@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "vaultPath": "~/Documents/Brain-Eleven",
+  "companion": {
+    "name": "Jane",
+    "dailyTemplate": "🔮 850-Companion/Daily/{{DATE}}.md",
+    "threadsFile": "🔮 850-Companion/Threads.md"
+  },
+  "hooks": {
+    "SessionStart": {
+      "enabled": true,
+      "script": ".claude/hooks/session-start.sh",
+      "description": "Last Session ve Threads'i oku, bağlantıyı kur"
+    },
+    "UserPromptSubmit": {
+      "enabled": true,
+      "script": ".claude/hooks/prompt-counter.sh",
+      "description": "Her 15 prompt'ta Daily'yi özenle"
+    },
+    "SessionEnd": {
+      "enabled": true,
+      "script": ".claude/hooks/session-end.sh",
+      "description": "Daily yazısını özet et"
+    },
+    "PreCompact": {
+      "enabled": true,
+      "script": ".claude/hooks/pre-compact.sh",
+      "description": "Derleme günlüğünü güncelle"
+    }
+  },
+  "memory": {
+    "scope": "core+goals",
+    "autoSave": true,
+    "dailyBackup": true
+  },
+  "git": {
+    "autoCommit": false,
+    "commitTemplate": "chore(brain-eleven): daily sync"
+  }
+}
