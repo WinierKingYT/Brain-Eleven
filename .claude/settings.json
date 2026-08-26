@@ -7,26 +7,50 @@
     "threadsFile": "🔮 850-Companion/Threads.md"
   },
   "hooks": {
-    "SessionStart": {
-      "enabled": true,
-      "script": ".claude/hooks/session-start.sh",
-      "description": "Last Session ve Threads'i oku, bağlantıyı kur"
-    },
-    "UserPromptSubmit": {
-      "enabled": true,
-      "script": ".claude/hooks/prompt-counter.sh",
-      "description": "Her 15 prompt'ta Daily'yi özenle"
-    },
-    "SessionEnd": {
-      "enabled": true,
-      "script": ".claude/hooks/session-end.sh",
-      "description": "Daily yazısını özet et"
-    },
-    "PreCompact": {
-      "enabled": true,
-      "script": ".claude/hooks/pre-compact.sh",
-      "description": "Derleme günlüğünü güncelle"
-    }
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh",
+            "statusMessage": "Last Session ve Threads'i oku, bağlantıyı kur"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/prompt-counter.sh",
+            "statusMessage": "Her 15 prompt'ta Daily'yi özenle"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-end.sh",
+            "statusMessage": "Daily yazısını özet et"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-compact.sh",
+            "statusMessage": "Derleme günlüğünü güncelle"
+          }
+        ]
+      }
+    ]
   },
   "memory": {
     "scope": "core+goals",
