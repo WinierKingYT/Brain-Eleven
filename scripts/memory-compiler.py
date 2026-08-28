@@ -71,7 +71,7 @@ class MemoryCompiler:
     # ========================================================================
 
     def extract_from_daily(self) -> int:
-        """Parse Daily.md and extract memory candidates"""
+        """Parse Daily.md with date awareness (handles multiple daily entries)"""
 
         daily_file = self.companion_path / "Daily.md"
         if not daily_file.exists():
@@ -81,25 +81,37 @@ class MemoryCompiler:
         with open(daily_file, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # Parse sections
-        sections = self._parse_sections(content)
+        # Split by date entries: # Daily Notes - YYYY-MM-DD
+        import re
+        date_pattern = r'^# Daily Notes - (\d{4}-\d{2}-\d{2})'
+        date_entries = re.split(date_pattern, content, flags=re.MULTILINE)
 
-        for section_name, section_text in sections.items():
-            if not section_text.strip():
-                continue
+        # Process each date's sections
+        # Structure: [text_before_first_date, date1, content1, date2, content2, ...]
+        for i in range(1, len(date_entries), 2):
+            if i + 1 < len(date_entries):
+                # date = date_entries[i]  # Can use if needed for filtering
+                date_content = date_entries[i + 1]
 
-            # Extract based on section type
-            if section_name == "IMPORTANT DECISION":
-                self._extract_decision(section_text, "daily")
+                # Parse sections for THIS date only
+                sections = self._parse_sections_for_date(date_content)
 
-            elif section_name == "LEARNED":
-                self._extract_lesson(section_text, "daily")
+                for section_name, section_text in sections.items():
+                    if not section_text.strip():
+                        continue
 
-            elif section_name == "OPEN LOOPS":
-                self._extract_open_loop(section_text, "daily")
+                    # Extract based on section type
+                    if section_name == "IMPORTANT DECISION":
+                        self._extract_decision(section_text, "daily")
 
-            elif section_name in ["TODAY", "ACTIONS", "PROGRESS"]:
-                self._extract_observation(section_text, "daily")
+                    elif section_name == "LEARNED":
+                        self._extract_lesson(section_text, "daily")
+
+                    elif section_name == "OPEN LOOPS":
+                        self._extract_open_loop(section_text, "daily")
+
+                    elif section_name in ["TODAY", "ACTIONS", "PROGRESS"]:
+                        self._extract_observation(section_text, "daily")
 
         return len(self.candidates)
 
@@ -276,8 +288,8 @@ class MemoryCompiler:
     # UTILITIES
     # ========================================================================
 
-    def _parse_sections(self, content: str) -> Dict[str, str]:
-        """Parse markdown sections (## SECTION_NAME)"""
+    def _parse_sections_for_date(self, content: str) -> Dict[str, str]:
+        """Parse markdown sections for a single date (## SECTION_NAME)"""
 
         sections = {}
         current_section = None

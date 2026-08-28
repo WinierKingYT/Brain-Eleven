@@ -3,8 +3,8 @@
   "vaultPath": "~/Documents/Brain-Eleven",
   "companion": {
     "name": "Jane",
-    "dailyTemplate": "🔮 850-Companion/Daily/{{DATE}}.md",
-    "threadsFile": "🔮 850-Companion/Threads.md"
+    "dailyTemplate": "🔮 Companion/Daily.md",
+    "threadsFile": "🔮 Companion/Threads.md"
   },
   "hooks": {
     "SessionStart": [
