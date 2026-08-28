@@ -112,4 +112,8 @@ setInterval(() => {
 
 ---
 
-**Bağlantılar:** [[hamle5-backend-002-connection-pooling]]
+**Bağlantılar:** 
+- [[hamle5-backend-002-connection-pooling]] (async resource management)
+- [[hamle6-devops-001-structured-logging-json]] (monitor event loop lag)
+- [[hamle5-performance-001-flame-graphs]] (profile event loop time)
+- [[hamle5-cloud-002-kubernetes-hpa]] (scale when event loop lags)

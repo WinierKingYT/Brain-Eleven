@@ -127,4 +127,8 @@ SET enable_seqscan = off; -- Force index use (debug only)
 
 ---
 
-**Bağlantılar:** [[hamle5-database-002-indexing-strategy]]
+**Bağlantılar:** 
+- [[hamle5-database-002-indexing-strategy]] (index impact on plans)
+- [[hamle5-performance-002-apm-instrumentation]] (trace slow queries)
+- [[hamle6-devops-001-structured-logging-json]] (log query execution)
+- [[hamle5-cloud-004-cost-optimization]] (query efficiency = cost)

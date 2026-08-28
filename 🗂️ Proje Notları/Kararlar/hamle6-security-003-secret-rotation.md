@@ -181,4 +181,7 @@ Monitoring:
 
 ---
 
-**Bağlantılar:** [[hamle6-security-004-rate-limiting]]
+**Bağlantılar:** 
+- [[hamle6-security-004-rate-limiting-distributed]] (credential rotation monitoring)
+- [[hamle6-devops-001-structured-logging-json]] (audit trail for rotations)
+- [[hamle5-system-001-event-sourcing]] (event log of secret changes)

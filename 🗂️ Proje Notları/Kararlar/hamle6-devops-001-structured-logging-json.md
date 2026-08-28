@@ -172,4 +172,8 @@ const sanitizeLog = (entry) => {
 
 ---
 
-**Bağlantılar:** [[hamle6-devops-002-prometheus-metrics]]
+**Bağlantılar:** 
+- [[hamle5-backend-001-event-loop-optimization]] (async logging for performance)
+- [[hamle6-system-001-event-sourcing]] (event logs as audit trail)
+- [[hamle5-database-001-query-plans]] (tracing database operations)
+- [[hamle6-security-004-rate-limiting-distributed]] (audit security events)

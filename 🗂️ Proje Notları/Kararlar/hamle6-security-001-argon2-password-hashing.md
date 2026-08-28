@@ -172,4 +172,7 @@ Example Prometheus metric:
 
 ---
 
-**Bağlantılar:** [[hamle6-security-002-jwt-refresh-tokens]]
+**Bağlantılar:** 
+- [[hamle6-security-002-jwt-refresh-tokens]] (token-based auth)
+- [[hamle6-api-001-rest-resource-design]] (API security headers)
+- [[hamle5-backend-001-event-loop-optimization]] (async hashing performance)

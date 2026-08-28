@@ -138,4 +138,8 @@ Server Error (5xx):
 
 ---
 
-**Bağlantılar:** [[hamle6-api-002-graphql-schema]]
+**Bağlantılar:** 
+- [[hamle6-api-002-graphql-schema]] (schema design patterns)
+- [[hamle6-security-001-argon2-password-hashing]] (auth endpoint security)
+- [[hamle6-security-004-rate-limiting-distributed]] (API rate limiting)
+- [[hamle6-testing-001-test-pyramid]] (E2E testing API endpoints)

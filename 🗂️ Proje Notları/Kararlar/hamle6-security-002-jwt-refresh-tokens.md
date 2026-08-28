@@ -211,4 +211,8 @@ Alert examples:
 
 ---
 
-**Bağlantılar:** [[hamle6-security-003-secret-rotation]]
+**Bağlantılar:** 
+- [[hamle6-security-003-secret-rotation]] (access token secret rotation)
+- [[hamle6-security-004-rate-limiting-distributed]] (login endpoint rate limiting)
+- [[hamle6-api-001-rest-resource-design]] (auth endpoint design)
+- [[hamle5-devops-001-structured-logging-json]] (auth event logging)

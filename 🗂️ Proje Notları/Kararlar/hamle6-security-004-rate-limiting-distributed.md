@@ -174,4 +174,8 @@ async function rateLimitWithFallback(userId, limit, windowSeconds) {
 
 ---
 
-**Bağlantılar:** [[hamle6-devops-001-structured-logging]]
+**Bağlantılar:** 
+- [[hamle6-devops-001-structured-logging-json]] (logging rate limit events)
+- [[hamle6-api-001-rest-resource-design]] (API endpoint protection)
+- [[hamle5-database-002-indexing-strategy]] (Redis index optimization)
+- [[hamle5-cloud-002-kubernetes-hpa]] (scaling under attack)

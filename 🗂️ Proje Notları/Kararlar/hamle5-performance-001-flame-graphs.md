@@ -138,4 +138,8 @@ performance.measure('data-fetch', 'data-fetch-start', 'data-fetch-end')
 
 ---
 
-**Bağlantılar:** [[hamle5-performance-002-apm-instrumentation]]
+**Bağlantılar:** 
+- [[hamle5-performance-002-apm-instrumentation]] (correlate with traces)
+- [[hamle5-backend-001-event-loop-optimization]] (profile event loop)
+- [[hamle5-frontend-004-render-optimization]] (profile render time)
+- [[hamle6-testing-001-test-pyramid]] (performance testing)
