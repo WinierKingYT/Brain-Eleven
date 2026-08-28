@@ -1,0 +1,61 @@
+{
+  "query": "architecture decisions",
+  "results": [
+    {
+      "id": 5,
+      "type": "decision",
+      "content": "**Decided: Multi-phase implementation for Brain-Eleven v3**\n\nAfter analysis showed system needs 4 la",
+      "confidence": 1.0,
+      "timestamp": "2026-08-28T21:21:02.174048",
+      "similarity": 0.016666666666666666,
+      "freshness": 1.0,
+      "priority": 1.0,
+      "combined_score": 0.6066666666666666
+    },
+    {
+      "id": 7,
+      "type": "open_loop",
+      "content": "Memory Compiler: Section extraction needs real Daily data testing",
+      "confidence": 1.0,
+      "timestamp": "2026-08-28T21:21:02.174048",
+      "similarity": 0.0,
+      "freshness": 1.0,
+      "priority": 0.9,
+      "combined_score": 0.58
+    },
+    {
+      "id": 8,
+      "type": "open_loop",
+      "content": "mem0 integration: Waiting on auth.json configuration",
+      "confidence": 1.0,
+      "timestamp": "2026-08-28T21:21:02.174048",
+      "similarity": 0.0,
+      "freshness": 1.0,
+      "priority": 0.9,
+      "combined_score": 0.58
+    },
+    {
+      "id": 9,
+      "type": "open_loop",
+      "content": "Session-end hook: Currently just grabs 500 chars; needs full extraction",
+      "confidence": 1.0,
+      "timestamp": "2026-08-28T21:21:02.174048",
+      "similarity": 0.0,
+      "freshness": 1.0,
+      "priority": 0.9,
+      "combined_score": 0.58
+    },
+    {
+      "id": 10,
+      "type": "open_loop",
+      "content": "Validation layer: Not started; critical for quality gate",
+      "confidence": 1.0,
+      "timestamp": "2026-08-28T21:21:02.174048",
+      "similarity": 0.0,
+      "freshness": 1.0,
+      "priority": 0.9,
+      "combined_score": 0.58
+    }
+  ],
+  "timestamp": "2026-08-29T00:18:21.124413"
+}
