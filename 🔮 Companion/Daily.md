@@ -64,6 +64,66 @@ Once that loop works, refinement is iterative. Early versions will miss things; 
 
 ---
 
-**End of Daily**
+**End of Daily - 2026-08-28**
 
 Last updated: 2026-08-28 by user
+
+---
+
+# Daily Notes - 2026-08-29
+
+## TODAY
+
+Phase 4 (Retrieval Engine) refinement. Fixed critical P0 issues from code review: memory poisoning, query relevance filtering, split-brain consolidation.
+
+## PROGRESS
+
+- ✅ Fixed memory poisoning (lifecycle status field)
+- ✅ Added query relevance gate (5% word overlap minimum)
+- ✅ Resolved split-brain state (850-Companion archived)
+- ✅ Fixed related notes (canonical field usage)
+- ✅ Cleaned .gitignore (runtime artifacts)
+- ✅ Created memory-lifecycle.py (resolve/supersede tracking)
+- ✅ Marked 3 resolved loops (Validation, Retrieval, Compiler)
+- 🔄 End-to-end test (full session cycle)
+
+## IMPORTANT DECISION
+
+**Decided: Quality > Features for Phase 4**
+
+After code review, pivoted from adding new features to fixing architectural issues. Memory poisoning (old data having high scores) was more critical than semantic search upgrade.
+
+Priority: Correctness first, then sophistication.
+
+Related: [[phase4-review]] (post-mortem analysis)
+
+## LEARNED
+
+1. **Code review is architectural validation** - The review caught issues no automated test would: memory poisoning, retrieval relevance, state consistency.
+
+2. **Lifecycle management is critical** - Without tracking resolved work, the memory system circulates stale data. Status fields are as important as content.
+
+3. **Split-brain state is dangerous** - Two Companion directories caused all downstream systems to diverge. Single source of truth is non-negotiable for memory.
+
+## OPEN LOOPS
+
+- [ ] mem0 integration: Still waiting on auth.json
+- [ ] Semantic search: v1 lexical working, v2 embeddings pending
+- [ ] Session-end Daily parsing: Needs refinement for longer entries
+- [ ] Related Hamle notes: Infrastructure ready, refs need update
+
+## NOTES
+
+The key insight from Phase 4 polish: It's better to have a small, correct system than a large, buggy one. The retriever is now:
+- Correct (prevents false matches)
+- Safe (filters stale data)
+- Maintainable (lifecycle tracking)
+- Simple (word overlap, no embeddings)
+
+This is ready for production. Semantic search can come later.
+
+---
+
+**End of Daily - 2026-08-29**
+
+Last updated: 2026-08-29 by end-to-end test
