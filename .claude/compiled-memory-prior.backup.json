@@ -1,13 +1,5 @@
 {
-  "validated_at": "2026-08-29T01:09:34.323355",
-  "summary": {
-    "total_candidates": 46,
-    "approved": 46,
-    "rejected": 0,
-    "conflicts_found": 2,
-    "duplicates_found": 0
-  },
-  "validated_memory": [
+  "candidates": [
     {
       "memory_id": "01M155WB9AKKTCZWTFRDDZR4W7",
       "id": 0,
@@ -1105,7 +1097,5 @@
       "supersession_note": "",
       "dedup_fingerprint": "395a26dc2eb09450"
     }
-  ],
-  "rejected_memory": [],
-  "next_step": "Import validated_memory to Obsidian + sync to mem0 when ready"
+  ]
 }

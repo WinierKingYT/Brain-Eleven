@@ -169,17 +169,51 @@ class MemoryLifecycleManager:
         return chain
 
     def save(self):
-        """Save updated memories back to JSON"""
+        """Save updated memories with atomic persistence"""
+
+        import tempfile
+        import shutil
+
+        # Read current data
         with open(self.validated_json, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         data["validated_memory"] = self.memories
         data["last_updated"] = datetime.now().isoformat()
 
-        with open(self.validated_json, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        # Atomic write: temp → validate → rename
+        try:
+            temp_fd, temp_path = tempfile.mkstemp(
+                dir=self.validated_json.parent,
+                prefix='.tmp_',
+                suffix='.json'
+            )
 
-        print(f"\n💾 Saved to {self.validated_json}")
+            with open(temp_fd, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            # Validate
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                validate_data = json.load(f)
+
+            if "validated_memory" not in validate_data:
+                raise ValueError("Invalid structure")
+
+            # Atomic rename
+            if self.validated_json.exists():
+                backup = self.validated_json.with_suffix('.backup.json')
+                shutil.copy2(self.validated_json, backup)
+
+            shutil.move(temp_path, self.validated_json)
+            print(f"✅ Atomically saved to {self.validated_json}")
+
+        except Exception as e:
+            print(f"❌ Atomic save failed: {e}")
+            try:
+                if Path(temp_path).exists():
+                    Path(temp_path).unlink()
+            except:
+                pass
 
 
 # ============================================================================

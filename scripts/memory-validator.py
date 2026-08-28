@@ -530,6 +530,52 @@ class MemoryValidator:
     # OUTPUT
     # ========================================================================
 
+    def _atomic_write(self, filepath: Path, data: Dict, validate_structure: bool = True) -> bool:
+        """Write to temp file, validate, then rename (atomic operation)"""
+
+        import tempfile
+        import shutil
+
+        try:
+            # Write to temp file in same directory (same filesystem for atomic rename)
+            temp_fd, temp_path = tempfile.mkstemp(
+                dir=filepath.parent,
+                prefix='.tmp_',
+                suffix='.json'
+            )
+
+            with open(temp_fd, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+
+            # Validate JSON integrity
+            with open(temp_path, 'r', encoding='utf-8') as f:
+                validate_data = json.load(f)
+
+            # Check structure if requested
+            if validate_structure:
+                if not isinstance(validate_data, dict):
+                    raise ValueError("Data must be a JSON object")
+
+            # Validation passed - atomic rename
+            if filepath.exists():
+                backup_path = filepath.with_suffix('.backup.json')
+                shutil.copy2(filepath, backup_path)
+                print(f"  📋 Backup: {backup_path}")
+
+            shutil.move(temp_path, filepath)
+            print(f"✅ Atomically persisted to {filepath}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Atomic write failed: {e}")
+            # Clean up temp file
+            try:
+                if 'temp_path' in locals() and Path(temp_path).exists():
+                    Path(temp_path).unlink()
+            except:
+                pass
+            return False
+
     def validate_all(self) -> Dict:
         """Execute full validation pipeline"""
 
@@ -593,27 +639,28 @@ class MemoryValidator:
         return output
 
     def save_output(self, output_file: str = None) -> str:
-        """Save validation results"""
+        """Save validation results with atomic persistence"""
 
         if output_file is None:
             output_file = str(self.vault_path / ".claude/validated-memory.json")
 
         output = self.validate_all()
 
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
+        # Use atomic write (temp + validate + rename)
+        output_path = Path(output_file)
+        if not self._atomic_write(output_path, output):
+            print(f"❌ Failed to atomically persist {output_file}")
+            return output_file
 
-        print(f"\n📁 Saved to: {output_file}")
+        # Also save prior compilation for next validation (also atomic)
+        prior_file = Path(self.vault_path / ".claude/compiled-memory-prior.json")
+        prior_output = {
+            "compiled_at": output.get("validated_at"),
+            "candidates": output.get("validated_memory", [])
+        }
 
-        # Also save prior compilation for next validation
-        prior_file = str(self.vault_path / ".claude/compiled-memory-prior.json")
-        with open(prior_file, 'w', encoding='utf-8') as f:
-            json.dump(
-                {"candidates": [c.to_dict() for c in self.candidates]},
-                f,
-                indent=2,
-                ensure_ascii=False
-            )
+        self._atomic_write(prior_file, prior_output, validate_structure=False)
+        print(f"💾 Also saved prior: {prior_file}")
 
         return output_file
 
