@@ -75,7 +75,9 @@ class MemoryValidator:
     def __init__(self, vault_path: str):
         self.vault_path = Path(vault_path)
         self.compiled_json = self.vault_path / ".claude/compiled-memory.json"
+        self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.existing_memory = self._load_existing_memory()
+        self.prior_validated = self._load_prior_validated()  # Load long-term memory
         self.candidates = []
         self.validated = []
 
@@ -124,6 +126,83 @@ class MemoryValidator:
             items = [s.strip() for s in section_text.split('\n') if s.strip() and not s.startswith('#')]
             return items
         return []
+
+    def _load_prior_validated(self) -> Dict[str, any]:
+        """Load existing validated-memory.json (cumulative long-term store)"""
+
+        if not self.validated_json.exists():
+            return {"validated_memory": [], "metadata": {}}
+
+        with open(self.validated_json, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        return data
+
+    # ========================================================================
+    # MERGE: Cumulative Memory Store
+    # ========================================================================
+
+    def _merge_with_prior(self, new_candidates: List[ValidatedMemory]) -> List[ValidatedMemory]:
+        """Merge new candidates with prior validated memory (cumulative store)"""
+
+        if not self.prior_validated.get("validated_memory"):
+            # No prior memory, all new
+            return new_candidates
+
+        prior_memories = self.prior_validated["validated_memory"]
+
+        # Build index of prior memories by (type, content)
+        prior_index = {}
+        for mem in prior_memories:
+            key = (mem["type"], mem["content"][:50])  # Key by type + content prefix
+            prior_index[key] = mem
+
+        merged = []
+        seen_keys = set()
+
+        # Process new candidates: preserve prior status if exists
+        for new_mem in new_candidates:
+            key = (new_mem.type, new_mem.content[:50])
+
+            if key in prior_index:
+                # Update: preserve lifecycle status from prior
+                prior = prior_index[key]
+                new_mem.status = prior.get("status", "active")
+                new_mem.resolved_at = prior.get("resolved_at", "")
+                new_mem.resolved_by = prior.get("resolved_by", "")
+
+            merged.append(new_mem)
+            seen_keys.add(key)
+
+        # Add prior memories that didn't re-extract (e.g., resolved loops)
+        for mem in prior_memories:
+            key = (mem["type"], mem["content"][:50])
+            if key not in seen_keys:
+                # Convert dict back to ValidatedMemory
+                prior_mem = ValidatedMemory(
+                    id=mem["id"],
+                    type=mem["type"],
+                    content=mem["content"],
+                    confidence=mem["confidence"],
+                    source=mem["source"],
+                    timestamp=mem["timestamp"],
+                    related_notes=mem.get("related_notes", []),
+                    section=mem.get("section", ""),
+                    issues=[],
+                    quality_score=mem["quality_score"],
+                    novelty=mem.get("novelty", 0.5),
+                    is_approved=mem["is_approved"],
+                    status=mem.get("status", "active"),
+                    resolved_at=mem.get("resolved_at", ""),
+                    resolved_by=mem.get("resolved_by", "")
+                )
+                merged.append(prior_mem)
+
+        # Re-assign IDs (sequential)
+        for i, mem in enumerate(merged):
+            mem.id = i
+
+        return merged
 
     # ========================================================================
     # LOAD CANDIDATES
@@ -367,6 +446,13 @@ class MemoryValidator:
         # Score quality
         print("\n4. Scoring quality...")
         self.score_quality()
+
+        # Merge with prior validated memory (cumulative store)
+        print("\n5. Merging with prior memory...")
+        prior_count = len(self.prior_validated.get("validated_memory", []))
+        self.candidates = self._merge_with_prior(self.candidates)
+        merged_count = len(self.candidates)
+        print(f"   → Prior: {prior_count}, New/Updated: {loaded}, Merged: {merged_count}")
 
         # Summary
         self.validated = [c for c in self.candidates if c.is_approved]
