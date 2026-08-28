@@ -26,7 +26,7 @@ class ContextCompiler:
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.last_session_file = self.vault_path / "🔮 Companion/Last Session.md"
         self.open_loops_file = self.vault_path / "🔮 Companion/Açık Döngüler.md"
-        self.hamle_dir = self.vault_path / "Hamle"
+        self.hamle_dir = self.vault_path / "🗂️ Proje Notları/Kararlar"
 
         self.memories = []
         self.related_notes = []
@@ -126,20 +126,26 @@ class ContextCompiler:
         return set(matches)
 
     def _fetch_related_hamles(self, memories: List[Dict]) -> Dict[str, str]:
-        """Fetch related Hamle notes referenced in memories"""
+        """Fetch related Hamle notes referenced in memories (canonical: related_notes field)"""
 
         related = {}
 
-        # Collect all wikilinks from top memories
+        # Canonical source: related_notes field already in memory
         all_links = set()
         for memory in memories:
-            links = self._extract_wikilinks(memory["content"])
-            all_links.update(links)
+            # Use the structured related_notes field (primary)
+            related_notes = memory.get("related_notes", [])
+            all_links.update(related_notes)
+
+            # Fallback: parse wikilinks from content (secondary)
+            if not related_notes:
+                links = self._extract_wikilinks(memory["content"])
+                all_links.update(links)
 
         # Fetch each Hamle note
         if self.hamle_dir.exists():
             for link in all_links:
-                # Try to find the file
+                # Try to find the file (handle various formats)
                 hamle_file = self.hamle_dir / f"{link}.md"
 
                 if hamle_file.exists():
