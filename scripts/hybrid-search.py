@@ -60,9 +60,18 @@ class HybridSearchEngine:
 
         print(f"\n🔎 Hybrid search: \"{query}\"")
 
-        # Get lexical results (Phase 4 retriever)
+        # Get lexical results (Phase 4 retriever uses 'search' method)
         print(f"   → Lexical search...")
-        lexical_results = self.lexical.retrieve(query, memories, top_k=10)
+        lexical_search_results = self.lexical.search(query, limit=10)
+
+        # Convert SearchResult objects to dicts for merging
+        lexical_results = []
+        for result in lexical_search_results:
+            lexical_results.append({
+                'memory_id': result.memory_id,
+                'score': result.score,
+                'content': next((m['content'] for m in memories if m['memory_id'] == result.memory_id), '')
+            })
 
         # Get semantic results
         print(f"   → Semantic search...")
