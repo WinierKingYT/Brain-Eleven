@@ -88,4 +88,8 @@ Example:
 
 ---
 
-**Bağlantılar:** [[mtdvio/every-programmer-should-know]]
+**Bağlantılar:** 
+- [[hamle4-023-utf8-encoding-pitfalls]] (other foundational issues)
+- [[hamle6-testing-001-test-pyramid]] (numeric edge case testing)
+- [[hamle5-database-004-connection-tuning]] (numeric precision in queries)
+- [[hamle5-performance-004-benchmarking-methodology]] (accurate benchmarking)

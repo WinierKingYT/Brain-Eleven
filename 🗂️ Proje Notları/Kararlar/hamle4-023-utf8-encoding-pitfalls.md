@@ -85,4 +85,8 @@ Java:
 
 ---
 
-**Bağlantılar:** [[mtdvio/every-programmer-should-know]]
+**Bağlantılar:** 
+- [[hamle4-024-floating-point-precision]] (other encoding pitfalls)
+- [[hamle6-api-001-rest-resource-design]] (JSON encoding in APIs)
+- [[hamle6-testing-001-test-pyramid]] (test edge cases: emoji, multibyte)
+- [[hamle5-database-003-transaction-isolation]] (charset in transactions)

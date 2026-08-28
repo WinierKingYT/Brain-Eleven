@@ -160,3 +160,12 @@ Core Patterns:
 - Notes written: 8 detailed + this summary
 - Patterns available: 76+ (20 sampled + documented)
 - Status: Hamle 6 core complete, extensions pending
+
+---
+
+**Bağlantılar:**
+- [[hamle6-security-001-argon2-password-hashing]], [[hamle6-security-002-jwt-refresh-tokens]], [[hamle6-security-003-secret-rotation]], [[hamle6-security-004-rate-limiting-distributed]]
+- [[hamle6-devops-001-structured-logging-json]]
+- [[hamle6-api-001-rest-resource-design]]
+- [[hamle6-testing-001-test-pyramid]]
+- [[hamle6-system-001-event-sourcing]]

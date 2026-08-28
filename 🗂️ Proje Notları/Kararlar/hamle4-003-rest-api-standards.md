@@ -79,4 +79,8 @@ Accept: application/vnd.company.v2+json (clean but hidden)
 
 ---
 
-**Bağlantılar:** [[hamle4-004-api-idempotency]]
+**Bağlantılar:** 
+- [[hamle4-004-api-idempotency]] (idempotency patterns)
+- [[hamle6-api-001-rest-resource-design]] (modern REST design)
+- [[hamle6-security-004-rate-limiting-distributed]] (API protection)
+- [[hamle5-database-001-query-plans]] (query efficiency for APIs)

@@ -125,4 +125,8 @@ function SearchResults() {
 
 ---
 
-**Bağlantılar:** [[hamle5-frontend-002-state-machines]]
+**Bağlantılar:** 
+- [[hamle5-frontend-002-state-machines]] (predictable state)
+- [[hamle5-performance-001-flame-graphs]] (profile render time)
+- [[hamle5-performance-002-apm-instrumentation]] (trace React performance)
+- [[hamle6-testing-001-test-pyramid]] (component testing)

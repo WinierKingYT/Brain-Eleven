@@ -85,4 +85,8 @@ Decision: Use Kafka for events
 
 ---
 
-**Bağlantılar:** [[hamle4-013-technical-debt-matrix]], [[hamle4-014-design-document-template]]
+**Bağlantılar:** 
+- [[hamle4-013-technical-debt-matrix]], [[hamle4-014-design-document-template]]
+- [[hamle6-system-001-event-sourcing]] (event-driven architecture patterns)
+- [[hamle5-system-001-event-sourcing]] (patterns in distributed systems)
+- [[hamle6-testing-001-test-pyramid]] (testing architectural decisions)

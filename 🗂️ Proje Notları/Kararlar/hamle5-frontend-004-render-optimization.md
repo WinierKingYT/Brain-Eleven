@@ -136,4 +136,8 @@ Example:
 
 ---
 
-**Bağlantılar:** [[hamle5-database-001-query-plans]]
+**Bağlantılar:** 
+- [[hamle5-frontend-003-bundle-splitting]] (code splitting impact)
+- [[hamle5-performance-001-flame-graphs]] (measure optimization)
+- [[hamle5-performance-003-bottleneck-identification]] (find render bottlenecks)
+- [[hamle6-testing-001-test-pyramid]] (performance test pyramid)
