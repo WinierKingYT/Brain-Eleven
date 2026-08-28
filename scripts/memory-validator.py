@@ -21,9 +21,20 @@ import json
 import re
 from pathlib import Path
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple
 from enum import Enum
+
+try:
+    from ulid import ULID
+except ImportError:
+    # Fallback: use UUID if ULID not available
+    from uuid import uuid4
+    class ULID:
+        def __init__(self):
+            self.value = str(uuid4())[:20]
+        def __str__(self):
+            return self.value
 
 # ============================================================================
 # Data Models
@@ -42,25 +53,31 @@ class ValidationIssue:
 @dataclass
 class ValidatedMemory:
     """Memory after passing validation gate"""
-    id: int
-    type: str
-    content: str
-    confidence: float
-    source: str
-    timestamp: str
-    related_notes: List[str]
-    section: str
+    # IDENTITY (Phase 5)
+    memory_id: str = field(default_factory=lambda: str(ULID()))  # Immutable ULID
+    id: int = -1  # Deprecated: array index (kept for backward compat)
+    source_id: str = ""  # Canonical source anchor (daily:date:section:n)
 
-    # Validation results
-    issues: List[ValidationIssue]
-    quality_score: float  # 0.0 - 1.0 (after all adjustments)
-    novelty: float  # Is this new knowledge?
-    is_approved: bool  # Passes validation gate?
+    # CONTENT
+    type: str = ""
+    content: str = ""
+    confidence: float = 0.0
+    source: str = ""
+    timestamp: str = ""
+    related_notes: List[str] = field(default_factory=list)
+    section: str = ""
 
-    # Lifecycle (Phase 4+): Prevents memory poisoning
+    # VALIDATION
+    issues: List[ValidationIssue] = field(default_factory=list)
+    quality_score: float = 0.0
+    novelty: float = 0.0
+    is_approved: bool = False
+
+    # LIFECYCLE (Phase 5: rich object instead of flat fields)
     status: str = "active"  # active, resolved, superseded
-    resolved_at: str = ""  # ISO timestamp when resolved
-    resolved_by: str = ""  # git commit hash or reference
+    resolved_at: str = ""
+    resolved_by: str = ""
+    dedup_fingerprint: str = ""  # SHA256 for dedup
 
     def to_dict(self):
         return {
@@ -143,44 +160,60 @@ class MemoryValidator:
     # ========================================================================
 
     def _merge_with_prior(self, new_candidates: List[ValidatedMemory]) -> List[ValidatedMemory]:
-        """Merge new candidates with prior validated memory (cumulative store)"""
+        """Merge with fingerprint-based dedup (Phase 5: canonical merge)"""
 
         if not self.prior_validated.get("validated_memory"):
-            # No prior memory, all new
             return new_candidates
 
         prior_memories = self.prior_validated["validated_memory"]
 
-        # Build index of prior memories by (type, content)
-        prior_index = {}
+        # Build index by memory_id (immutable identity)
+        prior_by_id = {}
+        prior_by_fingerprint = {}
+
         for mem in prior_memories:
-            key = (mem["type"], mem["content"][:50])  # Key by type + content prefix
-            prior_index[key] = mem
+            mid = mem.get("memory_id")
+            if mid:
+                prior_by_id[mid] = mem
+
+            # Also index by fingerprint for dedup
+            fp = mem.get("dedup_fingerprint")
+            if fp:
+                prior_by_fingerprint[fp] = mem
 
         merged = []
-        seen_keys = set()
+        seen_memory_ids = set()
 
-        # Process new candidates: preserve prior status if exists
+        # Process new candidates
         for new_mem in new_candidates:
-            key = (new_mem.type, new_mem.content[:50])
+            # Check if memory_id already exists (update)
+            if new_mem.memory_id in prior_by_id:
+                prior = prior_by_id[new_mem.memory_id]
+                # Preserve lifecycle from prior
+                new_mem.status = prior.get("status", "active")
+                new_mem.resolved_at = prior.get("resolved_at", "")
+                new_mem.resolved_by = prior.get("resolved_by", "")
 
-            if key in prior_index:
-                # Update: preserve lifecycle status from prior
-                prior = prior_index[key]
+            # Check if fingerprint exists (content unchanged, same memory)
+            elif new_mem.dedup_fingerprint in prior_by_fingerprint:
+                prior = prior_by_fingerprint[new_mem.dedup_fingerprint]
+                # Use prior's memory_id (stable identity)
+                new_mem.memory_id = prior.get("memory_id", new_mem.memory_id)
                 new_mem.status = prior.get("status", "active")
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
 
             merged.append(new_mem)
-            seen_keys.add(key)
+            seen_memory_ids.add(new_mem.memory_id)
 
-        # Add prior memories that didn't re-extract (e.g., resolved loops)
+        # Add prior memories not in new batch (resolved loops, etc)
         for mem in prior_memories:
-            key = (mem["type"], mem["content"][:50])
-            if key not in seen_keys:
-                # Convert dict back to ValidatedMemory
+            mid = mem.get("memory_id")
+            if mid not in seen_memory_ids:
                 prior_mem = ValidatedMemory(
-                    id=mem["id"],
+                    memory_id=mid,
+                    id=-1,  # Deprecated
+                    source_id=mem.get("source_id", ""),
                     type=mem["type"],
                     content=mem["content"],
                     confidence=mem["confidence"],
@@ -194,13 +227,10 @@ class MemoryValidator:
                     is_approved=mem["is_approved"],
                     status=mem.get("status", "active"),
                     resolved_at=mem.get("resolved_at", ""),
-                    resolved_by=mem.get("resolved_by", "")
+                    resolved_by=mem.get("resolved_by", ""),
+                    dedup_fingerprint=mem.get("dedup_fingerprint", "")
                 )
                 merged.append(prior_mem)
-
-        # Re-assign IDs (sequential)
-        for i, mem in enumerate(merged):
-            mem.id = i
 
         return merged
 
@@ -209,7 +239,7 @@ class MemoryValidator:
     # ========================================================================
 
     def load_candidates(self):
-        """Load from compiled-memory.json"""
+        """Load from compiled-memory.json with immutable IDs"""
         if not self.compiled_json.exists():
             print("⚠️  compiled-memory.json not found")
             return 0
@@ -219,8 +249,14 @@ class MemoryValidator:
 
         # Convert to ValidatedMemory objects
         for i, candidate in enumerate(data.get("candidates", [])):
+            # Generate immutable ID and fingerprint
+            memory_id = candidate.get("memory_id", str(ULID()))
+            fingerprint = self._compute_fingerprint(candidate["content"])
+
             validated = ValidatedMemory(
-                id=i,
+                memory_id=memory_id,
+                id=i,  # Keep for backward compat, deprecated
+                source_id=candidate.get("source_id", f"daily:{candidate.get('section', 'unknown')}:{i}"),
                 type=candidate["type"],
                 content=candidate["content"],
                 confidence=candidate["confidence"],
@@ -231,11 +267,19 @@ class MemoryValidator:
                 issues=[],
                 quality_score=candidate["confidence"],  # Start with compiler confidence
                 novelty=0.5,  # To be calculated
-                is_approved=False
+                is_approved=False,
+                dedup_fingerprint=fingerprint
             )
             self.candidates.append(validated)
 
         return len(self.candidates)
+
+    def _compute_fingerprint(self, content: str) -> str:
+        """Compute SHA256 fingerprint for content (dedup key)"""
+        import hashlib
+        # Normalize: lowercase, strip whitespace, remove punctuation
+        normalized = ' '.join(content.lower().split())
+        return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
     # ========================================================================
     # VALIDATION: Conflict Detection
