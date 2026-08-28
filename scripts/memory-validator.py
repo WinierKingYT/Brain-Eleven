@@ -77,6 +77,9 @@ class ValidatedMemory:
     status: str = "active"  # active, resolved, superseded
     resolved_at: str = ""
     resolved_by: str = ""
+    resolution_note: str = ""  # Why was it resolved?
+    superseded_by: str = ""  # ULID of memory that superseded this one
+    supersession_note: str = ""  # Why was it superseded?
     dedup_fingerprint: str = ""  # SHA256 for dedup
 
     def to_dict(self):
@@ -189,10 +192,13 @@ class MemoryValidator:
             # Check if memory_id already exists (update)
             if new_mem.memory_id in prior_by_id:
                 prior = prior_by_id[new_mem.memory_id]
-                # Preserve lifecycle from prior
+                # Preserve full lifecycle from prior
                 new_mem.status = prior.get("status", "active")
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
+                new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.superseded_by = prior.get("superseded_by", "")
+                new_mem.supersession_note = prior.get("supersession_note", "")
 
             # Check if fingerprint exists (content unchanged, same memory)
             elif new_mem.dedup_fingerprint in prior_by_fingerprint:
@@ -202,6 +208,9 @@ class MemoryValidator:
                 new_mem.status = prior.get("status", "active")
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
+                new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.superseded_by = prior.get("superseded_by", "")
+                new_mem.supersession_note = prior.get("supersession_note", "")
 
             merged.append(new_mem)
             seen_memory_ids.add(new_mem.memory_id)
@@ -228,6 +237,9 @@ class MemoryValidator:
                     status=mem.get("status", "active"),
                     resolved_at=mem.get("resolved_at", ""),
                     resolved_by=mem.get("resolved_by", ""),
+                    resolution_note=mem.get("resolution_note", ""),
+                    superseded_by=mem.get("superseded_by", ""),
+                    supersession_note=mem.get("supersession_note", ""),
                     dedup_fingerprint=mem.get("dedup_fingerprint", "")
                 )
                 merged.append(prior_mem)
@@ -268,6 +280,9 @@ class MemoryValidator:
                 quality_score=candidate["confidence"],  # Start with compiler confidence
                 novelty=0.5,  # To be calculated
                 is_approved=False,
+                resolution_note=candidate.get("resolution_note", ""),
+                superseded_by=candidate.get("superseded_by", ""),
+                supersession_note=candidate.get("supersession_note", ""),
                 dedup_fingerprint=fingerprint
             )
             self.candidates.append(validated)

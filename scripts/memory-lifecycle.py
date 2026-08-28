@@ -93,7 +93,7 @@ class MemoryLifecycleManager:
         superseded_by: str,
         reason: str = ""
     ) -> bool:
-        """Mark a memory as superseded (by immutable ULID)"""
+        """Mark a memory as superseded and link to new memory (by immutable ULID)"""
 
         memory = None
         for m in self.memories:
@@ -109,7 +109,7 @@ class MemoryLifecycleManager:
         # Update status
         memory["status"] = "superseded"
         memory["resolved_at"] = datetime.now().isoformat()
-        memory["superseded_by"] = superseded_by
+        memory["superseded_by"] = superseded_by  # ULID of new memory
 
         if reason:
             memory["supersession_note"] = reason
@@ -117,8 +117,56 @@ class MemoryLifecycleManager:
         print(f"✅ Marked as superseded:")
         print(f"   Memory: {memory['content'][:60]}...")
         print(f"   Superseded by: {superseded_by}")
+        if reason:
+            print(f"   Reason: {reason}")
 
         return True
+
+    def trace_provenance(self, memory_id: str) -> List[Dict]:
+        """Trace full lifecycle chain (supersessions and resolutions)"""
+
+        memory = None
+        for m in self.memories:
+            if m.get("memory_id") == memory_id or str(m.get("id")) == memory_id:
+                memory = m
+                break
+
+        if not memory:
+            print(f"❌ Memory {memory_id} not found")
+            return []
+
+        chain = [memory]
+        current = memory
+
+        # Follow supersession chain forward
+        while current.get("superseded_by"):
+            next_id = current["superseded_by"]
+            next_mem = None
+            for m in self.memories:
+                if m.get("memory_id") == next_id:
+                    next_mem = m
+                    break
+
+            if next_mem:
+                chain.append(next_mem)
+                current = next_mem
+            else:
+                break
+
+        # Print chain
+        print(f"\n🔗 Provenance chain for {memory_id}:")
+        for i, mem in enumerate(chain):
+            status = mem.get("status", "active")
+            content = mem["content"][:50]
+            mid = mem.get("memory_id", "?")
+            print(f"  {i+1}. [{status.upper()}] {mid}")
+            print(f"     {content}...")
+            if mem.get("resolved_at"):
+                print(f"     Resolved: {mem['resolved_at']}")
+            if mem.get("superseded_by"):
+                print(f"     Superseded by: {mem['superseded_by']}")
+
+        return chain
 
     def save(self):
         """Save updated memories back to JSON"""
