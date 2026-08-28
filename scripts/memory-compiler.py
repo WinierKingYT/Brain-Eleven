@@ -50,6 +50,7 @@ class MemoryCandidate:
     timestamp: str            # ISO format
     related_notes: List[str]  # Hamle notes references
     section: Optional[str]    # Section in source document
+    source_id: str = ""       # Canonical location (daily:YYYY-MM-DD:type:idx)
 
     def to_dict(self):
         return asdict(self)
@@ -90,8 +91,11 @@ class MemoryCompiler:
         # Structure: [text_before_first_date, date1, content1, date2, content2, ...]
         for i in range(1, len(date_entries), 2):
             if i + 1 < len(date_entries):
-                # date = date_entries[i]  # Can use if needed for filtering
+                date_str = date_entries[i]  # YYYY-MM-DD
                 date_content = date_entries[i + 1]
+
+                # Track section counts per date for source_id
+                section_counts = {}
 
                 # Parse sections for THIS date only
                 sections = self._parse_sections_for_date(date_content)
@@ -100,22 +104,26 @@ class MemoryCompiler:
                     if not section_text.strip():
                         continue
 
-                    # Extract based on section type
+                    # Increment section count for source_id
+                    section_counts[section_name] = section_counts.get(section_name, 0) + 1
+                    idx = section_counts[section_name] - 1
+
+                    # Extract based on section type (pass date for source_id generation)
                     if section_name == "IMPORTANT DECISION":
-                        self._extract_decision(section_text, "daily")
+                        self._extract_decision(section_text, "daily", date_str, idx)
 
                     elif section_name == "LEARNED":
-                        self._extract_lesson(section_text, "daily")
+                        self._extract_lesson(section_text, "daily", date_str, idx)
 
                     elif section_name == "OPEN LOOPS":
-                        self._extract_open_loop(section_text, "daily")
+                        self._extract_open_loop(section_text, "daily", date_str, idx)
 
                     elif section_name in ["TODAY", "ACTIONS", "PROGRESS"]:
-                        self._extract_observation(section_text, "daily")
+                        self._extract_observation(section_text, "daily", date_str, idx)
 
         return len(self.candidates)
 
-    def _extract_decision(self, text: str, source: str):
+    def _extract_decision(self, text: str, source: str, date_str: str = "", idx: int = 0):
         """Extract decision candidates"""
 
         # Clean text
@@ -126,6 +134,9 @@ class MemoryCompiler:
         # Find related Hamle notes
         related = self._find_related_notes(text)
 
+        # Generate source_id with date
+        source_id = f"daily:{date_str}:decision:{idx}" if date_str else f"daily:decision:{idx}"
+
         candidate = MemoryCandidate(
             type=MemoryType.DECISION.value,
             content=text,
@@ -133,12 +144,13 @@ class MemoryCompiler:
             source=source,
             timestamp=self.timestamp,
             related_notes=related,
-            section="IMPORTANT DECISION"
+            section="IMPORTANT DECISION",
+            source_id=source_id
         )
 
         self.candidates.append(candidate)
 
-    def _extract_lesson(self, text: str, source: str):
+    def _extract_lesson(self, text: str, source: str, date_str: str = "", idx: int = 0):
         """Extract lesson candidates"""
 
         text = text.strip()
@@ -147,6 +159,9 @@ class MemoryCompiler:
 
         related = self._find_related_notes(text)
 
+        # Generate source_id with date
+        source_id = f"daily:{date_str}:lesson:{idx}" if date_str else f"daily:lesson:{idx}"
+
         candidate = MemoryCandidate(
             type=MemoryType.LESSON.value,
             content=text,
@@ -154,16 +169,18 @@ class MemoryCompiler:
             source=source,
             timestamp=self.timestamp,
             related_notes=related,
-            section="LEARNED"
+            section="LEARNED",
+            source_id=source_id
         )
 
         self.candidates.append(candidate)
 
-    def _extract_open_loop(self, text: str, source: str):
+    def _extract_open_loop(self, text: str, source: str, date_str: str = "", idx: int = 0):
         """Extract unresolved work"""
 
         # Parse checkbox items
         lines = text.strip().split('\n')
+        item_idx = 0
 
         for line in lines:
             line = line.strip()
@@ -176,6 +193,9 @@ class MemoryCompiler:
             if not task:
                 continue
 
+            # Generate source_id with date and item index
+            source_id = f"daily:{date_str}:open_loop:{idx}:{item_idx}" if date_str else f"daily:open_loop:{idx}:{item_idx}"
+
             candidate = MemoryCandidate(
                 type=MemoryType.OPEN_LOOP.value,
                 content=task,
@@ -183,16 +203,19 @@ class MemoryCompiler:
                 source=source,
                 timestamp=self.timestamp,
                 related_notes=[],
-                section="OPEN LOOPS"
+                section="OPEN LOOPS",
+                source_id=source_id
             )
 
             self.candidates.append(candidate)
+            item_idx += 1
 
-    def _extract_observation(self, text: str, source: str):
+    def _extract_observation(self, text: str, source: str, date_str: str = "", idx: int = 0):
         """Extract what happened (lower confidence)"""
 
         # Split into sentences
         sentences = re.split(r'[.!?]+', text)
+        sent_idx = 0
 
         for sentence in sentences:
             sentence = sentence.strip()
@@ -202,6 +225,9 @@ class MemoryCompiler:
             # Observations are lower confidence (they're contextual)
             related = self._find_related_notes(sentence)
 
+            # Generate source_id with date and sentence index
+            source_id = f"daily:{date_str}:observation:{idx}:{sent_idx}" if date_str else f"daily:observation:{idx}:{sent_idx}"
+
             candidate = MemoryCandidate(
                 type=MemoryType.OBSERVATION.value,
                 content=sentence,
@@ -209,10 +235,12 @@ class MemoryCompiler:
                 source=source,
                 timestamp=self.timestamp,
                 related_notes=related,
-                section="OBSERVATION"
+                section="OBSERVATION",
+                source_id=source_id
             )
 
             self.candidates.append(candidate)
+            sent_idx += 1
 
     # ========================================================================
     # DEDUPLICATION: Remove near-duplicates
