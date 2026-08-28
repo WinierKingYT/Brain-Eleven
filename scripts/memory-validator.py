@@ -286,12 +286,12 @@ class MemoryValidator:
     # ========================================================================
 
     def detect_conflicts(self):
-        """Find contradictions between candidates"""
+        """Find contradictions between candidates (new & prior)"""
 
         print("\n🔍 Detecting conflicts...")
         conflicts = []
 
-        # Compare all pairs of decisions
+        # Phase 1: Conflicts within new candidates
         decisions = [c for c in self.candidates if c.type == "decision"]
 
         for i, d1 in enumerate(decisions):
@@ -304,10 +304,23 @@ class MemoryValidator:
                     print(f"      vs")
                     print(f"      {d2.content[:60]}...")
 
+        # Phase 2: Cross-history conflicts (new candidates vs prior memories)
+        prior_decisions = [m for m in self.prior_validated.get("validated_memory", [])
+                          if m.get("type") == "decision" and m.get("status") == "active"]
+
+        for new_decision in decisions:
+            for prior_decision in prior_decisions:
+                conflict = self._check_contradiction_cross_history(new_decision, prior_decision)
+                if conflict:
+                    conflicts.append(conflict)
+                    print(f"  ⚠️  CROSS-HISTORY CONFLICT: new decision vs prior")
+                    print(f"      New: {new_decision.content[:50]}...")
+                    print(f"      Prior ({prior_decision['memory_id']}): {prior_decision['content'][:50]}...")
+
         return conflicts
 
     def _check_contradiction(self, m1: ValidatedMemory, m2: ValidatedMemory) -> Optional[ValidationIssue]:
-        """Check if two memories contradict"""
+        """Check if two new memories contradict"""
 
         content1 = m1.content.lower()
         content2 = m2.content.lower()
@@ -340,6 +353,47 @@ class MemoryValidator:
                     candidate_ids=[m1.id, m2.id],
                     description=f"Decision {m1.id} and {m2.id} may contradict on '{positive}' vs '{negative}'",
                     recommendation="Review both decisions; keep the newer one or combine them"
+                )
+
+        return None
+
+    def _check_contradiction_cross_history(self, new_mem: ValidatedMemory, prior_mem: Dict) -> Optional[ValidationIssue]:
+        """Check if new memory contradicts a prior decision"""
+
+        content_new = new_mem.content.lower()
+        content_prior = prior_mem["content"].lower()
+
+        # Pattern-based detection
+        contradictions = [
+            ("use", "don't use"),
+            ("should", "shouldn't"),
+            ("will", "won't"),
+            ("yes", "no"),
+            ("enable", "disable"),
+            ("proceed", "abort"),
+            ("phased", "monolithic"),
+            ("async", "sync"),
+            ("distributed", "monolithic"),
+            ("microservices", "monolith"),
+        ]
+
+        for positive, negative in contradictions:
+            if positive in content_new and negative in content_prior:
+                return ValidationIssue(
+                    type="contradiction",
+                    severity="warning",
+                    candidate_ids=[new_mem.id],
+                    description=f"New decision contradicts prior '{prior_mem['memory_id']}' on '{positive}' vs '{negative}'",
+                    recommendation=f"Review and reconcile with prior decision {prior_mem['memory_id']}"
+                )
+
+            if negative in content_new and positive in content_prior:
+                return ValidationIssue(
+                    type="contradiction",
+                    severity="warning",
+                    candidate_ids=[new_mem.id],
+                    description=f"New decision contradicts prior '{prior_mem['memory_id']}' on '{positive}' vs '{negative}'",
+                    recommendation=f"Review and reconcile with prior decision {prior_mem['memory_id']}"
                 )
 
         return None
