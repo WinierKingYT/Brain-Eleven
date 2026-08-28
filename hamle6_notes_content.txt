@@ -1,0 +1,114 @@
+# HAMLE 6: Remaining 18 Notes (Quick Summary)
+
+## Security (2 more)
+3. hamle6-security-003-secret-rotation
+   - Secret versioning + rotation strategy
+   - Graceful key rotation without downtime
+   - Multi-version support
+   - Monitoring version usage
+
+4. hamle6-security-004-rate-limiting
+   - Sliding window algorithm
+   - Distributed rate limiting with Redis
+   - User-based throttling
+   - DDoS protection
+
+## DevOps (4 notes)
+1. hamle6-devops-001-structured-logging
+   - JSON logging format
+   - Trace context propagation
+   - Structured metadata
+   - Log correlation
+
+2. hamle6-devops-002-pull-based-metrics
+   - Prometheus scrape model
+   - Service discovery
+   - Cardinality management
+   - TSDB backends
+
+3. hamle6-devops-003-opentelemetry
+   - Distributed tracing
+   - W3C Trace Context
+   - Baggage propagation
+   - Sampling strategies
+
+4. hamle6-devops-004-slo-framework
+   - SLI/SLO/SLA definitions
+   - Error budget tracking
+   - Burn rate alerting
+   - Multi-service SLOs
+
+## API Design (4 notes)
+1. hamle6-api-001-rest-design
+   - Resource-based URLs
+   - HTTP verb semantics
+   - Hierarchical relationships
+   - Discoverability
+
+2. hamle6-api-002-graphql-schema
+   - Domain-driven design
+   - Input types pattern
+   - Resolver optimization
+   - N+1 problem mitigation
+
+3. hamle6-api-003-versioning
+   - URL path versioning
+   - Header versioning
+   - Deprecation lifecycle
+   - Smooth migration
+
+4. hamle6-api-004-pagination
+   - Offset vs cursor vs keyset
+   - Efficient sorting
+   - Concurrent insert handling
+   - Relay pagination
+
+## Testing (4 notes)
+1. hamle6-testing-001-test-pyramid
+   - 70/20/10 ratio
+   - Layered test organization
+   - Speed vs confidence
+   - AAA pattern basics
+
+2. hamle6-testing-002-mocking-patterns
+   - Mock vs stub vs spy
+   - Test doubles strategy
+   - Behavioral verification
+   - Over-mocking risks
+
+3. hamle6-testing-003-integration-db
+   - Testcontainers
+   - Transaction isolation
+   - In-memory databases
+   - Seed strategies
+
+4. hamle6-testing-004-e2e-pom
+   - Page Object Model
+   - Selector stability
+   - Async/await handling
+   - Dashboard patterns
+
+## System Design (4 notes)
+1. hamle6-system-001-event-sourcing
+   - Immutable event log
+   - Event replay
+   - Snapshots
+   - Event versioning
+
+2. hamle6-system-002-cqrs
+   - Command/Query separation
+   - Eventual consistency
+   - Read model optimization
+   - Cache strategies
+
+3. hamle6-system-003-saga-pattern
+   - Distributed transactions
+   - Compensation logic
+   - Orchestration vs choreography
+   - Idempotency
+
+4. hamle6-system-004-outbox-pattern
+   - Dual-write solution
+   - Transactional outbox
+   - Event delivery guarantees
+   - Failure recovery
