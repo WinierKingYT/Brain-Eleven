@@ -67,11 +67,20 @@ class HybridSearchEngine:
         # Convert SearchResult objects to dicts for merging
         lexical_results = []
         for result in lexical_search_results:
-            lexical_results.append({
-                'memory_id': result.memory_id,
-                'score': result.score,
-                'content': next((m['content'] for m in memories if m['memory_id'] == result.memory_id), '')
-            })
+            # SearchResult has 'id' field (integer index), map to memory_id
+            # Find memory by matching content or use id as fallback
+            mem_id = None
+            for m in memories:
+                if m.get('content') == result.content:
+                    mem_id = m['memory_id']
+                    break
+
+            if mem_id:
+                lexical_results.append({
+                    'memory_id': mem_id,
+                    'score': result.combined_score,
+                    'content': result.content
+                })
 
         # Get semantic results
         print(f"   → Semantic search...")
