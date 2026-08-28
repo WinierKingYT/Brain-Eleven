@@ -4,16 +4,22 @@ Brain-Eleven Memory Lifecycle Tests
 Regression tests for resolve/supersede, ULID lookup, provenance tracing
 """
 
+import sys
+import importlib.util
+from pathlib import Path
 import pytest
 import json
 import tempfile
-from pathlib import Path
 from datetime import datetime
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-from memory_lifecycle import MemoryLifecycleManager
+# Load memory-lifecycle from hyphenated filename
+spec = importlib.util.spec_from_file_location(
+    "memory_lifecycle",
+    Path(__file__).parent.parent / "scripts" / "memory-lifecycle.py"
+)
+memory_lifecycle = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(memory_lifecycle)
+MemoryLifecycleManager = memory_lifecycle.MemoryLifecycleManager
 
 
 @pytest.fixture
@@ -42,6 +48,7 @@ def sample_validated_memory(temp_vault):
                 "type": "decision",
                 "content": "Use PostgreSQL for production",
                 "confidence": 0.95,
+                "quality_score": 0.95,
                 "status": "active",
                 "resolved_at": "",
                 "resolved_by": "",
@@ -55,6 +62,7 @@ def sample_validated_memory(temp_vault):
                 "type": "decision",
                 "content": "Use microservices architecture",
                 "confidence": 0.85,
+                "quality_score": 0.85,
                 "status": "active",
                 "resolved_at": "",
                 "resolved_by": "",
@@ -68,6 +76,7 @@ def sample_validated_memory(temp_vault):
                 "type": "open_loop",
                 "content": "Write regression tests",
                 "confidence": 0.90,
+                "quality_score": 0.90,
                 "status": "resolved",
                 "resolved_at": "2026-08-29T10:00:00",
                 "resolved_by": "test-commit-1",
