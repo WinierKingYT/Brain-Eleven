@@ -100,13 +100,24 @@ class MemoryRetriever:
             return 0.5
 
     def search(self, query: str, limit: int = 5) -> List[SearchResult]:
-        """Search and rank memories"""
+        """Search and rank memories (with query relevance filtering)"""
 
         results = []
 
         for memory in self.memories:
-            # Calculate scores
+            # Skip inactive memories (prevents memory poisoning)
+            status = memory.get("status", "active")
+            if status != "active":
+                continue
+
+            # Calculate similarity (lexical word overlap)
             sim = self._similarity_score(query, memory["content"])
+
+            # Gate: must have at least some query match
+            # Prevents low-quality matches from high confidence/freshness scores
+            if sim < 0.05:  # Minimum 5% word overlap required
+                continue
+
             fresh = self._freshness_score(memory["timestamp"])
             conf = memory["quality_score"]
             priority = self.TYPE_PRIORITY.get(memory["type"], 0.5)
@@ -115,18 +126,17 @@ class MemoryRetriever:
             # Similarity: 40%, Confidence: 30%, Priority: 20%, Freshness: 10%
             combined = (sim * 0.4) + (conf * 0.3) + (priority * 0.2) + (fresh * 0.1)
 
-            if combined > 0.0:  # Only include matches
-                results.append(SearchResult(
-                    id=memory["id"],
-                    type=memory["type"],
-                    content=memory["content"][:100],  # Truncate for display
-                    confidence=conf,
-                    timestamp=memory["timestamp"],
-                    similarity=sim,
-                    freshness=fresh,
-                    priority=priority,
-                    combined_score=combined
-                ))
+            results.append(SearchResult(
+                id=memory["id"],
+                type=memory["type"],
+                content=memory["content"][:100],  # Truncate for display
+                confidence=conf,
+                timestamp=memory["timestamp"],
+                similarity=sim,
+                freshness=fresh,
+                priority=priority,
+                combined_score=combined
+            ))
 
         # Sort by combined score
         results.sort(key=lambda r: r.combined_score, reverse=True)

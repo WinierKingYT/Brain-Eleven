@@ -57,6 +57,11 @@ class ValidatedMemory:
     novelty: float  # Is this new knowledge?
     is_approved: bool  # Passes validation gate?
 
+    # Lifecycle (Phase 4+): Prevents memory poisoning
+    status: str = "active"  # active, resolved, superseded
+    resolved_at: str = ""  # ISO timestamp when resolved
+    resolved_by: str = ""  # git commit hash or reference
+
     def to_dict(self):
         return {
             **asdict(self),

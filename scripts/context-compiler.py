@@ -72,7 +72,7 @@ class ContextCompiler:
     # ========================================================================
 
     def _rank_memories(self, limit: int = 5) -> List[Dict]:
-        """Rank memories by type priority + freshness + confidence"""
+        """Rank memories by type priority + freshness + confidence (skip inactive)"""
 
         type_priority = {
             "decision": 1.0,
@@ -84,6 +84,11 @@ class ContextCompiler:
         ranked = []
 
         for memory in self.memories:
+            # Skip inactive memories (prevents memory poisoning)
+            status = memory.get("status", "active")
+            if status != "active":
+                continue
+
             # Type priority
             priority = type_priority.get(memory["type"], 0.5)
 
