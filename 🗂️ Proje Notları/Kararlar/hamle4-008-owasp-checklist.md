@@ -67,4 +67,8 @@ Never log:
 
 ---
 
-**Bağlantılar:** [[hamle4-009-jwt-validation]], [[hamle4-010-rate-limiting]]
+**Bağlantılar:** 
+- [[hamle4-009-jwt-validation]] (JWT specifics)
+- [[hamle4-010-rate-limiting]] (rate limiting)
+- [[hamle6-security-001-argon2-password-hashing]] (password hashing foundation)
+- [[hamle6-security-004-rate-limiting-distributed]] (DDoS protection patterns)

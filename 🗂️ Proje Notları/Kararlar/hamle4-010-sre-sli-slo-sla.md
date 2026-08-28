@@ -69,4 +69,8 @@ Total: 43 minutes ✓
 
 ---
 
-**Bağlantılar:** [[hamle4-011-incident-response]]
+**Bağlantılar:** 
+- [[hamle4-011-incident-response]] (response procedures)
+- [[hamle6-devops-001-structured-logging-json]] (SLI measurement)
+- [[hamle6-testing-001-test-pyramid]] (reliability testing)
+- [[hamle5-system-001-event-sourcing]] (audit trail for SLA)

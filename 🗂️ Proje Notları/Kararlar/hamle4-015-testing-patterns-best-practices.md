@@ -71,4 +71,8 @@ Assert structure:
 
 ---
 
-**Bağlantılar:** [[github-harvest-006-testing-pyramid]]
+**Bağlantılar:** 
+- [[github-harvest-006-testing-pyramid]] (pyramid structure)
+- [[hamle6-testing-001-test-pyramid]] (modern patterns)
+- [[hamle6-security-001-argon2-password-hashing]] (security testing)
+- [[hamle5-backend-001-event-loop-optimization]] (performance testing)

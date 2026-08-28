@@ -83,4 +83,8 @@ Communication: Events
 
 ---
 
-**Bağlantılar:** [[github-harvest-007-aggregate-root]], [[hamle4-014-design-document-template]]
+**Bağlantılar:** 
+- [[github-harvest-007-aggregate-root]] (DDD patterns)
+- [[hamle4-014-design-document-template]] (documentation)
+- [[hamle6-system-001-event-sourcing]] (event-driven contexts)
+- [[hamle6-testing-001-test-pyramid]] (testing bounded contexts)
