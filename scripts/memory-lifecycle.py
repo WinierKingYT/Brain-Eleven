@@ -41,12 +41,13 @@ class MemoryLifecycleManager:
         self.memories = data.get("validated_memory", [])
 
     def list_active(self) -> List[Dict]:
-        """List all active memories"""
+        """List all active memories (by immutable ID)"""
         active = [m for m in self.memories if m.get("status", "active") == "active"]
 
         print(f"\n📋 Active Memories ({len(active)} total)\n")
         for i, m in enumerate(active, 1):
-            print(f"{i}. [{m['type'].upper()}] ID {m['id']}")
+            mem_id = m.get("memory_id", m.get("id", "unknown"))
+            print(f"{i}. [{m['type'].upper()}] {mem_id}")
             print(f"   {m['content'][:80]}...")
             print(f"   Score: {m['quality_score']:.2f}, Confidence: {m['confidence']:.2f}\n")
 
@@ -54,20 +55,21 @@ class MemoryLifecycleManager:
 
     def resolve_memory(
         self,
-        memory_id: int,
+        memory_id: str,
         resolved_by: str,
         reason: str = ""
     ) -> bool:
-        """Mark a memory as resolved"""
+        """Mark a memory as resolved (by immutable ULID)"""
 
         memory = None
         for m in self.memories:
-            if m["id"] == memory_id:
+            # Try new memory_id field first, fallback to legacy id
+            if m.get("memory_id") == memory_id or str(m.get("id")) == memory_id:
                 memory = m
                 break
 
         if not memory:
-            print(f"❌ Memory ID {memory_id} not found")
+            print(f"❌ Memory {memory_id} not found")
             return False
 
         # Update status
@@ -87,20 +89,21 @@ class MemoryLifecycleManager:
 
     def supersede_memory(
         self,
-        memory_id: int,
+        memory_id: str,
         superseded_by: str,
         reason: str = ""
     ) -> bool:
-        """Mark a memory as superseded by newer information"""
+        """Mark a memory as superseded (by immutable ULID)"""
 
         memory = None
         for m in self.memories:
-            if m["id"] == memory_id:
+            # Try new memory_id field first, fallback to legacy id
+            if m.get("memory_id") == memory_id or str(m.get("id")) == memory_id:
                 memory = m
                 break
 
         if not memory:
-            print(f"❌ Memory ID {memory_id} not found")
+            print(f"❌ Memory {memory_id} not found")
             return False
 
         # Update status
@@ -158,10 +161,11 @@ if __name__ == "__main__":
 
     elif command == "resolve":
         if len(sys.argv) < 4:
-            print("❌ Usage: resolve <id> <commit_hash> [reason]")
+            print("❌ Usage: resolve <memory_id> <commit_hash> [reason]")
+            print("   Example: resolve 01M155WB9AKKTCZWTFRDDZR4W7 69b6437 'reason'")
             sys.exit(1)
 
-        memory_id = int(sys.argv[2])
+        memory_id = sys.argv[2]  # Now accepts ULID string or legacy integer
         resolved_by = sys.argv[3]
         reason = " ".join(sys.argv[4:]) if len(sys.argv) > 4 else ""
 
@@ -170,10 +174,11 @@ if __name__ == "__main__":
 
     elif command == "supersede":
         if len(sys.argv) < 4:
-            print("❌ Usage: supersede <id> <new_source> [reason]")
+            print("❌ Usage: supersede <memory_id> <new_source> [reason]")
+            print("   Example: supersede 01M155WB9AKKTCZWTFRDDZR4W7 'mem_new_id' 'reason'")
             sys.exit(1)
 
-        memory_id = int(sys.argv[2])
+        memory_id = sys.argv[2]  # Now accepts ULID string or legacy integer
         superseded_by = sys.argv[3]
         reason = " ".join(sys.argv[4:]) if len(sys.argv) > 4 else ""
 
