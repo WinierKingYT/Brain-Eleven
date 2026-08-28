@@ -1,0 +1,128 @@
+{
+  "compiled_at": "2026-08-28T20:27:32.315812",
+  "summary": {
+    "total_candidates": 12,
+    "by_type": {
+      "observation": 5,
+      "decision": 1,
+      "lesson": 1,
+      "open_loop": 5
+    }
+  },
+  "candidates": [
+    {
+      "type": "observation",
+      "content": "Started Brain-Eleven v3 implementation",
+      "confidence": 0.65,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OBSERVATION"
+    },
+    {
+      "type": "observation",
+      "content": "Created Phase 1 foundation with session-start hook and companion structure",
+      "confidence": 0.65,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OBSERVATION"
+    },
+    {
+      "type": "observation",
+      "content": "- ✅ Wrote audit-state-consistency",
+      "confidence": 0.65,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OBSERVATION"
+    },
+    {
+      "type": "observation",
+      "content": "sh (state validation)\n- ✅ Wrote session-start",
+      "confidence": 0.65,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OBSERVATION"
+    },
+    {
+      "type": "observation",
+      "content": "sh (context bootstrap)\n- ✅ Created Companion structure (Last Session, Open Loops, Jane - Core, Threads)\n- ✅ Tested hooks (all working, mem0 awaiting auth)\n- 🔄 Writing Memory Compiler (extraction pipeline)",
+      "confidence": 0.65,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OBSERVATION"
+    },
+    {
+      "type": "decision",
+      "content": "**Decided: Multi-phase implementation for Brain-Eleven v3**\n\nAfter analysis showed system needs 4 layers (Memory Compiler, Validation, Retrieval, Testing), we're executing in phases rather than monolithic build.\n\nWhy: Phased approach allows early wins (hooks working now) + iterative feedback before big investment in Memory Compiler. Also allows parallel work on mem0 auth while we build other components.\n\nRelated: [[hamle7-summary]] (architecture decisions documented)",
+      "confidence": 0.95,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [
+        "hamle6-testing",
+        "hamle7-ml"
+      ],
+      "section": "IMPORTANT DECISION"
+    },
+    {
+      "type": "lesson",
+      "content": "1. **Hook state consistency matters** - When settings.json says one thing and CLAUDE.md says another, system is confused about its own capabilities.\n\n2. **Session continuity is the bottleneck** - Most valuable thing isn't storing memory; it's retrieving the right memory when Claude starts a new session.\n\n3. **Phased implementation beats monolithic** - Building Memory Compiler alone is 2-3 days; building + testing + validating is a week. But getting hooks working in one day unblocks everything else.",
+      "confidence": 0.85,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [
+        "hamle6-testing"
+      ],
+      "section": "LEARNED"
+    },
+    {
+      "type": "open_loop",
+      "content": "Memory Compiler: Section extraction needs real Daily data testing",
+      "confidence": 0.9,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OPEN LOOPS"
+    },
+    {
+      "type": "open_loop",
+      "content": "mem0 integration: Waiting on auth.json configuration",
+      "confidence": 0.9,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OPEN LOOPS"
+    },
+    {
+      "type": "open_loop",
+      "content": "Session-end hook: Currently just grabs 500 chars; needs full extraction",
+      "confidence": 0.9,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OPEN LOOPS"
+    },
+    {
+      "type": "open_loop",
+      "content": "Validation layer: Not started; critical for quality gate",
+      "confidence": 0.9,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OPEN LOOPS"
+    },
+    {
+      "type": "open_loop",
+      "content": "Retrieval engine: Not started; enables smart bootstrap",
+      "confidence": 0.9,
+      "source": "daily",
+      "timestamp": "2026-08-28T20:27:32.315812",
+      "related_notes": [],
+      "section": "OPEN LOOPS"
+    }
+  ],
+  "next_step": "Send candidates.json to mem0 or review in Obsidian"
+}
