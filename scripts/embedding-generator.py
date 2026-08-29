@@ -27,9 +27,14 @@ class EmbeddingGenerator:
         self.model = "text-embedding-3-small"
         self.dimension = 1536
 
-        # Try to use OpenAI if API key available
+        # Try to use OpenAI if API key available. An empty string counts as
+        # "not set" - e.g. a .env with `OPENAI_API_KEY=` (no value) loaded
+        # via python-dotenv sets the env var to "", and os.getenv() returns
+        # that "" rather than None, so `is not None` alone would wrongly
+        # treat an empty key as present and initialize a client that fails
+        # on the first real call instead of using the fallback embeddings.
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.use_openai = self.api_key is not None
+        self.use_openai = bool(self.api_key)
 
         if self.use_openai:
             try:

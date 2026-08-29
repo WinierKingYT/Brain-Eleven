@@ -60,6 +60,8 @@ try:
     MLRanker = _ml_ranker.MLRanker
 
     from cache_manager import CacheManager
+    from summarizer import MemorySummarizer
+    from anomaly_detector import AnomalyDetector
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
@@ -503,6 +505,40 @@ async def cache_clear():
     cache.clear()
     logger.info("Cache cleared via API request")
     return {"status": "cleared", "timestamp": datetime.now().isoformat()}
+
+# ============================================================================
+# Digest & Anomaly Endpoints (Phase 10A/10B)
+# ============================================================================
+
+@app.get("/digest")
+async def get_digest(days: Optional[int] = None, top_n: int = 5):
+    """
+    Generate a memory digest: top-ranked, deduped entries per type.
+
+    Embedding/LLM-free (token-overlap dedup + quality/confidence ranking),
+    so this works the same whether OPENAI_API_KEY is set or not.
+    """
+    try:
+        summarizer = MemorySummarizer(str(vault_path))
+        digest = summarizer.generate_digest(days=days, top_n_per_type=top_n)
+        return digest
+    except Exception as e:
+        logger.error(f"Digest error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/anomalies")
+async def get_anomalies():
+    """
+    Scan the memory store for structural anomalies: duplicates, stale
+    open loops, broken supersession links, scoring inconsistencies, etc.
+    """
+    try:
+        detector = AnomalyDetector(str(vault_path))
+        report = detector.detect_all()
+        return report
+    except Exception as e:
+        logger.error(f"Anomaly detection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================================================
 # Metrics Endpoint
