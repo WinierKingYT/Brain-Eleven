@@ -277,10 +277,10 @@
       "quality_score": 1.0,
       "novelty": 0.5,
       "is_approved": true,
-      "status": "active",
-      "resolved_at": "",
-      "resolved_by": "",
-      "resolution_note": "",
+      "status": "resolved",
+      "resolved_at": "2026-08-29T01:09:38.347468",
+      "resolved_by": "test-commit",
+      "resolution_note": "test resolution",
       "superseded_by": "",
       "supersession_note": "",
       "dedup_fingerprint": "f7e8bd3620cb0aea"
@@ -1107,5 +1107,6 @@
     }
   ],
   "rejected_memory": [],
-  "next_step": "Import validated_memory to Obsidian + sync to mem0 when ready"
+  "next_step": "Import validated_memory to Obsidian + sync to mem0 when ready",
+  "last_updated": "2026-08-29T01:09:38.358011"
 }
