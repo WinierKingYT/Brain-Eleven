@@ -28,6 +28,15 @@ for _stream in (sys.stdout, sys.stderr):
 SCRIPTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
+# Load .env for local runs (docker-compose already injects real env vars
+# directly, so this is a no-op there - python-dotenv never overrides an
+# already-set variable by default).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(SCRIPTS_DIR.parent / ".env")
+except ImportError:
+    pass  # python-dotenv not installed - fall back to real env vars only
+
 
 def _load_hyphenated_module(name: str, filename: str):
     """Load a module whose filename uses hyphens (not valid for `import`)."""

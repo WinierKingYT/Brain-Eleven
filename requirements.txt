@@ -16,3 +16,7 @@ redis==7.1.0
 
 # Memory IDs
 python-ulid==4.0.1
+
+# Local .env loading (docker-compose injects env vars directly; this
+# only matters for `python scripts/search-api.py` outside a container)
+python-dotenv==1.0.1
