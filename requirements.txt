@@ -1,0 +1,18 @@
+# Brain-Eleven v3 - Production dependencies
+# Install: pip install -r requirements.txt
+# Versions pinned to what is verified working against scripts/*.py in this repo.
+
+# API server
+fastapi==0.103.2
+uvicorn[standard]==0.23.2
+pydantic==2.12.5
+
+# ML / embeddings
+numpy==2.4.2
+openai==2.24.0
+
+# Caching (Phase 9A)
+redis==7.1.0
+
+# Memory IDs
+python-ulid==4.0.1

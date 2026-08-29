@@ -11,17 +11,46 @@ from datetime import datetime
 from typing import List, Optional, Dict
 import json
 import sys
+import importlib.util
 from pathlib import Path
 import logging
 
-# Setup path for imports
-sys.path.insert(0, str(Path(__file__).parent))
+# On Windows, the console's active codepage (e.g. cp1254) often can't encode
+# the emoji used in log/print statements throughout scripts/*, which raises
+# UnicodeEncodeError and crashes startup entirely. Force UTF-8 stdout/stderr
+# up front so this entrypoint is codepage-independent. No-op on platforms
+# where streams are already UTF-8 (Linux/Docker) or don't support reconfigure.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
-# Import our components
+# Setup path for imports
+SCRIPTS_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPTS_DIR))
+
+
+def _load_hyphenated_module(name: str, filename: str):
+    """Load a module whose filename uses hyphens (not valid for `import`)."""
+    spec = importlib.util.spec_from_file_location(name, SCRIPTS_DIR / filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Import our components. cache_manager and logging_config use underscores
+# and are directly importable; the rest use hyphenated filenames and must
+# be loaded via importlib.
 try:
-    from memory_retriever import MemoryRetriever, SearchResult
-    from hybrid_search import HybridSearchEngine
-    from ml_ranker import MLRanker
+    _memory_retriever = _load_hyphenated_module("memory_retriever", "memory-retriever.py")
+    _hybrid_search = _load_hyphenated_module("hybrid_search", "hybrid-search.py")
+    _ml_ranker = _load_hyphenated_module("ml_ranker", "ml-ranker.py")
+
+    MemoryRetriever = _memory_retriever.MemoryRetriever
+    SearchResult = _memory_retriever.SearchResult
+    HybridSearchEngine = _hybrid_search.HybridSearchEngine
+    MLRanker = _ml_ranker.MLRanker
+
+    from cache_manager import CacheManager
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
@@ -85,6 +114,7 @@ vault_path = Path.home() / "Documents/Brain-Eleven"
 memory_store = None
 hybrid_engine = None
 ranker = None
+cache = None
 
 # ============================================================================
 # Initialization
@@ -93,7 +123,7 @@ ranker = None
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global memory_store, hybrid_engine, ranker
+    global memory_store, hybrid_engine, ranker, cache
 
     logger.info("🚀 Starting Brain-Eleven API...")
 
@@ -109,6 +139,15 @@ async def startup_event():
         # Initialize ML ranker
         ranker = MLRanker()
         logger.info("✅ ML ranker initialized")
+
+        # Initialize cache manager (Phase 9A: L1 memory + L2 Redis + L3 disk)
+        import os
+        cache = CacheManager(
+            vault_path=str(vault_path),
+            redis_host=os.environ.get("REDIS_HOST", "localhost"),
+            redis_port=int(os.environ.get("REDIS_PORT", "6379")),
+        )
+        logger.info("✅ Cache manager initialized")
 
         logger.info("✅ All services ready!")
     except Exception as e:
@@ -185,8 +224,14 @@ async def search(request: SearchRequest):
         if not memories:
             return {"results": [], "query": request.query, "count": 0}
 
-        # Perform hybrid search
-        results = hybrid_engine.search(request.query, memories, top_k=request.top_k)
+        # Cache key incorporates query + top_k + a fingerprint of the memory
+        # set size so a cache entry can't outlive additions to the vault.
+        cache_key = CacheManager.make_key("search", request.query, request.top_k, len(memories))
+
+        def compute_results():
+            return hybrid_engine.search(request.query, memories, top_k=request.top_k)
+
+        results = cache.get_or_compute(cache_key, compute_results) if cache else compute_results()
 
         logger.info(f"Search returned {len(results)} results")
 
@@ -233,16 +278,25 @@ async def rank_results(request: RankRequest):
 async def embed_text(query: str = Query(..., description="Text to embed")):
     """
     Generate embedding for text using text-embedding-3-small
+
+    Embeddings are cached (Phase 9A) since they're a pure function of the
+    input text and expensive to (re)compute via the OpenAI API.
     """
     try:
-        from embedding_generator import EmbeddingGenerator
+        _embedding_generator = _load_hyphenated_module("embedding_generator", "embedding-generator.py")
+        EmbeddingGenerator = _embedding_generator.EmbeddingGenerator
 
-        gen = EmbeddingGenerator(str(vault_path))
-        embedding = gen.embed_text(query)
+        cache_key = CacheManager.make_key("embed", query)
+
+        def compute_embedding():
+            gen = EmbeddingGenerator(str(vault_path))
+            return gen.embed_text(query).tolist()
+
+        embedding = cache.get_or_compute(cache_key, compute_embedding) if cache else compute_embedding()
 
         return {
             "text": query,
-            "embedding": embedding.tolist(),
+            "embedding": embedding,
             "dimension": len(embedding),
             "model": "text-embedding-3-small"
         }
@@ -313,6 +367,11 @@ async def create_memory(memory: MemoryCreate):
         with open(validated_file, 'w') as f:
             json.dump(data, f, indent=2)
 
+        # Search results are keyed partly on memory count, but content-level
+        # caches (e.g. embeddings for existing queries) can go stale too.
+        if cache:
+            cache.clear()
+
         logger.info(f"Created memory: {memory_id}")
 
         return {
@@ -374,6 +433,9 @@ async def update_memory(memory_id: str, update: MemoryUpdate):
         with open(validated_file, 'w') as f:
             json.dump(data, f, indent=2)
 
+        if cache:
+            cache.clear()
+
         logger.info(f"Updated memory: {memory_id}")
         return memory
     except HTTPException:
@@ -402,6 +464,9 @@ async def delete_memory(memory_id: str):
         with open(validated_file, 'w') as f:
             json.dump(data, f, indent=2)
 
+        if cache:
+            cache.clear()
+
         logger.info(f"Deleted memory: {memory_id}")
         return {"status": "deleted", "memory_id": memory_id}
     except HTTPException:
@@ -409,6 +474,26 @@ async def delete_memory(memory_id: str):
     except Exception as e:
         logger.error(f"Delete memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# Cache Endpoint (Phase 9A)
+# ============================================================================
+
+@app.get("/cache/stats")
+async def cache_stats():
+    """Get multi-level cache statistics (L1 in-memory, L2 Redis, L3 disk)"""
+    if not cache:
+        raise HTTPException(status_code=503, detail="Cache not initialized")
+    return cache.stats()
+
+@app.post("/cache/clear")
+async def cache_clear():
+    """Clear all cache levels (L1, L2, L3)"""
+    if not cache:
+        raise HTTPException(status_code=503, detail="Cache not initialized")
+    cache.clear()
+    logger.info("Cache cleared via API request")
+    return {"status": "cleared", "timestamp": datetime.now().isoformat()}
 
 # ============================================================================
 # Metrics Endpoint
@@ -451,8 +536,10 @@ if __name__ == "__main__":
 
     logger.info("🚀 Starting Brain-Eleven API Server...")
 
+    # Pass the app object directly (not "module:app" string) since this
+    # file's hyphenated name (search-api.py) isn't a valid import target.
     uvicorn.run(
-        "search_api:app",
+        app,
         host="0.0.0.0",
         port=8000,
         reload=False,

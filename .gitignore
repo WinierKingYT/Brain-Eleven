@@ -17,3 +17,12 @@
 
 # Archive (historical reference only)
 .archived/
+
+# Cache (Phase 9A disk cache - L3, regenerated at runtime)
+cache/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
