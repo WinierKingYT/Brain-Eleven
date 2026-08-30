@@ -162,30 +162,61 @@ class MemoryValidator:
     # MERGE: Cumulative Memory Store
     # ========================================================================
 
+    def _canonical_by_fingerprint(self) -> Dict[str, Dict]:
+        """
+        Map dedup_fingerprint -> the canonical persisted record for that
+        content, scanning the ENTIRE validated-memory.json.
+
+        Two things make this the single source of truth for "does this
+        content already have a memory_id?":
+
+        1. It reads BOTH validated_memory and rejected_memory. A memory that
+           was approved on one run and dropped below the quality threshold on
+           the next (e.g. observation time-decay) still keeps its identity -
+           without this, the following run mints a brand-new ULID for content
+           that already exists in the store.
+        2. When a fingerprint already has several records (the historical
+           duplicate pairs), it keeps the EARLIEST by timestamp, so new
+           candidates always bind to the canonical original rather than to
+           whichever duplicate happened to be iterated last.
+
+        Superseded records are skipped - they are explicitly retired identity
+        and must not be re-adopted.
+        """
+        canonical: Dict[str, Dict] = {}
+        for bucket in ("validated_memory", "rejected_memory"):
+            for mem in self.prior_validated.get(bucket, []):
+                fp = mem.get("dedup_fingerprint")
+                if not fp or mem.get("status") == "superseded":
+                    continue
+                incumbent = canonical.get(fp)
+                if incumbent is None or mem.get("timestamp", "") < incumbent.get("timestamp", ""):
+                    canonical[fp] = mem
+        return canonical
+
     def _merge_with_prior(self, new_candidates: List[ValidatedMemory]) -> List[ValidatedMemory]:
         """Merge with fingerprint-based dedup (Phase 5: canonical merge)"""
 
-        if not self.prior_validated.get("validated_memory"):
-            return new_candidates
+        prior_memories = self.prior_validated.get("validated_memory", [])
 
-        prior_memories = self.prior_validated["validated_memory"]
-
-        # Build index by memory_id (immutable identity)
+        # Index by memory_id (immutable identity) from the approved store...
         prior_by_id = {}
-        prior_by_fingerprint = {}
-
         for mem in prior_memories:
             mid = mem.get("memory_id")
             if mid:
                 prior_by_id[mid] = mem
 
-            # Also index by fingerprint for dedup
-            fp = mem.get("dedup_fingerprint")
-            if fp:
-                prior_by_fingerprint[fp] = mem
+        # ...and by fingerprint across the WHOLE persisted file (see
+        # _canonical_by_fingerprint for why the approved array alone is not
+        # enough).
+        prior_by_fingerprint = self._canonical_by_fingerprint()
 
         merged = []
         seen_memory_ids = set()
+        # Within-batch dedup: two candidates in the SAME compiled batch can
+        # carry identical content (repeated in a daily note, re-emitted by the
+        # compiler). Without this they would each get their own fresh ULID.
+        batch_id_by_fingerprint: Dict[str, str] = {}
 
         # Process new candidates
         for new_mem in new_candidates:
@@ -211,6 +242,15 @@ class MemoryValidator:
                 new_mem.resolution_note = prior.get("resolution_note", "")
                 new_mem.superseded_by = prior.get("superseded_by", "")
                 new_mem.supersession_note = prior.get("supersession_note", "")
+
+            # Collapse a repeat of content already seen earlier in this batch
+            # onto that same memory_id and drop the duplicate row.
+            fp = new_mem.dedup_fingerprint
+            if fp and fp in batch_id_by_fingerprint:
+                new_mem.memory_id = batch_id_by_fingerprint[fp]
+                continue
+            if fp:
+                batch_id_by_fingerprint[fp] = new_mem.memory_id
 
             merged.append(new_mem)
             seen_memory_ids.add(new_mem.memory_id)
@@ -665,13 +705,13 @@ class MemoryValidator:
         """
         fingerprint = self._compute_fingerprint(content)
 
-        prior_by_fingerprint = {
-            m.get("dedup_fingerprint"): m
-            for m in self.prior_validated.get("validated_memory", [])
-            if m.get("dedup_fingerprint")
-        }
-        if fingerprint in prior_by_fingerprint:
-            return prior_by_fingerprint[fingerprint], [], False
+        # Same canonical fingerprint -> memory_id resolver the batch merge
+        # uses: scans validated_memory AND rejected_memory across the whole
+        # persisted store and returns the earliest record for the fingerprint,
+        # so a repeat POST never mints a second ULID for existing content.
+        canonical_by_fingerprint = self._canonical_by_fingerprint()
+        if fingerprint in canonical_by_fingerprint:
+            return canonical_by_fingerprint[fingerprint], [], False
 
         candidate = ValidatedMemory(
             memory_id=str(ULID()),

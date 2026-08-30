@@ -426,5 +426,188 @@ class TestSingleCandidateValidation:
             assert field in stored, f"missing field: {field}"
 
 
+def _write_compiled(vault, candidates):
+    """(Re)write compiled-memory.json for a validator run."""
+    (vault / ".claude" / "compiled-memory.json").write_text(
+        json.dumps({
+            "compiled_at": datetime.now().isoformat(),
+            "summary": {},
+            "candidates": candidates,
+        }, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _decision(content, source_id):
+    return {
+        "type": "decision",
+        "content": content,
+        "confidence": 0.95,
+        "source": "daily",
+        "timestamp": datetime.now().isoformat(),
+        "related_notes": [],
+        "section": "IMPORTANT DECISION",
+        "source_id": source_id,
+    }
+
+
+def _fp_ids(vault, bucket="validated_memory"):
+    """{fingerprint: [memory_id, ...]} for one bucket of the persisted store."""
+    with open(vault / ".claude" / "validated-memory.json", encoding="utf-8") as f:
+        data = json.load(f)
+    out = {}
+    for m in data.get(bucket, []):
+        out.setdefault(m["dedup_fingerprint"], []).append(m["memory_id"])
+    return out
+
+
+def _records(vault, *buckets):
+    """Flat list of memory records across the given buckets."""
+    with open(vault / ".claude" / "validated-memory.json", encoding="utf-8") as f:
+        data = json.load(f)
+    rows = []
+    for b in buckets or ("validated_memory", "rejected_memory"):
+        rows.extend(data.get(b, []))
+    return rows
+
+
+class TestFingerprintDedupAcrossInvocations:
+    """
+    Regression coverage for the duplicate-ULID bug: the validator minted a
+    fresh memory_id for content whose fingerprint was already persisted,
+    because dedup only consulted the *approved* array of the last run's
+    output rather than the full persisted store (validated + rejected), and
+    never deduped candidates within a single batch.
+
+    anomaly_detector.py's detect_duplicate_content found ~12 such pairs in
+    the live vault (same dedup_fingerprint, different memory_ids, all
+    status="active").
+    """
+
+    def test_rerun_against_persisted_store_keeps_single_memory_id(self, temp_vault):
+        """Two separate validator invocations, same source content -> one id."""
+        _write_compiled(temp_vault, [_decision("Use PostgreSQL for production",
+                                               "daily:2026-08-28:decision:0")])
+        MemoryValidator(str(temp_vault)).save_output()
+        first = _fp_ids(temp_vault)
+        assert sum(len(v) for v in first.values()) == 1
+
+        # Fresh instance = fresh load from disk, like a second session/day.
+        _write_compiled(temp_vault, [_decision("Use PostgreSQL for production",
+                                               "daily:2026-08-28:decision:0")])
+        MemoryValidator(str(temp_vault)).save_output()
+        second = _fp_ids(temp_vault)
+
+        assert sum(len(v) for v in second.values()) == 1, \
+            f"re-run minted a duplicate: {second}"
+        assert second == first, "memory_id must be stable across invocations"
+
+    def test_within_batch_identical_content_collapses_to_one_id(self, temp_vault):
+        """Two candidates with identical content in ONE compiled batch -> one id."""
+        _write_compiled(temp_vault, [
+            _decision("Ship the release on Friday", "daily:2026-08-28:decision:0"),
+            _decision("Ship the release on Friday", "daily:2026-08-28:decision:1"),
+        ])
+        MemoryValidator(str(temp_vault)).save_output()
+
+        ids = _fp_ids(temp_vault)
+        assert len(ids) == 1
+        assert len(next(iter(ids.values()))) == 1, \
+            f"within-batch duplicate not collapsed: {ids}"
+
+    def test_rerun_resolves_to_existing_id_when_prior_copy_was_rejected(self, temp_vault):
+        """
+        A memory can land in rejected_memory (e.g. quality decay). Re-running
+        with the same content must reuse that memory_id, not mint a new one.
+        """
+        validated_file = temp_vault / ".claude" / "validated-memory.json"
+        validated_file.write_text(json.dumps({
+            "validated_at": datetime.now().isoformat(),
+            "summary": {},
+            "validated_memory": [],
+            "rejected_memory": [{
+                "memory_id": "01M155WB9AKKTCZWTFRDDZR4W7",
+                "id": -1,
+                "source_id": "daily:2026-08-27:decision:0",
+                "type": "decision",
+                "content": "Adopt trunk-based development",
+                "confidence": 0.95,
+                "source": "daily",
+                "timestamp": "2026-08-27T09:00:00.000000",
+                "related_notes": [],
+                "section": "IMPORTANT DECISION",
+                "issues": [],
+                "quality_score": 0.40,
+                "novelty": 0.5,
+                "is_approved": False,
+                "status": "active",
+                "dedup_fingerprint": "",
+            }],
+        }, indent=2), encoding="utf-8")
+        # fix up the fingerprint to match _compute_fingerprint
+        data = json.loads(validated_file.read_text(encoding="utf-8"))
+        fp = MemoryValidator(str(temp_vault))._compute_fingerprint("Adopt trunk-based development")
+        data["rejected_memory"][0]["dedup_fingerprint"] = fp
+        validated_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+        _write_compiled(temp_vault, [_decision("Adopt trunk-based development",
+                                               "daily:2026-08-28:decision:0")])
+        MemoryValidator(str(temp_vault)).save_output()
+
+        ids_for_fp = {m["memory_id"] for m in _records(temp_vault)
+                      if m["dedup_fingerprint"] == fp}
+        assert ids_for_fp == {"01M155WB9AKKTCZWTFRDDZR4W7"}, \
+            f"expected the prior rejected id to be reused, got {ids_for_fp}"
+
+    def test_rerun_binds_to_earliest_id_when_store_already_has_dupes(self, temp_vault):
+        """
+        Given a store already polluted with two ids for one fingerprint
+        (the historical state), a re-run of the same content must bind to
+        the EARLIEST id and mint no new (third) id.
+        """
+        fp = MemoryValidator(str(temp_vault))._compute_fingerprint("Cache invalidation is hard")
+
+        def rec(mid, ts):
+            return {
+                "memory_id": mid, "id": -1,
+                "source_id": "daily:2026-08-20:lesson:0", "type": "lesson",
+                "content": "Cache invalidation is hard", "confidence": 0.9,
+                "source": "daily", "timestamp": ts, "related_notes": [],
+                "section": "LEARNED", "issues": [], "quality_score": 0.9,
+                "novelty": 0.5, "is_approved": True, "status": "active",
+                "dedup_fingerprint": fp,
+            }
+
+        (temp_vault / ".claude" / "validated-memory.json").write_text(json.dumps({
+            "validated_at": datetime.now().isoformat(), "summary": {},
+            "validated_memory": [
+                rec("01EARLIESTAAAAAAAAAAAAAAAA", "2026-08-20T01:00:00.000000"),
+                rec("01LATERBBBBBBBBBBBBBBBBBBBB", "2026-08-21T01:00:00.000000"),
+            ],
+            "rejected_memory": [],
+        }, indent=2), encoding="utf-8")
+
+        _write_compiled(temp_vault, [{
+            "type": "lesson", "content": "Cache invalidation is hard",
+            "confidence": 0.9, "source": "daily",
+            "timestamp": datetime.now().isoformat(), "related_notes": [],
+            "section": "LEARNED", "source_id": "daily:2026-08-28:lesson:0",
+        }])
+        MemoryValidator(str(temp_vault)).save_output()
+
+        rows = [m for m in _records(temp_vault) if m["dedup_fingerprint"] == fp]
+        # No new id minted: only the two pre-existing ids may appear
+        # (collapsing the historical pair is the cleanup script's job).
+        assert {m["memory_id"] for m in rows} <= {"01EARLIESTAAAAAAAAAAAAAAAA",
+                                                  "01LATERBBBBBBBBBBBBBBBBBBBB"}, \
+            f"validator minted a new id instead of binding to an existing one: {rows}"
+        # The freshly-compiled candidate (its own source_id) bound to the
+        # EARLIEST id, not the newer duplicate.
+        fresh = [m for m in rows if m["source_id"] == "daily:2026-08-28:lesson:0"]
+        assert len(fresh) == 1
+        assert fresh[0]["memory_id"] == "01EARLIESTAAAAAAAAAAAAAAAA", \
+            f"fresh candidate bound to {fresh[0]['memory_id']}, expected earliest"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
