@@ -100,6 +100,30 @@ else
 fi
 
 # ============================================================================
+# Step 3.5: Post-Session Maintenance (Phase 12)
+# Graph rebuild + anomaly detection + same-day digest - the Phase 10/11
+# tools the pipeline above never touched. Best-effort: never blocks
+# session end even if this whole step fails.
+# ============================================================================
+MAINTENANCE_SCRIPT="${BRAIN_ELEVEN_PATH}/scripts/post_session_maintenance.py"
+MAINTENANCE_REPORT="${BRAIN_ELEVEN_PATH}/.claude/session-maintenance-report.json"
+MAINTENANCE_SUMMARY=""
+
+if [ -f "$MAINTENANCE_SCRIPT" ]; then
+    log "Running post-session maintenance..."
+    MAINTENANCE_SUMMARY=$(PYTHONIOENCODING=utf-8 python3 "$MAINTENANCE_SCRIPT" --vault "$BRAIN_ELEVEN_PATH" 2>/dev/null || true)
+
+    if [ -f "$MAINTENANCE_REPORT" ]; then
+        log_ok "Post-session maintenance complete"
+        echo "$MAINTENANCE_SUMMARY" | sed 's/^/  → /' >&2
+    else
+        log_warn "Maintenance report not generated"
+    fi
+else
+    log_warn "Post-session maintenance script not found"
+fi
+
+# ============================================================================
 # Step 4: Log session end
 # ============================================================================
 HOOK_LOG="${BRAIN_ELEVEN_PATH}/.claude/hook-execution.log"
@@ -110,6 +134,7 @@ cat >> "$HOOK_LOG" <<EOF
 - Memory Compiler: $([ -f "$COMPILED_JSON" ] && echo "OK ($CANDIDATE_COUNT candidates)" || echo "FAILED")
 - Memory Validator: $([ -f "$VALIDATED_JSON" ] && echo "OK ($APPROVED approved)" || echo "FAILED")
 - Context Bootstrap: $([ -f "$CONTEXT_BOOTSTRAP" ] && echo "OK" || echo "FAILED")
+- Post-Session Maintenance: $([ -f "$MAINTENANCE_REPORT" ] && echo "OK" || echo "FAILED")
 - Ready for: SessionStart
 
 EOF
@@ -122,6 +147,9 @@ echo ""
 echo "✓ Memory extracted: $CANDIDATE_COUNT candidates"
 echo "✓ Memory validated: $APPROVED approved"
 echo "✓ Context compiled: ready for next session"
+if [ -f "$MAINTENANCE_REPORT" ]; then
+    echo "✓ Post-session maintenance: graph rebuilt, anomalies checked"
+fi
 echo ""
 echo "Next session will load bootstrap automatically."
 echo ""
