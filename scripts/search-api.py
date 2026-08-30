@@ -194,7 +194,9 @@ def _rebuild_graph() -> "KnowledgeGraph":
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global memory_store, hybrid_engine, ranker, cache, graph, chat_agent
+    # `graph` itself is not assigned here - _rebuild_graph() (called below)
+    # owns that global assignment; startup_event only needs to trigger it.
+    global memory_store, hybrid_engine, ranker, cache, chat_agent
 
     logger.info("🚀 Starting Brain-Eleven API...")
 

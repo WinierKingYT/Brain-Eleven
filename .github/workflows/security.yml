@@ -14,10 +14,10 @@ jobs:
     name: Bandit Security Scan
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.13'
 
@@ -34,7 +34,7 @@ jobs:
 
     - name: Upload Bandit report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bandit-report
         path: bandit-report.json
@@ -44,10 +44,10 @@ jobs:
     name: Secret Detection
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.13'
 
@@ -58,6 +58,13 @@ jobs:
 
     - name: Scan for secrets
       run: |
+        # .secrets.baseline isn't committed (it's meant to be generated once
+        # and reviewed, not hand-maintained) - without this check, every run
+        # failed with exit code 2 before ever comparing anything, since
+        # `--baseline` requires the file to already exist.
+        if [ ! -f .secrets.baseline ]; then
+          detect-secrets scan > .secrets.baseline
+        fi
         detect-secrets scan --baseline .secrets.baseline
       continue-on-error: true
 
@@ -66,10 +73,10 @@ jobs:
     name: Dependency Security Check
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.13'
 
@@ -87,29 +94,36 @@ jobs:
     runs-on: ubuntu-latest
     name: Docker Image Security Scan
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Uploading SARIF to the Security tab needs this explicitly - the
+    # default GITHUB_TOKEN doesn't carry security-events write access,
+    # which is why every prior run failed with "Resource not accessible
+    # by integration" on the upload step.
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Build Docker image
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         context: .
         load: true
         tags: brain-eleven:scan
 
     - name: Run Trivy scan
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.28.0
       with:
         image-ref: brain-eleven:scan
         format: 'sarif'
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'

@@ -6,7 +6,7 @@ Structured JSON logging with console and file output
 
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 class JSONFormatter(logging.Formatter):
@@ -14,7 +14,10 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record):
         log_obj = {
-            "timestamp": datetime.utcnow().isoformat(),
+            # datetime.utcnow() is deprecated (returns a naive datetime that's
+            # easy to mistake for local time) - timezone.utc makes the UTC-ness
+            # explicit in the ISO string itself (trailing +00:00).
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
