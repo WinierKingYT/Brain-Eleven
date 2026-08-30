@@ -1,0 +1,26 @@
+[run]
+source = scripts
+omit =
+    # Package-level auto-import scaffolding - nothing in this repo actually
+    # does `import scripts` (every module loads via sys.path + importlib
+    # instead, see _load_hyphenated_module in search-api.py/chat_interface.py),
+    # so this file's code path never executes.
+    scripts/__init__.py
+    # Manual demo script (Phase 7 completion showcase) - meant to be run and
+    # read by a human, not exercised by the test suite.
+    scripts/demo-phase7-complete.py
+    # One-off migration script: converts legacy integer-indexed memories to
+    # ULIDs. Already run once against this vault; re-running it isn't part
+    # of the system's ongoing behavior.
+    scripts/migrate-legacy-memory.py
+    # One-off cleanup script: collapsed the pre-existing duplicate-fingerprint
+    # memories found by anomaly_detector.py. Already run once; not part of
+    # the system's ongoing behavior (memory-validator.py's own dedup logic
+    # is what's tested and covered).
+    scripts/dedupe-validated-memory.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
