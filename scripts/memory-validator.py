@@ -638,6 +638,78 @@ class MemoryValidator:
 
         return output
 
+    # ========================================================================
+    # SINGLE-CANDIDATE PATH (ad-hoc writes from the API / chat, not the
+    # batch daily-compile flow). This is the ONLY code path that should
+    # append to validated-memory.json outside memory-compiler.py's batch
+    # run - it exists so a single new memory still gets a real ULID,
+    # fingerprint dedup against the live store, conflict detection, and
+    # quality scoring, instead of being raw-appended.
+    # ========================================================================
+
+    def validate_single(
+        self, type_: str, content: str, confidence: float = 0.7, source: str = "api"
+    ) -> Tuple["ValidatedMemory", List[ValidationIssue], bool]:
+        """
+        Validate one ad-hoc candidate through the same fingerprint-dedup,
+        conflict-detection, and quality-scoring logic the batch pipeline
+        uses - just scoped to a single item instead of a compiled batch.
+
+        Returns (memory, issues, is_new):
+        - is_new=False means an existing memory with this exact fingerprint
+          was found; `memory` is that existing record (a plain dict from
+          validated-memory.json, NOT a fresh ValidatedMemory) and the
+          caller must NOT append it again.
+        - is_new=True means `memory` is a new ValidatedMemory the caller
+          should persist via append_validated().
+        """
+        fingerprint = self._compute_fingerprint(content)
+
+        prior_by_fingerprint = {
+            m.get("dedup_fingerprint"): m
+            for m in self.prior_validated.get("validated_memory", [])
+            if m.get("dedup_fingerprint")
+        }
+        if fingerprint in prior_by_fingerprint:
+            return prior_by_fingerprint[fingerprint], [], False
+
+        candidate = ValidatedMemory(
+            memory_id=str(ULID()),
+            id=-1,
+            source_id=f"{source}:{datetime.now().isoformat()}",
+            type=type_,
+            content=content,
+            confidence=confidence,
+            source=source,
+            timestamp=datetime.now().isoformat(),
+            related_notes=[],
+            section=type_.upper(),
+            issues=[],
+            quality_score=confidence,
+            novelty=0.5,
+            is_approved=False,
+            dedup_fingerprint=fingerprint,
+        )
+
+        # detect_conflicts()/score_quality() both operate on self.candidates -
+        # scope it to just this one item so cross-checks run against the
+        # live prior store rather than a batch that was never loaded here.
+        self.candidates = [candidate]
+        conflicts = self.detect_conflicts()
+        for conflict in conflicts:
+            if candidate.id in conflict.candidate_ids:
+                candidate.issues.append(conflict)
+        self.score_quality()
+
+        return candidate, candidate.issues, True
+
+    def append_validated(self, candidate: "ValidatedMemory") -> bool:
+        """Atomically append one new (already-validated) memory to the store."""
+        memories = self.prior_validated.get("validated_memory", [])
+        memories.append(candidate.to_dict())
+        self.prior_validated["validated_memory"] = memories
+        return self._atomic_write(self.validated_json, self.prior_validated)
+
     def save_output(self, output_file: str = None) -> str:
         """Save validation results with atomic persistence"""
 

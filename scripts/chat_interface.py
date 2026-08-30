@@ -8,8 +8,12 @@ handling and response generation; no OpenAI key is configured here, so
 every handler below calls this repo's own real functions (Phase 7 hybrid
 search, Phase 10A summarizer, Phase 10B anomaly detector, Phase 11
 knowledge graph) and formats their output with templates. Answers are
-grounded in actual stored data - never generated free text - which also
-means there is nothing here that can hallucinate.
+grounded in actual stored data - never generated free text. That rules
+out classic generative hallucination, but not a wrong answer: bad
+retrieval ranking, a mis-resolved entity, a stale graph, or a duplicate
+memory in the store can all still produce an answer that's wrong even
+though nothing was "made up". "Non-generative, source-grounded" is the
+accurate claim here, not "hallucination-free".
 
 If a real LLM becomes available later, the natural upgrade is to keep
 IntentClassifier + the handlers' data-fetching as-is and swap only the
@@ -281,24 +285,46 @@ class ChatAgent:
         "link", "uses", "use", "used", "with", "and", "or", "graph",
     }
 
+    # Node types that ARE a memory's own record (entity_extractor.py adds
+    # one per memory, named after its type). Ranked below purpose-built
+    # entities (TECHNOLOGY, PHASE, ...) below since a query naming a real
+    # entity ("Redis") shouldn't resolve to some unrelated memory whose
+    # truncated content happens to contain that word.
+    MEMORY_NODE_TYPES = {"DECISION", "LESSON", "OBSERVATION", "OPEN_LOOP"}
+
     def _find_subject_entities(self, query: str) -> List[Dict]:
         """
         Match query tokens against actual graph entity names rather than
         guessing from capitalization - entity names here (e.g. "mem0") are
         often lowercase, so a capitalization heuristic alone misses them.
         Tries longer token combinations first so multi-word names win over
-        a partial single-word match.
+        a partial single-word match, then ranks all candidate matches:
+        exact name match beats substring, and a purpose-built entity
+        (TECHNOLOGY/PHASE) beats a memory-content node with an incidental
+        substring hit.
         """
         words = [w for w in re.findall(r"[A-Za-z0-9']+", query)
                  if w.lower() not in self.QUESTION_STOPWORDS]
 
-        for window in (2, 1):
-            for i in range(len(words) - window + 1):
-                candidate = " ".join(words[i:i + window])
-                matches = self.graph.find_entities(name_contains=candidate)
-                if matches:
-                    return matches
-        return []
+        candidate_phrases = [
+            " ".join(words[i:i + window])
+            for window in (2, 1)
+            for i in range(len(words) - window + 1)
+        ]
+
+        seen_ids = set()
+        ranked = []
+        for candidate in candidate_phrases:
+            for match in self.graph.find_entities(name_contains=candidate):
+                if match["id"] in seen_ids:
+                    continue
+                seen_ids.add(match["id"])
+                is_exact = match["name"].strip().lower() == candidate.strip().lower()
+                is_typed_entity = match["type"] not in self.MEMORY_NODE_TYPES
+                ranked.append((is_exact, is_typed_entity, match))
+
+        ranked.sort(key=lambda t: (t[0], t[1]), reverse=True)
+        return [match for _, _, match in ranked]
 
     @staticmethod
     def _follow_ups(intent: Intent) -> List[str]:

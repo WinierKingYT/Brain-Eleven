@@ -56,10 +56,6 @@ TECH_LEXICON: Dict[str, List[str]] = {
 
 PHASE_PATTERN = re.compile(r"\bphase\s+(\d+)\b", re.IGNORECASE)
 
-# Memory types where naming a technology reads as "we built with it" rather
-# than "it came up in passing".
-USES_TYPES = {"decision"}
-
 
 def _slugify(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
@@ -73,11 +69,26 @@ class EntityExtractor:
         self.memory_file = self.vault_path / ".claude" / "validated-memory.json"
 
     def load_memories(self) -> List[Dict]:
+        """
+        Load memories eligible for the graph: active status AND approved.
+
+        Excluding resolved/superseded/deleted matters here more than it
+        would for a text digest - resolved/superseded content in the graph
+        can surface as "current" evidence in a chat answer (e.g. "Redis"
+        pointing at both a superseded decision that rejected it and a
+        newer one that adopted it), silently reintroducing the memory
+        poisoning problem Phase 5 was built to close, just at the graph
+        layer instead of the retriever layer.
+        """
         if not self.memory_file.exists():
             return []
         with open(self.memory_file, encoding="utf-8") as f:
             data = json.load(f)
-        return data.get("validated_memory", [])
+        memories = data.get("validated_memory", [])
+        return [
+            m for m in memories
+            if m.get("status", "active") == "active" and m.get("is_approved", False)
+        ]
 
     @staticmethod
     def find_technologies(content: str) -> List[str]:
@@ -113,11 +124,18 @@ class EntityExtractor:
         entities_added = 1
         relationships_added = 0
 
-        rel_type = "USES" if mem_type in USES_TYPES else "MENTIONS"
+        # Always MENTIONS, never USES/DEPENDS_ON/etc: a lexicon+regex match
+        # can't tell "we adopted Redis" from "we decided against Redis" -
+        # a memory of type "decision" that names a technology is not
+        # evidence the decision was to use it. Stronger relationship types
+        # need an extractor that actually reads the sentence (structured
+        # metadata, an explicit parser, or a provenance-carrying semantic
+        # step), not a keyword hit. This is an entity-mention graph, not
+        # (yet) a graph of asserted facts.
         for tech in self.find_technologies(content):
             tech_id = f"tech_{_slugify(tech)}"
             graph.add_entity(tech_id, "TECHNOLOGY", tech)
-            graph.add_relationship(memory_id, rel_type, tech_id, source_memory=memory_id)
+            graph.add_relationship(memory_id, "MENTIONS", tech_id, source_memory=memory_id)
             entities_added += 1
             relationships_added += 1
 
@@ -131,8 +149,19 @@ class EntityExtractor:
         return (entities_added, relationships_added)
 
     def build_graph(self, graph: KnowledgeGraph = None, save: bool = True) -> KnowledgeGraph:
-        """Extract from every memory and populate (or rebuild) the graph."""
+        """
+        Rebuild the graph from scratch against the current canonical store.
+
+        Always clears first: the graph is a derived projection of
+        validated-memory.json, not a second source of truth accumulating
+        its own state. Without this, a memory that gets deleted or moved
+        out of "active" stays in the graph forever (loaded from the
+        persisted knowledge-graph.json and never removed), and re-running
+        this after content changes just layers new nodes on top of stale
+        ones instead of reflecting the current store.
+        """
         graph = graph if graph is not None else KnowledgeGraph(str(self.vault_path))
+        graph.clear()
         memories = self.load_memories()
 
         total_entities, total_relationships = 0, 0

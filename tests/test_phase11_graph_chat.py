@@ -249,15 +249,19 @@ class TestEntityExtractor:
         assert entities_added >= 1
         assert relationships_added >= 1  # Redis mention -> relationship
 
-    def test_decision_type_uses_uses_relationship(self, vault):
+    def test_decision_type_still_produces_mentions_not_uses(self, vault):
         extractor = EntityExtractor(str(vault))
         kg = KnowledgeGraph(str(vault))
         memory = make_memory(memory_id="m1", type="decision", content="Chose Redis for caching")
 
         extractor.extract_from_memory(memory, kg)
 
-        rels = kg.get_relationships("m1", direction="out", rel_type="USES")
+        # Lexicon/regex extraction can't tell "we adopted Redis" from "we
+        # decided against Redis" - always MENTIONS regardless of memory
+        # type, never a stronger asserted relationship like USES.
+        rels = kg.get_relationships("m1", direction="out", rel_type="MENTIONS")
         assert len(rels) == 1
+        assert kg.get_relationships("m1", direction="out", rel_type="USES") == []
 
     def test_non_decision_type_uses_mentions_relationship(self, vault):
         extractor = EntityExtractor(str(vault))
@@ -298,6 +302,67 @@ class TestEntityExtractor:
         graph = extractor.build_graph(save=False)
 
         assert graph.stats()["total_entities"] == 0
+
+    def test_load_memories_excludes_non_active_status(self, vault):
+        write_memories(vault, [
+            make_memory(memory_id="a", status="active"),
+            make_memory(memory_id="b", status="superseded"),
+            make_memory(memory_id="c", status="resolved"),
+            make_memory(memory_id="d", status="deleted"),
+        ])
+        extractor = EntityExtractor(str(vault))
+
+        loaded_ids = {m["memory_id"] for m in extractor.load_memories()}
+
+        assert loaded_ids == {"a"}
+
+    def test_load_memories_excludes_unapproved(self, vault):
+        write_memories(vault, [
+            make_memory(memory_id="a", is_approved=True),
+            make_memory(memory_id="b", is_approved=False),
+        ])
+        extractor = EntityExtractor(str(vault))
+
+        loaded_ids = {m["memory_id"] for m in extractor.load_memories()}
+
+        assert loaded_ids == {"a"}
+
+    def test_build_graph_excludes_superseded_memory_from_graph(self, vault):
+        """
+        Regression test for the graph-layer memory-poisoning bug: a
+        superseded memory (e.g. "use Redis", later reversed) must not
+        appear in the graph alongside the memory that superseded it, or
+        chat queries can surface the reversed decision as live evidence.
+        """
+        write_memories(vault, [
+            make_memory(memory_id="old", content="Use Redis for caching", status="superseded"),
+            make_memory(memory_id="new", content="Don't use Redis, switched to Memcached", status="active"),
+        ])
+        extractor = EntityExtractor(str(vault))
+
+        graph = extractor.build_graph(save=False)
+
+        assert graph.get_entity("old") is None
+        assert graph.get_entity("new") is not None
+
+    def test_build_graph_clears_stale_entities_from_prior_persisted_graph(self, vault):
+        """
+        Regression test for the "fresh rebuild isn't fresh" bug: build_graph
+        must start from empty each time, not load whatever was previously
+        persisted to knowledge-graph.json and add to it. Simulated here by
+        pre-populating a graph with an entity that no longer has a backing
+        memory, then rebuilding - it must be gone afterward.
+        """
+        graph = KnowledgeGraph(str(vault))
+        graph.add_entity("stale_node", "TECHNOLOGY", "Deprecated Thing")
+        graph.save()
+
+        write_memories(vault, [make_memory(memory_id="m1", content="Something new entirely")])
+        extractor = EntityExtractor(str(vault))
+        rebuilt = extractor.build_graph(save=False)  # loads persisted graph internally, must still clear it
+
+        assert rebuilt.get_entity("stale_node") is None
+        assert rebuilt.get_entity("m1") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +472,27 @@ class TestChatAgent:
 
         assert "mem0" in response
         assert "no known entity" not in response.lower()
+
+    def test_entity_resolution_prefers_canonical_technology_over_memory_node(self, vault):
+        """
+        Regression test: entity_extractor inserts a memory's own node
+        before any technology it mentions, so a naive "first substring
+        match wins" resolver could return a memory node like "Decided to
+        use Redis for caching..." instead of the canonical TECHNOLOGY
+        node named "Redis" when a query asks about Redis by name. Ranking
+        must prefer the typed, exactly-named entity.
+        """
+        write_memories(vault, [make_memory()])
+        agent = ChatAgent(str(vault))
+        # Insertion order deliberately mirrors the real bug: memory node
+        # first (its truncated content contains "Redis"), tech node second.
+        agent.graph.add_entity("dec_1", "DECISION", "Decided to use Redis for caching everywhere")
+        agent.graph.add_entity("tech_redis", "TECHNOLOGY", "Redis")
+
+        matches = agent._find_subject_entities("What is Redis connected to?")
+
+        assert matches, "expected at least one match"
+        assert matches[0]["id"] == "tech_redis"
 
     def test_handle_graph_query_reports_when_entity_not_found(self, vault):
         write_memories(vault, [make_memory()])

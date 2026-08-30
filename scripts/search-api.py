@@ -4,12 +4,14 @@ Brain-Eleven v3 REST API
 Complete API server with hybrid search, ML ranking, and memory management
 """
 
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional, Dict
 import json
+import os
 import sys
 import importlib.util
 from pathlib import Path
@@ -53,11 +55,13 @@ try:
     _memory_retriever = _load_hyphenated_module("memory_retriever", "memory-retriever.py")
     _hybrid_search = _load_hyphenated_module("hybrid_search", "hybrid-search.py")
     _ml_ranker = _load_hyphenated_module("ml_ranker", "ml-ranker.py")
+    _memory_validator = _load_hyphenated_module("memory_validator", "memory-validator.py")
 
     MemoryRetriever = _memory_retriever.MemoryRetriever
     SearchResult = _memory_retriever.SearchResult
     HybridSearchEngine = _hybrid_search.HybridSearchEngine
     MLRanker = _ml_ranker.MLRanker
+    MemoryValidator = _memory_validator.MemoryValidator
 
     from cache_manager import CacheManager
     from summarizer import MemorySummarizer
@@ -114,14 +118,41 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware. allow_origins=["*"] combined with allow_credentials=True
+# is both a browser-spec violation (credentialed requests can't actually
+# use a wildcard origin) and, for an API with unauthenticated write
+# endpoints, an open door for any page the user's browser visits to call
+# them. Default to localhost dev origins; override via CORS_ALLOWED_ORIGINS
+# (comma-separated) for a real deployment.
+_cors_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = (
+    [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+    if _cors_origins_env
+    else ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8000", "http://127.0.0.1:8000"]
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API key gate. BRAIN_ELEVEN_API_KEY unset means auth is OFF - fine for
+# local-only use bound to 127.0.0.1, but this endpoint set has no other
+# access control (memory CRUD, cache clear, graph rebuild, chat), so
+# anything reachable beyond localhost MUST set this. Logged loudly at
+# startup rather than failing silently either way.
+API_KEY = os.environ.get("BRAIN_ELEVEN_API_KEY")
+_PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+
+@app.middleware("http")
+async def require_api_key(request: Request, call_next):
+    if API_KEY and request.url.path not in _PUBLIC_PATHS:
+        if request.headers.get("X-API-Key") != API_KEY:
+            return JSONResponse(status_code=401, content={"detail": "Missing or invalid X-API-Key header"})
+    return await call_next(request)
 
 # Global state
 vault_path = Path.home() / "Documents/Brain-Eleven"
@@ -131,6 +162,26 @@ ranker = None
 cache = None
 graph = None
 chat_agent = None
+
+
+def _rebuild_graph() -> "KnowledgeGraph":
+    """
+    Rebuild the knowledge graph from the current canonical store and swap
+    it into both the module-level `graph` and the running ChatAgent.
+
+    Call this after ANY write to validated-memory.json (create, update,
+    delete, and the batch validator run) - the graph is a derived
+    projection, not an independent store, so a write that doesn't trigger
+    this leaves the graph reflecting stale data. EntityExtractor.build_graph
+    always clears before repopulating, so this is a real fresh rebuild,
+    not an incremental add on top of whatever was there before.
+    """
+    global graph
+    graph = EntityExtractor(str(vault_path)).build_graph()
+    if chat_agent:
+        chat_agent.graph = graph
+    return graph
+
 
 # ============================================================================
 # Initialization
@@ -157,7 +208,6 @@ async def startup_event():
         logger.info("✅ ML ranker initialized")
 
         # Initialize cache manager (Phase 9A: L1 memory + L2 Redis + L3 disk)
-        import os
         cache = CacheManager(
             vault_path=str(vault_path),
             redis_host=os.environ.get("REDIS_HOST", "localhost"),
@@ -165,18 +215,18 @@ async def startup_event():
         )
         logger.info("✅ Cache manager initialized")
 
-        # Build the knowledge graph fresh on startup (Phase 11A/B). Cheap at
-        # this data volume (46 memories); if the vault grows large enough
-        # for this to matter, switch to loading the persisted graph and
-        # rebuilding only via POST /graph/rebuild.
-        graph = EntityExtractor(str(vault_path)).build_graph()
-        logger.info(f"✅ Knowledge graph built: {graph.stats()}")
-
         # ChatAgent builds its own MemoryRetriever/HybridSearchEngine
         # internally rather than reusing the ones above - duplicate init
         # cost is negligible here (fallback embeddings, no network calls).
         chat_agent = ChatAgent(str(vault_path))
         logger.info("✅ Chat agent initialized")
+
+        # Build the knowledge graph fresh on startup (Phase 11A/B). Cheap at
+        # this data volume (46 memories); _rebuild_graph() always clears
+        # before repopulating, so this reflects the current store exactly,
+        # not whatever an old persisted knowledge-graph.json happened to have.
+        _rebuild_graph()
+        logger.info(f"✅ Knowledge graph built: {graph.stats()}")
 
         logger.info("✅ All services ready!")
     except Exception as e:
@@ -365,49 +415,61 @@ async def list_memories(skip: int = 0, limit: int = 100):
 
 @app.post("/memories")
 async def create_memory(memory: MemoryCreate):
-    """Create new memory"""
+    """
+    Create a new memory through the real validation pipeline (fingerprint
+    dedup, conflict detection, quality scoring) - NOT a raw append.
+
+    Previously this minted its own fake "ULID" (an epoch-seconds string,
+    collidable within the same second and not a real ULID at all) and
+    wrote a bare {memory_id, type, content, confidence, timestamp, status}
+    record directly to validated-memory.json, skipping every check
+    memory-validator.py exists to run and producing a memory shape that
+    didn't match what the batch pipeline writes (missing source_id,
+    quality_score, novelty, is_approved, dedup_fingerprint, ...) - two
+    divergent memory schemas from two write paths into the same file.
+    MemoryValidator.validate_single() is the fix: same fingerprint-dedup,
+    conflict-detection, and quality-scoring logic the batch compiler uses,
+    just scoped to one item instead of a compiled batch.
+    """
     try:
-        # Load current memories
-        validated_file = vault_path / ".claude/validated-memory.json"
-        if validated_file.exists():
-            with open(validated_file) as f:
-                data = json.load(f)
-                memories = data.get("validated_memory", [])
-        else:
-            memories = []
+        validator = MemoryValidator(str(vault_path))
+        candidate, issues, is_new = validator.validate_single(
+            type_=memory.type, content=memory.content, confidence=memory.confidence, source="api",
+        )
 
-        # Create new memory with ULID
-        from datetime import datetime
-        memory_id = f"mem_{datetime.now().timestamp():.0f}"
+        if not is_new:
+            # Exact fingerprint match already exists - hand back its real
+            # identity instead of minting a duplicate memory_id for
+            # content that's already stored.
+            return {
+                "memory_id": candidate.get("memory_id"),
+                "status": "duplicate_returned_existing",
+                "timestamp": datetime.now().isoformat(),
+            }
 
-        new_memory = {
-            "memory_id": memory_id,
-            "type": memory.type,
-            "content": memory.content,
-            "confidence": memory.confidence,
-            "timestamp": memory.timestamp or datetime.now().isoformat(),
-            "status": "active"
-        }
+        if not validator.append_validated(candidate):
+            raise HTTPException(status_code=500, detail="Failed to persist memory")
 
-        memories.append(new_memory)
-
-        # Save back
-        data = {"validated_memory": memories}
-        with open(validated_file, 'w') as f:
-            json.dump(data, f, indent=2)
-
-        # Search results are keyed partly on memory count, but content-level
-        # caches (e.g. embeddings for existing queries) can go stale too.
+        # The graph is a derived projection of validated-memory.json, not
+        # an independent store - any write here must propagate or /chat
+        # and /graph/* diverge from /search and /memories within the same
+        # running process.
         if cache:
             cache.clear()
+        _rebuild_graph()
 
-        logger.info(f"Created memory: {memory_id}")
+        logger.info(f"Created memory: {candidate.memory_id} (quality={candidate.quality_score:.2f})")
 
         return {
-            "memory_id": memory_id,
+            "memory_id": candidate.memory_id,
             "status": "created",
-            "timestamp": datetime.now().isoformat()
+            "is_approved": candidate.is_approved,
+            "quality_score": candidate.quality_score,
+            "issues": [issue.description for issue in issues],
+            "timestamp": datetime.now().isoformat(),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Create memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -464,6 +526,7 @@ async def update_memory(memory_id: str, update: MemoryUpdate):
 
         if cache:
             cache.clear()
+        _rebuild_graph()
 
         logger.info(f"Updated memory: {memory_id}")
         return memory
@@ -495,6 +558,7 @@ async def delete_memory(memory_id: str):
 
         if cache:
             cache.clear()
+        _rebuild_graph()
 
         logger.info(f"Deleted memory: {memory_id}")
         return {"status": "deleted", "memory_id": memory_id}
@@ -596,16 +660,12 @@ async def graph_traverse(entity_id: str, depth: int = 2):
 
 @app.post("/graph/rebuild")
 async def graph_rebuild():
-    """Re-run entity extraction over all current memories."""
-    global graph
-    if not graph:
+    """Force a fresh rebuild of the knowledge graph from current memories."""
+    if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     try:
-        extractor = EntityExtractor(str(vault_path))
-        graph = extractor.build_graph()
-        if chat_agent:
-            chat_agent.graph = graph
-        return {"status": "rebuilt", "stats": graph.stats(), "timestamp": datetime.now().isoformat()}
+        rebuilt = _rebuild_graph()
+        return {"status": "rebuilt", "stats": rebuilt.stats(), "timestamp": datetime.now().isoformat()}
     except Exception as e:
         logger.error(f"Graph rebuild error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -670,11 +730,25 @@ if __name__ == "__main__":
 
     logger.info("🚀 Starting Brain-Eleven API Server...")
 
+    if not API_KEY:
+        logger.warning(
+            "⚠️  BRAIN_ELEVEN_API_KEY is not set - every endpoint except "
+            "/health is unauthenticated. Fine for 127.0.0.1-only local use; "
+            "set it before binding to anything else reachable off this machine."
+        )
+
+    # Default to loopback-only: memory CRUD, cache clear, and graph rebuild
+    # have no access control beyond the API key gate above, so binding
+    # 0.0.0.0 without also setting BRAIN_ELEVEN_API_KEY exposes all of it
+    # to the network. Override via BRAIN_ELEVEN_HOST - docker-compose.yml
+    # sets it to 0.0.0.0 explicitly, since container network isolation is
+    # the real boundary there, not the bind address.
+    #
     # Pass the app object directly (not "module:app" string) since this
     # file's hyphenated name (search-api.py) isn't a valid import target.
     uvicorn.run(
         app,
-        host="0.0.0.0",
+        host=os.environ.get("BRAIN_ELEVEN_HOST", "127.0.0.1"),
         port=8000,
         reload=False,
         access_log=True

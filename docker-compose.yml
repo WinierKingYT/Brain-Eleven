@@ -16,6 +16,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-brain}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-brain_eleven}
+      # search-api.py defaults to binding 127.0.0.1 for safety; inside the
+      # container that would make the port mapping below unreachable, so
+      # bind 0.0.0.0 here - Docker's own network isolation is the actual
+      # boundary in this deployment, not the process bind address.
+      BRAIN_ELEVEN_HOST: 0.0.0.0
+      # Unset by default (docker-compose leaves ${VAR} empty if the host
+      # env doesn't have it) - every endpoint except /health is then
+      # unauthenticated. Set BRAIN_ELEVEN_API_KEY in your shell or a .env
+      # file before exposing this beyond localhost.
+      BRAIN_ELEVEN_API_KEY: ${BRAIN_ELEVEN_API_KEY:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
     volumes:
       - ./data/vault:/vault
       - ./.claude:/app/.claude

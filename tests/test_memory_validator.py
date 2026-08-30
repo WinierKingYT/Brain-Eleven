@@ -349,5 +349,82 @@ class TestAtomicPersistence:
         assert backup_file.exists(), "Backup should be created"
 
 
+class TestSingleCandidateValidation:
+    """
+    Tests for validate_single()/append_validated(): the ad-hoc write path
+    used by the API's POST /memories instead of raw-appending a hand-built
+    dict. Regression coverage for a real bug found in review: the old
+    handler minted its own fake "ULID" (an epoch-seconds string, collidable
+    within the same second) and skipped fingerprint dedup, conflict
+    detection, and quality scoring entirely.
+    """
+
+    def test_validate_single_assigns_real_ulid(self, temp_vault):
+        validator = MemoryValidator(str(temp_vault))
+
+        candidate, issues, is_new = validator.validate_single("observation", "Deployed to production")
+
+        assert is_new is True
+        # A real ULID is 26 chars, Crockford base32 (no I/L/O/U).
+        assert len(candidate.memory_id) == 26
+        assert not any(c in candidate.memory_id for c in "ILOU")
+
+    def test_validate_single_computes_quality_score(self, temp_vault):
+        validator = MemoryValidator(str(temp_vault))
+
+        candidate, _, _ = validator.validate_single("decision", "We decided to use Redis", confidence=0.7)
+
+        # score_quality() actually ran: decision bonus + novelty from
+        # "decided" keyword should push this above the raw input confidence.
+        assert candidate.quality_score > 0.7
+        assert candidate.dedup_fingerprint  # fingerprint was computed, not left blank
+
+    def test_validate_single_same_content_returns_existing_id_not_new_one(self, temp_vault):
+        """Direct regression test for the split-schema/duplicate-ID bug."""
+        v1 = MemoryValidator(str(temp_vault))
+        first, _, _ = v1.validate_single("decision", "Use PostgreSQL for the database")
+        assert v1.append_validated(first)
+
+        # Fresh instance = fresh load from disk, same as two separate API requests.
+        v2 = MemoryValidator(str(temp_vault))
+        second, _, is_new = v2.validate_single("decision", "Use PostgreSQL for the database")
+
+        assert is_new is False
+        assert second["memory_id"] == first.memory_id
+
+        with open(temp_vault / ".claude" / "validated-memory.json", encoding="utf-8") as f:
+            stored = json.load(f)["validated_memory"]
+        assert len(stored) == 1
+
+    def test_validate_single_detects_cross_history_contradiction(self, temp_vault):
+        v1 = MemoryValidator(str(temp_vault))
+        first, _, _ = v1.validate_single("decision", "We will use Redis for caching")
+        v1.append_validated(first)
+
+        v2 = MemoryValidator(str(temp_vault))
+        _, issues, _ = v2.validate_single("decision", "We don't use Redis for caching")
+
+        assert len(issues) == 1
+        assert issues[0].type == "contradiction"
+
+    def test_append_validated_persists_full_schema(self, temp_vault):
+        """
+        The API's old raw-append path wrote a record with only
+        {memory_id, type, content, confidence, timestamp, status} - a
+        different shape than the batch validator's canonical output. This
+        pins that append_validated() writes the same complete schema.
+        """
+        validator = MemoryValidator(str(temp_vault))
+        candidate, _, _ = validator.validate_single("lesson", "Always write tests first")
+        validator.append_validated(candidate)
+
+        with open(temp_vault / ".claude" / "validated-memory.json", encoding="utf-8") as f:
+            stored = json.load(f)["validated_memory"][0]
+
+        for field in ("source_id", "quality_score", "novelty", "is_approved",
+                      "dedup_fingerprint", "related_notes", "section", "status"):
+            assert field in stored, f"missing field: {field}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
