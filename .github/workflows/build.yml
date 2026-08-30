@@ -25,11 +25,21 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    # GHCR (and Docker registries generally) require an all-lowercase
+    # repository path - github.repository preserves the owner's actual
+    # casing ("WinierKingYT/Brain-Eleven"), which buildx rejects outright
+    # ("invalid reference format: repository name ... must be lowercase").
+    # There's no lower() function in GitHub Actions expression syntax, so
+    # this has to happen in a shell step.
+    - name: Compute lowercase image repository
+      id: repo
+      run: echo "name=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ghcr.io/${{ github.repository }}
+        images: ghcr.io/${{ steps.repo.outputs.name }}
         tags: |
           type=ref,event=branch
           type=semver,pattern={{version}}
@@ -38,14 +48,15 @@ jobs:
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Docker image
+      id: docker_build
       uses: docker/build-push-action@v6
       with:
         context: .
         push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
-        cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
+        cache-from: type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache
+        cache-to: type=registry,ref=ghcr.io/${{ steps.repo.outputs.name }}:buildcache,mode=max
 
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
