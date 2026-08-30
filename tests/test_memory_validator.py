@@ -425,6 +425,25 @@ class TestSingleCandidateValidation:
                       "dedup_fingerprint", "related_notes", "section", "status"):
             assert field in stored, f"missing field: {field}"
 
+    def test_project_provenance_persists_and_survives_carry_forward(self, temp_vault):
+        validator = MemoryValidator(str(temp_vault))
+        candidate, _, _ = validator.validate_single(
+            "decision", "Use Redis for the imported project", project="promtgen"
+        )
+        assert candidate.project == "promtgen"
+        assert validator.append_validated(candidate)
+
+        # A later batch that does not re-submit the record must still carry
+        # its origin field forward through the canonical merge path.
+        fresh_validator = MemoryValidator(str(temp_vault))
+        carried = fresh_validator._merge_with_prior([])
+
+        assert carried[0].project == "promtgen"
+
+        with open(temp_vault / ".claude" / "validated-memory.json", encoding="utf-8") as f:
+            stored = json.load(f)["validated_memory"][0]
+        assert stored["project"] == "promtgen"
+
 
 def _write_compiled(vault, candidates):
     """(Re)write compiled-memory.json for a validator run."""

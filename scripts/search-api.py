@@ -85,6 +85,7 @@ class MemoryCreate(BaseModel):
     type: str = Field(..., description="Memory type: decision, lesson, open_loop, etc")
     content: str = Field(..., description="Memory content")
     confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+    project: str = Field(default="", description="Optional originating project identifier")
     timestamp: Optional[str] = None
 
 class MemoryUpdate(BaseModel):
@@ -438,7 +439,11 @@ async def create_memory(memory: MemoryCreate):
     try:
         validator = MemoryValidator(str(vault_path))
         candidate, issues, is_new = validator.validate_single(
-            type_=memory.type, content=memory.content, confidence=memory.confidence, source="api",
+            type_=memory.type,
+            content=memory.content,
+            confidence=memory.confidence,
+            source="api",
+            project=memory.project,
         )
 
         if not is_new:
@@ -448,6 +453,7 @@ async def create_memory(memory: MemoryCreate):
             return {
                 "memory_id": candidate.get("memory_id"),
                 "status": "duplicate_returned_existing",
+                "project": candidate.get("project", memory.project),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -467,6 +473,7 @@ async def create_memory(memory: MemoryCreate):
         return {
             "memory_id": candidate.memory_id,
             "status": "created",
+            "project": candidate.project,
             "is_approved": candidate.is_approved,
             "quality_score": candidate.quality_score,
             "issues": [issue.description for issue in issues],

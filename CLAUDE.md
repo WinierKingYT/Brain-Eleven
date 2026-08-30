@@ -40,6 +40,13 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 - Wikilink'ler bozuk mu? → `claude -p "lint --vault ."` (opsiyonel)
 - Git tracking opsiyonel (bak: PHASE 9)
 
+## Çapraz proje hafıza yakalama
+
+- Açıkça istenen tekil kayıt: global `/remember` komutu → `scripts/remember.py`
+- Proje kimliği memory içinde varsayılan olarak dizin adıyla saklanır; tam dosya yolu saklanmaz.
+- Proaktif yakalama varsayılan olarak kapalıdır. İzin verilen proje kökleri `.claude/remember-config.json` içindeki `proactive_opt_in_projects` listesine mutlak yol olarak eklenmelidir.
+- Opt-in kontrolü bozuk veya eksik yapılandırmada fail-closed çalışır; sır, token, parola ve tam oturum dökümü kaydedilmez.
+
 ---
 
 **v3 thesis**: Memory must be a mechanism, not a discipline. Hooks automate extraction; Claude retrieves context automatically on session start.

@@ -63,6 +63,9 @@ class ValidatedMemory:
     content: str = ""
     confidence: float = 0.0
     source: str = ""
+    # Origin label for cross-project capture. Keep this as a caller-supplied
+    # identifier rather than persisting an absolute filesystem path.
+    project: str = ""
     timestamp: str = ""
     related_notes: List[str] = field(default_factory=list)
     section: str = ""
@@ -228,6 +231,7 @@ class MemoryValidator:
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
                 new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.project = prior.get("project", new_mem.project)
                 new_mem.superseded_by = prior.get("superseded_by", "")
                 new_mem.supersession_note = prior.get("supersession_note", "")
 
@@ -240,6 +244,7 @@ class MemoryValidator:
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
                 new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.project = prior.get("project", new_mem.project)
                 new_mem.superseded_by = prior.get("superseded_by", "")
                 new_mem.supersession_note = prior.get("supersession_note", "")
 
@@ -267,6 +272,7 @@ class MemoryValidator:
                     content=mem["content"],
                     confidence=mem["confidence"],
                     source=mem["source"],
+                    project=mem.get("project", ""),
                     timestamp=mem["timestamp"],
                     related_notes=mem.get("related_notes", []),
                     section=mem.get("section", ""),
@@ -313,6 +319,7 @@ class MemoryValidator:
                 content=candidate["content"],
                 confidence=candidate["confidence"],
                 source=candidate["source"],
+                project=candidate.get("project", ""),
                 timestamp=candidate["timestamp"],
                 related_notes=candidate.get("related_notes", []),
                 section=candidate.get("section", ""),
@@ -688,7 +695,12 @@ class MemoryValidator:
     # ========================================================================
 
     def validate_single(
-        self, type_: str, content: str, confidence: float = 0.7, source: str = "api"
+        self,
+        type_: str,
+        content: str,
+        confidence: float = 0.7,
+        source: str = "api",
+        project: str = "",
     ) -> Tuple["ValidatedMemory", List[ValidationIssue], bool]:
         """
         Validate one ad-hoc candidate through the same fingerprint-dedup,
@@ -721,6 +733,7 @@ class MemoryValidator:
             content=content,
             confidence=confidence,
             source=source,
+            project=project,
             timestamp=datetime.now().isoformat(),
             related_notes=[],
             section=type_.upper(),

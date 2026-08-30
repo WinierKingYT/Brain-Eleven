@@ -16,6 +16,7 @@
 .claude/compiled-memory-prior.backup.json
 .claude/validated-memory.json
 .claude/validated-memory.backup.json
+.claude/remember-config.json
 .claude/context-bootstrap.json
 .claude/search-results.json
 .claude/hook-execution.log

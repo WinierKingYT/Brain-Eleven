@@ -187,12 +187,14 @@ class TestMemoryCRUD:
     def test_create_memory_goes_through_real_validation(self, client):
         response = client.post("/memories", json={
             "type": "decision", "content": "Adopt PostgreSQL for the test suite", "confidence": 0.75,
+            "project": "brain-eleven-tests",
         })
 
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "created"
         assert len(body["memory_id"]) == 26  # real ULID, not the old fake epoch-based id
+        assert body["project"] == "brain-eleven-tests"
         assert "quality_score" in body
 
     def test_create_memory_with_identical_content_dedupes(self, client):

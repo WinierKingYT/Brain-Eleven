@@ -1,319 +1,185 @@
-# Brain-Eleven v3 - Complete Project Status
+# Brain-Eleven v3 — Current Project Status
 
-**Overall Status:** 🟡 **70% COMPLETE - ON TRACK FOR PRODUCTION**
+**Last updated:** 2026-08-30
+**Scope decision:** Personal, local-first memory system
+**Overall status:** 🟡 Core system implemented; verification and hardening remain
 
-## Phases Completed
+This file describes the repository as it exists now. It is intentionally evidence-based: implemented code is separated from claims that still need to be verified in a real runtime.
 
-| Phase | Name | Status | Components | Tests | Commits |
-|-------|------|--------|-----------|-------|---------|
-| 1 | Foundation | ✅ | 4 | - | 3 |
-| 2 | Memory Compiler | ✅ | 1 | - | 3 |
-| 3 | Memory Validator | ✅ | 1 | - | 4 |
-| 4 | Memory Retriever | ✅ | 1 | - | 3 |
-| 5 | Memory Integrity | ✅ | 3 | - | 6 |
-| 6 | Testing & Optimization | ✅ | 3 | 34 | 2 |
-| **7** | **Semantic Search & ML** | **80%** | **4** | **15+** | **3** |
+## What the project is
 
----
+Brain-Eleven is a personal memory system built around an Obsidian vault and local Python services. Its canonical memory store is `.claude/validated-memory.json`; Markdown notes are compiled into structured memories, validated, searched, analyzed, and surfaced back into future sessions.
 
-## Phase 7: Semantic Search & ML Ranking (🟡 IN PROGRESS)
+The current product boundary is deliberately narrow:
 
-### ✅ Completed
-- EmbeddingGenerator: OpenAI + fallback (300 LOC)
-- SemanticSearchEngine: Vector similarity (250 LOC)
-- HybridSearchEngine: Lexical+Semantic (280 LOC)
-- MLRanker: Feature-based ranking (350 LOC)
-- Test suite: 15+ tests (403 LOC)
-- Complete documentation
+- Single user
+- Local-first operation
+- File-backed canonical memory
+- Optional OpenAI embeddings
+- No multi-user or cloud platform roadmap at this time
 
-### ⏳ In Progress (20%)
-- Run test suite
-- Fix any test failures
-- Create API endpoints
-- Performance validation
-- End-to-end integration
+## Current implementation
 
-**Estimated:** 1-2 more sessions
+| Area | Status | Evidence |
+|---|---|---|
+| Vault structure and session hooks | ✅ Implemented | `CLAUDE.md`, `.claude/settings.json`, `.claude/hooks/` |
+| Memory compilation | ✅ Implemented | `scripts/memory-compiler.py` |
+| Validation, deduplication and conflict detection | ✅ Implemented | `scripts/memory-validator.py` |
+| ULID identity, provenance and lifecycle | ✅ Implemented | `scripts/memory-lifecycle.py` and validator persistence |
+| Lexical retrieval | ✅ Implemented | `scripts/memory-retriever.py` |
+| Semantic and hybrid search | ✅ Implemented | `scripts/semantic-search.py`, `scripts/hybrid-search.py` |
+| ML-style candidate ranking | ✅ Implemented | `scripts/ml-ranker.py` |
+| Multi-level cache | ✅ Implemented | `scripts/cache_manager.py` |
+| Auto-summary and anomaly detection | ✅ Implemented | `scripts/summarizer.py`, `scripts/anomaly_detector.py` |
+| Knowledge graph | ✅ Implemented | In-process NetworkX graph in `scripts/knowledge_graph.py` |
+| Rule-based chat interface | ✅ Implemented | `scripts/chat_interface.py` |
+| REST API | ✅ Implemented | 21 routes in `scripts/search-api.py` |
+| Docker and CI scaffolding | ✅ Present; runtime verification pending | `Dockerfile`, `docker-compose.yml`, `.github/workflows/` |
+| Post-session maintenance | ✅ Implemented | `scripts/post_session_maintenance.py` and SessionEnd hook |
+| Cross-project memory capture | ✅ Implemented; global wiring added | `scripts/remember.py`, `scripts/remember_opt_in.py`, `remember-config.json` |
 
----
+## Phase history
 
-## Phases Remaining
+The original Phase 7–12 planning documents are now historical. The implementation has moved through Phase 13.
 
-| Phase | Name | Status | Effort | Risk | Impact |
-|-------|------|--------|--------|------|--------|
-| 8 | Deployment & CI/CD | 📋 | 2 days | Low | High |
-| 9 | Performance Tuning | 📋 | 2 days | Medium | High |
-| 10 | Advanced Features | 📋 | 3-4 days | High | Medium |
+| Phase | Focus | Current state |
+|---|---|---|
+| 1 | Foundation and vault integration | ✅ Complete |
+| 2 | Memory compiler | ✅ Complete |
+| 3 | Memory validator | ✅ Complete |
+| 4 | Memory retrieval | ✅ Complete |
+| 5 | Integrity, ULIDs and provenance | ✅ Complete |
+| 6 | Regression testing and optimization | ✅ Complete |
+| 7 | Semantic search, hybrid search and ranking | ✅ Complete |
+| 8A | Docker containerization | ✅ Implemented |
+| 8B | GitHub Actions CI/CD | ✅ Implemented; GitHub run still needs confirmation |
+| 8C | FastAPI service | ✅ Implemented |
+| 9A | L1/L2/L3 caching | ✅ Implemented |
+| 9B | Performance tests | ✅ Implemented |
+| 10A | Memory digest and summarization | ✅ Implemented |
+| 10B | Anomaly detection | ✅ Implemented |
+| 11A/B | Entity extraction and knowledge graph | ✅ Implemented with NetworkX; no Neo4j dependency |
+| 11C | Rule-based chat | ✅ Implemented |
+| 12 | Post-session maintenance integration | ✅ Implemented |
+| 13 | Cross-project memory capture with explicit opt-in | ✅ Implemented; runtime verification pending |
 
----
+Recent commits support Phases 8A–8C, 9A/B, 10A/B, 11 and 12. Phase 13 is the current working-tree implementation and is not committed yet.
 
-## Project Metrics
+## Repository snapshot
 
-### Code Statistics
-```
-Total Lines Written:    ~8,000 (production code)
-                        ~2,500 (tests)
-                        ~1,500 (documentation)
+These are static counts from the current working tree, not performance or pass-rate claims:
 
-Core Components:        11
-Test Suites:           4 (34+ tests passing)
-Documentation Pages:   10+
-
-Git Commits:           40+ total
-```
-
-### Timeline
-```
-Phase 1-6:        ✅ Completed (6 phases, ~3-4 weeks)
-Phase 7:          🟡 In Progress (1-2 weeks, 80% done)
-Phase 8-10:       📋 Planned (2-3 weeks)
-
-Total Project:    ~6-8 weeks
-Current Progress: 70% complete
-Estimated Ship:   14-21 days from now
-```
-
-### Performance
-```
-Memory Compiler:        23 entries → 0.1s
-Memory Validator:       46 entries → 0.2s
-Memory Retriever:       Query → top-5 → 0.3s
-Semantic Search:        Query → top-5 → 0.5s (with embeddings)
-Hybrid Search:          Query → ranked → 0.7s
-ML Ranking:             10 candidates → 0.1s
-Full Pipeline:          Query → ranked results → <2s
-
-Test Suite:             34 tests → 0.33s ✅
+```text
+Python production code:  6,507 lines under scripts/
+Python test code:        3,883 lines under tests/
+Test files:                 13
+Discovered test functions: 232
+Scripts:                    25 files
+API routes:                 21
 ```
 
----
+Current memory-store snapshot:
 
-## Phase 7 Detailed Status
-
-### Components Implemented (4/4)
-```
-EmbeddingGenerator
-├── OpenAI integration
-├── Fallback embeddings
-├── Batch processing
-└── Caching/persistence ✅
-
-SemanticSearchEngine
-├── Vector similarity
-├── Cosine computation
-├── Search operations
-└── Embedding retrieval ✅
-
-HybridSearchEngine
-├── Lexical search
-├── Semantic search
-├── Result merging
-└── Quality analysis ✅
-
-MLRanker
-├── Feature extraction
-├── Weight tuning
-├── Scoring logic
-└── Analysis tools ✅
+```text
+Total records: 46
+Active:       21
+Resolved:      2
+Superseded:   23
 ```
 
-### Test Coverage
-```
-EmbeddingGenerator    5 tests ✅
-SemanticSearchEngine  3 tests ✅
-HybridSearchEngine    3 tests ✅
-MLRanker             6 tests ✅
-Integration          3 tests ✅
-─────────────────────────────
-Total               15+ tests
-```
+## Architecture at a glance
 
----
-
-## How to Complete Remaining Phases
-
-### Phase 7 Completion (Next 1-2 days)
-```bash
-# Run tests
-pytest tests/test_phase7_semantic_search.py -v
-
-# Fix any failures
-# (iterate until all pass)
-
-# Test with actual memories
-python scripts/semantic-search.py
-python scripts/hybrid-search.py
-
-# Create demo
-# (show hybrid search + ML ranking working)
-
-# Commit completion
-git commit -m "feat(phase7): Complete semantic search system"
+```text
+Obsidian Markdown notes
+        │
+        ▼
+Memory Compiler
+        │
+        ▼
+Memory Validator ──► validated-memory.json
+        │                       │
+        ├─► Retriever            ├─► Digest / anomaly detection
+        ├─► Semantic search      ├─► Knowledge graph
+        ├─► Hybrid search        └─► Rule-based chat
+        └─► ML ranking
+                │
+                ▼
+          FastAPI REST API
+                │
+       L1 memory / L2 Redis / L3 disk cache
 ```
 
-### Phase 8: Deployment (2 days)
-```
-- Docker containerization
-- CI/CD pipeline setup
-- API server creation
-- Deployment documentation
-```
+The canonical data path is file-backed. Redis is used as a cache. PostgreSQL is declared in Docker Compose, but the current application does not contain a PostgreSQL driver or persistence adapter; it should not be described as an active database layer yet.
 
-### Phase 9: Performance (2 days)
-```
-- Caching layer
-- Database optimization
-- Load testing
-- Performance tuning
-```
+## Verification status
 
-### Phase 10: Advanced Features (3-4 days, pick 2-3)
-```
-Options:
-A) Multi-user collaboration
-B) Auto-summarization
-C) Anomaly detection
-D) Knowledge graph
-E) NLP interface
-```
+### Verified by repository inspection
 
----
+- Docker Compose configuration parses successfully.
+- The API has health, status, search, ranking, embedding, memory CRUD, cache, digest, anomaly, graph, chat and metrics routes.
+- The memory store contains 46 records with the status distribution above.
 
-## Key Achievements Per Phase
+### Not verified in this environment
 
-**Phase 1:** ✅ Vault structure, hooks, settings, SessionStart bootstrap  
-**Phase 2:** ✅ Memory Compiler with date-aware parsing (23 candidates)  
-**Phase 3:** ✅ Memory Validator with conflict detection & quality scoring  
-**Phase 4:** ✅ Memory Retriever with relevance filtering & ranking  
-**Phase 5:** ✅ Memory Integrity (ULID IDs, atomic persistence, provenance)  
-**Phase 6:** ✅ Comprehensive regression test suite (34/34 passing)  
-**Phase 7:** 🟡 Semantic search & ML ranking (4 components, 15+ tests)  
+- The full pytest suite could not be executed because no Python interpreter is installed on this host.
+- Docker services could not be started because the Docker daemon was unavailable.
+- A current GitHub Actions run was not independently confirmed.
+- Production latency and backup-restore behavior have not been measured in this session.
 
----
+Therefore, “implemented” below means present in source and tests; it does not mean that the current runtime is proven green.
 
-## Production Readiness
+## Open risks and known gaps
 
-### Current State (Phase 6 ✅)
-- [x] All core functionality implemented
-- [x] Fully tested (34 regression tests)
-- [x] Data integrity guaranteed
-- [x] Performance validated
-- [x] Backward compatible
-- **Status:** MVP-ready for single-user deployment
+### High priority
 
-### After Phase 7 (2-3 days)
-- [x] Semantic search implemented
-- [x] ML ranking functional
-- [x] Better memory discovery
-- **Status:** Ready for production with semantic capabilities
+1. **Local session hook drift:** the repository’s `.claude/settings.json` references `.claude/hooks/prompt-counter.sh`, but that file is not present. The UserPromptSubmit hook is therefore not currently trustworthy. The global Phase 13 opt-in gate is separate and has been added to `~/.claude/settings.json`.
+2. **Non-atomic API updates:** `PUT /memories/{memory_id}` and `DELETE /memories/{memory_id}` write the canonical JSON directly with `json.dump`; they do not use the validator’s atomic persistence path.
+3. **Container healthcheck mismatch:** `Dockerfile` checks health by importing `requests`, but `requests` is not a direct dependency in `requirements.txt`.
+4. **Unauthenticated Compose default:** `BRAIN_ELEVEN_API_KEY` defaults to empty in Compose while the API binds to `0.0.0.0` inside the container. This is acceptable only when the deployment boundary is genuinely trusted and the service is not exposed beyond it.
 
-### After Phase 8 (2 days)
-- [x] Containerized
-- [x] CI/CD automated
-- [x] Deployable to cloud
-- **Status:** Production deployment ready
+### Medium priority
 
-### After Phase 9 (2 days)
-- [x] Handles 5000+ memories
-- [x] Sub-second queries
-- [x] Optimized performance
-- **Status:** Enterprise-ready
+5. **Integration-test signal is weak:** the test tree currently has no `@pytest.mark.integration` tests, while CI invokes a separate integration-test selection and allows that job to fail. The job should either contain real marked tests or be removed.
+6. **Documentation drift:** older planning and orchestration documents still describe Phase 7–11 as future or in-progress work. They should be marked historical or updated so future sessions do not treat them as active instructions.
+7. **Deployment surface is larger than the personal-use scope:** Docker, PostgreSQL, CI publishing, SARIF and multi-service operations add maintenance cost without currently adding personal-use value.
 
-### After Phase 10 (3-4 days)
-- [x] 2-3 advanced features
-- [x] Multi-user collaboration (optional)
-- [x] Advanced analytics (optional)
-- **Status:** Market-ready platform
+## Recommended next steps
 
----
+### Immediate hardening
 
-## Next Actions
+1. Restore or remove the missing `prompt-counter.sh` hook and test all configured hooks, including the global Phase 13 gate.
+2. Route API update/delete persistence through one atomic store helper.
+3. Change the Docker healthcheck to use an installed dependency or a standard-library check.
+4. Make authenticated deployment the safe default, or bind Compose ports to localhost explicitly.
+5. Add real integration markers/tests, or simplify CI to the tests that are actually run.
+6. Exercise `/remember` from a non-Brain-Eleven project and verify that the stored `project` field is correct without persisting its absolute path.
 
-### Immediate (Next 1-2 sessions)
-1. ✅ **Complete Phase 7:**
-   - Run test suite → fix failures
-   - Create demo of semantic search
-   - Benchmark performance
-   - Final integration checks
+### Evidence loop
 
-2. **Prepare for Phase 8:**
-   - Review deployment plan
-   - Set up Docker environment
-   - Plan API endpoints
+1. Run `pytest tests/ -q` in Python 3.13.
+2. Run the coverage command used by CI and record the actual result.
+3. Start the Compose stack and verify `/health`, cache fallback, API-key protection and backup/restore.
+4. Use the system daily for one week before adding another feature.
 
-### Medium Term (Next 2-3 weeks)
-3. **Execute Phases 8-10**
-   - Deployment infrastructure
-   - Performance optimization
-   - Advanced features (choose 2-3)
+### Simplification
 
-4. **Launch to Production**
-   - Final testing
-   - Security review
-   - Release announcement
+After the evidence loop, decide whether Docker, PostgreSQL declarations, CI publishing and old phase documents still earn their maintenance cost for a single-user local system. Do not add multi-user, cloud or “market-ready” work unless the product boundary changes explicitly.
 
----
+## Definition of “solid enough” for this project
 
-## Success Metrics
+Brain-Eleven is ready for dependable personal use when:
 
-**Current (Phase 6):**
-- ✅ 34/34 tests passing
-- ✅ All core components working
-- ✅ Data integrity verified
-- ✅ Backward compatible
+- The complete test suite passes in a reproducible Python environment.
+- Memory writes are atomic across compiler, validator and API paths.
+- Session hooks either run successfully or fail visibly.
+- A backup can be restored into a fresh directory and queried.
+- Local API exposure is intentional and protected when it is not loopback-only.
+- The status file and active instructions describe the same system as the code.
 
-**After Phase 7:**
-- 🎯 Semantic search quality > 0.8 (cosine similarity)
-- 🎯 Hybrid search better than lexical alone
-- 🎯 ML ranking improves relevance by 20%+
-- 🎯 All 15+ tests passing
+## Primary references
 
-**After Phase 8:**
-- 🎯 Deployment automated
-- 🎯 Zero-downtime deployments
-- 🎯 CI/CD pipeline green
-
-**After Phase 9:**
-- 🎯 Handles 5000+ memories
-- 🎯 Queries < 500ms (p95)
-- 🎯 Cache hit rate > 60%
-
----
-
-## Repository Statistics
-
-```
-Total Commits:       40+
-Lines of Code:       8,000+ (production)
-Test Coverage:       80%+ (34 tests)
-Documentation:       10+ files
-Project Duration:    ~6-8 weeks
-Team Size:          1 (Claude + user collaboration)
-```
-
----
-
-## To Ship Brain-Eleven v3
-
-### Week 1 (This week) 🟡
-- [ ] Complete Phase 7 (semantic search)
-- [ ] All Phase 7 tests passing
-- [ ] Performance validated
-
-### Week 2 📋
-- [ ] Phase 8: Deploy infrastructure
-- [ ] Phase 9: Performance tuning
-- [ ] Choose Phase 10 features
-
-### Week 3+ 📋
-- [ ] Phase 10: Advanced features
-- [ ] Security review
-- [ ] Final testing & QA
-- [ ] **PRODUCTION LAUNCH** 🚀
-
----
-
-**Last Updated:** Today  
-**Next Phase:** Phase 7 completion → Phase 8  
-**Estimated Time to Production:** 2-3 weeks  
-**Status:** On track for successful launch 🎯
+- [CLAUDE.md](CLAUDE.md) — vault routing and memory protocol
+- [🧠 Brain-Eleven.md](🧠%20Brain-Eleven.md) — vault hub
+- [DEPLOYMENT-STACK.md](DEPLOYMENT-STACK.md) — deployment notes
+- [TESTING-FRAMEWORK.md](TESTING-FRAMEWORK.md) — testing design and targets
+- [INTEGRATION-CHECKLIST.md](INTEGRATION-CHECKLIST.md) — integration checklist
