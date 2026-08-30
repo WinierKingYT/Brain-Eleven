@@ -154,8 +154,12 @@ async def require_api_key(request: Request, call_next):
             return JSONResponse(status_code=401, content={"detail": "Missing or invalid X-API-Key header"})
     return await call_next(request)
 
-# Global state
-vault_path = Path.home() / "Documents/Brain-Eleven"
+# Global state. VAULT_PATH is injected by the Docker image (ENV VAULT_PATH=/vault)
+# and docker-compose.yml, which volume-mounts ./data/vault to /vault. Without
+# reading it here the API resolves to the container's home directory and
+# silently ignores the mounted vault entirely. Unset for local runs, so it
+# falls back to the repo's canonical location under the user's home.
+vault_path = Path(os.environ.get("VAULT_PATH", str(Path.home() / "Documents/Brain-Eleven")))
 memory_store = None
 hybrid_engine = None
 ranker = None
