@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Query, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Optional, Dict
 import json
@@ -107,6 +108,92 @@ class HealthResponse(BaseModel):
     services: Dict[str, str]
 
 # ============================================================================
+# Global State & Lifespan
+# ============================================================================
+
+# VAULT_PATH is injected by the Docker image (ENV VAULT_PATH=/vault) and
+# docker-compose.yml, which volume-mounts ./data/vault to /vault. Without
+# reading it here the API resolves to the container's home directory and
+# silently ignores the mounted vault entirely. Unset for local runs, so it
+# falls back to the repo's canonical location under the user's home.
+vault_path = Path(os.environ.get("VAULT_PATH", str(Path.home() / "Documents/Brain-Eleven")))
+memory_store = None
+hybrid_engine = None
+ranker = None
+cache = None
+graph = None
+chat_agent = None
+
+
+def _rebuild_graph() -> "KnowledgeGraph":
+    """
+    Rebuild the knowledge graph from the current canonical store and swap
+    it into both the module-level `graph` and the running ChatAgent.
+
+    Call this after ANY write to validated-memory.json (create, update,
+    delete, and the batch validator run) - the graph is a derived
+    projection, not an independent store, so a write that doesn't trigger
+    this leaves the graph reflecting stale data. EntityExtractor.build_graph
+    always clears before repopulating, so this is a real fresh rebuild,
+    not an incremental add on top of whatever was there before.
+    """
+    global graph
+    graph = EntityExtractor(str(vault_path)).build_graph()
+    if chat_agent:
+        chat_agent.graph = graph
+    return graph
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup/shutdown as a single context manager (the on_event hooks
+    this replaced are deprecated as of FastAPI 0.95+)."""
+    global memory_store, hybrid_engine, ranker, cache, chat_agent
+
+    logger.info("🚀 Starting Brain-Eleven API...")
+
+    try:
+        memory_store = MemoryRetriever(str(vault_path))
+        logger.info("✅ Memory store initialized")
+
+        hybrid_engine = HybridSearchEngine(str(vault_path))
+        logger.info("✅ Hybrid search engine initialized")
+
+        ranker = MLRanker()
+        logger.info("✅ ML ranker initialized")
+
+        # Cache manager (Phase 9A: L1 memory + L2 Redis + L3 disk)
+        cache = CacheManager(
+            vault_path=str(vault_path),
+            redis_host=os.environ.get("REDIS_HOST", "localhost"),
+            redis_port=int(os.environ.get("REDIS_PORT", "6379")),
+        )
+        logger.info("✅ Cache manager initialized")
+
+        # ChatAgent builds its own MemoryRetriever/HybridSearchEngine
+        # internally rather than reusing the ones above - duplicate init
+        # cost is negligible here (fallback embeddings, no network calls).
+        chat_agent = ChatAgent(str(vault_path))
+        logger.info("✅ Chat agent initialized")
+
+        # Build the knowledge graph fresh on startup (Phase 11A/B). Cheap at
+        # this data volume; _rebuild_graph() always clears before
+        # repopulating, so this reflects the current store exactly, not
+        # whatever an old persisted knowledge-graph.json happened to have.
+        _rebuild_graph()
+        logger.info(f"✅ Knowledge graph built: {graph.stats()}")
+
+        logger.info("✅ All services ready!")
+    except Exception as e:
+        logger.error(f"❌ Startup error: {e}")
+        raise
+
+    yield
+
+    logger.info("🛑 Shutting down Brain-Eleven API...")
+
+
+# ============================================================================
 # FastAPI App Setup
 # ============================================================================
 
@@ -115,7 +202,8 @@ app = FastAPI(
     description="Advanced memory system with semantic search and ML ranking",
     version="3.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS middleware. allow_origins=["*"] combined with allow_credentials=True
@@ -153,96 +241,6 @@ async def require_api_key(request: Request, call_next):
         if request.headers.get("X-API-Key") != API_KEY:
             return JSONResponse(status_code=401, content={"detail": "Missing or invalid X-API-Key header"})
     return await call_next(request)
-
-# Global state. VAULT_PATH is injected by the Docker image (ENV VAULT_PATH=/vault)
-# and docker-compose.yml, which volume-mounts ./data/vault to /vault. Without
-# reading it here the API resolves to the container's home directory and
-# silently ignores the mounted vault entirely. Unset for local runs, so it
-# falls back to the repo's canonical location under the user's home.
-vault_path = Path(os.environ.get("VAULT_PATH", str(Path.home() / "Documents/Brain-Eleven")))
-memory_store = None
-hybrid_engine = None
-ranker = None
-cache = None
-graph = None
-chat_agent = None
-
-
-def _rebuild_graph() -> "KnowledgeGraph":
-    """
-    Rebuild the knowledge graph from the current canonical store and swap
-    it into both the module-level `graph` and the running ChatAgent.
-
-    Call this after ANY write to validated-memory.json (create, update,
-    delete, and the batch validator run) - the graph is a derived
-    projection, not an independent store, so a write that doesn't trigger
-    this leaves the graph reflecting stale data. EntityExtractor.build_graph
-    always clears before repopulating, so this is a real fresh rebuild,
-    not an incremental add on top of whatever was there before.
-    """
-    global graph
-    graph = EntityExtractor(str(vault_path)).build_graph()
-    if chat_agent:
-        chat_agent.graph = graph
-    return graph
-
-
-# ============================================================================
-# Initialization
-# ============================================================================
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
-    # `graph` itself is not assigned here - _rebuild_graph() (called below)
-    # owns that global assignment; startup_event only needs to trigger it.
-    global memory_store, hybrid_engine, ranker, cache, chat_agent
-
-    logger.info("🚀 Starting Brain-Eleven API...")
-
-    try:
-        # Load memory store
-        memory_store = MemoryRetriever(str(vault_path))
-        logger.info("✅ Memory store initialized")
-
-        # Initialize hybrid search
-        hybrid_engine = HybridSearchEngine(str(vault_path))
-        logger.info("✅ Hybrid search engine initialized")
-
-        # Initialize ML ranker
-        ranker = MLRanker()
-        logger.info("✅ ML ranker initialized")
-
-        # Initialize cache manager (Phase 9A: L1 memory + L2 Redis + L3 disk)
-        cache = CacheManager(
-            vault_path=str(vault_path),
-            redis_host=os.environ.get("REDIS_HOST", "localhost"),
-            redis_port=int(os.environ.get("REDIS_PORT", "6379")),
-        )
-        logger.info("✅ Cache manager initialized")
-
-        # ChatAgent builds its own MemoryRetriever/HybridSearchEngine
-        # internally rather than reusing the ones above - duplicate init
-        # cost is negligible here (fallback embeddings, no network calls).
-        chat_agent = ChatAgent(str(vault_path))
-        logger.info("✅ Chat agent initialized")
-
-        # Build the knowledge graph fresh on startup (Phase 11A/B). Cheap at
-        # this data volume (46 memories); _rebuild_graph() always clears
-        # before repopulating, so this reflects the current store exactly,
-        # not whatever an old persisted knowledge-graph.json happened to have.
-        _rebuild_graph()
-        logger.info(f"✅ Knowledge graph built: {graph.stats()}")
-
-        logger.info("✅ All services ready!")
-    except Exception as e:
-        logger.error(f"❌ Startup error: {e}")
-        raise
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    logger.info("🛑 Shutting down Brain-Eleven API...")
 
 # ============================================================================
 # Health & Status Endpoints

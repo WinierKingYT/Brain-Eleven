@@ -127,7 +127,12 @@ class MemoryRetriever:
             combined = (sim * 0.4) + (conf * 0.3) + (priority * 0.2) + (fresh * 0.1)
 
             results.append(SearchResult(
-                id=memory["id"],
+                # "id" is the deprecated array-index field kept only for
+                # backward compat (see ValidatedMemory.id in
+                # memory-validator.py) - a memory missing it should
+                # degrade gracefully, not raise KeyError and 500 the
+                # whole search request.
+                id=memory.get("id", -1),
                 type=memory["type"],
                 content=memory["content"][:100],  # Truncate for display
                 confidence=conf,
@@ -156,7 +161,12 @@ class MemoryRetriever:
             conf = memory["quality_score"]
 
             results.append(SearchResult(
-                id=memory["id"],
+                # "id" is the deprecated array-index field kept only for
+                # backward compat (see ValidatedMemory.id in
+                # memory-validator.py) - a memory missing it should
+                # degrade gracefully, not raise KeyError and 500 the
+                # whole search request.
+                id=memory.get("id", -1),
                 type=memory["type"],
                 content=memory["content"][:100],
                 confidence=conf,
