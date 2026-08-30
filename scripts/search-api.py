@@ -62,6 +62,9 @@ try:
     from cache_manager import CacheManager
     from summarizer import MemorySummarizer
     from anomaly_detector import AnomalyDetector
+    from knowledge_graph import KnowledgeGraph
+    from entity_extractor import EntityExtractor
+    from chat_interface import ChatAgent
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
@@ -126,6 +129,8 @@ memory_store = None
 hybrid_engine = None
 ranker = None
 cache = None
+graph = None
+chat_agent = None
 
 # ============================================================================
 # Initialization
@@ -134,7 +139,7 @@ cache = None
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global memory_store, hybrid_engine, ranker, cache
+    global memory_store, hybrid_engine, ranker, cache, graph, chat_agent
 
     logger.info("🚀 Starting Brain-Eleven API...")
 
@@ -159,6 +164,19 @@ async def startup_event():
             redis_port=int(os.environ.get("REDIS_PORT", "6379")),
         )
         logger.info("✅ Cache manager initialized")
+
+        # Build the knowledge graph fresh on startup (Phase 11A/B). Cheap at
+        # this data volume (46 memories); if the vault grows large enough
+        # for this to matter, switch to loading the persisted graph and
+        # rebuilding only via POST /graph/rebuild.
+        graph = EntityExtractor(str(vault_path)).build_graph()
+        logger.info(f"✅ Knowledge graph built: {graph.stats()}")
+
+        # ChatAgent builds its own MemoryRetriever/HybridSearchEngine
+        # internally rather than reusing the ones above - duplicate init
+        # cost is negligible here (fallback embeddings, no network calls).
+        chat_agent = ChatAgent(str(vault_path))
+        logger.info("✅ Chat agent initialized")
 
         logger.info("✅ All services ready!")
     except Exception as e:
@@ -538,6 +556,77 @@ async def get_anomalies():
         return report
     except Exception as e:
         logger.error(f"Anomaly detection error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# Knowledge Graph & Chat Endpoints (Phase 11)
+# ============================================================================
+
+@app.get("/graph/stats")
+async def graph_stats():
+    """Entity/relationship counts in the knowledge graph."""
+    if not graph:
+        raise HTTPException(status_code=503, detail="Graph not initialized")
+    return graph.stats()
+
+@app.get("/graph/entities")
+async def graph_entities(type: Optional[str] = None, name_contains: Optional[str] = None):
+    """List entities, optionally filtered by type and/or name substring."""
+    if not graph:
+        raise HTTPException(status_code=503, detail="Graph not initialized")
+    return {"entities": graph.find_entities(entity_type=type, name_contains=name_contains)}
+
+@app.get("/graph/entities/{entity_id}/relationships")
+async def graph_entity_relationships(entity_id: str, direction: str = "both"):
+    """Relationships for one entity. direction: out | in | both."""
+    if not graph:
+        raise HTTPException(status_code=503, detail="Graph not initialized")
+    if graph.get_entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return {"entity_id": entity_id, "relationships": graph.get_relationships(entity_id, direction=direction)}
+
+@app.get("/graph/traverse/{entity_id}")
+async def graph_traverse(entity_id: str, depth: int = 2):
+    """Subgraph reachable from an entity within `depth` hops (either direction)."""
+    if not graph:
+        raise HTTPException(status_code=503, detail="Graph not initialized")
+    if graph.get_entity(entity_id) is None:
+        raise HTTPException(status_code=404, detail="Entity not found")
+    return graph.traverse(entity_id, max_depth=depth)
+
+@app.post("/graph/rebuild")
+async def graph_rebuild():
+    """Re-run entity extraction over all current memories."""
+    global graph
+    if not graph:
+        raise HTTPException(status_code=503, detail="Graph not initialized")
+    try:
+        extractor = EntityExtractor(str(vault_path))
+        graph = extractor.build_graph()
+        if chat_agent:
+            chat_agent.graph = graph
+        return {"status": "rebuilt", "stats": graph.stats(), "timestamp": datetime.now().isoformat()}
+    except Exception as e:
+        logger.error(f"Graph rebuild error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ChatRequest(BaseModel):
+    message: str = Field(..., description="User message")
+    conversation_id: Optional[str] = None
+
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    """
+    Rule-based chat over the memory system (see chat_interface.py) -
+    answers are grounded in real search/digest/anomaly/graph results, not
+    LLM-generated free text, since no LLM is configured.
+    """
+    if not chat_agent:
+        raise HTTPException(status_code=503, detail="Chat agent not initialized")
+    try:
+        return chat_agent.chat(request.message, conversation_id=request.conversation_id)
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================================================

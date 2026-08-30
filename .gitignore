@@ -19,6 +19,8 @@
 .claude/hook-execution.log
 .claude/prompt-counter-state.json
 .claude/checkpoints/
+.claude/knowledge-graph.json
+.claude/embeddings.json
 
 # Archive (historical reference only)
 .archived/

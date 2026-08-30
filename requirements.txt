@@ -14,6 +14,9 @@ openai==2.24.0
 # Caching (Phase 9A)
 redis==7.1.0
 
+# Knowledge graph (Phase 11A) - in-process graph, no separate DB service
+networkx==3.6.1
+
 # Memory IDs
 python-ulid==4.0.1
 
