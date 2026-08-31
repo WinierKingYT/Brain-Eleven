@@ -192,7 +192,9 @@ def test_graph_exposes_project_provenance_and_filters_it(tmp_path):
     extractor.extract_from_memory(_memory("m-g", "Global Redis guidance"), graph)
 
     assert graph.get_entity("project_project-a")["type"] == "PROJECT"
-    assert graph.get_relationships("m-a", rel_type="BELONGS_TO")[0]["target"] == "project_project-a"
+    assert graph.get_relationships(
+        "m-a", rel_type="BELONGS_TO", retrieval_scope="all"
+    )[0]["target"] == "project_project-a"
     assert {e["id"] for e in graph.find_entities(entity_type="DECISION", project_id=project_id)} == {"m-a", "m-g"}
     assert {e["id"] for e in graph.find_entities(entity_type="DECISION", project_id="other")} == {"m-g"}
 

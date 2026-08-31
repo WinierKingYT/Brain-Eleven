@@ -120,11 +120,19 @@ class ChatAgent:
         self.anomaly_detector = AnomalyDetector(str(vault_path))
         self.graph = KnowledgeGraph(str(vault_path))
 
-    def _load_memories(self, context: ConversationContext) -> List[Dict]:
+    @staticmethod
+    def _scope_for(context: Optional[ConversationContext]) -> tuple[Optional[str], str]:
+        """Keep direct handler calls backward-compatible and scope-safe."""
+        if context is None:
+            return None, "default"
+        return context.project_id, context.retrieval_scope
+
+    def _load_memories(self, context: Optional[ConversationContext]) -> List[Dict]:
+        project_id, retrieval_scope = self._scope_for(context)
         return filter_memories(
             self.summarizer.load_memories(),
-            project_id=context.project_id,
-            retrieval_scope=context.retrieval_scope,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
         )
 
     def chat(
@@ -166,12 +174,19 @@ class ChatAgent:
 
     # -- handlers -----------------------------------------------------------
 
-    def handle_query(self, query: str, context: ConversationContext) -> str:
+    def handle_query(self, query: str, context: Optional[ConversationContext]) -> str:
         memories = self._load_memories(context)
         if not memories:
             return "I don't have any memories stored yet."
 
-        results = self.hybrid_search.search(query, memories, top_k=3, retrieval_scope="all")
+        project_id, retrieval_scope = self._scope_for(context)
+        results = self.hybrid_search.search(
+            query,
+            memories,
+            top_k=3,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
         if not results:
             return "I don't have information about that in my memory."
 
@@ -184,7 +199,7 @@ class ChatAgent:
             lines.append(f"{i}. {content} (relevance: {score:.2f})")
         return "\n".join(lines)
 
-    def handle_summarize(self, query: str, context: ConversationContext) -> str:
+    def handle_summarize(self, query: str, context: Optional[ConversationContext]) -> str:
         days = None
         if "weekly" in query.lower():
             days = 7
@@ -193,11 +208,12 @@ class ChatAgent:
         elif "daily" in query.lower() or "today" in query.lower():
             days = 1
 
+        project_id, retrieval_scope = self._scope_for(context)
         digest = self.summarizer.generate_digest(
             days=days,
             top_n_per_type=3,
-            project_id=context.project_id,
-            retrieval_scope=context.retrieval_scope,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
         )
         if digest["total_memories_considered"] == 0:
             return "Nothing to summarize for that period."
@@ -214,7 +230,7 @@ class ChatAgent:
                 lines.append(f"  - {item['content']}")
         return "\n".join(lines)
 
-    def handle_anomaly(self, query: str, context: ConversationContext) -> str:
+    def handle_anomaly(self, query: str, context: Optional[ConversationContext]) -> str:
         report = self.anomaly_detector.detect_all()
         if report["total_anomalies"] == 0:
             return "No anomalies detected - the memory store looks clean."
@@ -228,7 +244,7 @@ class ChatAgent:
             lines.append(f"  - [{anomaly['type']}] {anomaly['description']}")
         return "\n".join(lines)
 
-    def handle_create(self, query: str, context: ConversationContext) -> str:
+    def handle_create(self, query: str, context: Optional[ConversationContext]) -> str:
         # Deliberately does not write to validated-memory.json directly:
         # doing so here would bypass memory-validator.py's quality gate
         # (conflict detection, fingerprint dedup, scoring). Point the
@@ -239,9 +255,10 @@ class ChatAgent:
             "Use POST /memories with the content, type, and confidence instead."
         )
 
-    def handle_analyze(self, query: str, context: ConversationContext) -> str:
+    def handle_analyze(self, query: str, context: Optional[ConversationContext]) -> str:
+        project_id, retrieval_scope = self._scope_for(context)
         entities = self._find_subject_entities(
-            query, project_id=context.project_id, retrieval_scope=context.retrieval_scope
+            query, project_id=project_id, retrieval_scope=retrieval_scope
         )
         if not entities:
             return self.handle_query(query, context)
@@ -250,8 +267,8 @@ class ChatAgent:
         subgraph = self.graph.traverse(
             entity["id"],
             max_depth=1,
-            project_id=context.project_id,
-            retrieval_scope=context.retrieval_scope,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
         )
         related = [n["name"] for n in subgraph["nodes"] if n["id"] != entity["id"]]
 
@@ -262,9 +279,10 @@ class ChatAgent:
             lines.append("No recorded connections to other entities.")
         return "\n".join(lines)
 
-    def handle_graph_query(self, query: str, context: ConversationContext) -> str:
+    def handle_graph_query(self, query: str, context: Optional[ConversationContext]) -> str:
+        project_id, retrieval_scope = self._scope_for(context)
         entities = self._find_subject_entities(
-            query, project_id=context.project_id, retrieval_scope=context.retrieval_scope
+            query, project_id=project_id, retrieval_scope=retrieval_scope
         )
 
         if not entities:
@@ -278,8 +296,8 @@ class ChatAgent:
         entity = entities[0]
         relationships = self.graph.get_relationships(
             entity["id"],
-            project_id=context.project_id,
-            retrieval_scope=context.retrieval_scope,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
         )
         if not relationships:
             return f"'{entity['name']}' has no recorded relationships."
@@ -292,12 +310,13 @@ class ChatAgent:
             lines.append(f"  - {rel['rel_type']}: {other_name}")
         return "\n".join(lines)
 
-    def handle_reflect(self, query: str, context: ConversationContext) -> str:
+    def handle_reflect(self, query: str, context: Optional[ConversationContext]) -> str:
+        project_id, retrieval_scope = self._scope_for(context)
         digest = self.summarizer.generate_digest(
             top_n_per_type=3,
             statuses=["active", "resolved"],
-            project_id=context.project_id,
-            retrieval_scope=context.retrieval_scope,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
         )
         lessons = digest["by_type"].get("lesson", [])
         decisions = digest["by_type"].get("decision", [])

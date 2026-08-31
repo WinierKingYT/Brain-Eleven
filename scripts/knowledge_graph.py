@@ -249,7 +249,7 @@ class KnowledgeGraph:
         entity_type: Optional[str] = None,
         name_contains: Optional[str] = None,
         project_id: Optional[str] = None,
-        retrieval_scope: str = "all",
+        retrieval_scope: str = "default",
     ) -> List[Dict]:
         results = []
         for node_id, data in self.graph.nodes(data=True):
@@ -268,7 +268,7 @@ class KnowledgeGraph:
         direction: str = "both",
         rel_type: Optional[str] = None,
         project_id: Optional[str] = None,
-        retrieval_scope: str = "all",
+        retrieval_scope: str = "default",
     ) -> List[Dict]:
         """direction: 'out' (entity_id -> X), 'in' (X -> entity_id), or 'both'."""
         if not self.graph.has_node(entity_id):
@@ -319,7 +319,7 @@ class KnowledgeGraph:
         entity_id: str,
         max_depth: int = 2,
         project_id: Optional[str] = None,
-        retrieval_scope: str = "all",
+        retrieval_scope: str = "default",
     ) -> Dict[str, Any]:
         """BFS out to max_depth hops (either direction). Returns a subgraph view."""
         if not self.graph.has_node(entity_id):

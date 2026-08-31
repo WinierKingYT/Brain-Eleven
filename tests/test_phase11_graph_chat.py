@@ -430,6 +430,19 @@ class TestChatAgent:
 
         assert "don't have any memories" in response
 
+    @pytest.mark.parametrize(("handler_name", "query"), [
+        ("handle_summarize", "Summarize recent memories"),
+        ("handle_analyze", "Why did we choose Redis?"),
+    ])
+    def test_direct_scope_aware_handlers_accept_none_context(self, vault, handler_name, query):
+        """Legacy direct handler calls default to global-only retrieval."""
+        write_memories(vault, [make_memory(content="Chose Redis for caching")])
+        agent = ChatAgent(str(vault))
+
+        response = getattr(agent, handler_name)(query, None)
+
+        assert isinstance(response, str)
+
     def test_handle_anomaly_reports_clean_store(self, vault):
         write_memories(vault, [make_memory(content="A perfectly normal unique entry here")])
         agent = ChatAgent(str(vault))
