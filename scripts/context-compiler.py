@@ -13,20 +13,29 @@ Pipeline:
 
 import json
 import re
+import argparse
+import io
+from contextlib import redirect_stdout
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Set
+
+from memory_scope import filter_memories, infer_memory_scope
+from memory_scope import registered_project_identity
+from project_registry import registry_path as project_registry_path
 
 
 class ContextCompiler:
     """Compile curated context for session bootstrap"""
 
-    def __init__(self, vault_path: str):
+    def __init__(self, vault_path: str, project_id: str = None, retrieval_scope: str = "default"):
         self.vault_path = Path(vault_path)
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.last_session_file = self.vault_path / "🔮 Companion/Last Session.md"
         self.open_loops_file = self.vault_path / "🔮 Companion/Açık Döngüler.md"
         self.hamle_dir = self.vault_path / "🗂️ Proje Notları/Kararlar"
+        self.project_id = project_id
+        self.retrieval_scope = retrieval_scope
 
         self.memories = []
         self.related_notes = []
@@ -81,9 +90,14 @@ class ContextCompiler:
             "observation": 0.6
         }
 
+        scoped_memories = filter_memories(
+            self.memories,
+            project_id=self.project_id,
+            retrieval_scope=self.retrieval_scope,
+        )
         ranked = []
 
-        for memory in self.memories:
+        for memory in scoped_memories:
             # Skip inactive memories (prevents memory poisoning)
             status = memory.get("status", "active")
             if status != "active":
@@ -110,8 +124,14 @@ class ContextCompiler:
                 "ranking_score": score
             })
 
-        # Sort by score
-        ranked.sort(key=lambda m: m["ranking_score"], reverse=True)
+        # Current-project memories form the first scope tier; preserve the
+        # existing score ordering within each tier.
+        ranked.sort(
+            key=lambda m: (
+                0 if self.project_id and infer_memory_scope(m)[2] == self.project_id else 1,
+                -m["ranking_score"],
+            )
+        )
 
         return ranked[:limit]
 
@@ -185,6 +205,8 @@ class ContextCompiler:
             "compiled_at": datetime.now().isoformat(),
             "summary": {
                 "top_memories": len(top_memories),
+                "retrieval_scope": self.retrieval_scope,
+                "project_id": self.project_id,
                 "related_hamles": len(related_hamles),
                 "has_last_session": bool(last_session),
                 "has_open_loops": bool(open_loops)
@@ -271,12 +293,37 @@ class ContextCompiler:
 # ============================================================================
 
 if __name__ == "__main__":
-    vault_path = Path.home() / "Documents/Brain-Eleven"
+    parser = argparse.ArgumentParser(description="Compile Brain-Eleven session context")
+    parser.add_argument("--vault", default=str(Path.home() / "Documents/Brain-Eleven"))
+    parser.add_argument("--project-root", default=None)
+    parser.add_argument("--project-id", default=None)
+    parser.add_argument(
+        "--retrieval-scope",
+        choices=("default", "global", "project", "all"),
+        default="default",
+    )
+    parser.add_argument("--stdout", action="store_true", help="Print only the context block")
+    args = parser.parse_args()
 
-    compiler = ContextCompiler(str(vault_path))
-    output_file = compiler.save()
-
-    print(f"\n🎯 Ready for session bootstrap:")
-    print(f"   1. SessionStart hook loads: {output_file}")
-    print(f"   2. Claude gets full context automatically")
-    print(f"   3. No manual re-briefing needed")
+    project_id = args.project_id
+    if project_id is None and args.project_root:
+        project_id = registered_project_identity(
+            args.project_root,
+            project_registry_path(args.vault),
+        )[0]
+    compiler = ContextCompiler(
+        args.vault,
+        project_id=project_id,
+        retrieval_scope=args.retrieval_scope,
+    )
+    if args.stdout:
+        sink = io.StringIO()
+        with redirect_stdout(sink):
+            output = compiler.compile()
+        print(output["context_block"])
+    else:
+        output_file = compiler.save()
+        print(f"\n🎯 Ready for session bootstrap:")
+        print(f"   1. SessionStart hook loads: {output_file}")
+        print(f"   2. Claude gets full context automatically")
+        print(f"   3. No manual re-briefing needed")

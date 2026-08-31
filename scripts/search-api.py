@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 import json
 import os
 import sys
@@ -70,12 +70,16 @@ try:
     from knowledge_graph import KnowledgeGraph
     from entity_extractor import EntityExtractor
     from chat_interface import ChatAgent
+    from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
+    from project_registry import registry_path as project_registry_path
+    from memory_store import MemoryStore, MemoryStoreConflict
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
 # Setup logging
 from logging_config import setup_logging
 logger = setup_logging(__name__)
+
 
 # ============================================================================
 # API Models
@@ -85,22 +89,31 @@ class MemoryCreate(BaseModel):
     type: str = Field(..., description="Memory type: decision, lesson, open_loop, etc")
     content: str = Field(..., description="Memory content")
     confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+    scope: Optional[Literal["global", "project"]] = None
     project: str = Field(default="", description="Optional originating project identifier")
+    project_label: str = Field(default="", description="Human-readable project label")
+    project_id: str = Field(default="", description="Opaque project namespace identifier")
+    project_root: Optional[str] = Field(default=None, description="Project root used only to derive project_id")
     timestamp: Optional[str] = None
 
 class MemoryUpdate(BaseModel):
     content: Optional[str] = None
     confidence: Optional[float] = None
     status: Optional[str] = None
+    expected_revision: Optional[int] = Field(default=None, ge=0)
 
 class SearchRequest(BaseModel):
     query: str = Field(..., description="Search query")
     top_k: int = Field(default=5, ge=1, le=100)
     hybrid: bool = Field(default=True, description="Use hybrid search")
+    project_id: Optional[str] = None
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 class RankRequest(BaseModel):
     query: str
     candidates: List[Dict]
+    project_id: Optional[str] = None
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 class HealthResponse(BaseModel):
     status: str
@@ -139,9 +152,24 @@ def _rebuild_graph() -> "KnowledgeGraph":
     not an incremental add on top of whatever was there before.
     """
     global graph
-    graph = EntityExtractor(str(vault_path)).build_graph()
+    extractor = EntityExtractor(str(vault_path))
+    graph = extractor.build_graph()
     if chat_agent:
         chat_agent.graph = graph
+    return graph
+
+
+def _ensure_graph_current() -> "KnowledgeGraph":
+    """Recover the graph projection before serving graph-backed responses."""
+    if graph is None:
+        raise RuntimeError("Knowledge graph is not initialized")
+    current_revision = MemoryStore(vault_path).revision()
+    if not graph.is_current(current_revision):
+        logger.warning(
+            "Knowledge graph projection is %s; rebuilding before retrieval",
+            graph.projection_status(current_revision).get("status"),
+        )
+        return _rebuild_graph()
     return graph
 
 
@@ -264,18 +292,14 @@ async def health_check():
 async def status():
     """Get system status"""
     try:
-        validated_file = vault_path / ".claude/validated-memory.json"
-        if validated_file.exists():
-            with open(validated_file) as f:
-                data = json.load(f)
-                memory_count = len(data.get("validated_memory", []))
-        else:
-            memory_count = 0
+        data = MemoryStore(vault_path).load()
+        memory_count = len(data.get("validated_memory", []))
 
         return {
             "status": "operational",
             "timestamp": datetime.now().isoformat(),
             "memory_count": memory_count,
+            "store_revision": data["revision"],
             "vault_path": str(vault_path)
         }
     except Exception as e:
@@ -303,17 +327,28 @@ async def search(request: SearchRequest):
 
         with open(validated_file) as f:
             data = json.load(f)
-            memories = data.get("validated_memory", [])
+            memories = filter_memories(
+                data.get("validated_memory", []),
+                project_id=request.project_id,
+                retrieval_scope=request.retrieval_scope,
+            )
 
         if not memories:
             return {"results": [], "query": request.query, "count": 0}
 
         # Cache key incorporates query + top_k + a fingerprint of the memory
         # set size so a cache entry can't outlive additions to the vault.
-        cache_key = CacheManager.make_key("search", request.query, request.top_k, len(memories))
+        cache_key = CacheManager.make_key(
+            "search", request.query, request.top_k, request.project_id or "global-only",
+            request.retrieval_scope, len(memories),
+        )
 
         def compute_results():
-            return hybrid_engine.search(request.query, memories, top_k=request.top_k)
+            return hybrid_engine.search(
+                request.query, memories, top_k=request.top_k,
+                project_id=request.project_id,
+                retrieval_scope=request.retrieval_scope,
+            )
 
         results = cache.get_or_compute(cache_key, compute_results) if cache else compute_results()
 
@@ -325,6 +360,8 @@ async def search(request: SearchRequest):
             "count": len(results),
             "timestamp": datetime.now().isoformat()
         }
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -343,10 +380,21 @@ async def rank_results(request: RankRequest):
         validated_file = vault_path / ".claude/validated-memory.json"
         with open(validated_file) as f:
             data = json.load(f)
-            memories = data.get("validated_memory", [])
+            memories = filter_memories(
+                data.get("validated_memory", []),
+                project_id=request.project_id,
+                retrieval_scope=request.retrieval_scope,
+            )
 
-        # Rank candidates
-        ranked = ranker.rank(request.query, request.candidates, memories)
+        # Apply the same visibility policy to the candidate set itself. The
+        # context corpus alone is not enough: otherwise a caller could send a
+        # foreign project's candidate directly to /rank and bypass retrieval.
+        candidates = filter_memories(
+            request.candidates,
+            project_id=request.project_id,
+            retrieval_scope=request.retrieval_scope,
+        )
+        ranked = ranker.rank(request.query, candidates, memories)
 
         return {
             "results": ranked,
@@ -354,6 +402,8 @@ async def rank_results(request: RankRequest):
             "count": len(ranked),
             "timestamp": datetime.now().isoformat()
         }
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.error(f"Ranking error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -393,7 +443,12 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
 # ============================================================================
 
 @app.get("/memories")
-async def list_memories(skip: int = 0, limit: int = 100):
+async def list_memories(
+    skip: int = 0,
+    limit: int = 100,
+    project_id: Optional[str] = None,
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """List all memories"""
     try:
         validated_file = vault_path / ".claude/validated-memory.json"
@@ -402,7 +457,11 @@ async def list_memories(skip: int = 0, limit: int = 100):
 
         with open(validated_file) as f:
             data = json.load(f)
-            memories = data.get("validated_memory", [])
+            memories = filter_memories(
+                data.get("validated_memory", []),
+                project_id=project_id,
+                retrieval_scope=retrieval_scope,
+            )
 
         # Pagination
         total = len(memories)
@@ -438,12 +497,16 @@ async def create_memory(memory: MemoryCreate):
     """
     try:
         validator = MemoryValidator(str(vault_path))
-        candidate, issues, is_new = validator.validate_single(
+        candidate, issues, is_new = validator.validate_single_and_append(
             type_=memory.type,
             content=memory.content,
             confidence=memory.confidence,
             source="api",
-            project=memory.project,
+            scope=memory.scope,
+            project=memory.project_label or memory.project,
+            project_id=memory.project_id,
+            project_root=memory.project_root,
+            registry_path=str(project_registry_path(vault_path)),
         )
 
         if not is_new:
@@ -453,12 +516,11 @@ async def create_memory(memory: MemoryCreate):
             return {
                 "memory_id": candidate.get("memory_id"),
                 "status": "duplicate_returned_existing",
+                "scope": candidate.get("scope", memory.scope or "global"),
                 "project": candidate.get("project", memory.project),
+                "project_id": candidate.get("project_id", memory.project_id),
                 "timestamp": datetime.now().isoformat(),
             }
-
-        if not validator.append_validated(candidate):
-            raise HTTPException(status_code=500, detail="Failed to persist memory")
 
         # The graph is a derived projection of validated-memory.json, not
         # an independent store - any write here must propagate or /chat
@@ -473,7 +535,9 @@ async def create_memory(memory: MemoryCreate):
         return {
             "memory_id": candidate.memory_id,
             "status": "created",
+            "scope": candidate.scope,
             "project": candidate.project,
+            "project_id": candidate.project_id,
             "is_approved": candidate.is_approved,
             "quality_score": candidate.quality_score,
             "issues": [issue.description for issue in issues],
@@ -481,6 +545,8 @@ async def create_memory(memory: MemoryCreate):
         }
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.error(f"Create memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -512,69 +578,94 @@ async def get_memory(memory_id: str):
 async def update_memory(memory_id: str, update: MemoryUpdate):
     """Update memory"""
     try:
-        validated_file = vault_path / ".claude/validated-memory.json"
-        with open(validated_file) as f:
-            data = json.load(f)
+        store = MemoryStore(vault_path)
+
+        def mutate(data):
             memories = data.get("validated_memory", [])
+            memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
+            if not memory:
+                raise HTTPException(status_code=404, detail="Memory not found")
 
-        memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
-        if not memory:
-            raise HTTPException(status_code=404, detail="Memory not found")
+            if update.content:
+                memory["content"] = update.content
+            if update.confidence is not None:
+                memory["confidence"] = update.confidence
+            if update.status:
+                memory["status"] = update.status
 
-        # Update fields
-        if update.content:
-            memory["content"] = update.content
-        if update.confidence is not None:
-            memory["confidence"] = update.confidence
-        if update.status:
-            memory["status"] = update.status
+            scope, _project, project_id = infer_memory_scope(memory)
+            memory["scope"] = scope
+            memory["project_id"] = project_id
+            memory["dedup_fingerprint"] = scoped_fingerprint(
+                memory.get("content", ""), scope, project_id, memory.get("type", "")
+            )
+            memory["updated_at"] = datetime.now().isoformat()
+            return memory
 
-        memory["updated_at"] = datetime.now().isoformat()
-
-        # Save back
-        with open(validated_file, 'w') as f:
-            json.dump(data, f, indent=2)
+        memory, persisted = store.transact(
+            mutate,
+            expected_revision=update.expected_revision,
+        )
 
         if cache:
             cache.clear()
         _rebuild_graph()
 
         logger.info(f"Updated memory: {memory_id}")
-        return memory
+        return {**memory, "store_revision": persisted["revision"]}
     except HTTPException:
         raise
+    except MemoryStoreConflict as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "MEMORY_STORE_REVISION_CONFLICT",
+                "expected_revision": e.expected_revision,
+                "actual_revision": e.actual_revision,
+            },
+        )
     except Exception as e:
         logger.error(f"Update memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/memories/{memory_id}")
-async def delete_memory(memory_id: str):
+async def delete_memory(memory_id: str, expected_revision: Optional[int] = Query(default=None, ge=0)):
     """Delete memory (soft delete - mark as deleted)"""
     try:
-        validated_file = vault_path / ".claude/validated-memory.json"
-        with open(validated_file) as f:
-            data = json.load(f)
+        store = MemoryStore(vault_path)
+
+        def mutate(data):
             memories = data.get("validated_memory", [])
+            memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
+            if not memory:
+                raise HTTPException(status_code=404, detail="Memory not found")
+            memory["status"] = "deleted"
+            memory["deleted_at"] = datetime.now().isoformat()
+            return memory
 
-        memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
-        if not memory:
-            raise HTTPException(status_code=404, detail="Memory not found")
-
-        # Soft delete
-        memory["status"] = "deleted"
-        memory["deleted_at"] = datetime.now().isoformat()
-
-        with open(validated_file, 'w') as f:
-            json.dump(data, f, indent=2)
+        _memory, persisted = store.transact(mutate, expected_revision=expected_revision)
 
         if cache:
             cache.clear()
         _rebuild_graph()
 
         logger.info(f"Deleted memory: {memory_id}")
-        return {"status": "deleted", "memory_id": memory_id}
+        return {
+            "status": "deleted",
+            "memory_id": memory_id,
+            "store_revision": persisted["revision"],
+        }
     except HTTPException:
         raise
+    except MemoryStoreConflict as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "MEMORY_STORE_REVISION_CONFLICT",
+                "expected_revision": e.expected_revision,
+                "actual_revision": e.actual_revision,
+            },
+        )
     except Exception as e:
         logger.error(f"Delete memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -604,7 +695,12 @@ async def cache_clear():
 # ============================================================================
 
 @app.get("/digest")
-async def get_digest(days: Optional[int] = None, top_n: int = 5):
+async def get_digest(
+    days: Optional[int] = None,
+    top_n: int = 5,
+    project_id: Optional[str] = None,
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """
     Generate a memory digest: top-ranked, deduped entries per type.
 
@@ -613,7 +709,12 @@ async def get_digest(days: Optional[int] = None, top_n: int = 5):
     """
     try:
         summarizer = MemorySummarizer(str(vault_path))
-        digest = summarizer.generate_digest(days=days, top_n_per_type=top_n)
+        digest = summarizer.generate_digest(
+            days=days,
+            top_n_per_type=top_n,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
         return digest
     except Exception as e:
         logger.error(f"Digest error: {e}")
@@ -640,34 +741,72 @@ async def get_anomalies():
 @app.get("/graph/stats")
 async def graph_stats():
     """Entity/relationship counts in the knowledge graph."""
-    if not graph:
+    if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
-    return graph.stats()
+    return _ensure_graph_current().stats()
 
 @app.get("/graph/entities")
-async def graph_entities(type: Optional[str] = None, name_contains: Optional[str] = None):
+async def graph_entities(
+    type: Optional[str] = None,
+    name_contains: Optional[str] = None,
+    project_id: Optional[str] = None,
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """List entities, optionally filtered by type and/or name substring."""
-    if not graph:
+    if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
-    return {"entities": graph.find_entities(entity_type=type, name_contains=name_contains)}
+    current_graph = _ensure_graph_current()
+    return {
+        "entities": current_graph.find_entities(
+            entity_type=type,
+            name_contains=name_contains,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
+    }
 
 @app.get("/graph/entities/{entity_id}/relationships")
-async def graph_entity_relationships(entity_id: str, direction: str = "both"):
+async def graph_entity_relationships(
+    entity_id: str,
+    direction: str = "both",
+    project_id: Optional[str] = None,
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """Relationships for one entity. direction: out | in | both."""
-    if not graph:
+    if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
-    if graph.get_entity(entity_id) is None:
+    current_graph = _ensure_graph_current()
+    if not current_graph.is_entity_visible(entity_id, project_id, retrieval_scope):
         raise HTTPException(status_code=404, detail="Entity not found")
-    return {"entity_id": entity_id, "relationships": graph.get_relationships(entity_id, direction=direction)}
+    return {
+        "entity_id": entity_id,
+        "relationships": current_graph.get_relationships(
+            entity_id,
+            direction=direction,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        ),
+    }
 
 @app.get("/graph/traverse/{entity_id}")
-async def graph_traverse(entity_id: str, depth: int = 2):
+async def graph_traverse(
+    entity_id: str,
+    depth: int = 2,
+    project_id: Optional[str] = None,
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """Subgraph reachable from an entity within `depth` hops (either direction)."""
-    if not graph:
+    if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
-    if graph.get_entity(entity_id) is None:
+    current_graph = _ensure_graph_current()
+    if not current_graph.is_entity_visible(entity_id, project_id, retrieval_scope):
         raise HTTPException(status_code=404, detail="Entity not found")
-    return graph.traverse(entity_id, max_depth=depth)
+    return current_graph.traverse(
+        entity_id,
+        max_depth=depth,
+        project_id=project_id,
+        retrieval_scope=retrieval_scope,
+    )
 
 @app.post("/graph/rebuild")
 async def graph_rebuild():
@@ -676,7 +815,12 @@ async def graph_rebuild():
         raise HTTPException(status_code=503, detail="Graph not initialized")
     try:
         rebuilt = _rebuild_graph()
-        return {"status": "rebuilt", "stats": rebuilt.stats(), "timestamp": datetime.now().isoformat()}
+        return {
+            "status": "rebuilt",
+            "stats": rebuilt.stats(),
+            "projection": rebuilt.projection_status(),
+            "timestamp": datetime.now().isoformat(),
+        }
     except Exception as e:
         logger.error(f"Graph rebuild error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -684,6 +828,8 @@ async def graph_rebuild():
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User message")
     conversation_id: Optional[str] = None
+    project_id: Optional[str] = None
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
@@ -695,7 +841,13 @@ async def chat(request: ChatRequest):
     if not chat_agent:
         raise HTTPException(status_code=503, detail="Chat agent not initialized")
     try:
-        return chat_agent.chat(request.message, conversation_id=request.conversation_id)
+        _ensure_graph_current()
+        return chat_agent.chat(
+            request.message,
+            conversation_id=request.conversation_id,
+            project_id=request.project_id,
+            retrieval_scope=request.retrieval_scope,
+        )
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

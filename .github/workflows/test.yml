@@ -8,32 +8,12 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
-    services:
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: brain
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: brain_eleven
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v5
@@ -62,6 +42,7 @@ jobs:
         pytest tests/ -v --tb=short -m "not integration"
 
     - name: Run integration tests
+      if: matrix.os == 'ubuntu-latest'
       run: |
         pytest tests/ -v --tb=short -m "integration"
       env:

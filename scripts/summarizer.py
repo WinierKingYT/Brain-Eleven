@@ -23,6 +23,7 @@ from typing import List, Dict, Optional
 from collections import defaultdict
 
 from logging_config import setup_logging
+from memory_scope import filter_memories, infer_memory_scope
 
 logger = setup_logging(__name__)
 
@@ -136,6 +137,8 @@ class MemorySummarizer:
         days: Optional[int] = None,
         top_n_per_type: int = 5,
         statuses: Optional[List[str]] = None,
+        project_id: Optional[str] = None,
+        retrieval_scope: str = "default",
     ) -> Dict:
         """
         Build a full digest.
@@ -147,6 +150,11 @@ class MemorySummarizer:
         """
         statuses = statuses or ["active", "resolved"]
         memories = self.load_memories(statuses=statuses)
+        memories = filter_memories(
+            memories,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
 
         if days is not None:
             cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -170,6 +178,9 @@ class MemorySummarizer:
                         "confidence": m.get("confidence"),
                         "quality_score": m.get("quality_score"),
                         "status": m.get("status"),
+                        "scope": infer_memory_scope(m)[0],
+                        "project": m.get("project", ""),
+                        "project_id": m.get("project_id", infer_memory_scope(m)[2]),
                         "date": self.extract_date(m),
                     }
                     for m in items

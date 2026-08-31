@@ -230,6 +230,26 @@ class TestMemoryCRUD:
         assert response.status_code == 200
         assert response.json()["content"] == "Updated content after PUT"
 
+    def test_update_memory_rejects_stale_expected_revision(self, client):
+        created = client.post("/memories", json={
+            "type": "observation", "content": "CAS original", "confidence": 0.6,
+        })
+        memory_id = created.json()["memory_id"]
+        revision = client.get("/status").json()["store_revision"]
+
+        updated = client.put(
+            f"/memories/{memory_id}",
+            json={"content": "CAS first update", "expected_revision": revision},
+        )
+        assert updated.status_code == 200
+
+        stale = client.put(
+            f"/memories/{memory_id}",
+            json={"content": "CAS stale update", "expected_revision": revision},
+        )
+        assert stale.status_code == 409
+        assert stale.json()["detail"]["code"] == "MEMORY_STORE_REVISION_CONFLICT"
+
     def test_update_missing_memory_returns_404(self, client):
         response = client.put("/memories/does-not-exist", json={"content": "irrelevant"})
 

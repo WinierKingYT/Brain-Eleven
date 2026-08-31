@@ -2,6 +2,7 @@
 """Tests for the cross-project memory capture adapter and opt-in gate."""
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -10,6 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from knowledge_graph import KnowledgeGraph  # noqa: E402
+from project_registry import ProjectRegistry  # noqa: E402
 from remember import (  # noqa: E402
     config_path,
     default_project_id,
@@ -46,7 +48,7 @@ def test_remember_persists_project_and_rebuilds_graph(vault):
     assert graph.get_entity(result["memory_id"]) is not None
 
 
-def test_remember_dedup_keeps_canonical_identity_and_origin(vault):
+def test_remember_dedup_isolated_by_project_namespace(vault):
     first = remember(
         type_="lesson",
         content="The imported project uses deterministic tests",
@@ -54,7 +56,14 @@ def test_remember_dedup_keeps_canonical_identity_and_origin(vault):
         project="project-a",
         vault_path=vault,
     )
-    second = remember(
+    same_project = remember(
+        type_="lesson",
+        content="The imported project uses deterministic tests",
+        confidence=1.0,
+        project="project-a",
+        vault_path=vault,
+    )
+    other_project = remember(
         type_="lesson",
         content="The imported project uses deterministic tests",
         confidence=1.0,
@@ -62,9 +71,12 @@ def test_remember_dedup_keeps_canonical_identity_and_origin(vault):
         vault_path=vault,
     )
 
-    assert second["status"] == "duplicate_returned_existing"
-    assert second["memory_id"] == first["memory_id"]
-    assert second["project"] == "project-a"
+    assert same_project["status"] == "duplicate_returned_existing"
+    assert same_project["memory_id"] == first["memory_id"]
+    assert same_project["project"] == "project-a"
+    assert other_project["status"] == "created"
+    assert other_project["memory_id"] != first["memory_id"]
+    assert other_project["project"] == "project-b"
 
 
 def test_default_project_id_does_not_persist_absolute_path(tmp_path):
@@ -74,14 +86,44 @@ def test_default_project_id_does_not_persist_absolute_path(tmp_path):
     assert default_project_id(project_root) == "private-client-project"
 
 
+def test_remember_uses_registry_identity_after_project_relocation(vault, tmp_path):
+    old_root = tmp_path / "old-project"
+    new_root = tmp_path / "moved-project"
+    old_root.mkdir()
+    new_root.mkdir()
+
+    first = remember(
+        type_="decision",
+        content="The project uses a local cache",
+        confidence=1.0,
+        vault_path=vault,
+        project_root=old_root,
+    )
+    registry = ProjectRegistry(vault)
+    registry.relocate(first["project_id"], new_root)
+
+    second = remember(
+        type_="lesson",
+        content="The project tests run offline",
+        confidence=1.0,
+        vault_path=vault,
+        project_root=new_root,
+    )
+
+    assert second["project_id"] == first["project_id"]
+
+
 def test_opt_in_requires_exact_normalized_absolute_root(tmp_path):
     config = tmp_path / "remember-config.json"
     project = tmp_path / "AllowedProject"
     other = tmp_path / "OtherProject"
     project.mkdir()
     other.mkdir()
+    configured_root = str(project).replace("\\", "/")
+    if os.name == "nt":
+        configured_root = configured_root.upper()
     config.write_text(
-        json.dumps({"proactive_opt_in_projects": [str(project).replace("\\", "/").upper()]}),
+        json.dumps({"proactive_opt_in_projects": [configured_root]}),
         encoding="utf-8",
     )
 

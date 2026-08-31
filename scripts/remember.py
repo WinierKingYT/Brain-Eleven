@@ -19,6 +19,15 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from memory_scope import (
+    GLOBAL_SCOPE,
+    PROJECT_SCOPE,
+    normalize_project_root,
+    project_identity,
+    resolve_capture_scope,
+)
+from project_registry import registry_path as project_registry_path
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_VAULT = SCRIPT_DIR.parent
@@ -49,17 +58,9 @@ def default_vault_path() -> Path:
     return Path(configured).expanduser() if configured else DEFAULT_VAULT
 
 
-def normalize_project_root(project_root: Optional[Union[str, Path]] = None) -> str:
-    """Normalize a project root for safe, platform-aware exact comparison."""
-    root = Path(project_root or Path.cwd()).expanduser()
-    resolved = root.resolve(strict=False)
-    return os.path.normcase(os.path.normpath(str(resolved)))
-
-
 def default_project_id(project_root: Optional[Union[str, Path]] = None) -> str:
     """Return a privacy-preserving project identifier for stored memories."""
-    root = Path(project_root or Path.cwd()).expanduser().resolve(strict=False)
-    return root.name or str(root)
+    return project_identity(project_root)[1]
 
 
 def config_path(vault_path: Union[str, Path]) -> Path:
@@ -106,6 +107,8 @@ def remember(
     project: Optional[str] = None,
     vault_path: Optional[Union[str, Path]] = None,
     project_root: Optional[Union[str, Path]] = None,
+    scope: Optional[str] = None,
+    project_id: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Validate, persist and graph one explicitly requested memory.
 
@@ -123,17 +126,25 @@ def remember(
         raise ValueError("confidence must be between 0.0 and 1.0")
 
     vault = Path(vault_path).expanduser() if vault_path else default_vault_path()
-    project_id = str(project).strip() if project is not None else default_project_id(project_root)
-    if not project_id:
-        raise ValueError("project must not be empty")
+    resolved_scope, project_label, resolved_project_id = resolve_capture_scope(
+        scope=scope,
+        project=project or "",
+        project_id=project_id or "",
+        project_root=project_root,
+        registry_path=project_registry_path(vault),
+        default_to_project=scope is None,
+    )
 
     validator = MemoryValidator(str(vault))
-    candidate, issues, is_new = validator.validate_single(
+    candidate, issues, is_new = validator.validate_single_and_append(
         type_=normalized_type,
         content=normalized_content,
         confidence=confidence,
         source="remember",
-        project=project_id,
+        scope=resolved_scope,
+        project=project_label,
+        project_id=resolved_project_id,
+        registry_path=str(project_registry_path(vault)),
     )
 
     if not is_new:
@@ -141,12 +152,11 @@ def remember(
             "memory_id": candidate.get("memory_id"),
             "status": "duplicate_returned_existing",
             "is_new": False,
-            "project": candidate.get("project", project_id),
+            "scope": candidate.get("scope", resolved_scope),
+            "project": candidate.get("project", project_label),
+            "project_id": candidate.get("project_id", resolved_project_id),
             "issues": [],
         }
-
-    if not validator.append_validated(candidate):
-        raise RuntimeError("Failed to persist memory atomically")
 
     # Keep the graph as a derived projection, exactly like the API path.
     rebuilt_graph = EntityExtractor(str(vault)).build_graph()
@@ -154,7 +164,9 @@ def remember(
         "memory_id": candidate.memory_id,
         "status": "created",
         "is_new": True,
+        "scope": candidate.scope,
         "project": candidate.project,
+        "project_id": candidate.project_id,
         "is_approved": candidate.is_approved,
         "quality_score": candidate.quality_score,
         "issues": [issue.description for issue in issues],
@@ -166,7 +178,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Capture one memory in Brain-Eleven")
     parser.add_argument("--vault", default=None, help="Brain-Eleven vault path")
     parser.add_argument("--project-root", default=None, help="Current project root used for default project ID")
-    parser.add_argument("--project", default=None, help="Stored project identifier; defaults to project directory name")
+    parser.add_argument("--project", default=None, help="Display project label; defaults to project directory name")
+    parser.add_argument("--project-id", default=None, help="Opaque project namespace ID")
+    parser.add_argument("--scope", choices=(GLOBAL_SCOPE, PROJECT_SCOPE), default=None)
     parser.add_argument("--type", dest="type_", help="Memory type: decision, lesson, open_loop, observation")
     parser.add_argument("--content", help="Memory content")
     parser.add_argument("--confidence", type=float, default=0.7)
@@ -201,6 +215,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         content=args.content,
         confidence=args.confidence,
         project=args.project,
+        project_id=args.project_id,
+        scope=args.scope,
         vault_path=vault,
         project_root=project_root,
     )

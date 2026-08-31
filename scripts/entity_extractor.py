@@ -29,7 +29,9 @@ from pathlib import Path
 from typing import List, Dict, Tuple
 
 from logging_config import setup_logging
-from knowledge_graph import KnowledgeGraph
+from knowledge_graph import KnowledgeGraph, KnowledgeGraphProjectionStale
+from memory_scope import infer_memory_scope
+from memory_store import MemoryStore
 
 logger = setup_logging(__name__)
 
@@ -57,6 +59,10 @@ TECH_LEXICON: Dict[str, List[str]] = {
 PHASE_PATTERN = re.compile(r"\bphase\s+(\d+)\b", re.IGNORECASE)
 
 
+class ProjectionInvariantError(RuntimeError):
+    """Raised when a graph projection cannot be proven to match the store."""
+
+
 def _slugify(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
@@ -67,8 +73,17 @@ class EntityExtractor:
     def __init__(self, vault_path: str = "."):
         self.vault_path = Path(vault_path)
         self.memory_file = self.vault_path / ".claude" / "validated-memory.json"
+        self.store = MemoryStore(self.vault_path)
 
-    def load_memories(self) -> List[Dict]:
+    @staticmethod
+    def _eligible_memories(data: Dict) -> List[Dict]:
+        memories = data.get("validated_memory", [])
+        return [
+            m for m in memories
+            if m.get("status", "active") == "active" and m.get("is_approved", False)
+        ]
+
+    def load_memories(self, data: Dict = None) -> List[Dict]:
         """
         Load memories eligible for the graph: active status AND approved.
 
@@ -80,15 +95,74 @@ class EntityExtractor:
         poisoning problem Phase 5 was built to close, just at the graph
         layer instead of the retriever layer.
         """
-        if not self.memory_file.exists():
-            return []
-        with open(self.memory_file, encoding="utf-8") as f:
-            data = json.load(f)
-        memories = data.get("validated_memory", [])
-        return [
-            m for m in memories
-            if m.get("status", "active") == "active" and m.get("is_approved", False)
-        ]
+        snapshot = self.store.load() if data is None else data
+        return self._eligible_memories(snapshot)
+
+    def validate_projection(
+        self, graph: KnowledgeGraph, canonical: Dict = None
+    ) -> Dict:
+        """Check that graph memory nodes and project provenance match the store."""
+        snapshot = self.store.load() if canonical is None else canonical
+        eligible = {
+            memory.get("memory_id"): memory
+            for memory in self._eligible_memories(snapshot)
+            if memory.get("memory_id")
+        }
+        memory_nodes = {
+            node_id: data
+            for node_id, data in graph.graph.nodes(data=True)
+            if data.get("entity_kind") == "memory"
+        }
+        errors = []
+        missing = sorted(set(eligible) - set(memory_nodes))
+        unexpected = sorted(set(memory_nodes) - set(eligible))
+        if missing:
+            errors.append(f"Missing eligible memory nodes: {', '.join(missing)}")
+        if unexpected:
+            errors.append(f"Unexpected or ineligible memory nodes: {', '.join(unexpected)}")
+
+        for memory_id in memory_nodes:
+            memory = eligible.get(memory_id)
+            if not memory:
+                continue
+            scope, _project_label, project_id = infer_memory_scope(memory)
+            if scope != "project" or not project_id:
+                continue
+            belongs_to = graph.get_relationships(
+                memory_id, direction="out", rel_type="BELONGS_TO", retrieval_scope="all"
+            )
+            matching = [
+                edge for edge in belongs_to
+                if graph.graph.nodes.get(edge["target"], {}).get("project_id") == project_id
+            ]
+            if len(matching) != 1:
+                errors.append(
+                    f"Project memory {memory_id} must have exactly one BELONGS_TO "
+                    f"edge for project {project_id}"
+                )
+
+        projection = graph.projection_status(current_revision=int(snapshot.get("revision", 0)))
+        if projection["status"] != "fresh":
+            errors.append(
+                f"Graph projection status is {projection['status']}, expected fresh"
+            )
+
+        return {
+            "valid": not errors,
+            "errors": errors,
+            "canonical_revision": int(snapshot.get("revision", 0)),
+            "graph_memory_nodes": len(memory_nodes),
+            "eligible_memories": len(eligible),
+            "projection": projection,
+        }
+
+    def assert_projection_consistent(
+        self, graph: KnowledgeGraph, canonical: Dict = None
+    ) -> Dict:
+        report = self.validate_projection(graph, canonical=canonical)
+        if not report["valid"]:
+            raise ProjectionInvariantError("; ".join(report["errors"]))
+        return report
 
     @staticmethod
     def find_technologies(content: str) -> List[str]:
@@ -112,17 +186,40 @@ class EntityExtractor:
         memory_id = memory.get("memory_id")
         content = memory.get("content", "")
         mem_type = memory.get("type", "unknown")
+        scope, project_label, project_id = infer_memory_scope(memory)
 
         if not memory_id or not content:
             return (0, 0)
 
         graph.add_entity(
             memory_id, mem_type.upper(), content[:80],
+            entity_kind="memory",
             confidence=memory.get("confidence"),
             status=memory.get("status"),
+            scope=scope,
+            project=project_label,
+            project_id=project_id,
         )
         entities_added = 1
         relationships_added = 0
+
+        if scope == "project" and project_id:
+            project_entity_id = f"project_{project_id}"
+            graph.add_entity(
+                project_entity_id,
+                "PROJECT",
+                project_label or project_id,
+                entity_kind="project",
+                project_id=project_id,
+            )
+            graph.add_relationship(
+                memory_id,
+                "BELONGS_TO",
+                project_entity_id,
+                source_memory=memory_id,
+            )
+            entities_added += 1
+            relationships_added += 1
 
         # Always MENTIONS, never USES/DEPENDS_ON/etc: a lexicon+regex match
         # can't tell "we adopted Redis" from "we decided against Redis" -
@@ -134,14 +231,14 @@ class EntityExtractor:
         # (yet) a graph of asserted facts.
         for tech in self.find_technologies(content):
             tech_id = f"tech_{_slugify(tech)}"
-            graph.add_entity(tech_id, "TECHNOLOGY", tech)
+            graph.add_entity(tech_id, "TECHNOLOGY", tech, entity_kind="technology")
             graph.add_relationship(memory_id, "MENTIONS", tech_id, source_memory=memory_id)
             entities_added += 1
             relationships_added += 1
 
         for phase_num in self.find_phase_references(content):
             phase_id = f"phase_{phase_num}"
-            graph.add_entity(phase_id, "PHASE", f"Phase {phase_num}")
+            graph.add_entity(phase_id, "PHASE", f"Phase {phase_num}", entity_kind="phase")
             graph.add_relationship(memory_id, "RELATES_TO", phase_id, source_memory=memory_id)
             entities_added += 1
             relationships_added += 1
@@ -162,7 +259,9 @@ class EntityExtractor:
         """
         graph = graph if graph is not None else KnowledgeGraph(str(self.vault_path))
         graph.clear()
-        memories = self.load_memories()
+        snapshot = self.store.load()
+        source_revision = int(snapshot["revision"])
+        memories = self.load_memories(snapshot)
 
         total_entities, total_relationships = 0, 0
         for memory in memories:
@@ -176,8 +275,21 @@ class EntityExtractor:
             f"{graph.stats()['total_relationships']} relationships"
         )
 
+        # A rebuild must not publish a projection built from an obsolete
+        # snapshot. The canonical store transaction boundary guarantees the
+        # revision check is meaningful even when another process writes here.
+        current_revision = self.store.revision()
+        if current_revision != source_revision:
+            raise KnowledgeGraphProjectionStale(
+                "Canonical memory store changed during graph rebuild: "
+                f"started at revision {source_revision}, now {current_revision}"
+            )
+
+        graph.mark_projection(source_revision)
+        self.assert_projection_consistent(graph, canonical=snapshot)
+
         if save:
-            graph.save()
+            graph.save(source_memory_revision=source_revision)
 
         return graph
 

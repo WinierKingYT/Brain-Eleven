@@ -13,11 +13,12 @@ Pipeline:
   Retriever skips these on next search
 """
 
-import json
 import sys
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
+
+from memory_store import MemoryStore
 
 
 class MemoryLifecycleManager:
@@ -26,18 +27,17 @@ class MemoryLifecycleManager:
     def __init__(self, vault_path: str):
         self.vault_path = Path(vault_path)
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
+        self.store = MemoryStore(self.vault_path)
         self.memories = []
+        self.store_document = self.store.empty_document()
+        self.store_revision = 0
         self._load_memories()
 
     def _load_memories(self):
         """Load validated memories"""
-        if not self.validated_json.exists():
-            print("⚠️  validated-memory.json not found")
-            return
-
-        with open(self.validated_json, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
+        data = self.store.load()
+        self.store_document = data
+        self.store_revision = data["revision"]
         self.memories = data.get("validated_memory", [])
 
     def list_active(self) -> List[Dict]:
@@ -169,51 +169,15 @@ class MemoryLifecycleManager:
         return chain
 
     def save(self):
-        """Save updated memories with atomic persistence"""
-
-        import tempfile
-        import shutil
-
-        # Read current data
-        with open(self.validated_json, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
+        """Save through the canonical store with an optimistic revision check."""
+        data = dict(self.store_document)
         data["validated_memory"] = self.memories
         data["last_updated"] = datetime.now().isoformat()
-
-        # Atomic write: temp → validate → rename
-        try:
-            temp_fd, temp_path = tempfile.mkstemp(
-                dir=self.validated_json.parent,
-                prefix='.tmp_',
-                suffix='.json'
-            )
-
-            with open(temp_fd, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-
-            # Validate
-            with open(temp_path, 'r', encoding='utf-8') as f:
-                validate_data = json.load(f)
-
-            if "validated_memory" not in validate_data:
-                raise ValueError("Invalid structure")
-
-            # Atomic rename
-            if self.validated_json.exists():
-                backup = self.validated_json.with_suffix('.backup.json')
-                shutil.copy2(self.validated_json, backup)
-
-            shutil.move(temp_path, self.validated_json)
-            print(f"✅ Atomically saved to {self.validated_json}")
-
-        except Exception as e:
-            print(f"❌ Atomic save failed: {e}")
-            try:
-                if Path(temp_path).exists():
-                    Path(temp_path).unlink()
-            except:
-                pass
+        persisted = self.store.replace(data, expected_revision=self.store_revision)
+        self.store_document = persisted
+        self.store_revision = persisted["revision"]
+        self.memories = persisted.get("validated_memory", [])
+        print(f"✅ Atomically saved to {self.validated_json} (revision {self.store_revision})")
 
 
 # ============================================================================

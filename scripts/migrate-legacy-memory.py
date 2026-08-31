@@ -7,10 +7,11 @@ Mission: Convert legacy validated-memory.json records
 to use real ULID + fingerprint dedup keys
 """
 
-import json
-import hashlib
 from pathlib import Path
 from datetime import datetime
+
+from memory_scope import infer_memory_scope, scoped_fingerprint
+from memory_store import MemoryStore
 
 try:
     from ulid import ULID
@@ -23,58 +24,48 @@ except ImportError:
             return self.value
 
 
-def compute_fingerprint(content: str) -> str:
-    """Compute SHA256 fingerprint for content"""
-    normalized = ' '.join(content.lower().split())
-    return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+def compute_fingerprint(content: str, type_: str = "") -> str:
+    """Compute the current type-aware global fingerprint."""
+    return scoped_fingerprint(content, "global", "", type_)
 
 
 def migrate_legacy_memory(vault_path: str):
     """Migrate legacy validated-memory.json to new ID system"""
 
-    validated_json = Path(vault_path) / ".claude/validated-memory.json"
-    backup_file = Path(vault_path) / ".claude/validated-memory.backup.json"
+    store = MemoryStore(vault_path)
+    validated_json = store.path
+    backup_file = store.backup_path
 
     if not validated_json.exists():
         print("⚠️  validated-memory.json not found")
         return 0
 
-    # Create backup
-    with open(validated_json, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    def mutate(data):
+        migrated_count = 0
+        for bucket in ("validated_memory", "rejected_memory"):
+            for memory in data.get(bucket, []):
+                if not memory.get("memory_id"):
+                    memory["memory_id"] = str(ULID())
+                    migrated_count += 1
 
-    with open(backup_file, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+                scope, _project, project_id = infer_memory_scope(memory)
+                memory.setdefault("scope", scope)
+                if scope == "project":
+                    memory.setdefault("project_id", project_id)
+                    memory.setdefault("project_label", memory.get("project", project_id))
+                if not memory.get("dedup_fingerprint"):
+                    memory["dedup_fingerprint"] = scoped_fingerprint(
+                        memory.get("content", ""), scope, project_id, memory.get("type", "")
+                    )
+                if not memory.get("source_id"):
+                    memory["source_id"] = f"daily:{memory.get('section', 'unknown')}:{memory.get('id', 0)}"
+                memory.setdefault("id", -1)
 
-    print(f"✓ Backup created: {backup_file}")
+        data["migrated_at"] = datetime.now().isoformat()
+        data["migration_version"] = "1.0"
+        return migrated_count
 
-    # Migrate memories
-    migrated_count = 0
-    for memory in data.get("validated_memory", []):
-        # Assign new memory_id if missing
-        if not memory.get("memory_id"):
-            memory["memory_id"] = str(ULID())
-            migrated_count += 1
-
-        # Compute fingerprint if missing
-        if not memory.get("dedup_fingerprint"):
-            memory["dedup_fingerprint"] = compute_fingerprint(memory["content"])
-
-        # Assign source_id if missing (fallback)
-        if not memory.get("source_id"):
-            memory["source_id"] = f"daily:{memory.get('section', 'unknown')}:{memory.get('id', 0)}"
-
-        # Keep integer id for backward compat but mark as deprecated
-        if "id" not in memory:
-            memory["id"] = -1  # deprecated marker
-
-    # Update metadata
-    data["migrated_at"] = datetime.now().isoformat()
-    data["migration_version"] = "1.0"
-
-    # Save migrated version
-    with open(validated_json, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    migrated_count, _persisted = store.transact(mutate)
 
     print(f"✓ Migration complete")
     print(f"  → {migrated_count} memories assigned new IDs")

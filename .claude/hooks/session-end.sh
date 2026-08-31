@@ -8,6 +8,7 @@
 set -e
 
 BRAIN_ELEVEN_PATH="${HOME}/Documents/Brain-Eleven"
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
 # Colors
@@ -88,7 +89,9 @@ CONTEXT_BOOTSTRAP="${BRAIN_ELEVEN_PATH}/.claude/context-bootstrap.json"
 
 if [ -f "$CONTEXT_COMPILER" ]; then
     log "Compiling context bootstrap..."
-    PYTHONIOENCODING=utf-8 python3 "$CONTEXT_COMPILER" > /dev/null 2>&1 || true
+    PYTHONIOENCODING=utf-8 python3 "$CONTEXT_COMPILER" \
+        --vault "$BRAIN_ELEVEN_PATH" \
+        --project-root "$PROJECT_ROOT" > /dev/null 2>&1 || true
 
     if [ -f "$CONTEXT_BOOTSTRAP" ]; then
         log_ok "Context bootstrap ready"

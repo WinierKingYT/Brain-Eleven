@@ -25,6 +25,15 @@ from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple
 from enum import Enum
 
+from memory_scope import (
+    GLOBAL_SCOPE,
+    fingerprint_aliases,
+    infer_memory_scope,
+    resolve_capture_scope,
+    scoped_fingerprint,
+)
+from memory_store import MemoryStore, no_change
+
 try:
     from ulid import ULID
 except ImportError:
@@ -63,9 +72,6 @@ class ValidatedMemory:
     content: str = ""
     confidence: float = 0.0
     source: str = ""
-    # Origin label for cross-project capture. Keep this as a caller-supplied
-    # identifier rather than persisting an absolute filesystem path.
-    project: str = ""
     timestamp: str = ""
     related_notes: List[str] = field(default_factory=list)
     section: str = ""
@@ -84,6 +90,12 @@ class ValidatedMemory:
     superseded_by: str = ""  # ULID of memory that superseded this one
     supersession_note: str = ""  # Why was it superseded?
     dedup_fingerprint: str = ""  # SHA256 for dedup
+    # Scope-aware provenance. ``project`` is a display label; ``project_id``
+    # is the opaque namespace key. Absolute paths are never persisted.
+    scope: str = GLOBAL_SCOPE
+    project: str = ""
+    project_label: str = ""
+    project_id: str = ""
 
     def to_dict(self):
         return {
@@ -97,6 +109,7 @@ class MemoryValidator:
 
     def __init__(self, vault_path: str):
         self.vault_path = Path(vault_path)
+        self.store = MemoryStore(self.vault_path)
         self.compiled_json = self.vault_path / ".claude/compiled-memory.json"
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.existing_memory = self._load_existing_memory()
@@ -152,14 +165,12 @@ class MemoryValidator:
 
     def _load_prior_validated(self) -> Dict[str, any]:
         """Load existing validated-memory.json (cumulative long-term store)"""
+        return self.store.load()
 
-        if not self.validated_json.exists():
-            return {"validated_memory": [], "metadata": {}}
-
-        with open(self.validated_json, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
-        return data
+    def _reload_persisted_state(self) -> None:
+        """Reload store-dependent state after acquiring the writer lock."""
+        self.existing_memory = self._load_existing_memory()
+        self.prior_validated = self._load_prior_validated()
 
     # ========================================================================
     # MERGE: Cumulative Memory Store
@@ -190,11 +201,29 @@ class MemoryValidator:
         for bucket in ("validated_memory", "rejected_memory"):
             for mem in self.prior_validated.get(bucket, []):
                 fp = mem.get("dedup_fingerprint")
-                if not fp or mem.get("status") == "superseded":
+                if mem.get("status") == "superseded":
                     continue
-                incumbent = canonical.get(fp)
-                if incumbent is None or mem.get("timestamp", "") < incumbent.get("timestamp", ""):
-                    canonical[fp] = mem
+                aliases = []
+                if fp:
+                    aliases.append(fp)
+                if mem.get("content"):
+                    scope, _, project_id = infer_memory_scope(mem)
+                    current_fp = scoped_fingerprint(
+                        mem["content"], scope, project_id, mem.get("type", "")
+                    )
+                    aliases.append(current_fp)
+                    # Legacy records used content-only or scope-only keys.
+                    # Keep those aliases only when the stored key is not the
+                    # current type-aware key, preventing new cross-type merges.
+                    if fp != current_fp:
+                        aliases.extend(fingerprint_aliases(
+                            mem["content"], mem.get("type", ""), scope, project_id,
+                            include_legacy=True,
+                        )[1:])
+                for alias in aliases:
+                    incumbent = canonical.get(alias)
+                    if incumbent is None or mem.get("timestamp", "") < incumbent.get("timestamp", ""):
+                        canonical[alias] = mem
         return canonical
 
     def _merge_with_prior(self, new_candidates: List[ValidatedMemory]) -> List[ValidatedMemory]:
@@ -231,20 +260,52 @@ class MemoryValidator:
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
                 new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.scope = prior.get("scope", new_mem.scope)
                 new_mem.project = prior.get("project", new_mem.project)
+                new_mem.project_label = prior.get("project_label", new_mem.project_label or new_mem.project)
+                new_mem.project_id = prior.get("project_id", new_mem.project_id)
                 new_mem.superseded_by = prior.get("superseded_by", "")
                 new_mem.supersession_note = prior.get("supersession_note", "")
 
             # Check if fingerprint exists (content unchanged, same memory)
-            elif new_mem.dedup_fingerprint in prior_by_fingerprint:
-                prior = prior_by_fingerprint[new_mem.dedup_fingerprint]
+            else:
+                prior = next(
+                    (
+                        prior_by_fingerprint[alias]
+                        for alias in fingerprint_aliases(
+                            new_mem.content,
+                            new_mem.type,
+                            new_mem.scope,
+                            new_mem.project_id,
+                            include_legacy=True,
+                        )
+                        if alias in prior_by_fingerprint
+                    ),
+                    None,
+                )
+            if prior is not None:
                 # Use prior's memory_id (stable identity)
                 new_mem.memory_id = prior.get("memory_id", new_mem.memory_id)
+                legacy_aliases = fingerprint_aliases(
+                    new_mem.content,
+                    new_mem.type,
+                    new_mem.scope,
+                    new_mem.project_id,
+                    include_legacy=True,
+                )[1:]
+                if prior.get("dedup_fingerprint") in legacy_aliases:
+                    # Preserve a legacy key until the explicit migration runs;
+                    # this avoids minting a second identity during a rolling
+                    # upgrade of an existing store.
+                    new_mem.dedup_fingerprint = prior["dedup_fingerprint"]
                 new_mem.status = prior.get("status", "active")
                 new_mem.resolved_at = prior.get("resolved_at", "")
                 new_mem.resolved_by = prior.get("resolved_by", "")
                 new_mem.resolution_note = prior.get("resolution_note", "")
+                new_mem.scope = prior.get("scope", new_mem.scope)
                 new_mem.project = prior.get("project", new_mem.project)
+                new_mem.project_label = prior.get("project_label", new_mem.project_label or new_mem.project)
+                new_mem.project_id = prior.get("project_id", new_mem.project_id)
                 new_mem.superseded_by = prior.get("superseded_by", "")
                 new_mem.supersession_note = prior.get("supersession_note", "")
 
@@ -272,7 +333,10 @@ class MemoryValidator:
                     content=mem["content"],
                     confidence=mem["confidence"],
                     source=mem["source"],
+                    scope=mem.get("scope", infer_memory_scope(mem)[0]),
                     project=mem.get("project", ""),
+                    project_label=mem.get("project_label", mem.get("project", "")),
+                    project_id=mem.get("project_id", infer_memory_scope(mem)[2]),
                     timestamp=mem["timestamp"],
                     related_notes=mem.get("related_notes", []),
                     section=mem.get("section", ""),
@@ -309,7 +373,14 @@ class MemoryValidator:
         for i, candidate in enumerate(data.get("candidates", [])):
             # Generate immutable ID and fingerprint
             memory_id = candidate.get("memory_id", str(ULID()))
-            fingerprint = self._compute_fingerprint(candidate["content"])
+            scope, project, project_id = resolve_capture_scope(
+                scope=candidate.get("scope"),
+                project=candidate.get("project", ""),
+                project_id=candidate.get("project_id", ""),
+            )
+            fingerprint = self._compute_fingerprint(
+                candidate["content"], scope, project_id, candidate.get("type", "")
+            )
 
             validated = ValidatedMemory(
                 memory_id=memory_id,
@@ -319,7 +390,10 @@ class MemoryValidator:
                 content=candidate["content"],
                 confidence=candidate["confidence"],
                 source=candidate["source"],
-                project=candidate.get("project", ""),
+                scope=scope,
+                project=project,
+                project_label=project,
+                project_id=project_id,
                 timestamp=candidate["timestamp"],
                 related_notes=candidate.get("related_notes", []),
                 section=candidate.get("section", ""),
@@ -336,12 +410,15 @@ class MemoryValidator:
 
         return len(self.candidates)
 
-    def _compute_fingerprint(self, content: str) -> str:
-        """Compute SHA256 fingerprint for content (dedup key)"""
-        import hashlib
-        # Normalize: lowercase, strip whitespace, remove punctuation
-        normalized = ' '.join(content.lower().split())
-        return hashlib.sha256(normalized.encode()).hexdigest()[:16]
+    def _compute_fingerprint(
+        self,
+        content: str,
+        scope: str = GLOBAL_SCOPE,
+        project_id: str = "",
+        type_: str = "",
+    ) -> str:
+        """Compute a type- and scope-aware SHA256 dedup key."""
+        return scoped_fingerprint(content, scope, project_id, type_)
 
     # ========================================================================
     # VALIDATION: Conflict Detection
@@ -358,6 +435,8 @@ class MemoryValidator:
 
         for i, d1 in enumerate(decisions):
             for d2 in decisions[i+1:]:
+                if d1.scope != d2.scope or d1.project_id != d2.project_id:
+                    continue
                 conflict = self._check_contradiction(d1, d2)
                 if conflict:
                     conflicts.append(conflict)
@@ -372,6 +451,9 @@ class MemoryValidator:
 
         for new_decision in decisions:
             for prior_decision in prior_decisions:
+                prior_scope, _, prior_project_id = infer_memory_scope(prior_decision)
+                if new_decision.scope != prior_scope or new_decision.project_id != prior_project_id:
+                    continue
                 conflict = self._check_contradiction_cross_history(new_decision, prior_decision)
                 if conflict:
                     conflicts.append(conflict)
@@ -701,6 +783,10 @@ class MemoryValidator:
         confidence: float = 0.7,
         source: str = "api",
         project: str = "",
+        scope: Optional[str] = None,
+        project_id: str = "",
+        project_root: Optional[str] = None,
+        registry_path: Optional[str] = None,
     ) -> Tuple["ValidatedMemory", List[ValidationIssue], bool]:
         """
         Validate one ad-hoc candidate through the same fingerprint-dedup,
@@ -715,15 +801,25 @@ class MemoryValidator:
         - is_new=True means `memory` is a new ValidatedMemory the caller
           should persist via append_validated().
         """
-        fingerprint = self._compute_fingerprint(content)
+        scope, project, project_id = resolve_capture_scope(
+            scope=scope,
+            project=project,
+            project_id=project_id,
+            project_root=project_root,
+            registry_path=registry_path,
+        )
+        fingerprint = self._compute_fingerprint(content, scope, project_id, type_)
 
         # Same canonical fingerprint -> memory_id resolver the batch merge
         # uses: scans validated_memory AND rejected_memory across the whole
         # persisted store and returns the earliest record for the fingerprint,
         # so a repeat POST never mints a second ULID for existing content.
         canonical_by_fingerprint = self._canonical_by_fingerprint()
-        if fingerprint in canonical_by_fingerprint:
-            return canonical_by_fingerprint[fingerprint], [], False
+        for alias in fingerprint_aliases(
+            content, type_, scope, project_id, include_legacy=True
+        ):
+            if alias in canonical_by_fingerprint:
+                return canonical_by_fingerprint[alias], [], False
 
         candidate = ValidatedMemory(
             memory_id=str(ULID()),
@@ -733,7 +829,10 @@ class MemoryValidator:
             content=content,
             confidence=confidence,
             source=source,
+            scope=scope,
             project=project,
+            project_label=project,
+            project_id=project_id,
             timestamp=datetime.now().isoformat(),
             related_notes=[],
             section=type_.upper(),
@@ -756,12 +855,39 @@ class MemoryValidator:
 
         return candidate, candidate.issues, True
 
-    def append_validated(self, candidate: "ValidatedMemory") -> bool:
-        """Atomically append one new (already-validated) memory to the store."""
+    def validate_single_and_append(self, **kwargs):
+        """Validate and append one candidate in a lost-update-safe transaction."""
+        def mutate(data):
+            self.prior_validated = data
+            self.existing_memory = self._load_existing_memory()
+            candidate, issues, is_new = self.validate_single(**kwargs)
+            if not is_new:
+                return no_change((candidate, issues, is_new))
+            data.setdefault("validated_memory", []).append(candidate.to_dict())
+            self.prior_validated = data
+            return candidate, issues, is_new
+
+        result, _persisted = self.store.transact(mutate)
+        return result
+
+    def _append_validated_unlocked(self, candidate: "ValidatedMemory") -> bool:
         memories = self.prior_validated.get("validated_memory", [])
         memories.append(candidate.to_dict())
         self.prior_validated["validated_memory"] = memories
-        return self._atomic_write(self.validated_json, self.prior_validated)
+        return True
+
+    def append_validated(self, candidate: "ValidatedMemory") -> bool:
+        """Atomically append one new (already-validated) memory to the store."""
+        def mutate(data):
+            self.prior_validated = data
+            self.existing_memory = self._load_existing_memory()
+            if candidate.dedup_fingerprint in self._canonical_by_fingerprint():
+                return no_change(False)
+            data.setdefault("validated_memory", []).append(candidate.to_dict())
+            return True
+
+        result, _persisted = self.store.transact(mutate)
+        return result
 
     def save_output(self, output_file: str = None) -> str:
         """Save validation results with atomic persistence"""
@@ -769,21 +895,29 @@ class MemoryValidator:
         if output_file is None:
             output_file = str(self.vault_path / ".claude/validated-memory.json")
 
-        output = self.validate_all()
-
-        # Use atomic write (temp + validate + rename)
         output_path = Path(output_file)
-        if not self._atomic_write(output_path, output):
-            print(f"❌ Failed to atomically persist {output_file}")
+        if output_path.resolve() != self.validated_json.resolve():
+            self._reload_persisted_state()
+            output = self.validate_all()
+            self._atomic_write(output_path, output)
             return output_file
 
-        # Also save prior compilation for next validation (also atomic)
+        def mutate(data):
+            self.prior_validated = data
+            self.existing_memory = self._load_existing_memory()
+            output = self.validate_all()
+            data.clear()
+            data.update(output)
+            return output
+
+        output, _persisted = self.store.transact(mutate)
+
+        # Also save prior compilation for next validation (a derived artifact).
         prior_file = Path(self.vault_path / ".claude/compiled-memory-prior.json")
         prior_output = {
             "compiled_at": output.get("validated_at"),
             "candidates": output.get("validated_memory", [])
         }
-
         self._atomic_write(prior_file, prior_output, validate_structure=False)
         print(f"💾 Also saved prior: {prior_file}")
 

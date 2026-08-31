@@ -18,7 +18,9 @@ import re
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+
+from memory_scope import filter_memories
 
 
 @dataclass
@@ -33,6 +35,7 @@ class SearchResult:
     freshness: float
     priority: float
     combined_score: float  # Final ranking score
+    memory_id: str = ""
 
 
 class MemoryRetriever:
@@ -99,12 +102,24 @@ class MemoryRetriever:
         except:
             return 0.5
 
-    def search(self, query: str, limit: int = 5) -> List[SearchResult]:
+    def search(
+        self,
+        query: str,
+        limit: int = 5,
+        memories: List[Dict] = None,
+        project_id: Optional[str] = None,
+        retrieval_scope: str = "default",
+    ) -> List[SearchResult]:
         """Search and rank memories (with query relevance filtering)"""
 
         results = []
+        corpus = filter_memories(
+            memories if memories is not None else self.memories,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
 
-        for memory in self.memories:
+        for memory in corpus:
             # Skip inactive memories (prevents memory poisoning)
             status = memory.get("status", "active")
             if status != "active":
@@ -140,7 +155,8 @@ class MemoryRetriever:
                 similarity=sim,
                 freshness=fresh,
                 priority=priority,
-                combined_score=combined
+                combined_score=combined,
+                memory_id=memory.get("memory_id", "")
             ))
 
         # Sort by combined score
@@ -148,12 +164,22 @@ class MemoryRetriever:
 
         return results[:limit]
 
-    def get_by_type(self, memory_type: str, limit: int = 5) -> List[SearchResult]:
+    def get_by_type(
+        self,
+        memory_type: str,
+        limit: int = 5,
+        project_id: Optional[str] = None,
+        retrieval_scope: str = "default",
+    ) -> List[SearchResult]:
         """Get top memories of a specific type"""
 
         results = []
 
-        for memory in self.memories:
+        for memory in filter_memories(
+            self.memories,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        ):
             if memory["type"] != memory_type:
                 continue
 
@@ -174,7 +200,8 @@ class MemoryRetriever:
                 similarity=1.0,  # Type match
                 freshness=fresh,
                 priority=1.0,
-                combined_score=(conf * 0.6) + (fresh * 0.4)
+                combined_score=(conf * 0.6) + (fresh * 0.4),
+                memory_id=memory.get("memory_id", ""),
             ))
 
         results.sort(key=lambda r: r.combined_score, reverse=True)

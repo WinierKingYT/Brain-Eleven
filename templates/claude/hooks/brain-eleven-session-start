@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Brain-Eleven global SessionStart integration.
+# Retrieval is project-aware: current project + global memories only.
+
+set -u
+
+BRAIN_ELEVEN_VAULT="${BRAIN_ELEVEN_VAULT:-{{VAULT_PATH}}}"
+COMPILER="$BRAIN_ELEVEN_VAULT/scripts/context-compiler.py"
+
+if [ ! -f "$COMPILER" ]; then
+    exit 0
+fi
+
+# Compile to stdout for the current project. This is read-only with respect to
+# the canonical store and avoids applying one project's bootstrap to another.
+PYTHONIOENCODING=utf-8 python "$COMPILER" \
+    --vault "$BRAIN_ELEVEN_VAULT" \
+    --project-root "$PWD" \
+    --retrieval-scope default \
+    --stdout 2>/dev/null || true
+
+exit 0

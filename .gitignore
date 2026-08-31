@@ -15,14 +15,19 @@
 .claude/compiled-memory-prior.json
 .claude/compiled-memory-prior.backup.json
 .claude/validated-memory.json
+.claude/validated-memory.json.lock
 .claude/validated-memory.backup.json
+.claude/validated-memory.json.pre-scope-*.bak
 .claude/remember-config.json
+.claude/project-registry.json
+.claude/project-registry.json.lock
 .claude/context-bootstrap.json
 .claude/search-results.json
 .claude/hook-execution.log
 .claude/prompt-counter-state.json
 .claude/checkpoints/
 .claude/knowledge-graph.json
+.claude/knowledge-graph.backup.json
 .claude/embeddings.json
 .claude/session-maintenance-report.json
 

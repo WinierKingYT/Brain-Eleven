@@ -40,14 +40,42 @@ else
     echo "   ℹ️  No validated memories yet (Memory Validator not run)"
 fi
 
+# Step 2.5: Consume the compiled bootstrap produced by SessionEnd. The
+# compiler applies the current project's retrieval scope, so this is the
+# context Claude should actually receive rather than a raw store dump.
+echo ""
+echo "2️⃣5️⃣  Loading context bootstrap..."
+
+CONTEXT_BOOTSTRAP="$VAULT_PATH/.claude/context-bootstrap.json"
+if [ -f "$CONTEXT_BOOTSTRAP" ]; then
+    PYTHONIOENCODING=utf-8 python3 - "$CONTEXT_BOOTSTRAP" <<'PYEOF'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as f:
+        bootstrap = json.load(f)
+    block = bootstrap.get("context_block", "").strip()
+    if block:
+        print("   ✅ Compiled context:")
+        print(block)
+    else:
+        print("   ℹ️  Bootstrap exists but contains no context")
+except Exception:
+    print("   ℹ️  Context bootstrap unreadable, skipping")
+PYEOF
+else
+    echo "   ℹ️  No context bootstrap yet (runs after SessionEnd)"
+fi
+
 # Step 3: Load Open Loops
 echo ""
 echo "3️⃣  Loading open loops..."
 
-if [ -f "$COMPANION_DIR/Open Loops.md" ]; then
-    LOOPS=$(grep -c '^\- \[' "$COMPANION_DIR/Open Loops.md" 2>/dev/null || echo "0")
+if [ -f "$COMPANION_DIR/Açık Döngüler.md" ]; then
+    LOOPS=$(grep -c '^\- \[' "$COMPANION_DIR/Açık Döngüler.md" 2>/dev/null || echo "0")
     echo "   📍 Open loops: $LOOPS"
-    grep '^\- \[.' "$COMPANION_DIR/Open Loops.md" 2>/dev/null | head -3 | sed 's/^/      /'
+    grep '^\- \[.' "$COMPANION_DIR/Açık Döngüler.md" 2>/dev/null | head -3 | sed 's/^/      /'
 fi
 
 # Step 3.5: Surface post-session maintenance findings (Phase 12)
@@ -97,7 +125,7 @@ echo "✅ SessionStart bootstrap complete"
 echo ""
 echo "Available:"
 echo "  📖 Last Session (.../Last Session.md)"
-echo "  🎯 Open Loops (.../Open Loops.md)"
+echo "  🎯 Open Loops (.../Açık Döngüler.md)"
 echo "  💾 Memory Store (.claude/validated-memory.json)"
 echo ""
 echo "Next:"

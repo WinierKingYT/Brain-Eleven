@@ -15,6 +15,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
+from memory_scope import filter_memories
+from memory_scope import infer_memory_scope
+
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -55,25 +58,41 @@ class HybridSearchEngine:
     # HYBRID SEARCH
     # ========================================================================
 
-    def search(self, query: str, memories: List[Dict], top_k: int = 5) -> List[Dict]:
+    def search(
+        self,
+        query: str,
+        memories: List[Dict],
+        top_k: int = 5,
+        project_id: Optional[str] = None,
+        retrieval_scope: str = "default",
+    ) -> List[Dict]:
         """Execute hybrid search: lexical + semantic"""
+
+        memories = filter_memories(memories, project_id=project_id, retrieval_scope=retrieval_scope)
 
         print(f"\n🔎 Hybrid search: \"{query}\"")
 
         # Get lexical results (Phase 4 retriever uses 'search' method)
         print(f"   → Lexical search...")
-        lexical_search_results = self.lexical.search(query, limit=10)
+        lexical_search_results = self.lexical.search(
+            query,
+            limit=10,
+            memories=memories,
+            project_id=project_id,
+            retrieval_scope=retrieval_scope,
+        )
 
         # Convert SearchResult objects to dicts for merging
         lexical_results = []
         for result in lexical_search_results:
             # SearchResult has 'id' field (integer index), map to memory_id
             # Find memory by matching content or use id as fallback
-            mem_id = None
-            for m in memories:
-                if m.get('content') == result.content:
-                    mem_id = m['memory_id']
-                    break
+            mem_id = result.memory_id or None
+            if mem_id is None:
+                for m in memories:
+                    if m.get('content', '')[:100] == result.content:
+                        mem_id = m['memory_id']
+                        break
 
             if mem_id:
                 lexical_results.append({
@@ -167,6 +186,10 @@ class HybridSearchEngine:
             memory = next((m for m in memories if m['memory_id'] == mem_id), None)
             if memory:
                 item['quality_score'] = memory.get('quality_score', 0.5)
+                scope, project, project_id = infer_memory_scope(memory)
+                item['scope'] = scope
+                item['project'] = project
+                item['project_id'] = project_id
                 combined_score *= (1.0 + (memory.get('novelty', 0.5) * 0.1))
             else:
                 item['quality_score'] = 0.5
