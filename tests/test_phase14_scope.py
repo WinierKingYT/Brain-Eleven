@@ -19,6 +19,7 @@ from memory_scope import (  # noqa: E402
     filter_memories,
     legacy_project_id,
     project_identity,
+    resolve_retrieval_project,
     resolved_project_identity,
     scoped_fingerprint,
 )
@@ -173,8 +174,53 @@ def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_
     registered = ProjectRegistry(vault).register(project_root, project_id="proj-session")
     before = path.read_bytes()
 
-    assert compiler_module.resolve_session_project_id(vault, project_root) == registered["project_id"]
+    project_id = compiler_module.resolve_session_project_id(vault, project_root)
+    assert project_id == registered["project_id"]
     assert path.read_bytes() == before
+    compiler = compiler_module.ContextCompiler(str(vault), project_id=project_id)
+    compiler._load_validated_memories()
+    assert {memory["memory_id"] for memory in compiler._rank_memories(limit=10)} == {"g", "p"}
+
+
+def test_archived_project_defaults_to_global_only_but_historical_scope_is_explicit(tmp_path):
+    compiler_module = _load_script("phase13_archived_context_compiler", "context-compiler.py")
+    vault = tmp_path / "vault"
+    archived_root = tmp_path / "archived-project"
+    archived_root.mkdir()
+    (vault / ".claude").mkdir(parents=True)
+    records = [
+        _memory("g", "global fact"),
+        _memory("a", "archived project fact", PROJECT_SCOPE, "proj-archived", "Archived"),
+        _memory("b", "other project fact", PROJECT_SCOPE, "proj-other", "Other"),
+    ]
+    (vault / ".claude" / "validated-memory.json").write_text(
+        json.dumps({"validated_memory": records}), encoding="utf-8"
+    )
+    registry = ProjectRegistry(vault)
+    registry.register(archived_root, project_id="proj-archived")
+    registry.set_status("proj-archived", "archived")
+
+    assert compiler_module.resolve_session_project_id(vault, archived_root) is None
+    default_compiler = compiler_module.ContextCompiler(str(vault), project_id=None)
+    default_compiler._load_validated_memories()
+    assert [memory["memory_id"] for memory in default_compiler._rank_memories(limit=10)] == ["g"]
+
+    historical_id, _label = resolve_retrieval_project(
+        archived_root,
+        registry_path(vault),
+        include_archived=True,
+    )
+    historical_compiler = compiler_module.ContextCompiler(
+        str(vault), project_id=historical_id, retrieval_scope="project"
+    )
+    historical_compiler._load_validated_memories()
+    assert [memory["memory_id"] for memory in historical_compiler._rank_memories(limit=10)] == ["a"]
+
+    all_compiler = compiler_module.ContextCompiler(
+        str(vault), project_id=historical_id, retrieval_scope="all"
+    )
+    all_compiler._load_validated_memories()
+    assert {memory["memory_id"] for memory in all_compiler._rank_memories(limit=10)} == {"g", "a", "b"}
 
 
 def test_legacy_project_label_gets_stable_compatibility_id():

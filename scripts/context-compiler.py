@@ -20,7 +20,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Set
 
-from memory_scope import filter_memories, infer_memory_scope, resolved_project_identity
+from memory_scope import filter_memories, infer_memory_scope, resolve_retrieval_project
 from project_registry import registry_path as project_registry_path
 
 
@@ -28,7 +28,7 @@ def resolve_session_project_id(vault_path: str, project_root: str = None) -> str
     """Return a registered project ID for SessionStart without creating one."""
     if not project_root:
         return None
-    identity = resolved_project_identity(
+    identity = resolve_retrieval_project(
         project_root,
         project_registry_path(vault_path),
     )

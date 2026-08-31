@@ -54,16 +54,17 @@ def registered_project_identity(
     return record["project_id"], record["project_label"]
 
 
-def resolved_project_identity(
+def resolve_retrieval_project(
     project_root: Optional[Union[str, Path]] = None,
     registry_path: Optional[Union[str, Path]] = None,
+    include_archived: bool = False,
 ) -> Optional[Tuple[str, str]]:
-    """Resolve a known project identity without registering or mutating it.
+    """Resolve a readable project identity without registering or mutating it.
 
-    Retrieval must only attach project-scoped memory when the current root is
-    already an explicit registry member. An unknown root intentionally returns
-    ``None`` so callers fall back to global-only context rather than creating
-    a project namespace as a side effect of SessionStart.
+    Default retrieval only attaches project-scoped memory for active registry
+    entries. Unknown and archived roots intentionally return ``None`` so
+    SessionStart falls back to global-only context. Historical tooling can
+    pass ``include_archived=True`` without making registry writes.
     """
     if registry_path is None:
         return None
@@ -72,7 +73,17 @@ def resolved_project_identity(
     record = ProjectRegistry(registry_path).resolve(project_root or Path.cwd())
     if record is None:
         return None
+    if record["status"] != "active" and not include_archived:
+        return None
     return record["project_id"], record["project_label"]
+
+
+def resolved_project_identity(
+    project_root: Optional[Union[str, Path]] = None,
+    registry_path: Optional[Union[str, Path]] = None,
+) -> Optional[Tuple[str, str]]:
+    """Backward-compatible default retrieval resolver for active projects."""
+    return resolve_retrieval_project(project_root, registry_path)
 
 
 def legacy_project_id(project: str) -> str:
