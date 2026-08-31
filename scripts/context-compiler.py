@@ -20,9 +20,19 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Set
 
-from memory_scope import filter_memories, infer_memory_scope
-from memory_scope import registered_project_identity
+from memory_scope import filter_memories, infer_memory_scope, resolved_project_identity
 from project_registry import registry_path as project_registry_path
+
+
+def resolve_session_project_id(vault_path: str, project_root: str = None) -> str:
+    """Return a registered project ID for SessionStart without creating one."""
+    if not project_root:
+        return None
+    identity = resolved_project_identity(
+        project_root,
+        project_registry_path(vault_path),
+    )
+    return identity[0] if identity else None
 
 
 class ContextCompiler:
@@ -306,11 +316,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     project_id = args.project_id
-    if project_id is None and args.project_root:
-        project_id = registered_project_identity(
-            args.project_root,
-            project_registry_path(args.vault),
-        )[0]
+    if project_id is None:
+        project_id = resolve_session_project_id(args.vault, args.project_root)
     compiler = ContextCompiler(
         args.vault,
         project_id=project_id,

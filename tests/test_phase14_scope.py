@@ -19,9 +19,10 @@ from memory_scope import (  # noqa: E402
     filter_memories,
     legacy_project_id,
     project_identity,
+    resolved_project_identity,
     scoped_fingerprint,
 )
-from project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
+from project_registry import ProjectRegistry, ProjectRegistryError, registry_path  # noqa: E402
 
 
 def _load_script(name, filename):
@@ -92,6 +93,25 @@ def test_project_registry_rejects_duplicate_root_identity(tmp_path):
         registry.register(root, project_id="proj-b")
 
 
+def test_retrieval_identity_resolution_never_registers_unknown_project(tmp_path):
+    vault = tmp_path / "vault"
+    unknown_root = tmp_path / "unknown-project"
+    unknown_root.mkdir()
+    path = registry_path(vault)
+
+    assert resolved_project_identity(unknown_root, path) is None
+    assert not path.exists()
+
+    registry = ProjectRegistry(vault)
+    registered = registry.register(unknown_root, project_id="proj-known")
+    before = path.read_bytes()
+
+    assert resolved_project_identity(unknown_root, path) == (
+        registered["project_id"], registered["project_label"]
+    )
+    assert path.read_bytes() == before
+
+
 def test_default_retrieval_is_global_only_without_project():
     memories = [
         _memory("g", "global fact"),
@@ -123,6 +143,38 @@ def test_context_compiler_retrieves_global_and_current_project_only(tmp_path):
     ranked_ids = {m["memory_id"] for m in compiler._rank_memories(limit=10)}
 
     assert ranked_ids == {"g", "a"}
+
+
+def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_path):
+    compiler_module = _load_script("phase14_context_compiler_read_only", "context-compiler.py")
+    vault = tmp_path / "vault"
+    project_root = tmp_path / "unregistered-project"
+    project_root.mkdir()
+    path = registry_path(vault)
+    (vault / ".claude").mkdir(parents=True)
+    (vault / ".claude" / "validated-memory.json").write_text(
+        json.dumps(
+            {
+                "validated_memory": [
+                    _memory("g", "global fact"),
+                    _memory("p", "project fact", PROJECT_SCOPE, "proj-session", "Session"),
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert compiler_module.resolve_session_project_id(vault, project_root) is None
+    assert not path.exists()
+    compiler = compiler_module.ContextCompiler(str(vault), project_id=None)
+    compiler._load_validated_memories()
+    assert [memory["memory_id"] for memory in compiler._rank_memories(limit=10)] == ["g"]
+
+    registered = ProjectRegistry(vault).register(project_root, project_id="proj-session")
+    before = path.read_bytes()
+
+    assert compiler_module.resolve_session_project_id(vault, project_root) == registered["project_id"]
+    assert path.read_bytes() == before
 
 
 def test_legacy_project_label_gets_stable_compatibility_id():

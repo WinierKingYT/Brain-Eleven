@@ -54,6 +54,27 @@ def registered_project_identity(
     return record["project_id"], record["project_label"]
 
 
+def resolved_project_identity(
+    project_root: Optional[Union[str, Path]] = None,
+    registry_path: Optional[Union[str, Path]] = None,
+) -> Optional[Tuple[str, str]]:
+    """Resolve a known project identity without registering or mutating it.
+
+    Retrieval must only attach project-scoped memory when the current root is
+    already an explicit registry member. An unknown root intentionally returns
+    ``None`` so callers fall back to global-only context rather than creating
+    a project namespace as a side effect of SessionStart.
+    """
+    if registry_path is None:
+        return None
+    from project_registry import ProjectRegistry
+
+    record = ProjectRegistry(registry_path).resolve(project_root or Path.cwd())
+    if record is None:
+        return None
+    return record["project_id"], record["project_label"]
+
+
 def legacy_project_id(project: str) -> str:
     """Create a stable compatibility ID when only an old label is available."""
     value = str(project or "").strip().lower()
