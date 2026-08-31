@@ -19,7 +19,18 @@ def main(argv=None) -> int:
     register = subparsers.add_parser("register")
     register.add_argument("root")
     register.add_argument("--label", default=None)
-    register.set_defaults(command_handler=lambda registry, args: registry.register(args.root, args.label))
+    register.add_argument(
+        "--proactive",
+        action="store_true",
+        help="Enable proactive capture for this active project",
+    )
+    register.set_defaults(
+        command_handler=lambda registry, args: registry.register(
+            args.root,
+            args.label,
+            proactive_capture=args.proactive,
+        )
+    )
 
     relocate = subparsers.add_parser("relocate")
     relocate.add_argument("project_id")
@@ -43,6 +54,12 @@ def main(argv=None) -> int:
         command_handler=lambda registry, args: registry.set_proactive_capture(
             args.project_id, args.value == "on"
         )
+    )
+
+    migrate_legacy = subparsers.add_parser("migrate-legacy-opt-in")
+    migrate_legacy.add_argument("--config", required=True)
+    migrate_legacy.set_defaults(
+        command_handler=lambda registry, args: registry.migrate_legacy_opt_in_config(args.config)
     )
 
     args = parser.parse_args(argv)

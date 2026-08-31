@@ -133,6 +133,25 @@ class ProjectRegistry:
             None,
         )
 
+    def proactive_capture_policy(self, project_root: Union[str, Path]) -> Dict:
+        """Return the canonical, fail-closed proactive-capture decision."""
+        record = self.resolve(project_root)
+        if record is None:
+            return {"allowed": False, "reason": "unregistered", "project_id": None}
+        if record["status"] != "active":
+            return {
+                "allowed": False,
+                "reason": "archived",
+                "project_id": record["project_id"],
+            }
+        if not record["proactive_capture"]:
+            return {
+                "allowed": False,
+                "reason": "disabled",
+                "project_id": record["project_id"],
+            }
+        return {"allowed": True, "reason": "enabled", "project_id": record["project_id"]}
+
     def register(
         self,
         project_root: Union[str, Path],
@@ -146,6 +165,8 @@ class ProjectRegistry:
         label = str(project_label or Path(normalized_root).name or normalized_root).strip()
         if status not in VALID_STATUSES:
             raise ProjectRegistryError(f"Unsupported project status: {status}")
+        if proactive_capture and status != "active":
+            raise ProjectRegistryError("Archived projects cannot enable proactive capture")
 
         def mutate(data):
             projects = data["projects"]
@@ -155,6 +176,10 @@ class ProjectRegistry:
                     raise ProjectRegistryError("Project root is already registered with another project_id")
                 if project_label:
                     by_root["project_label"] = label
+                if proactive_capture:
+                    if by_root["status"] != "active":
+                        raise ProjectRegistryError("Archived projects cannot enable proactive capture")
+                    by_root["proactive_capture"] = True
                 return dict(by_root)
 
             resolved_id = str(project_id or "").strip() or f"proj_{secrets.token_hex(12)}"
@@ -218,6 +243,8 @@ class ProjectRegistry:
             if record is None:
                 raise ProjectRegistryError(f"Unknown project_id: {project_id}")
             record["status"] = status
+            if status == "archived":
+                record["proactive_capture"] = False
             record["updated_at"] = _utc_now()
             return dict(record)
 
@@ -228,9 +255,70 @@ class ProjectRegistry:
             record = next((item for item in data["projects"] if item["project_id"] == project_id), None)
             if record is None:
                 raise ProjectRegistryError(f"Unknown project_id: {project_id}")
+            if enabled and record["status"] != "active":
+                raise ProjectRegistryError("Archived projects cannot enable proactive capture")
             record["proactive_capture"] = bool(enabled)
             record["updated_at"] = _utc_now()
             return dict(record)
 
         return self._mutate(mutate)
 
+    def migrate_legacy_opt_in_config(self, config_path: Union[str, Path]) -> Dict:
+        """Explicitly import legacy config opt-ins into the canonical registry."""
+        source = Path(config_path).expanduser()
+        if not source.exists():
+            return {"status": "missing", "migrated": [], "unchanged": [], "skipped": 0}
+        try:
+            payload = json.loads(source.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ProjectRegistryError(f"Cannot read legacy opt-in config: {source}") from exc
+
+        configured_roots = payload.get("proactive_opt_in_projects", []) if isinstance(payload, dict) else []
+        if not isinstance(configured_roots, list):
+            raise ProjectRegistryError("Legacy opt-in config must contain a projects list")
+
+        roots = []
+        skipped = 0
+        for root in configured_roots:
+            if not isinstance(root, str) or not root.strip():
+                skipped += 1
+                continue
+            candidate = Path(root).expanduser()
+            if not candidate.is_absolute():
+                skipped += 1
+                continue
+            normalized = normalize_registry_root(candidate)
+            if normalized not in roots:
+                roots.append(normalized)
+
+        def mutate(data):
+            migrated = []
+            unchanged = []
+            for root in roots:
+                record = next((item for item in data["projects"] if item["root"] == root), None)
+                if record is None:
+                    record = {
+                        "project_id": f"proj_{secrets.token_hex(12)}",
+                        "project_label": Path(root).name or root,
+                        "root": root,
+                        "status": "active",
+                        "proactive_capture": True,
+                        "created_at": _utc_now(),
+                        "updated_at": _utc_now(),
+                    }
+                    data["projects"].append(record)
+                    migrated.append(record["project_id"])
+                elif record["status"] == "active" and not record["proactive_capture"]:
+                    record["proactive_capture"] = True
+                    record["updated_at"] = _utc_now()
+                    migrated.append(record["project_id"])
+                else:
+                    unchanged.append(record["project_id"])
+            return {
+                "status": "migrated",
+                "migrated": migrated,
+                "unchanged": unchanged,
+                "skipped": skipped,
+            }
+
+        return self._mutate(mutate)

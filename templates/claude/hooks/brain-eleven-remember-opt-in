@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 # Brain-Eleven proactive-capture gate.
-# Missing, malformed, or non-matching config always fails closed.
+# The vault-local project registry is the sole capture authority and fails closed.
 
 set -u
 
 BRAIN_ELEVEN_VAULT="${BRAIN_ELEVEN_VAULT:-{{VAULT_PATH}}}"
-CONFIG_FILE="${BRAIN_ELEVEN_REMEMBER_CONFIG:-$BRAIN_ELEVEN_VAULT/.claude/remember-config.json}"
 GATE="$BRAIN_ELEVEN_VAULT/scripts/remember_opt_in.py"
 
 if [ ! -f "$GATE" ]; then
     exit 0
 fi
 
-if python "$GATE" --project-root "$PWD" --config "$CONFIG_FILE" >/dev/null 2>&1; then
+if python "$GATE" --project-root "$PWD" --vault "$BRAIN_ELEVEN_VAULT" >/dev/null 2>&1; then
     echo "Brain-Eleven proactive capture is enabled for this explicitly opted-in project. Capture only deliberate decisions, lessons, or open loops; never secrets or transcripts."
 fi
 

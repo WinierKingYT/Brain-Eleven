@@ -22,18 +22,14 @@ from typing import Any, Dict, List, Optional, Union
 from memory_scope import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
-    normalize_project_root,
     project_identity,
     resolve_capture_scope,
 )
-from project_registry import registry_path as project_registry_path
+from project_registry import ProjectRegistry, registry_path as project_registry_path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_VAULT = SCRIPT_DIR.parent
-DEFAULT_CONFIG_NAME = ".claude/remember-config.json"
-
-
 def _load_hyphenated_module(name: str, filename: str):
     """Load one of Brain-Eleven's legacy hyphenated module filenames."""
     spec = importlib.util.spec_from_file_location(name, SCRIPT_DIR / filename)
@@ -63,41 +59,22 @@ def default_project_id(project_root: Optional[Union[str, Path]] = None) -> str:
     return project_identity(project_root)[1]
 
 
-def config_path(vault_path: Union[str, Path]) -> Path:
-    """Return the local opt-in config path for a Brain-Eleven vault."""
-    return Path(vault_path).expanduser() / DEFAULT_CONFIG_NAME
-
-
-def load_opt_in_projects(path: Union[str, Path]) -> List[str]:
-    """Load normalized opt-in roots; malformed config fails closed."""
-    config_file = Path(path).expanduser()
-    if not config_file.exists():
-        return []
-
-    try:
-        data = json.loads(config_file.read_text(encoding="utf-8"))
-        projects = data.get("proactive_opt_in_projects", [])
-        if not isinstance(projects, list):
-            return []
-        normalized = []
-        for project in projects:
-            if isinstance(project, str) and project.strip():
-                candidate = Path(project).expanduser()
-                if candidate.is_absolute():
-                    normalized.append(normalize_project_root(candidate))
-        return normalized
-    except (OSError, json.JSONDecodeError, TypeError, ValueError):
-        return []
-
-
 def is_project_opted_in(
     project_root: Optional[Union[str, Path]] = None,
-    config_file: Optional[Union[str, Path]] = None,
+    vault_path: Optional[Union[str, Path]] = None,
 ) -> bool:
-    """Return whether ``project_root`` is explicitly allowed to auto-capture."""
-    root = normalize_project_root(project_root)
-    config = Path(config_file).expanduser() if config_file else config_path(DEFAULT_VAULT)
-    return root in set(load_opt_in_projects(config))
+    """Return the canonical fail-closed proactive-capture decision."""
+    vault = Path(vault_path).expanduser() if vault_path else default_vault_path()
+    return ProjectRegistry(vault).proactive_capture_policy(project_root or Path.cwd())["allowed"]
+
+
+def proactive_capture_policy(
+    project_root: Optional[Union[str, Path]] = None,
+    vault_path: Optional[Union[str, Path]] = None,
+) -> Dict[str, Any]:
+    """Expose the canonical registry policy without leaking a filesystem root."""
+    vault = Path(vault_path).expanduser() if vault_path else default_vault_path()
+    return ProjectRegistry(vault).proactive_capture_policy(project_root or Path.cwd())
 
 
 def remember(
@@ -187,9 +164,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--check-opt-in",
         action="store_true",
-        help="Check the opt-in list and exit 0 when the project is allowed",
+        help="Check the canonical registry policy and exit 0 when capture is allowed",
     )
-    parser.add_argument("--config", default=None, help="Opt-in JSON path for --check-opt-in")
     return parser
 
 
@@ -200,12 +176,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     project_root = args.project_root or str(Path.cwd())
 
     if args.check_opt_in:
-        allowed = is_project_opted_in(
-            project_root=project_root,
-            config_file=args.config or config_path(vault),
-        )
-        print(json.dumps({"opted_in": allowed, "project_root": normalize_project_root(project_root)}))
-        return 0 if allowed else 1
+        policy = proactive_capture_policy(project_root=project_root, vault_path=vault)
+        print(json.dumps({"opted_in": policy["allowed"], **policy}))
+        return 0 if policy["allowed"] else 1
 
     if args.type_ is None or args.content is None:
         parser.error("--type and --content are required unless --check-opt-in is used")
