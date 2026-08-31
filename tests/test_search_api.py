@@ -208,6 +208,23 @@ class TestMemoryCRUD:
         assert second.json()["status"] == "duplicate_returned_existing"
         assert second.json()["memory_id"] == first.json()["memory_id"]
 
+    def test_create_memory_rejects_credential_before_persistence(self, client):
+        response = client.post("/memories", json={
+            "type": "decision",
+            "content": "Authorization: Bearer abcdefghijklmnopqrstuvwxyz012345",
+        })
+
+        assert response.status_code == 422
+        assert response.json()["detail"] == {
+            "accepted": False,
+            "reason": "potential_secret",
+            "policy": "capture_safety_v1",
+        }
+        assert all(
+            memory["content"] != "Authorization: Bearer abcdefghijklmnopqrstuvwxyz012345"
+            for memory in client.get("/memories").json()["memories"]
+        )
+
     def test_get_memory_by_id(self, client):
         response = client.get("/memories/seed_decision")
 
@@ -229,6 +246,21 @@ class TestMemoryCRUD:
 
         assert response.status_code == 200
         assert response.json()["content"] == "Updated content after PUT"
+
+    def test_update_memory_rejects_credential_before_persistence(self, client):
+        created = client.post("/memories", json={
+            "type": "observation", "content": "Safe content before secret update", "confidence": 0.6,
+        })
+        memory_id = created.json()["memory_id"]
+
+        response = client.put(
+            f"/memories/{memory_id}",
+            json={"content": "password = hunter2-secret"},
+        )
+
+        assert response.status_code == 422
+        assert response.json()["detail"]["reason"] == "potential_secret"
+        assert client.get(f"/memories/{memory_id}").json()["content"] == "Safe content before secret update"
 
     def test_update_memory_rejects_stale_expected_revision(self, client):
         created = client.post("/memories", json={

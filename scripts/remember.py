@@ -26,6 +26,7 @@ from memory_scope import (
     resolve_capture_scope,
 )
 from project_registry import ProjectRegistry, registry_path as project_registry_path
+from capture_safety import evaluate_capture
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -101,6 +102,10 @@ def remember(
         raise ValueError("content must not be empty")
     if not 0.0 <= confidence <= 1.0:
         raise ValueError("confidence must be between 0.0 and 1.0")
+
+    safety = evaluate_capture(normalized_content)
+    if not safety.accepted:
+        return safety.to_dict()
 
     vault = Path(vault_path).expanduser() if vault_path else default_vault_path()
     resolved_scope, project_label, resolved_project_id = resolve_capture_scope(
@@ -194,7 +199,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         project_root=project_root,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if result.get("accepted", True) else 2
 
 
 if __name__ == "__main__":

@@ -73,6 +73,7 @@ try:
     from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
     from project_registry import registry_path as project_registry_path
     from memory_store import MemoryStore, MemoryStoreConflict
+    from capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
@@ -496,6 +497,9 @@ async def create_memory(memory: MemoryCreate):
     just scoped to one item instead of a compiled batch.
     """
     try:
+        safety = evaluate_capture(memory.content)
+        if not safety.accepted:
+            raise HTTPException(status_code=422, detail=safety.to_dict())
         validator = MemoryValidator(str(vault_path))
         candidate, issues, is_new = validator.validate_single_and_append(
             type_=memory.type,
@@ -545,6 +549,8 @@ async def create_memory(memory: MemoryCreate):
         }
     except HTTPException:
         raise
+    except CaptureSafetyError as e:
+        raise HTTPException(status_code=422, detail=e.result.to_dict())
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
@@ -578,6 +584,10 @@ async def get_memory(memory_id: str):
 async def update_memory(memory_id: str, update: MemoryUpdate):
     """Update memory"""
     try:
+        if update.content is not None:
+            safety = evaluate_capture(update.content)
+            if not safety.accepted:
+                raise HTTPException(status_code=422, detail=safety.to_dict())
         store = MemoryStore(vault_path)
 
         def mutate(data):

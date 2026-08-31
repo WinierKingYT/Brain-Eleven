@@ -33,6 +33,7 @@ from memory_scope import (
     scoped_fingerprint,
 )
 from memory_store import MemoryStore, no_change
+from capture_safety import evaluate_capture, require_safe_capture
 
 try:
     from ulid import ULID
@@ -116,6 +117,7 @@ class MemoryValidator:
         self.prior_validated = self._load_prior_validated()  # Load long-term memory
         self.candidates = []
         self.validated = []
+        self.safety_rejections = []
 
     # ========================================================================
     # LOAD EXISTING MEMORY
@@ -371,6 +373,10 @@ class MemoryValidator:
 
         # Convert to ValidatedMemory objects
         for i, candidate in enumerate(data.get("candidates", [])):
+            safety = evaluate_capture(candidate.get("content", ""))
+            if not safety.accepted:
+                self.safety_rejections.append(safety)
+                continue
             # Generate immutable ID and fingerprint
             memory_id = candidate.get("memory_id", str(ULID()))
             scope, project, project_id = resolve_capture_scope(
@@ -759,6 +765,7 @@ class MemoryValidator:
                 "rejected": len(self.candidates) - len(self.validated),
                 "conflicts_found": len(conflicts),
                 "duplicates_found": len(duplicates),
+                "safety_rejected": len(self.safety_rejections),
             },
             "validated_memory": [m.to_dict() for m in self.validated],
             "rejected_memory": [m.to_dict() for m in self.candidates if not m.is_approved],
@@ -801,6 +808,7 @@ class MemoryValidator:
         - is_new=True means `memory` is a new ValidatedMemory the caller
           should persist via append_validated().
         """
+        require_safe_capture(content)
         scope, project, project_id = resolve_capture_scope(
             scope=scope,
             project=project,
@@ -857,6 +865,8 @@ class MemoryValidator:
 
     def validate_single_and_append(self, **kwargs):
         """Validate and append one candidate in a lost-update-safe transaction."""
+        require_safe_capture(kwargs.get("content", ""))
+
         def mutate(data):
             self.prior_validated = data
             self.existing_memory = self._load_existing_memory()
@@ -878,6 +888,8 @@ class MemoryValidator:
 
     def append_validated(self, candidate: "ValidatedMemory") -> bool:
         """Atomically append one new (already-validated) memory to the store."""
+        require_safe_capture(candidate.content)
+
         def mutate(data):
             self.prior_validated = data
             self.existing_memory = self._load_existing_memory()
