@@ -15,13 +15,27 @@ import json
 import re
 import argparse
 import io
+import os
+import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple, Set, Optional
 
 from memory_scope import filter_memories, infer_memory_scope, resolve_retrieval_project
+from memory_store import MemoryStore, MemoryStoreError
 from project_registry import registry_path as project_registry_path
+
+
+CONTEXT_BOOTSTRAP_SCHEMA_VERSION = 2
+
+
+class ContextBootstrapError(RuntimeError):
+    """Base class for derived context-bootstrap failures."""
+
+
+class ContextBootstrapStale(ContextBootstrapError):
+    """Raised when a compiled bootstrap no longer matches canonical memory."""
 
 
 def resolve_session_project_id(vault_path: str, project_root: str = None) -> str:
@@ -41,6 +55,7 @@ class ContextCompiler:
     def __init__(self, vault_path: str, project_id: str = None, retrieval_scope: str = "default"):
         self.vault_path = Path(vault_path)
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
+        self.memory_store = MemoryStore(self.vault_path)
         self.last_session_file = self.vault_path / "🔮 Companion/Last Session.md"
         self.open_loops_file = self.vault_path / "🔮 Companion/Açık Döngüler.md"
         self.hamle_dir = self.vault_path / "🗂️ Proje Notları/Kararlar"
@@ -49,6 +64,7 @@ class ContextCompiler:
 
         self.memories = []
         self.related_notes = []
+        self.source_memory_revision: Optional[int] = None
 
     # ========================================================================
     # LOAD DATA
@@ -57,14 +73,124 @@ class ContextCompiler:
     def _load_validated_memories(self):
         """Load validated memories"""
         if not self.validated_json.exists():
+            self.memories = []
+            self.source_memory_revision = self.memory_store.revision()
             print("⚠️  validated-memory.json not found")
             return
 
-        with open(self.validated_json, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
+        data = self.memory_store.load()
+        self.source_memory_revision = int(data["revision"])
         self.memories = data.get("validated_memory", [])
         print(f"✓ Loaded {len(self.memories)} validated memories")
+
+    # ========================================================================
+    # DERIVED-PROJECTION SAFETY
+    # ========================================================================
+
+    def _bootstrap_path(self, output_file: str = None) -> Path:
+        return Path(output_file) if output_file else self.vault_path / ".claude/context-bootstrap.json"
+
+    def _ensure_output_is_current(self, output: Dict) -> None:
+        """Refuse to publish context compiled from an obsolete store snapshot."""
+        source_revision = output.get("source_memory_revision")
+        if not isinstance(source_revision, int) or source_revision < 0:
+            raise ContextBootstrapError("Bootstrap source revision must be a non-negative integer")
+
+        current_revision = self.memory_store.revision()
+        if source_revision != current_revision:
+            raise ContextBootstrapStale(
+                "Canonical memory store changed during context compilation: "
+                f"started at revision {source_revision}, now {current_revision}"
+            )
+
+    def bootstrap_status(self, output_file: str = None) -> Dict:
+        """Return whether a saved bootstrap is safe for this session to inject.
+
+        A bootstrap is a derived projection. It is readable only when its
+        schema, canonical-memory revision, and project retrieval scope all
+        exactly match the current session. Callers receive no context block for
+        missing, corrupt, stale, or scope-mismatched files.
+        """
+        bootstrap_path = self._bootstrap_path(output_file)
+        status = {
+            "status": "missing",
+            "path": str(bootstrap_path),
+            "source_memory_revision": None,
+            "context_block": None,
+            "error": None,
+        }
+        if not bootstrap_path.exists():
+            return status
+
+        try:
+            data = json.loads(bootstrap_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            status.update(status="corrupt", error=str(exc))
+            return status
+
+        if not isinstance(data, dict):
+            status.update(status="corrupt", error="Bootstrap must be a JSON object")
+            return status
+        if data.get("schema_version") != CONTEXT_BOOTSTRAP_SCHEMA_VERSION:
+            status.update(status="corrupt", error="Unsupported context bootstrap schema version")
+            return status
+        if data.get("projection") != "context_bootstrap":
+            status.update(status="corrupt", error="Unexpected context bootstrap projection name")
+            return status
+
+        source_revision = data.get("source_memory_revision")
+        status["source_memory_revision"] = source_revision
+        if not isinstance(source_revision, int) or source_revision < 0:
+            status.update(status="corrupt", error="Bootstrap source revision must be a non-negative integer")
+            return status
+        if data.get("ready_for_session_start") is not True:
+            status.update(status="corrupt", error="Bootstrap is not marked ready for SessionStart")
+            return status
+
+        summary = data.get("summary")
+        block = data.get("context_block")
+        if not isinstance(summary, dict) or not isinstance(block, str):
+            status.update(status="corrupt", error="Bootstrap summary or context block is invalid")
+            return status
+        if (
+            summary.get("project_id") != self.project_id
+            or summary.get("retrieval_scope") != self.retrieval_scope
+        ):
+            status.update(status="scope_mismatch")
+            return status
+
+        try:
+            current_revision = self.memory_store.revision()
+        except MemoryStoreError as exc:
+            status.update(status="source_unavailable", error=str(exc))
+            return status
+        if source_revision != current_revision:
+            status.update(status="stale")
+            return status
+
+        status.update(status="fresh", context_block=block)
+        return status
+
+    @staticmethod
+    def _atomic_write_json(path: Path, data: Dict) -> None:
+        """Persist a derived bootstrap atomically, never exposing partial JSON."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".context-bootstrap-", suffix=".json", dir=path.parent
+        )
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                json.dump(data, handle, indent=2, ensure_ascii=False)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            Path(temporary_name).replace(path)
+        except OSError as exc:
+            raise ContextBootstrapError(f"Cannot persist context bootstrap: {path}") from exc
+        finally:
+            temporary = Path(temporary_name)
+            if temporary.exists():
+                temporary.unlink()
 
     def _load_last_session(self) -> str:
         """Load Last Session context"""
@@ -212,6 +338,9 @@ class ContextCompiler:
         print("\n4. Compiling context...")
 
         output = {
+            "schema_version": CONTEXT_BOOTSTRAP_SCHEMA_VERSION,
+            "projection": "context_bootstrap",
+            "source_memory_revision": int(self.source_memory_revision),
             "compiled_at": datetime.now().isoformat(),
             "summary": {
                 "top_memories": len(top_memories),
@@ -280,22 +409,19 @@ class ContextCompiler:
         return "\n".join(lines)
 
     def save(self, output_file: str = None) -> str:
-        """Compile and save context"""
-
-        if output_file is None:
-            output_file = str(self.vault_path / ".claude/context-bootstrap.json")
+        """Compile and atomically save a bootstrap only if its snapshot is current."""
 
         output = self.compile()
-
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
+        self._ensure_output_is_current(output)
+        output_path = self._bootstrap_path(output_file)
+        self._atomic_write_json(output_path, output)
 
         print(f"\n✅ Context compiled")
-        print(f"   → Saved to: {output_file}")
+        print(f"   → Saved to: {output_path}")
         print(f"\n📝 Context block preview:")
         print(output["context_block"])
 
-        return output_file
+        return str(output_path)
 
 
 # ============================================================================
@@ -313,6 +439,11 @@ if __name__ == "__main__":
         default="default",
     )
     parser.add_argument("--stdout", action="store_true", help="Print only the context block")
+    parser.add_argument(
+        "--load-bootstrap",
+        action="store_true",
+        help="Print the saved bootstrap only when its revision and scope are current",
+    )
     args = parser.parse_args()
 
     project_id = args.project_id
@@ -323,10 +454,16 @@ if __name__ == "__main__":
         project_id=project_id,
         retrieval_scope=args.retrieval_scope,
     )
-    if args.stdout:
+    if args.load_bootstrap:
+        status = compiler.bootstrap_status()
+        if status["status"] != "fresh":
+            raise SystemExit(1)
+        print(status["context_block"])
+    elif args.stdout:
         sink = io.StringIO()
         with redirect_stdout(sink):
             output = compiler.compile()
+            compiler._ensure_output_is_current(output)
         print(output["context_block"])
     else:
         output_file = compiler.save()

@@ -11,12 +11,19 @@ if [ ! -f "$COMPILER" ]; then
     exit 0
 fi
 
-# Compile to stdout for the current project. This is read-only with respect to
-# the canonical store and avoids applying one project's bootstrap to another.
-PYTHONIOENCODING=utf-8 python "$COMPILER" \
+# Prefer a persisted projection only when it exactly matches the canonical
+# memory revision and current project scope. On a missing, corrupt, stale, or
+# scope-mismatched projection, compile a fresh read-only context instead.
+if ! PYTHONIOENCODING=utf-8 python "$COMPILER" \
     --vault "$BRAIN_ELEVEN_VAULT" \
     --project-root "$PWD" \
     --retrieval-scope default \
-    --stdout 2>/dev/null || true
+    --load-bootstrap 2>/dev/null; then
+    PYTHONIOENCODING=utf-8 python "$COMPILER" \
+        --vault "$BRAIN_ELEVEN_VAULT" \
+        --project-root "$PWD" \
+        --retrieval-scope default \
+        --stdout 2>/dev/null || true
+fi
 
 exit 0

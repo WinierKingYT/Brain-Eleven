@@ -46,26 +46,33 @@ fi
 echo ""
 echo "2️⃣5️⃣  Loading context bootstrap..."
 
-CONTEXT_BOOTSTRAP="$VAULT_PATH/.claude/context-bootstrap.json"
-if [ -f "$CONTEXT_BOOTSTRAP" ]; then
-    PYTHONIOENCODING=utf-8 python3 - "$CONTEXT_BOOTSTRAP" <<'PYEOF'
-import json
-import sys
-
-try:
-    with open(sys.argv[1], encoding="utf-8") as f:
-        bootstrap = json.load(f)
-    block = bootstrap.get("context_block", "").strip()
-    if block:
-        print("   ✅ Compiled context:")
-        print(block)
-    else:
-        print("   ℹ️  Bootstrap exists but contains no context")
-except Exception:
-    print("   ℹ️  Context bootstrap unreadable, skipping")
-PYEOF
+CONTEXT_COMPILER="$SCRIPTS_DIR/context-compiler.py"
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+if [ -f "$CONTEXT_COMPILER" ]; then
+    # A persisted bootstrap is a projection, not a source of truth. The
+    # compiler checks its schema, canonical revision, and project scope before
+    # returning it; a different project's or stale context is never injected.
+    if CONTEXT_BLOCK=$(PYTHONIOENCODING=utf-8 python3 "$CONTEXT_COMPILER" \
+        --vault "$VAULT_PATH" \
+        --project-root "$PROJECT_ROOT" \
+        --retrieval-scope default \
+        --load-bootstrap 2>/dev/null); then
+        echo "   ✅ Current compiled context:"
+        printf '%s\n' "$CONTEXT_BLOCK"
+    else
+        echo "   ℹ️  Bootstrap missing, stale, corrupt, or scope-mismatched; rebuilding safely"
+        if CONTEXT_BLOCK=$(PYTHONIOENCODING=utf-8 python3 "$CONTEXT_COMPILER" \
+            --vault "$VAULT_PATH" \
+            --project-root "$PROJECT_ROOT" \
+            --retrieval-scope default \
+            --stdout 2>/dev/null); then
+            printf '%s\n' "$CONTEXT_BLOCK"
+        else
+            echo "   ⚠️  Context could not be compiled; continuing without injected memory"
+        fi
+    fi
 else
-    echo "   ℹ️  No context bootstrap yet (runs after SessionEnd)"
+    echo "   ℹ️  Context compiler unavailable; skipping derived bootstrap"
 fi
 
 # Step 3: Load Open Loops

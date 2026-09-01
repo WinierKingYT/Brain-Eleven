@@ -22,6 +22,7 @@ spec = importlib.util.spec_from_file_location(
 context_compiler = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(context_compiler)
 ContextCompiler = context_compiler.ContextCompiler
+ContextBootstrapStale = context_compiler.ContextBootstrapStale
 
 
 def make_memory(**overrides):
@@ -227,6 +228,9 @@ class TestCompileAndSave:
         output = compiler.compile()
 
         assert output["ready_for_session_start"] is True
+        assert output["schema_version"] == 2
+        assert output["projection"] == "context_bootstrap"
+        assert output["source_memory_revision"] == 0
         assert "context_block" in output
         assert output["summary"]["top_memories"] == 1
 
@@ -275,6 +279,62 @@ class TestCompileAndSave:
         with open(output_path, encoding="utf-8") as f:
             data = json.load(f)
         assert data["ready_for_session_start"] is True
+
+    def test_saved_bootstrap_is_readable_only_when_current(self, vault):
+        write_memories(vault, [make_memory()])
+        compiler = ContextCompiler(str(vault), project_id="project-a")
+        compiler.save()
+
+        status = ContextCompiler(str(vault), project_id="project-a").bootstrap_status()
+
+        assert status["status"] == "fresh"
+        assert "SESSION BOOTSTRAP CONTEXT" in status["context_block"]
+
+    def test_saved_bootstrap_is_rejected_after_canonical_revision_changes(self, vault):
+        write_memories(vault, [make_memory()])
+        compiler = ContextCompiler(str(vault), project_id="project-a")
+        compiler.save()
+        context_compiler.MemoryStore(vault).append(make_memory(memory_id="new-memory"))
+
+        status = ContextCompiler(str(vault), project_id="project-a").bootstrap_status()
+
+        assert status["status"] == "stale"
+        assert status["context_block"] is None
+
+    def test_saved_bootstrap_is_rejected_for_a_different_project_scope(self, vault):
+        write_memories(vault, [make_memory()])
+        ContextCompiler(str(vault), project_id="project-a").save()
+
+        status = ContextCompiler(str(vault), project_id="project-b").bootstrap_status()
+
+        assert status["status"] == "scope_mismatch"
+        assert status["context_block"] is None
+
+    def test_corrupt_bootstrap_is_never_exposed_to_session_start(self, vault):
+        bootstrap = vault / ".claude" / "context-bootstrap.json"
+        bootstrap.write_text("{not valid json", encoding="utf-8")
+
+        status = ContextCompiler(str(vault)).bootstrap_status()
+
+        assert status["status"] == "corrupt"
+        assert status["context_block"] is None
+
+    def test_save_does_not_overwrite_prior_bootstrap_after_revision_race(self, vault):
+        write_memories(vault, [make_memory()])
+        bootstrap = vault / ".claude" / "context-bootstrap.json"
+        bootstrap.write_text('{"previous": true}', encoding="utf-8")
+        compiler = ContextCompiler(str(vault))
+
+        def mutate_store_during_compile(_memories):
+            context_compiler.MemoryStore(vault).append(make_memory(memory_id="concurrent"))
+            return {}
+
+        compiler._fetch_related_hamles = mutate_store_during_compile
+
+        with pytest.raises(ContextBootstrapStale):
+            compiler.save()
+
+        assert json.loads(bootstrap.read_text(encoding="utf-8")) == {"previous": True}
 
     def test_save_uses_default_output_path(self, vault):
         compiler = ContextCompiler(str(vault))
