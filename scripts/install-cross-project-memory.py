@@ -130,13 +130,31 @@ def _remove_commands(settings: Dict, commands: set) -> bool:
 
 
 def _shell_hook_command(home: Path, hook_name: str) -> str:
-    """Render a direct hook command without relying on ``~`` or nested shells."""
+    """Render a direct hook command without relying on ``~`` or nested shells.
+
+    On Windows there is no single path form every bash accepts: Git Bash/MSYS
+    (what Claude Code's own Bash tool uses, and the common case for a native
+    Windows install) resolves a drive-letter path like ``C:/Users/...``
+    directly, while WSL's bash only understands the ``/mnt/c/...`` mount
+    form and cannot open ``C:/...`` at all - and there is no install-time
+    signal that reliably predicts which bash will actually be invoked later,
+    since that depends on how Claude Code itself is launched, not on
+    ``os.name`` here. Emit both, right-to-left with a fallback: the first
+    form that resolves runs the hook; if the leading form's path doesn't
+    exist, bash exits before the hook body ever runs (`No such file or
+    directory`, i.e. before any side effect), so the fallback is safe to
+    attempt - at most one branch ever actually executes the hook.
+    """
     hook_path = home / ".claude" / "hooks" / hook_name
     if os.name == "nt" and hook_path.drive:
+        windows_path_text = str(hook_path).replace("\\", "/")
         drive = hook_path.drive.rstrip(":").lower()
-        hook_path_text = "/mnt/" + drive + "/" + "/".join(hook_path.parts[1:])
-    else:
-        hook_path_text = str(hook_path).replace("\\", "/")
+        wsl_path_text = "/mnt/" + drive + "/" + "/".join(hook_path.parts[1:])
+        return (
+            f"bash {shlex.quote(windows_path_text)} "
+            f"|| bash {shlex.quote(wsl_path_text)}"
+        )
+    hook_path_text = str(hook_path).replace("\\", "/")
     return f"bash {shlex.quote(hook_path_text)}"
 
 

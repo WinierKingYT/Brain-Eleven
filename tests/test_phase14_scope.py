@@ -444,15 +444,29 @@ def test_global_hook_templates_resolve_python_portably():
         assert 'BASH_REMATCH[1],,' in template
 
 
-def test_windows_installer_uses_a_direct_wsl_hook_path(tmp_path):
-    installer = _load_script("phase14_wsl_path_installer", "install-cross-project-memory.py")
+def test_windows_installer_hook_command_tries_both_bash_flavors(tmp_path):
+    """
+    Regression test: an earlier version of this installer emitted only the
+    WSL mount form (`bash /mnt/c/...`) on any os.name == "nt" host. That is
+    wrong for a native Windows install using Git Bash/MSYS - which is what
+    Claude Code's own Bash tool uses, and resolves `C:/...` directly but
+    cannot open `/mnt/c/...` at all - so the hook silently never ran there
+    (confirmed by executing the generated command directly against a real
+    Windows + Git Bash host: `No such file or directory`). There is no
+    install-time signal for which bash will actually invoke the hook later,
+    so the command must offer both forms rather than assume one.
+    """
+    installer = _load_script("phase14_hook_path_installer", "install-cross-project-memory.py")
     command = installer._shell_hook_command(tmp_path / "home", "brain-eleven-session-start")
 
     if installer.os.name == "nt":
-        assert command.startswith("bash /mnt/")
+        assert command.count("bash ") == 2, "must offer a fallback, not a single guessed path"
+        windows_form, _, wsl_form = command.partition(" || ")
+        assert windows_form.startswith("bash ") and ":" in windows_form, "missing the Git-Bash-native C:/... form"
+        assert wsl_form.startswith("bash /mnt/"), "missing the WSL /mnt/... fallback form"
     else:
         assert command.startswith("bash /")
-    assert "brain-eleven-session-start" in command
+    assert command.count("brain-eleven-session-start") == (2 if installer.os.name == "nt" else 1)
 
 
 def test_installer_replaces_only_legacy_managed_hook_commands(tmp_path):
