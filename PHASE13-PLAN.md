@@ -1,6 +1,7 @@
 # Phase 13 Plan — Cross-Project Memory Capture
 
-**Status:** Implemented in the working tree; runtime verification pending.
+**Status:** Historical implementation plan. Phase 13 and its Phase 14 hardening
+follow-up are complete; see `PROJECT-STATUS.md` for the current verified state.
 **Audience:** An engineer or agent with no prior context on this
 conversation. Everything needed to execute is below; verify claims
 rather than trusting this document blindly — it was written from a
@@ -20,9 +21,9 @@ The Phase 13 changes are now present in the working tree:
 - The global `/remember` command, global SessionEnd gate, validator/API
   provenance plumbing, tests, and status documentation were added or updated.
 
-The implementation has been statically checked, but the local machine does
-not currently provide a runnable Python/pytest environment, so the test suite
-still needs runtime verification in an environment with Python installed.
+The sections below preserve the original planning context. Historical runtime
+assumptions may no longer describe the current system; use `PROJECT-STATUS.md`
+as the source of truth for verified status and remaining operational checks.
 
 ---
 

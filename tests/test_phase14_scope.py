@@ -313,10 +313,173 @@ def test_installer_preserves_unrelated_settings_and_is_reversible(tmp_path):
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     commands = [hook["command"] for _event, _group, hook in installer._iter_hook_commands(settings)]
     assert "keep-me" in commands
-    assert "bash ~/.claude/hooks/brain-eleven-session-start" in commands
+    assert installer._managed_settings_entries(home)[0][1] in commands
     assert (claude / "commands" / "remember.md").exists()
 
     removed = installer.uninstall(home)
     assert removed["status"] == "uninstalled"
     assert "keep-me" in [hook["command"] for _event, _group, hook in installer._iter_hook_commands(json.loads(settings_path.read_text(encoding="utf-8")))]
     assert not (claude / "commands" / "remember.md").exists()
+
+
+def test_installer_recovers_a_matching_partial_legacy_install(tmp_path):
+    installer = _load_script("phase14_partial_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    claude = home / ".claude"
+    hooks = claude / "hooks"
+    commands = claude / "commands"
+    hooks.mkdir(parents=True)
+    commands.mkdir()
+    vault = tmp_path / "vault"
+
+    (commands / "remember.md").write_text(
+        installer._render(installer.TEMPLATE_ROOT / "commands" / "remember.md", vault),
+        encoding="utf-8",
+    )
+    (hooks / "brain-eleven-remember-opt-in").write_text(
+        installer._render(installer.TEMPLATE_ROOT / "hooks" / "brain-eleven-remember-opt-in", vault),
+        encoding="utf-8",
+    )
+    (claude / "settings.json").write_text(
+        json.dumps({"hooks": {"SessionEnd": [{"hooks": [{"type": "command", "command": "bash ~/.claude/hooks/brain-eleven-remember-opt-in"}]}]}}),
+        encoding="utf-8",
+    )
+
+    result = installer.install(home, vault)
+
+    assert result["status"] == "installed"
+    assert (hooks / "brain-eleven-session-start").exists()
+    assert (claude / installer.MANIFEST_NAME).exists()
+    settings = json.loads((claude / "settings.json").read_text(encoding="utf-8"))
+    commands = [hook["command"] for _event, _group, hook in installer._iter_hook_commands(settings)]
+    assert installer._managed_settings_entries(home)[0][1] in commands
+
+
+def test_installer_conflict_leaves_partial_global_state_untouched(tmp_path):
+    installer = _load_script("phase14_conflict_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    claude = home / ".claude"
+    commands = claude / "commands"
+    commands.mkdir(parents=True)
+    settings_path = claude / "settings.json"
+    original_settings = json.dumps({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "keep-me"}]}]}})
+    settings_path.write_text(original_settings, encoding="utf-8")
+    (commands / "remember.md").write_text("user-owned custom command", encoding="utf-8")
+
+    result = installer.install(home, tmp_path / "vault")
+
+    assert result["status"] == "conflict"
+    assert settings_path.read_text(encoding="utf-8") == original_settings
+    assert not (claude / "hooks" / "brain-eleven-session-start").exists()
+    assert not (claude / installer.MANIFEST_NAME).exists()
+
+
+def test_installer_upgrades_known_legacy_artifacts_with_backups(tmp_path):
+    installer = _load_script("phase14_upgrade_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    claude = home / ".claude"
+    commands = claude / "commands"
+    hooks = claude / "hooks"
+    commands.mkdir(parents=True)
+    hooks.mkdir()
+    vault = tmp_path / "vault"
+    legacy_remember = installer._render(installer.LEGACY_TEMPLATE_ROOT / "remember-v1.md", vault)
+    legacy_hook = installer._render(
+        installer.LEGACY_TEMPLATE_ROOT / "brain-eleven-remember-opt-in-v1", vault
+    )
+    remember_path = commands / "remember.md"
+    hook_path = hooks / "brain-eleven-remember-opt-in"
+    remember_path.write_text(legacy_remember, encoding="utf-8")
+    hook_path.write_text(legacy_hook, encoding="utf-8")
+
+    result = installer.install(home, vault)
+
+    upgraded = {Path(item["path"]).name: item for item in result["files"] if item["status"] == "upgrade"}
+    assert set(upgraded) == {"remember.md", "brain-eleven-remember-opt-in"}
+    assert Path(upgraded["remember.md"]["backup"]).read_text(encoding="utf-8") == legacy_remember
+    assert Path(upgraded["brain-eleven-remember-opt-in"]["backup"]).read_text(encoding="utf-8") == legacy_hook
+    assert remember_path.read_text(encoding="utf-8") == installer._render(
+        installer.TEMPLATE_ROOT / "commands" / "remember.md", vault
+    )
+    assert hook_path.read_text(encoding="utf-8") == installer._render(
+        installer.TEMPLATE_ROOT / "hooks" / "brain-eleven-remember-opt-in", vault
+    )
+
+
+def test_installer_upgrades_a_manifest_owned_artifact(tmp_path):
+    installer = _load_script("phase14_manifest_upgrade_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    vault = tmp_path / "vault"
+    command_path = home / ".claude" / "commands" / "remember.md"
+    command_path.parent.mkdir(parents=True)
+    prior_content = "known managed command version one\n"
+    command_path.write_text(prior_content, encoding="utf-8")
+    manifest_path = home / ".claude" / installer.MANIFEST_NAME
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "vault": str(vault),
+                "files": {str(command_path): installer._sha256_text(prior_content)},
+                "settings_commands": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = installer.install(home, vault)
+
+    upgraded = next(item for item in result["files"] if item["path"] == str(command_path))
+    assert upgraded["status"] == "upgrade"
+    assert Path(upgraded["backup"]).read_text(encoding="utf-8") == prior_content
+
+
+def test_global_hook_templates_resolve_python_portably():
+    template_root = SCRIPTS.parent / "templates" / "claude" / "hooks"
+    for name in ("brain-eleven-session-start", "brain-eleven-remember-opt-in"):
+        template = (template_root / name).read_text(encoding="utf-8")
+        assert 'PYTHON_BIN="${PYTHON:-python3}"' in template
+        assert 'command -v "$PYTHON_BIN"' in template
+        assert 'command -v wslpath' in template
+        assert 'BASH_REMATCH[1],,' in template
+
+
+def test_windows_installer_uses_a_direct_wsl_hook_path(tmp_path):
+    installer = _load_script("phase14_wsl_path_installer", "install-cross-project-memory.py")
+    command = installer._shell_hook_command(tmp_path / "home", "brain-eleven-session-start")
+
+    if installer.os.name == "nt":
+        assert command.startswith("bash /mnt/")
+    else:
+        assert command.startswith("bash /")
+    assert "brain-eleven-session-start" in command
+
+
+def test_installer_replaces_only_legacy_managed_hook_commands(tmp_path):
+    installer = _load_script("phase14_hook_command_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    settings_path = claude / "settings.json"
+    legacy_start, legacy_end = sorted(installer._legacy_settings_commands())
+    settings_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [{"hooks": [{"type": "command", "command": legacy_start}]}],
+                    "SessionEnd": [{"hooks": [{"type": "command", "command": legacy_end}]}],
+                    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "keep-me"}]}],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    installer.install(home, tmp_path / "vault")
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    commands = [hook["command"] for _event, _group, hook in installer._iter_hook_commands(settings)]
+    assert legacy_start not in commands
+    assert legacy_end not in commands
+    assert "keep-me" in commands
+    assert {command for _event, command in installer._managed_settings_entries(home)} <= set(commands)

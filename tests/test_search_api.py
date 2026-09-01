@@ -30,6 +30,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+pytestmark = pytest.mark.integration
 
 
 def make_memory(**overrides):

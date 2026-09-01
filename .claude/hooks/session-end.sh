@@ -7,7 +7,8 @@
 
 set -e
 
-BRAIN_ELEVEN_PATH="${HOME}/Documents/Brain-Eleven"
+HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BRAIN_ELEVEN_PATH="${BRAIN_ELEVEN_VAULT:-$(cd "$HOOK_DIR/../.." && pwd)}"
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 

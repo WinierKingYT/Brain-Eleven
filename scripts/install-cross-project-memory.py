@@ -21,6 +21,7 @@ from typing import Dict, Iterable, List
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_ROOT = REPO_ROOT / "templates" / "claude"
+LEGACY_TEMPLATE_ROOT = TEMPLATE_ROOT / "legacy"
 MANIFEST_NAME = ".brain-eleven-install.json"
 
 
@@ -52,10 +53,32 @@ def _atomic_json_write(path: Path, data: Dict) -> None:
             tmp.unlink()
 
 
+def _atomic_text_write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        Path(tmp_name).replace(path)
+    finally:
+        tmp = Path(tmp_name)
+        if tmp.exists():
+            tmp.unlink()
+
+
 def _backup_settings(settings_path: Path) -> Path:
     stamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
     backup = settings_path.with_name(f"settings.json.brain-eleven.{stamp}.bak")
     shutil.copy2(settings_path, backup)
+    return backup
+
+
+def _backup_managed_file(path: Path) -> Path:
+    stamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    backup = path.with_name(f"{path.name}.brain-eleven.{stamp}.bak")
+    shutil.copy2(path, backup)
     return backup
 
 
@@ -106,11 +129,71 @@ def _remove_commands(settings: Dict, commands: set) -> bool:
     return changed
 
 
-def _managed_settings_entries() -> List[tuple]:
+def _shell_hook_command(home: Path, hook_name: str) -> str:
+    """Render a direct hook command without relying on ``~`` or nested shells."""
+    hook_path = home / ".claude" / "hooks" / hook_name
+    if os.name == "nt" and hook_path.drive:
+        drive = hook_path.drive.rstrip(":").lower()
+        hook_path_text = "/mnt/" + drive + "/" + "/".join(hook_path.parts[1:])
+    else:
+        hook_path_text = str(hook_path).replace("\\", "/")
+    return f"bash {shlex.quote(hook_path_text)}"
+
+
+def _managed_settings_entries(home: Path) -> List[tuple]:
     return [
-        ("SessionStart", "bash ~/.claude/hooks/brain-eleven-session-start"),
-        ("SessionEnd", "bash ~/.claude/hooks/brain-eleven-remember-opt-in"),
+        ("SessionStart", _shell_hook_command(home, "brain-eleven-session-start")),
+        ("SessionEnd", _shell_hook_command(home, "brain-eleven-remember-opt-in")),
     ]
+
+
+def _legacy_settings_commands() -> set:
+    return {
+        "bash ~/.claude/hooks/brain-eleven-session-start",
+        "bash ~/.claude/hooks/brain-eleven-remember-opt-in",
+    }
+
+
+def _legacy_templates() -> Dict[str, Path]:
+    """Known Brain-Eleven v1 artifacts eligible for a backup-first upgrade."""
+    return {
+        "commands/remember.md": LEGACY_TEMPLATE_ROOT / "remember-v1.md",
+        "hooks/brain-eleven-remember-opt-in": LEGACY_TEMPLATE_ROOT / "brain-eleven-remember-opt-in-v1",
+    }
+
+
+def _managed_manifest_hashes(manifest_path: Path, vault: Path) -> Dict[str, str]:
+    """Return trusted prior managed hashes for this exact vault, if available."""
+    if not manifest_path.exists():
+        return {}
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_vault = Path(manifest.get("vault", "")).expanduser().resolve(strict=False)
+        files = manifest.get("files", {})
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return {}
+    if manifest_vault != vault.resolve(strict=False) or not isinstance(files, dict):
+        return {}
+    return {
+        str(path): digest
+        for path, digest in files.items()
+        if isinstance(path, str) and isinstance(digest, str)
+    }
+
+
+def _managed_manifest_commands(manifest_path: Path, vault: Path) -> set:
+    """Return trusted managed hook commands for this exact vault, if available."""
+    if not manifest_path.exists():
+        return set()
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_vault = Path(manifest.get("vault", "")).expanduser().resolve(strict=False)
+        commands = manifest.get("settings_commands", [])
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return set()
+    if manifest_vault != vault.resolve(strict=False) or not isinstance(commands, list):
+        return set()
+    return {command for command in commands if isinstance(command, str)}
 
 
 def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
@@ -122,6 +205,9 @@ def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
         claude_dir / "hooks" / "brain-eleven-session-start": TEMPLATE_ROOT / "hooks" / "brain-eleven-session-start",
         claude_dir / "hooks" / "brain-eleven-remember-opt-in": TEMPLATE_ROOT / "hooks" / "brain-eleven-remember-opt-in",
     }
+    legacy_specs = _legacy_templates()
+    prior_managed_hashes = _managed_manifest_hashes(manifest_path, vault)
+    prior_managed_commands = _managed_manifest_commands(manifest_path, vault)
     result = {"status": "dry_run" if dry_run else "installed", "files": [], "settings_changed": False}
 
     rendered = {str(path): _render(template, vault) for path, template in file_specs.items()}
@@ -130,27 +216,36 @@ def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
         if path.exists():
             current = path.read_text(encoding="utf-8")
             if current != content:
-                result["files"].append({"path": path_text, "status": "conflict"})
+                relative = str(path.relative_to(claude_dir)).replace("\\", "/")
+                legacy = legacy_specs.get(relative)
+                is_prior_managed = prior_managed_hashes.get(path_text) == _sha256_text(current)
+                if is_prior_managed or (legacy and current == _render(legacy, vault)):
+                    result["files"].append({"path": path_text, "status": "upgrade"})
+                else:
+                    result["files"].append({"path": path_text, "status": "conflict"})
                 continue
             result["files"].append({"path": path_text, "status": "unchanged", "sha256": _sha256_text(content)})
         else:
             result["files"].append({"path": path_text, "status": "create", "sha256": _sha256_text(content)})
-            if not dry_run:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(content, encoding="utf-8", newline="\n")
-                if path.name != "remember.md":
-                    try:
-                        path.chmod(path.stat().st_mode | 0o111)
-                    except OSError:
-                        pass
+
+    # A partially installed global integration is safer than overwriting a
+    # user-owned command or hook. Preflight every managed file before writing
+    # settings, a manifest, or any new files so a conflict is fail-closed.
+    if any(item["status"] == "conflict" for item in result["files"]):
+        result["status"] = "conflict"
+        result["manifest"] = str(manifest_path)
+        return result
 
     settings = {}
     if settings_path.exists():
         settings = json.loads(settings_path.read_text(encoding="utf-8"))
     settings.setdefault("hooks", {})
     commands = set()
-    settings_changed = False
-    for event, command in _managed_settings_entries():
+    settings_changed = _remove_commands(
+        settings,
+        prior_managed_commands | _legacy_settings_commands(),
+    )
+    for event, command in _managed_settings_entries(home):
         commands.add(command)
         groups = settings["hooks"].setdefault(event, [])
         already_present = any(
@@ -160,6 +255,20 @@ def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
         if not already_present:
             groups.append({"matcher": "*", "hooks": [{"type": "command", "command": command}]})
             settings_changed = True
+
+    if not dry_run:
+        for item in result["files"]:
+            if item["status"] not in {"create", "upgrade"}:
+                continue
+            path = Path(item["path"])
+            if item["status"] == "upgrade":
+                item["backup"] = str(_backup_managed_file(path))
+            _atomic_text_write(path, rendered[str(path)])
+            if path.name != "remember.md":
+                try:
+                    path.chmod(path.stat().st_mode | 0o111)
+                except OSError:
+                    pass
 
     if settings_changed:
         result["settings_changed"] = True

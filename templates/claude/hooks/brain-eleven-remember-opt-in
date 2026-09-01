@@ -5,13 +5,32 @@
 set -u
 
 BRAIN_ELEVEN_VAULT="${BRAIN_ELEVEN_VAULT:-{{VAULT_PATH}}}"
+if [ ! -d "$BRAIN_ELEVEN_VAULT" ]; then
+    if command -v wslpath >/dev/null 2>&1; then
+        CONVERTED_VAULT="$(wslpath -u "$BRAIN_ELEVEN_VAULT" 2>/dev/null || true)"
+        if [ -n "$CONVERTED_VAULT" ]; then
+            BRAIN_ELEVEN_VAULT="$CONVERTED_VAULT"
+        fi
+    fi
+    if [[ "$BRAIN_ELEVEN_VAULT" =~ ^([A-Za-z]):/(.*)$ ]] && [ -d "/mnt/${BASH_REMATCH[1],,}" ]; then
+        BRAIN_ELEVEN_VAULT="/mnt/${BASH_REMATCH[1],,}/${BASH_REMATCH[2]}"
+    fi
+fi
 GATE="$BRAIN_ELEVEN_VAULT/scripts/remember_opt_in.py"
 
 if [ ! -f "$GATE" ]; then
     exit 0
 fi
 
-if python "$GATE" --project-root "$PWD" --vault "$BRAIN_ELEVEN_VAULT" >/dev/null 2>&1; then
+PYTHON_BIN="${PYTHON:-python3}"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+fi
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    exit 0
+fi
+
+if "$PYTHON_BIN" "$GATE" --project-root "$PWD" --vault "$BRAIN_ELEVEN_VAULT" >/dev/null 2>&1; then
     echo "Brain-Eleven proactive capture is enabled for this explicitly opted-in project. Capture only deliberate decisions, lessons, or open loops; never secrets or transcripts."
 fi
 

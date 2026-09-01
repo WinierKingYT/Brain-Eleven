@@ -5,7 +5,8 @@
 
 set -e
 
-VAULT_PATH="$HOME/Documents/Brain-Eleven"
+HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+VAULT_PATH="${BRAIN_ELEVEN_VAULT:-$(cd "$HOOK_DIR/../.." && pwd)}"
 SCRIPTS_DIR="$VAULT_PATH/scripts"
 COMPANION_DIR="$VAULT_PATH/🔮 Companion"
 

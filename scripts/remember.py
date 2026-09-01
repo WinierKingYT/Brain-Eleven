@@ -31,6 +31,14 @@ from capture_safety import evaluate_capture
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_VAULT = SCRIPT_DIR.parent
+
+
+def _configure_utf8_output() -> None:
+    """Keep CLI diagnostics usable on Windows terminals with legacy encodings."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
 def _load_hyphenated_module(name: str, filename: str):
     """Load one of Brain-Eleven's legacy hyphenated module filenames."""
     spec = importlib.util.spec_from_file_location(name, SCRIPT_DIR / filename)
@@ -175,6 +183,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    _configure_utf8_output()
     parser = _build_parser()
     args = parser.parse_args(argv)
     vault = Path(args.vault).expanduser() if args.vault else default_vault_path()

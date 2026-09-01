@@ -1,7 +1,8 @@
 #!/bin/bash
 # PreCompact hook: Dersler + Kararlar'ı compile et, hafta özetini mem0'a gönder
 
-VAULT_DIR="${VAULT_DIR:-$HOME/Documents/Brain-Eleven}"
+HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+VAULT_DIR="${BRAIN_ELEVEN_VAULT:-${VAULT_DIR:-$(cd "$HOOK_DIR/../.." && pwd)}}"
 STATE_DIR="$VAULT_DIR/.claude/hooks/.state"
 mkdir -p "$STATE_DIR"
 

@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Brain-Eleven Phase 13 safety gate.
+# This never captures content. It only tells the session whether the current
+# project is explicitly opted in for proactive capture; missing/broken config
+# fails closed and never blocks the session.
+
+set -u
+
+BRAIN_ELEVEN_ROOT="{{VAULT_PATH}}"
+CONFIG_FILE="$BRAIN_ELEVEN_ROOT/.claude/remember-config.json"
+
+if python "$BRAIN_ELEVEN_ROOT/scripts/remember_opt_in.py" \
+    --project-root . \
+    --config "$CONFIG_FILE" >/dev/null 2>&1; then
+    echo "Brain-Eleven proactive capture is enabled for this explicitly opted-in project. Capture only deliberate decisions, lessons, or open loops; never secrets or transcripts."
+fi
+
+exit 0

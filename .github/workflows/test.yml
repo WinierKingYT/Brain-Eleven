@@ -41,14 +41,10 @@ jobs:
       run: |
         pytest tests/ -v --tb=short -m "not integration"
 
-    - name: Run integration tests
+    - name: Run API integration tests
       if: matrix.os == 'ubuntu-latest'
       run: |
         pytest tests/ -v --tb=short -m "integration"
-      env:
-        REDIS_HOST: localhost
-        POSTGRES_HOST: localhost
-      continue-on-error: true
 
     - name: Generate coverage report
       run: |

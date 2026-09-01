@@ -35,7 +35,7 @@ ENV POSTGRES_DB=brain_eleven
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "from urllib.request import urlopen; urlopen('http://localhost:8000/health', timeout=5).read()" || exit 1
 
 # Default: Run API server
 CMD ["python", "scripts/search-api.py"]
