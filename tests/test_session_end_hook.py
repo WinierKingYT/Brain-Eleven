@@ -43,7 +43,7 @@ def _run_hook(vault: Path) -> subprocess.CompletedProcess:
     command = (
         f"export BRAIN_ELEVEN_VAULT={shlex.quote(vault_path)}; "
         f"export CLAUDE_PROJECT_DIR={shlex.quote(vault_path)}; "
-        f"exec {shlex.quote(_bash_path(HOOK))}"
+        f"exec bash {shlex.quote(_bash_path(HOOK))}"
     )
     return subprocess.run(
         [BASH, "-c", command],
