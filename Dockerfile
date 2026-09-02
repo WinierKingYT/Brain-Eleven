@@ -16,13 +16,16 @@ COPY scripts/ ./scripts/
 COPY .claude/ ./.claude/
 COPY tests/ ./tests/
 
-# Install Python dependencies.  The base image ships older build tooling and
-# msgpack; upgrade both before installing the application dependency set so
-# fixed Python-package CVEs are not carried into the runtime image.
-RUN pip install --no-cache-dir --upgrade \
+# Install Python dependencies. The base image ships vulnerable distribution
+# records for build tooling and msgpack. Remove those records before installing
+# patched versions so the final image filesystem contains only the patched
+# distributions (and so image scanners can verify that fact).
+RUN python -m pip uninstall --yes setuptools msgpack \
+    && python -m pip install --no-cache-dir \
         "setuptools>=78.1.1" \
         "msgpack>=1.2.1" \
-    && pip install --no-cache-dir -r requirements.txt
+    && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m pip check
 
 # Create non-root user
 RUN addgroup --system app && adduser --system --group app
