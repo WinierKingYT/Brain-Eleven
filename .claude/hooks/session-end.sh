@@ -43,21 +43,53 @@ if ! RUN_OUTPUT=$(PYTHONIOENCODING=utf-8 python3 "$RUNNER_SCRIPT" \
     exit 0
 fi
 
+if ! PIPELINE_RUN_ID=$(PYTHONIOENCODING=utf-8 python3 - "$RUN_OUTPUT" <<'PYEOF'
+import json
+import sys
+
+try:
+    output = json.loads(sys.argv[1])
+    run_id = output["run_id"]
+except (IndexError, KeyError, TypeError, ValueError) as exc:
+    print(f"invalid runner output: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+
+if not isinstance(run_id, str) or not run_id:
+    print("invalid runner output: run_id is missing", file=sys.stderr)
+    raise SystemExit(1)
+
+print(run_id)
+PYEOF
+); then
+    log_warn "Pipeline runner returned no valid run identity; refusing any prior result"
+    printf '%s\n' "$RUN_OUTPUT" >&2
+    exit 0
+fi
+
 if [ ! -f "$RESULT_FILE" ]; then
     log_warn "Pipeline runner returned without a run result; treating all steps as unknown"
     exit 0
 fi
 
-SUMMARY=$(PYTHONIOENCODING=utf-8 python3 - "$RESULT_FILE" <<'PYEOF'
+SUMMARY=$(PYTHONIOENCODING=utf-8 python3 - "$RESULT_FILE" "$PIPELINE_RUN_ID" <<'PYEOF'
 import json
 import sys
 
 try:
     with open(sys.argv[1], encoding="utf-8") as handle:
         result = json.load(handle)
+    expected_run_id = sys.argv[2]
     run_id = result["run_id"]
     status = result["status"]
     steps = result["steps"]
+    if run_id != expected_run_id:
+        raise ValueError(
+            f"result run_id {run_id!r} does not match runner run_id {expected_run_id!r}"
+        )
+    if status not in {"SUCCESS", "DEGRADED", "FAILED"}:
+        raise ValueError(f"unknown pipeline status: {status!r}")
+    if not isinstance(steps, list):
+        raise TypeError("result steps must be a list")
 except (OSError, ValueError, KeyError, TypeError) as exc:
     print(f"INVALID_RESULT\t{exc}")
     raise SystemExit(0)

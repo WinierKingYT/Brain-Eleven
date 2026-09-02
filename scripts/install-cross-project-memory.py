@@ -258,13 +258,19 @@ def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
     if settings_path.exists():
         settings = json.loads(settings_path.read_text(encoding="utf-8"))
     settings.setdefault("hooks", {})
-    commands = set()
+    managed_entries = _managed_settings_entries(home)
+    commands = {command for _event, command in managed_entries}
+    # Keep exact current managed commands in place. Removing and appending them
+    # on every run rewrites settings.json (and creates needless backups) even
+    # when the requested integration is already installed.
+    commands_to_remove = (
+        prior_managed_commands | _legacy_settings_commands()
+    ) - commands
     settings_changed = _remove_commands(
         settings,
-        prior_managed_commands | _legacy_settings_commands(),
+        commands_to_remove,
     )
-    for event, command in _managed_settings_entries(home):
-        commands.add(command)
+    for event, command in managed_entries:
         groups = settings["hooks"].setdefault(event, [])
         already_present = any(
             existing_event == event and hook.get("command") == command

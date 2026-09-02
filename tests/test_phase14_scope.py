@@ -322,6 +322,24 @@ def test_installer_preserves_unrelated_settings_and_is_reversible(tmp_path):
     assert not (claude / "commands" / "remember.md").exists()
 
 
+def test_installer_is_idempotent_after_a_successful_install(tmp_path):
+    installer = _load_script("phase14_idempotent_installer", "install-cross-project-memory.py")
+    home = tmp_path / "home"
+    vault = tmp_path / "vault"
+
+    first = installer.install(home, vault)
+    settings_path = home / ".claude" / "settings.json"
+    settings_before = settings_path.read_bytes()
+
+    second = installer.install(home, vault)
+
+    assert first["settings_changed"] is True
+    assert second["settings_changed"] is False
+    assert settings_path.read_bytes() == settings_before
+    assert "settings_backup" not in second
+    assert {item["status"] for item in second["files"]} == {"unchanged"}
+
+
 def test_installer_recovers_a_matching_partial_legacy_install(tmp_path):
     installer = _load_script("phase14_partial_installer", "install-cross-project-memory.py")
     home = tmp_path / "home"
