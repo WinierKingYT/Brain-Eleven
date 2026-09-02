@@ -1,0 +1,34 @@
+# Reviewed: 2026-09-02
+#
+# These HIGH/CRITICAL findings originate in python:3.13-slim's Debian 13
+# base layer. Debian currently publishes no fixed version for them. This is a
+# deliberately short-lived acceptance, not a severity bypass: any new CVE,
+# any fixed CVE, or an expired entry fails the hard gate. Re-review the base
+# image and these entries before the expiry date.
+
+# exp:2026-10-02
+CVE-2025-69720
+# exp:2026-10-02
+CVE-2026-11822
+# exp:2026-10-02
+CVE-2026-11824
+# exp:2026-10-02
+CVE-2026-13221
+# exp:2026-10-02
+CVE-2026-41992
+# exp:2026-10-02
+CVE-2026-42496
+# exp:2026-10-02
+CVE-2026-42497
+# exp:2026-10-02
+CVE-2026-48962
+# exp:2026-10-02
+CVE-2026-54369
+# exp:2026-10-02
+CVE-2026-57432
+# exp:2026-10-02
+CVE-2026-57433
+# exp:2026-10-02
+CVE-2026-8376
+# exp:2026-10-02
+CVE-2026-9538

@@ -16,8 +16,13 @@ COPY scripts/ ./scripts/
 COPY .claude/ ./.claude/
 COPY tests/ ./tests/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies.  The base image ships older build tooling and
+# msgpack; upgrade both before installing the application dependency set so
+# fixed Python-package CVEs are not carried into the runtime image.
+RUN pip install --no-cache-dir --upgrade \
+        "setuptools>=78.1.1" \
+        "msgpack>=1.2.1" \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Create non-root user
 RUN addgroup --system app && adduser --system --group app
