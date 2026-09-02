@@ -234,6 +234,13 @@ class TestCompileAndSave:
         assert "context_block" in output
         assert output["summary"]["top_memories"] == 1
 
+    def test_compile_carries_session_run_lineage_when_provided(self, vault):
+        compiler = ContextCompiler(str(vault), generated_by_run="run_test")
+
+        output = compiler.compile()
+
+        assert output["generated_by_run"] == "run_test"
+
     def test_compile_with_no_memories_still_succeeds(self, vault):
         compiler = ContextCompiler(str(vault))
 

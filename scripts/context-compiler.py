@@ -52,7 +52,13 @@ def resolve_session_project_id(vault_path: str, project_root: str = None) -> str
 class ContextCompiler:
     """Compile curated context for session bootstrap"""
 
-    def __init__(self, vault_path: str, project_id: str = None, retrieval_scope: str = "default"):
+    def __init__(
+        self,
+        vault_path: str,
+        project_id: str = None,
+        retrieval_scope: str = "default",
+        generated_by_run: str = None,
+    ):
         self.vault_path = Path(vault_path)
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.memory_store = MemoryStore(self.vault_path)
@@ -61,6 +67,7 @@ class ContextCompiler:
         self.hamle_dir = self.vault_path / "🗂️ Proje Notları/Kararlar"
         self.project_id = project_id
         self.retrieval_scope = retrieval_scope
+        self.generated_by_run = generated_by_run
 
         self.memories = []
         self.related_notes = []
@@ -341,6 +348,7 @@ class ContextCompiler:
             "schema_version": CONTEXT_BOOTSTRAP_SCHEMA_VERSION,
             "projection": "context_bootstrap",
             "source_memory_revision": int(self.source_memory_revision),
+            "generated_by_run": self.generated_by_run,
             "compiled_at": datetime.now().isoformat(),
             "summary": {
                 "top_memories": len(top_memories),
@@ -439,6 +447,7 @@ if __name__ == "__main__":
         default="default",
     )
     parser.add_argument("--stdout", action="store_true", help="Print only the context block")
+    parser.add_argument("--generated-by-run", default=None)
     parser.add_argument(
         "--load-bootstrap",
         action="store_true",
@@ -453,6 +462,7 @@ if __name__ == "__main__":
         args.vault,
         project_id=project_id,
         retrieval_scope=args.retrieval_scope,
+        generated_by_run=args.generated_by_run,
     )
     if args.load_bootstrap:
         status = compiler.bootstrap_status()

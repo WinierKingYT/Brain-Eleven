@@ -31,6 +31,7 @@ from logging_config import setup_logging  # noqa: E402
 from summarizer import MemorySummarizer  # noqa: E402
 from anomaly_detector import AnomalyDetector  # noqa: E402
 from entity_extractor import EntityExtractor  # noqa: E402
+from memory_store import MemoryStore, MemoryStoreError  # noqa: E402
 
 logger = setup_logging(__name__)
 
@@ -49,7 +50,7 @@ def _run_step(name: str, fn) -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 
-def run_maintenance(vault_path: str = ".") -> Dict[str, Any]:
+def run_maintenance(vault_path: str = ".", generated_by_run: str = None) -> Dict[str, Any]:
     """Run graph rebuild + anomaly detection + same-day digest, return a report dict."""
     graph_step = _run_step(
         "graph_rebuild",
@@ -69,8 +70,16 @@ def run_maintenance(vault_path: str = ".") -> Dict[str, Any]:
         anomaly_report and anomaly_report.get("total_anomalies", 0) >= SURFACE_THRESHOLD
     )
 
+    try:
+        source_memory_revision = MemoryStore(vault_path).revision()
+    except MemoryStoreError as exc:
+        source_memory_revision = None
+        logger.error(f"Could not read canonical revision for maintenance report: {exc}")
+
     report = {
         "generated_at": datetime.now().isoformat(),
+        "generated_by_run": generated_by_run,
+        "source_memory_revision": source_memory_revision,
         "graph": graph_step,
         "anomalies": anomaly_step,
         "digest": digest_step,
@@ -127,9 +136,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Brain-Eleven post-session maintenance")
     parser.add_argument("--vault", default=".", help="Path to vault root")
     parser.add_argument("--quiet", action="store_true", help="Suppress the shell summary print")
+    parser.add_argument("--generated-by-run", default=None)
     args = parser.parse_args()
 
-    result = run_maintenance(args.vault)
+    result = run_maintenance(args.vault, generated_by_run=args.generated_by_run)
     save_report(result, args.vault)
 
     if not args.quiet:

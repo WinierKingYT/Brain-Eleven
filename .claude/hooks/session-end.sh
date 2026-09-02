@@ -1,161 +1,109 @@
 #!/bin/bash
-# .claude/hooks/session-end.sh
-# Brain-Eleven Session End: Extract memory from Daily + Validate + Bootstrap
+# Brain-Eleven SessionEnd hook: run the structured pipeline contract.
 #
-# Pipeline: Daily.md → Memory Compiler → Memory Validator → context-bootstrap.json
-# Ready for: SessionStart hook to load and display
+# The hook itself remains best-effort so it never blocks a Claude session from
+# ending. Its status messages are nevertheless derived from this invocation's
+# run-result document, never from a stale artifact left by an earlier run.
 
 set -e
 
 HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BRAIN_ELEVEN_PATH="${BRAIN_ELEVEN_VAULT:-$(cd "$HOOK_DIR/../.." && pwd)}"
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+RUNNER_SCRIPT="$BRAIN_ELEVEN_PATH/scripts/session_pipeline.py"
+RESULT_FILE="$BRAIN_ELEVEN_PATH/.claude/session-run-result.json"
+HOOK_LOG="$BRAIN_ELEVEN_PATH/.claude/hook-execution.log"
 
-# Colors
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log() {
-    echo -e "${BLUE}[Brain-Eleven SessionEnd]${NC} $1" >&2
-}
+log() { echo -e "${BLUE}[Brain-Eleven SessionEnd]${NC} $1" >&2; }
+log_ok() { echo -e "${GREEN}✓${NC} $1" >&2; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $1" >&2; }
 
-log_ok() {
-    echo -e "${GREEN}✓${NC} $1" >&2
-}
-
-log_warn() {
-    echo -e "${YELLOW}⚠${NC} $1" >&2
-}
-
-# ============================================================================
-# Verify vault exists
-# ============================================================================
 if [ ! -d "$BRAIN_ELEVEN_PATH" ]; then
-    log_warn "Brain-Eleven vault not found"
+    log_warn "Brain-Eleven vault not found; no pipeline was run"
     exit 0
 fi
 
-log "Starting session end extraction..."
-
-# ============================================================================
-# Step 1: Memory Compiler
-# ============================================================================
-COMPILER_SCRIPT="${BRAIN_ELEVEN_PATH}/scripts/memory-compiler.py"
-COMPILED_JSON="${BRAIN_ELEVEN_PATH}/.claude/compiled-memory.json"
-
-if [ -f "$COMPILER_SCRIPT" ]; then
-    log "Running Memory Compiler..."
-    PYTHONIOENCODING=utf-8 python3 "$COMPILER_SCRIPT" > /dev/null 2>&1 || true
-
-    if [ -f "$COMPILED_JSON" ]; then
-        log_ok "Memory Compiler complete"
-        CANDIDATE_COUNT=$(grep -c '"type"' "$COMPILED_JSON" 2>/dev/null || echo "0")
-        log "  → $CANDIDATE_COUNT candidates extracted"
-    else
-        log_warn "Compiler output missing"
-    fi
-else
-    log_warn "Memory Compiler script not found"
+if [ ! -f "$RUNNER_SCRIPT" ]; then
+    log_warn "Session pipeline runner not found; no pipeline was run"
+    exit 0
 fi
 
-# ============================================================================
-# Step 2: Memory Validator
-# ============================================================================
-VALIDATOR_SCRIPT="${BRAIN_ELEVEN_PATH}/scripts/memory-validator.py"
-VALIDATED_JSON="${BRAIN_ELEVEN_PATH}/.claude/validated-memory.json"
-
-if [ -f "$VALIDATOR_SCRIPT" ]; then
-    log "Running Memory Validator..."
-    PYTHONIOENCODING=utf-8 python3 "$VALIDATOR_SCRIPT" > /dev/null 2>&1 || true
-
-    if [ -f "$VALIDATED_JSON" ]; then
-        log_ok "Memory Validator complete"
-        APPROVED=$(grep -c '"is_approved": true' "$VALIDATED_JSON" 2>/dev/null || echo "0")
-        log "  → $APPROVED memories approved"
-    else
-        log_warn "Validator output missing"
-    fi
-else
-    log_warn "Memory Validator script not found"
+log "Running lineage-aware session pipeline..."
+if ! RUN_OUTPUT=$(PYTHONIOENCODING=utf-8 python3 "$RUNNER_SCRIPT" \
+    --vault "$BRAIN_ELEVEN_PATH" \
+    --project-root "$PROJECT_ROOT" \
+    --python python3 2>&1); then
+    log_warn "Pipeline runner failed before it could persist a run result"
+    printf '%s\n' "$RUN_OUTPUT" >&2
+    exit 0
 fi
 
-# ============================================================================
-# Step 3: Context Compiler (bootstrap for next session)
-# ============================================================================
-CONTEXT_COMPILER="${BRAIN_ELEVEN_PATH}/scripts/context-compiler.py"
-CONTEXT_BOOTSTRAP="${BRAIN_ELEVEN_PATH}/.claude/context-bootstrap.json"
-
-if [ -f "$CONTEXT_COMPILER" ]; then
-    log "Compiling context bootstrap..."
-    PYTHONIOENCODING=utf-8 python3 "$CONTEXT_COMPILER" \
-        --vault "$BRAIN_ELEVEN_PATH" \
-        --project-root "$PROJECT_ROOT" > /dev/null 2>&1 || true
-
-    if [ -f "$CONTEXT_BOOTSTRAP" ]; then
-        log_ok "Context bootstrap ready"
-    else
-        log_warn "Context bootstrap not generated"
-    fi
-else
-    log_warn "Context Compiler script not found"
+if [ ! -f "$RESULT_FILE" ]; then
+    log_warn "Pipeline runner returned without a run result; treating all steps as unknown"
+    exit 0
 fi
 
-# ============================================================================
-# Step 3.5: Post-Session Maintenance (Phase 12)
-# Graph rebuild + anomaly detection + same-day digest - the Phase 10/11
-# tools the pipeline above never touched. Best-effort: never blocks
-# session end even if this whole step fails.
-# ============================================================================
-MAINTENANCE_SCRIPT="${BRAIN_ELEVEN_PATH}/scripts/post_session_maintenance.py"
-MAINTENANCE_REPORT="${BRAIN_ELEVEN_PATH}/.claude/session-maintenance-report.json"
-MAINTENANCE_SUMMARY=""
+SUMMARY=$(PYTHONIOENCODING=utf-8 python3 - "$RESULT_FILE" <<'PYEOF'
+import json
+import sys
 
-if [ -f "$MAINTENANCE_SCRIPT" ]; then
-    log "Running post-session maintenance..."
-    MAINTENANCE_SUMMARY=$(PYTHONIOENCODING=utf-8 python3 "$MAINTENANCE_SCRIPT" --vault "$BRAIN_ELEVEN_PATH" 2>/dev/null || true)
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        result = json.load(handle)
+    run_id = result["run_id"]
+    status = result["status"]
+    steps = result["steps"]
+except (OSError, ValueError, KeyError, TypeError) as exc:
+    print(f"INVALID_RESULT\t{exc}")
+    raise SystemExit(0)
 
-    if [ -f "$MAINTENANCE_REPORT" ]; then
-        log_ok "Post-session maintenance complete"
-        echo "$MAINTENANCE_SUMMARY" | sed 's/^/  → /' >&2
-    else
-        log_warn "Maintenance report not generated"
-    fi
-else
-    log_warn "Post-session maintenance script not found"
+print(f"RUN\t{run_id}\t{status}")
+for step in steps:
+    print(
+        "STEP\t{step}\t{status}\t{exit_code}\t{fresh}\t{error}".format(
+            step=step.get("step", "unknown"),
+            status=step.get("status", "UNKNOWN"),
+            exit_code=step.get("exit_code", ""),
+            fresh=step.get("artifact_created_this_run", False),
+            error=step.get("error") or "",
+        )
+    )
+PYEOF
+)
+
+if [[ "$SUMMARY" == INVALID_RESULT* ]]; then
+    log_warn "Run result is unreadable; no step is reported as successful"
+    printf '%s\n' "$SUMMARY" >&2
+    exit 0
 fi
 
-# ============================================================================
-# Step 4: Log session end
-# ============================================================================
-HOOK_LOG="${BRAIN_ELEVEN_PATH}/.claude/hook-execution.log"
 mkdir -p "$(dirname "$HOOK_LOG")"
+printf '[SessionEnd] %s\n%s\n\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$SUMMARY" >> "$HOOK_LOG"
 
-cat >> "$HOOK_LOG" <<EOF
-[SessionEnd] $TIMESTAMP
-- Memory Compiler: $([ -f "$COMPILED_JSON" ] && echo "OK ($CANDIDATE_COUNT candidates)" || echo "FAILED")
-- Memory Validator: $([ -f "$VALIDATED_JSON" ] && echo "OK ($APPROVED approved)" || echo "FAILED")
-- Context Bootstrap: $([ -f "$CONTEXT_BOOTSTRAP" ] && echo "OK" || echo "FAILED")
-- Post-Session Maintenance: $([ -f "$MAINTENANCE_REPORT" ] && echo "OK" || echo "FAILED")
-- Ready for: SessionStart
+while IFS=$'\t' read -r record name status exit_code fresh error; do
+    if [ "$record" = "RUN" ]; then
+        RUN_ID="$name"
+        PIPELINE_STATUS="$status"
+        continue
+    fi
+    [ "$record" = "STEP" ] || continue
+    if [ "$status" = "SUCCESS" ]; then
+        log_ok "$name succeeded (fresh artifact: $fresh)"
+    else
+        log_warn "$name: $status${error:+ — $error}"
+    fi
+done <<< "$SUMMARY"
 
-EOF
-
-log_ok "Session end processing complete"
-
-echo ""
-echo "=== Session End Summary ==="
-echo ""
-echo "✓ Memory extracted: $CANDIDATE_COUNT candidates"
-echo "✓ Memory validated: $APPROVED approved"
-echo "✓ Context compiled: ready for next session"
-if [ -f "$MAINTENANCE_REPORT" ]; then
-    echo "✓ Post-session maintenance: graph rebuilt, anomalies checked"
-fi
-echo ""
-echo "Next session will load bootstrap automatically."
-echo ""
+case "${PIPELINE_STATUS:-UNKNOWN}" in
+    SUCCESS) log_ok "Session pipeline complete: $RUN_ID" ;;
+    DEGRADED) log_warn "Session pipeline degraded: $RUN_ID (see session-run-result.json)" ;;
+    FAILED) log_warn "Session pipeline failed safely: $RUN_ID (see session-run-result.json)" ;;
+    *) log_warn "Session pipeline produced an unknown result state" ;;
+esac
 
 exit 0

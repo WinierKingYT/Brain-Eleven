@@ -901,7 +901,7 @@ class MemoryValidator:
         result, _persisted = self.store.transact(mutate)
         return result
 
-    def save_output(self, output_file: str = None) -> str:
+    def save_output(self, output_file: str = None, generated_by_run: str = None) -> str:
         """Save validation results with atomic persistence"""
 
         if output_file is None:
@@ -911,6 +911,8 @@ class MemoryValidator:
         if output_path.resolve() != self.validated_json.resolve():
             self._reload_persisted_state()
             output = self.validate_all()
+            if generated_by_run:
+                output["last_validated_by_run"] = generated_by_run
             self._atomic_write(output_path, output)
             return output_file
 
@@ -918,6 +920,8 @@ class MemoryValidator:
             self.prior_validated = data
             self.existing_memory = self._load_existing_memory()
             output = self.validate_all()
+            if generated_by_run:
+                output["last_validated_by_run"] = generated_by_run
             data.clear()
             data.update(output)
             return output
@@ -928,7 +932,8 @@ class MemoryValidator:
         prior_file = Path(self.vault_path / ".claude/compiled-memory-prior.json")
         prior_output = {
             "compiled_at": output.get("validated_at"),
-            "candidates": output.get("validated_memory", [])
+            "candidates": output.get("validated_memory", []),
+            "generated_by_run": generated_by_run,
         }
         self._atomic_write(prior_file, prior_output, validate_structure=False)
         print(f"💾 Also saved prior: {prior_file}")
@@ -941,12 +946,15 @@ class MemoryValidator:
 # ============================================================================
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    vault_path = Path.home() / "Documents/Brain-Eleven"
+    parser = argparse.ArgumentParser(description="Validate Brain-Eleven memory candidates")
+    parser.add_argument("--vault", default=str(Path.home() / "Documents/Brain-Eleven"))
+    parser.add_argument("--generated-by-run", default=None)
+    args = parser.parse_args()
 
-    validator = MemoryValidator(str(vault_path))
-    output_file = validator.save_output()
+    validator = MemoryValidator(args.vault)
+    output_file = validator.save_output(generated_by_run=args.generated_by_run)
 
     print(f"\n🎯 Next steps:")
     print(f"   1. Review: {output_file}")

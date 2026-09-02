@@ -21,6 +21,7 @@ Pipeline:
 
 import json
 import re
+import argparse
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict
@@ -444,13 +445,15 @@ class MemoryCompiler:
 
         return output
 
-    def save_output(self, output_file: str = None) -> str:
+    def save_output(self, output_file: str = None, generated_by_run: str = None) -> str:
         """Save compilation output to JSON"""
 
         if output_file is None:
             output_file = str(self.vault_path / ".claude/compiled-memory.json")
 
         output = self.compile()
+        if generated_by_run:
+            output["generated_by_run"] = generated_by_run
 
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
@@ -464,12 +467,13 @@ class MemoryCompiler:
 # ============================================================================
 
 if __name__ == "__main__":
-    import sys
+    parser = argparse.ArgumentParser(description="Compile Brain-Eleven memory candidates")
+    parser.add_argument("--vault", default=str(Path.home() / "Documents/Brain-Eleven"))
+    parser.add_argument("--generated-by-run", default=None)
+    args = parser.parse_args()
 
-    vault_path = Path.home() / "Documents/Brain-Eleven"
-
-    compiler = MemoryCompiler(str(vault_path))
-    output_file = compiler.save_output()
+    compiler = MemoryCompiler(args.vault)
+    output_file = compiler.save_output(generated_by_run=args.generated_by_run)
 
     print(f"\n🎯 Next steps:")
     print(f"   1. Review: {output_file}")

@@ -62,6 +62,12 @@ class TestRunMaintenance:
         assert report["anomalies"]["ok"] is True
         assert report["digest"]["ok"] is True
 
+    def test_report_carries_run_lineage_and_canonical_revision(self, vault):
+        report = run_maintenance(str(vault), generated_by_run="run_test")
+
+        assert report["generated_by_run"] == "run_test"
+        assert report["source_memory_revision"] == 0
+
     def test_empty_vault_does_not_crash(self, vault):
         report = run_maintenance(str(vault))
 
