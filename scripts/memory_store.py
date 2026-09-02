@@ -119,26 +119,30 @@ class MemoryStore:
 
     def _write_unlocked(self, data: Dict) -> None:
         normalized = self._normalize(data)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        if self.path.exists():
-            shutil.copy2(self.path, self.backup_path)
-
-        descriptor, temporary_name = tempfile.mkstemp(
-            prefix=".memory-store-", suffix=".json", dir=self.path.parent
-        )
+        temporary = None
         try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            if self.path.exists():
+                shutil.copy2(self.path, self.backup_path)
+
+            descriptor, temporary_name = tempfile.mkstemp(
+                prefix=".memory-store-", suffix=".json", dir=self.path.parent
+            )
+            temporary = Path(temporary_name)
             with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
                 json.dump(normalized, handle, indent=2, ensure_ascii=False)
                 handle.write("\n")
                 handle.flush()
                 os.fsync(handle.fileno())
-            Path(temporary_name).replace(self.path)
+            temporary.replace(self.path)
         except OSError as exc:
             raise MemoryStoreError(f"Cannot persist canonical memory store: {self.path}") from exc
         finally:
-            temporary = Path(temporary_name)
-            if temporary.exists():
-                temporary.unlink()
+            if temporary is not None and temporary.exists():
+                try:
+                    temporary.unlink()
+                except OSError:
+                    pass
 
     def transact(
         self,
