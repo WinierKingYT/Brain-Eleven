@@ -707,8 +707,8 @@ class MemoryValidator:
             try:
                 if 'temp_path' in locals() and Path(temp_path).exists():
                     Path(temp_path).unlink()
-            except:
-                pass
+            except OSError as cleanup_error:
+                print(f"⚠️  Could not remove temporary file: {cleanup_error}")
             return False
 
     def validate_all(self) -> Dict:

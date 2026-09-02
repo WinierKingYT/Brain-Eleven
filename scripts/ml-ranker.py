@@ -31,9 +31,13 @@ class MLRanker:
             'match_type': 0.10         # Exact > partial > fuzzy match
         }
 
-        # Validate weights
+        self._validate_weights()
+
+    def _validate_weights(self) -> None:
+        """Reject invalid ranking configurations in every runtime mode."""
         total_weight = sum(self.weights.values())
-        assert abs(total_weight - 1.0) < 0.001, f"Weights must sum to 1.0, got {total_weight}"
+        if not np.isclose(total_weight, 1.0, atol=0.001):
+            raise ValueError(f"Weights must sum to 1.0, got {total_weight}")
 
     # ========================================================================
     # RANKING OPERATIONS
