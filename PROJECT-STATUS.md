@@ -1,64 +1,71 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-01
-**Current milestone:** Phase 13 cross-project memory and Phase 14 runtime hardening complete locally
+**Last updated:** 2026-09-02
+**Current milestone:** Phase 14G Memory Foundation Graduation — G1–G6 complete; independent review (G7) remains.
+
+## Status vocabulary
+
+| Status | Meaning |
+|---|---|
+| **VERIFIED** | A bounded claim has reproducible automated evidence or a revision-bound CI result. |
+| **PARTIALLY VERIFIED** | The implementation is present, but a required environment or operational check is still absent. |
+| **NOT VERIFIED** | No adequate evidence exists; this is not a claim of failure. |
+| **HISTORICAL** | A past implementation or validation record; it does not describe the current head. |
+
+“Implemented” and “verified” are deliberately different: an implementation is
+only **VERIFIED** when its stated evidence can be rerun or inspected.
 
 ## Product boundary
 
 Brain-Eleven is a local, privacy-first second-brain system. Canonical memory
-remains in the vault; the API, hooks, context compiler, knowledge graph and
-search layers consume that same validated store rather than creating parallel
-write paths.
+remains in the vault; API, hooks, context compiler, knowledge graph and search
+layers consume that same validated store rather than creating parallel write
+paths.
 
-## Verified current state
+## Current evidence-backed state
 
-| Area | Status | Evidence |
+| Area | Status | Evidence boundary |
 |---|---|---|
-| Canonical memory schema | ✅ | Scope v2 migration applied to the real vault: 46 memories, canonical revision 1, recoverable pre-migration backup. |
-| Project isolation | ✅ | Project memories deduplicate and detect conflicts only within their project; global memory remains explicitly shareable. |
-| Retrieval and context | ✅ | Current-project memories rank first, global memories remain eligible, and other-project memories are excluded unless explicitly requested. |
-| Knowledge graph provenance | ✅ | Memory nodes retain project provenance through `BELONGS_TO` project relations. |
-| Concurrent writes | ✅ | Canonical writes lock, reload and atomically replace the latest store to prevent lost updates. |
-| Global `/remember` installation | ✅ | Idempotent installer upgrades known legacy artifacts, preserves unrelated Claude settings and backs up managed changes. |
-| Hook portability | ✅ | Global and local hooks resolve Windows/WSL paths and `python3`/`python` safely; unopted projects fail closed. Corrected 2026-09-01: the installed `SessionStart`/`SessionEnd` commands only offered the WSL `/mnt/c/...` form, which a native Windows + Git Bash host (the actual target machine) cannot resolve at all - confirmed by executing the exact installed command directly and getting `No such file or directory`, contradicting the smoke-test claim below. `_shell_hook_command()` now emits `bash <Git-Bash-native form> || bash <WSL form>`, re-installed, and re-verified by executing the corrected command directly (real bootstrap output, exit 0). |
-| Prompt checkpoints | ✅ | The local prompt counter writes atomic state and every-15-prompt checkpoint without interrupting the prompt flow. |
-| API regression suite | ✅ | Unit and API-integration tests are split; integration tests use the actual FastAPI lifecycle. |
-| Container configuration | ✅ | Compose validation passes; service ports bind to loopback on the host and health checks use only Python standard-library dependencies. |
+| Canonical memory authority | **VERIFIED** | `MemoryStore` is the revisioned, locked and atomic canonical write boundary; malformed input and write failures are tested fail-closed. |
+| Cross-project isolation | **VERIFIED** | Default retrieval admits global + current-project memory only; conflict, dedup, graph and context tests cover wrong-project exclusion. |
+| Derived-state safety | **VERIFIED** | Graph and bootstrap are revisioned projections. Missing/corrupt projections rebuild; stale or scope-mismatched bootstrap is rejected. |
+| Concurrent writers | **VERIFIED** | Graduation tests cover 10 simultaneous writers, 20 reopened transactions, stale CAS, lock timeout and writer crash recovery with zero lost updates. |
+| Backup and restore | **VERIFIED** | A manifest/checksum ZIP restores into a blank vault, preserves canonical IDs/revision/lifecycle, then rebuilds graph and context. Corrupt or overwrite targets are refused. |
+| CI and release topology | **VERIFIED** | Unit, integration, coverage, Bandit, secrets, dependency and image-security gates precede the validated-image publish workflow. CI evidence is revision-bound; inspect the matching Actions run for a particular head. |
+| Global `/remember` installer | **PARTIALLY VERIFIED** | The installer and portability tests are versioned; installation into each user’s global Claude configuration remains a local operational action. |
+| Live Docker Compose deployment | **NOT VERIFIED** | Static compose and image-security contracts are tested, but this workstation has not run a live Linux Docker daemon/Compose healthcheck. |
+| Public deployment and daily-use telemetry | **NOT VERIFIED** | Outside the local-first memory-foundation graduation boundary. |
 
-## Local verification evidence
+## Runtime graduation evidence
 
-| Check | Result |
-|---|---|
-| Full automated suite | **311 passed** |
-| Coverage gate | **85%** (minimum: 80%) |
-| Unit suite | **272 passed** |
-| FastAPI integration suite | **38 passed** |
-| Compose configuration | `docker compose config --quiet` passed |
-| Real global hook smoke test | Originally claimed passing, but this was not verified against the actual target host - see the corrected Hook portability row above. Re-verified 2026-09-01 on the real machine after the fix: the exact command string in `~/.claude/settings.json` was executed directly, producing real bootstrap output (exit 0) for SessionStart, and a silent, non-crashing exit 0 for SessionEnd run from an unopted project directory. |
-| Real canonical migration | 46 records migrated, no records marked for review, exact backup created |
+The manifest is generated, never edited by hand:
 
-## Remaining operational validation
+```powershell
+python scripts/graduation_evidence.py run --output .phase-evidence/phase14-graduation.json
+```
 
-1. Docker Desktop's Linux daemon was unavailable on this workstation, so a live
-   `docker compose up` healthcheck remains an environment-level validation step.
-2. A public deployment, backup/restore drill and sustained daily-use telemetry
-   are separate operational work; none is required for the local-first core.
-3. The pending commit still needs remote GitHub Actions confirmation after it is
-   pushed.
+It records the exact test count, coverage, runtime, invariant outcomes,
+wrong-project leakage and lost-update metrics from JUnit/Cobertura output.
+The artifact is intentionally ignored by Git. In GitHub Actions, the same
+manifest is produced only after all security hard gates pass and is uploaded as
+the `phase14-graduation-evidence` artifact. Live Compose deployment remains
+`NOT_VERIFIED` in every manifest unless separately tested.
 
 ## Operational guidance
 
-- Keep project capture opt-in. Proactive capture may be enabled only after the
-  project is registered and its scope policy is understood.
-- Use project-scoped memory for project decisions. Use global memory only for
-  facts and practices intentionally shared across projects.
-- Retain `.claude/validated-memory.json.pre-scope-v2-*.bak` until the migrated
-  store has been observed in normal use.
-- Treat a hook warning as a degraded convenience feature, never as permission to
-  bypass the validator or write directly to canonical memory.
+- Keep proactive capture opt-in. Register a project before enabling it and use
+  project scope for project decisions; reserve global scope for intentional
+  cross-project facts.
+- Treat hook failures as degraded convenience behavior, never as permission to
+  bypass validation or write canonical memory directly.
+- Retain migration backups until normal use has been observed and a verified
+  backup/restore drill has completed for the intended vault.
+- Before calling the foundation frozen, complete the independent Phase 14G
+  review; before claiming Docker deployment verified, run the live Compose
+  healthcheck in a Linux Docker environment.
 
 ## Historical planning documents
 
-Phase plans preserve the original design and execution record. Current status
-is maintained here; the Phase 13 plan is marked as historical so old runtime
-assumptions are not mistaken for the verified system state.
+Older phase plans are **HISTORICAL** execution records. They may contain
+superseded assumptions; use this file and revision-bound evidence artifacts for
+the current state.

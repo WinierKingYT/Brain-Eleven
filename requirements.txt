@@ -35,3 +35,6 @@ python-ulid==4.0.1
 # Local .env loading (docker-compose injects env vars directly; this
 # only matters for `python scripts/search-api.py` outside a container)
 python-dotenv==1.2.2
+
+# Runtime evidence parsing (safe replacement for xml.etree on CI artifacts)
+defusedxml==0.7.1
