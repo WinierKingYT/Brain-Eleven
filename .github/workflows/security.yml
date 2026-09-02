@@ -88,6 +88,11 @@ jobs:
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
           limit-severities-for-sarif: 'true'
+          # Python libraries are hard-gated by pip-audit against the resolved
+          # requirements. Limit image scanning to OS packages so deleted,
+          # vulnerable records in immutable base layers cannot shadow patched
+          # runtime distributions in the final filesystem.
+          vuln-type: os
           exit-code: '1'
           ignore-unfixed: 'false'
           trivyignores: .trivyignore
