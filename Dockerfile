@@ -3,9 +3,11 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# System dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
+# Refresh the runtime OS packages while building.  The Python dependencies
+# currently resolve to wheels, so a compiler does not need to be shipped in
+# the production image.
+RUN apt-get update \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy files
@@ -25,7 +27,6 @@ USER app
 
 # Environment
 ENV PYTHONUNBUFFERED=1
-ENV OPENAI_API_KEY=${OPENAI_API_KEY}
 ENV VAULT_PATH=/vault
 ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
