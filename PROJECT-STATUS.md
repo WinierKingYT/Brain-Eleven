@@ -1,7 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-02
-**Current milestone:** Phase 14G Memory Foundation Graduation — G1–G6 complete; independent review (G7) remains.
+**Last updated:** 2026-09-03
+**Current milestone:** Phase 14G Memory Foundation Graduation — runtime evidence and documentation closure complete; final audit re-check pending.
 
 ## Status vocabulary
 
@@ -33,7 +33,7 @@ paths.
 | Backup and restore | **VERIFIED** | A manifest/checksum ZIP restores into a blank vault, preserves canonical IDs/revision/lifecycle, then rebuilds graph and context. Corrupt or overwrite targets are refused. |
 | CI and release topology | **VERIFIED** | Unit, integration, coverage, Bandit, secrets, dependency and image-security gates precede the validated-image publish workflow. CI evidence is revision-bound; inspect the matching Actions run for a particular head. |
 | Global `/remember` installer | **PARTIALLY VERIFIED** | The installer and portability tests are versioned; installation into each user’s global Claude configuration remains a local operational action. |
-| Live Docker Compose deployment | **NOT VERIFIED** | Static compose and image-security contracts are tested, but this workstation has not run a live Linux Docker daemon/Compose healthcheck. |
+| Live Docker Compose deployment (local Docker Desktop) | **VERIFIED** | On 2026-09-02, `app`, `postgres`, and `redis` became healthy; `127.0.0.1:8000/health` returned 200; the API port was unreachable through a non-loopback IPv4 address. The API key was unset, so its optional auth-gate branch was not applicable. |
 | Public deployment and daily-use telemetry | **NOT VERIFIED** | Outside the local-first memory-foundation graduation boundary. |
 
 ## Runtime graduation evidence
@@ -48,8 +48,14 @@ It records the exact test count, coverage, runtime, invariant outcomes,
 wrong-project leakage and lost-update metrics from JUnit/Cobertura output.
 The artifact is intentionally ignored by Git. In GitHub Actions, the same
 manifest is produced only after all security hard gates pass and is uploaded as
-the `phase14-graduation-evidence` artifact. Live Compose deployment remains
-`NOT_VERIFIED` in every manifest unless separately tested.
+the `phase14-graduation-evidence` artifact. The validation run for current HEAD
+`9bfdb0cad928884a5ba3a590f27fd58fe9dd9dcf` completed successfully and retains
+that artifact: [GitHub Actions run 33662966593](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33662966593).
+On 2026-09-03, a local regeneration, paired with that successful CI security
+gate, produced `PASS` with 341/341 tests, 83.11% coverage, zero wrong-project
+leakage, and zero lost updates. A manifest itself
+does not claim live deployment verification; that separate, bounded runtime
+check is recorded in the table above.
 
 ## Operational guidance
 
@@ -60,9 +66,12 @@ the `phase14-graduation-evidence` artifact. Live Compose deployment remains
   bypass validation or write canonical memory directly.
 - Retain migration backups until normal use has been observed and a verified
   backup/restore drill has completed for the intended vault.
-- Before calling the foundation frozen, complete the independent Phase 14G
-  review; before claiming Docker deployment verified, run the live Compose
-  healthcheck in a Linux Docker environment.
+- The independent Phase 14G audit returned `FIX-FIRST` on 2026-09-03 because
+  its worktree lacked a visible runtime artifact and this status documentation
+  still contained stale orchestration claims. The current-HEAD Actions record,
+  regenerated local manifest, and documentation correction above address those
+  evidence gaps; obtain a final audit re-check before declaring the foundation
+  frozen.
 
 ## Historical planning documents
 

@@ -1,8 +1,13 @@
-# Parallel Phase Orchestration - Live Status
+# Historical Phase 8–10 Orchestration Snapshot
 
-**Orchestration Start Time:** 2026-08-29 (current session)
-**Strategy:** 7 parallel agents across 3 phases
-**Status:** 🟢 **ALL AGENTS RUNNING**
+**Original orchestration date:** 2026-08-29
+**Original strategy:** 7 parallel agents across 3 phases
+**Status:** **HISTORICAL — this orchestration is closed; no agents are currently running under this plan.**
+**Current authority:** [`PROJECT-STATUS.md`](PROJECT-STATUS.md)
+
+> The remaining content is retained as an archived planning snapshot. Its
+> occurrences of “Running”, “NOW”, ETAs, and unchecked deliverables describe
+> the 2026-08-29 plan and are not current project-status claims.
 
 ---
 
