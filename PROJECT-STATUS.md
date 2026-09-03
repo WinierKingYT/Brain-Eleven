@@ -48,9 +48,9 @@ It records the exact test count, coverage, runtime, invariant outcomes,
 wrong-project leakage and lost-update metrics from JUnit/Cobertura output.
 The artifact is intentionally ignored by Git. In GitHub Actions, the same
 manifest is produced only after all security hard gates pass and is uploaded as
-the `phase14-graduation-evidence` artifact. The validation run for current HEAD
-`004627e87ae007ad6e1a30e493b460cce49542f1` completed successfully and retains
-that artifact: [GitHub Actions run 33721296500](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33721296500).
+the `phase14-graduation-evidence` artifact. The validation run for the Phase
+14G implementation revision `004627e87ae007ad6e1a30e493b460cce49542f1`
+completed successfully and retains that artifact: [GitHub Actions run 33721296500](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33721296500).
 An earlier local regeneration at historical commit
 `9bfdb0cad928884a5ba3a590f27fd58fe9dd9dcf` produced `PASS` with 341/341 tests,
 83.11% coverage, zero wrong-project leakage, and zero lost updates. A manifest
