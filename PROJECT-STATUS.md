@@ -1,7 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
 **Last updated:** 2026-09-03
-**Current milestone:** Phase 14G Memory Foundation Graduation — runtime evidence and documentation closure complete; final audit re-check pending.
+**Current milestone:** Phase 14G Memory Foundation — **FROZEN / GRADUATED**; Phase 15 Evaluation Harness is next.
 
 ## Status vocabulary
 
@@ -66,10 +66,12 @@ runtime check is recorded in the table above.
   bypass validation or write canonical memory directly.
 - Retain migration backups until normal use has been observed and a verified
   backup/restore drill has completed for the intended vault.
-- The independent Phase 14G re-check returned `FIX-FIRST` on 2026-09-03 solely
-  because this document cited a historical commit as current evidence. The
-  revision-bound record above corrects that provenance; obtain a final
-  independent verdict before declaring the foundation frozen.
+- Final independent Phase 14G review returned `SHIP` on 2026-09-03 with no
+  current blockers after reviewing revision
+  `a02f9df8a401fb24d0c1eb405be3e24d76b7ffcc` and its successful
+  [Validation run 33721896260](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33721896260).
+  The memory foundation is frozen: changes now require a new phase and
+  revision-bound regression evidence.
 
 ## Historical planning documents
 
