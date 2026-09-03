@@ -49,13 +49,13 @@ wrong-project leakage and lost-update metrics from JUnit/Cobertura output.
 The artifact is intentionally ignored by Git. In GitHub Actions, the same
 manifest is produced only after all security hard gates pass and is uploaded as
 the `phase14-graduation-evidence` artifact. The validation run for current HEAD
-`9bfdb0cad928884a5ba3a590f27fd58fe9dd9dcf` completed successfully and retains
-that artifact: [GitHub Actions run 33662966593](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33662966593).
-On 2026-09-03, a local regeneration, paired with that successful CI security
-gate, produced `PASS` with 341/341 tests, 83.11% coverage, zero wrong-project
-leakage, and zero lost updates. A manifest itself
-does not claim live deployment verification; that separate, bounded runtime
-check is recorded in the table above.
+`004627e87ae007ad6e1a30e493b460cce49542f1` completed successfully and retains
+that artifact: [GitHub Actions run 33721296500](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33721296500).
+An earlier local regeneration at historical commit
+`9bfdb0cad928884a5ba3a590f27fd58fe9dd9dcf` produced `PASS` with 341/341 tests,
+83.11% coverage, zero wrong-project leakage, and zero lost updates. A manifest
+itself does not claim live deployment verification; that separate, bounded
+runtime check is recorded in the table above.
 
 ## Operational guidance
 
@@ -66,12 +66,10 @@ check is recorded in the table above.
   bypass validation or write canonical memory directly.
 - Retain migration backups until normal use has been observed and a verified
   backup/restore drill has completed for the intended vault.
-- The independent Phase 14G audit returned `FIX-FIRST` on 2026-09-03 because
-  its worktree lacked a visible runtime artifact and this status documentation
-  still contained stale orchestration claims. The current-HEAD Actions record,
-  regenerated local manifest, and documentation correction above address those
-  evidence gaps; obtain a final audit re-check before declaring the foundation
-  frozen.
+- The independent Phase 14G re-check returned `FIX-FIRST` on 2026-09-03 solely
+  because this document cited a historical commit as current evidence. The
+  revision-bound record above corrects that provenance; obtain a final
+  independent verdict before declaring the foundation frozen.
 
 ## Historical planning documents
 
