@@ -2,7 +2,7 @@
   "schema_version": 1,
   "baseline_id": "baseline-v1",
   "foundation_sha": "5faf6d1d262eb8fd53bb646ef45a8089b6da19da",
-  "report_sha256": "sha256:ca2ee540ffe7b7298014ff9f21d5a9114628f2fd1d9b43bd1d2b84ae42df1b4b",
+  "report_sha256": "sha256:79958407d329181ae3e9c847d14c604913fcc5f24e784ea09bb410c34a176bc6",
   "provider_version": "baseline-context-compiler-v1",
   "corpus_version": 1,
   "metric_version": 1,

@@ -68,7 +68,7 @@ def _source_paths(root: Path) -> tuple[Path, ...]:
 
 
 def source_fingerprint(root: Path | str = _ROOT) -> str:
-    """Hash exact V2 evaluation and retrieval inputs, excluding reports."""
+    """Hash logical V2 inputs, excluding reports and checkout line endings."""
 
     source_root = Path(root).resolve()
     digest = hashlib.sha256()
@@ -76,7 +76,10 @@ def source_fingerprint(root: Path | str = _ROOT) -> str:
         relative = path.relative_to(source_root).as_posix().encode("utf-8")
         digest.update(len(relative).to_bytes(4, "big"))
         digest.update(relative)
-        content = path.read_bytes()
+        # Git may materialize text files as CRLF on Windows and LF on Linux.
+        # The baseline identity represents tracked logical inputs, not the
+        # platform-specific bytes of a particular checkout.
+        content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
         digest.update(len(content).to_bytes(8, "big"))
         digest.update(content)
     return f"sha256:{digest.hexdigest()}"
@@ -121,9 +124,10 @@ def check_baseline_snapshot(path: Path | str = DEFAULT_BASELINE_PATH, root: Path
 
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(64 * 1024), b""):
-            digest.update(chunk)
+    # Baseline reports are small UTF-8 JSON. Read the whole report so a CRLF
+    # pair split across a streaming chunk can never alter the logical checksum.
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    digest.update(content)
     return f"sha256:{digest.hexdigest()}"
 
 

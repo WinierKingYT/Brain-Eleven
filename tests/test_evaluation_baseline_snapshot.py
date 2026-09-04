@@ -35,3 +35,30 @@ def test_baseline_v2_snapshot_matches_current_public_suite_inputs():
     assert report["corpus"]["suite"] == "public"
     assert report["metrics"]["case_count"] == 130
     assert all(summary["state"] == "pass" for summary in report["invariants"].values())
+
+
+def test_source_fingerprint_is_independent_of_checkout_line_endings(tmp_path):
+    source = tmp_path / "evals" / "corpus-v2"
+    source.mkdir(parents=True)
+    (source / "sample.json").write_bytes(b'{\r\n  "id": "same"\r\n}\r\n')
+    (tmp_path / "evals" / "baseline.py").write_bytes(b"value = 1\r\n")
+    (tmp_path / "evals" / "contracts.py").write_bytes(b"value = 2\r\n")
+    (tmp_path / "evals" / "corpus_builder.py").write_bytes(b"value = 3\r\n")
+    (tmp_path / "evals" / "fixture_generator.py").write_bytes(b"value = 4\r\n")
+    (tmp_path / "evals" / "metrics.py").write_bytes(b"value = 5\r\n")
+    (tmp_path / "evals" / "reporting.py").write_bytes(b"value = 6\r\n")
+    (tmp_path / "evals" / "run.py").write_bytes(b"value = 7\r\n")
+    (tmp_path / "evals" / "fixtures").mkdir()
+    (tmp_path / "evals" / "fixtures" / "fixture.json").write_bytes(b"{}\r\n")
+    (tmp_path / "evals" / "schemas").mkdir()
+    (tmp_path / "evals" / "schemas" / "schema.json").write_bytes(b"{}\r\n")
+    (tmp_path / "scripts").mkdir()
+    for name in ("context-compiler.py", "memory_scope.py", "memory_store.py", "project_registry.py"):
+        (tmp_path / "scripts" / name).write_bytes(b"value = 1\r\n")
+
+    crlf_fingerprint = source_fingerprint(tmp_path)
+    for path in tmp_path.rglob("*"):
+        if path.is_file():
+            path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+
+    assert source_fingerprint(tmp_path) == crlf_fingerprint
