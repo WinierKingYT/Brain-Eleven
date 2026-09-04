@@ -40,7 +40,7 @@ jobs:
           flake8 scripts context_router authority context_compiler_v2 evals tests --count --exit-zero --max-complexity=10
           --max-line-length=127 --statistics
       - name: Run unit tests
-        run: pytest tests/ -v --tb=short -m "not integration"
+        run: pytest tests/ -v --tb=short -m "not integration and not graduation"
 
   integration:
     name: Integration tests
@@ -78,6 +78,33 @@ jobs:
       - name: Run API integration tests
         run: pytest tests/ -v --tb=short -m integration
 
+  context-privacy:
+    name: Context-engine privacy audit
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Verify content-free derived outputs and safe rendering
+        run: >-
+          pytest tests/test_context_engine_operational_surfaces.py tests/test_context_router.py
+          tests/test_authority_resolver.py tests/test_context_compiler_v2.py
+          --junitxml=context-privacy-junit.xml
+      - name: Upload privacy audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-engine-privacy-audit
+          path: context-privacy-junit.xml
+          if-no-files-found: error
+
   evaluation-smoke:
     name: Evaluation smoke suite
     needs: unit
@@ -94,7 +121,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run deterministic evaluation smoke suite
         run: >-
-          python -m evals.run --provider baseline --suite smoke
+          python -m evals.run --provider baseline --suite smoke --corpus-root evals/corpus-v2
           --report evaluation-smoke-report.json
       - name: Upload evaluation smoke report
         if: always()
@@ -121,7 +148,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run deterministic public evaluation suite
         run: >-
-          python -m evals.run --provider baseline --suite public
+          python -m evals.run --provider baseline --suite public --corpus-root evals/corpus-v2
           --report evaluation-public-report.json
       - name: Upload public evaluation report
         if: always()
@@ -155,6 +182,49 @@ jobs:
         with:
           name: task-state-smoke-report
           path: task-state-smoke-report.json
+          if-no-files-found: error
+
+  phase15-evidence:
+    name: Phase 15 evaluation evidence
+    needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, evaluation-public]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt defusedxml==0.7.1
+      - name: Download runtime test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: .phase15-evidence-input
+      - name: Verify immutable historical baseline
+        run: python -m evals.baseline_snapshot --baseline baseline-v1 --check
+      - name: Verify current compatibility baseline
+        run: python -m evals.baseline_snapshot --baseline baseline-v2 --check
+      - name: Run full public and holdout evaluation
+        run: >-
+          python -m evals.run --provider baseline --suite all --corpus-root evals/corpus-v2
+          --report .phase15-evidence-input/baseline-v2-all-report.json
+      - name: Generate Phase 15 evidence
+        run: >-
+          python scripts/phase15_evidence.py
+          --junit .phase15-evidence-input/pytest-results.xml
+          --baseline evals/reports/baseline-v2.json
+          --evaluation .phase15-evidence-input/baseline-v2-all-report.json
+          --output .phase-evidence/phase15-evaluation.json
+      - name: Upload Phase 15 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase15-evaluation-evidence
+          path: .phase-evidence/phase15-evaluation.json
           if-no-files-found: error
 
   task-state-public:
@@ -204,11 +274,11 @@ jobs:
           --report router-route-smoke-report.json
       - name: Run Router provider smoke corpus
         run: >-
-          python -m evals.run --provider router --suite smoke
+          python -m evals.run --provider router --suite smoke --corpus-root evals/corpus-v2
           --report router-selection-smoke-report.json
       - name: Compare baseline and Router in shadow mode
         run: >-
-          python -m evals.router_shadow --suite smoke
+          python -m evals.router_shadow --suite smoke --corpus-root evals/corpus-v2
           --output router-shadow-smoke-report.json
       - name: Upload router smoke reports
         if: always()
@@ -238,11 +308,11 @@ jobs:
           pip install -r requirements.txt
       - name: Run Router public corpus
         run: >-
-          python -m evals.run --provider router --suite public
+          python -m evals.run --provider router --suite public --corpus-root evals/corpus-v2
           --report router-selection-public-report.json
       - name: Compare public baseline and Router in shadow mode
         run: >-
-          python -m evals.router_shadow --suite public
+          python -m evals.router_shadow --suite public --corpus-root evals/corpus-v2
           --output router-shadow-public-report.json
       - name: Upload router public reports
         if: always()
@@ -274,11 +344,11 @@ jobs:
           --output authority-policy-smoke-report.json
       - name: Run authority provider smoke corpus
         run: >-
-          python -m evals.run --provider authority --suite smoke
+          python -m evals.run --provider authority --suite smoke --corpus-root evals/corpus-v2
           --report authority-selection-smoke-report.json
       - name: Compare Router and authority in shadow mode
         run: >-
-          python -m evals.authority_shadow --suite smoke
+          python -m evals.authority_shadow --suite smoke --corpus-root evals/corpus-v2
           --output authority-shadow-smoke-report.json
       - name: Upload authority smoke reports
         if: always()
@@ -312,11 +382,11 @@ jobs:
           --output authority-policy-public-report.json
       - name: Run authority provider public corpus
         run: >-
-          python -m evals.run --provider authority --suite public
+          python -m evals.run --provider authority --suite public --corpus-root evals/corpus-v2
           --report authority-selection-public-report.json
       - name: Compare public Router and authority in shadow mode
         run: >-
-          python -m evals.authority_shadow --suite public
+          python -m evals.authority_shadow --suite public --corpus-root evals/corpus-v2
           --output authority-shadow-public-report.json
       - name: Upload authority public reports
         if: always()
@@ -349,11 +419,11 @@ jobs:
           --output compiler-v2-policy-smoke-report.json
       - name: Run compiler V2 provider smoke corpus
         run: >-
-          python -m evals.run --provider compiler-v2 --suite smoke
+          python -m evals.run --provider compiler-v2 --suite smoke --corpus-root evals/corpus-v2
           --report compiler-v2-selection-smoke-report.json
       - name: Compare V1 and V2 in shadow mode
         run: >-
-          python -m evals.compiler_v2_shadow --suite smoke
+          python -m evals.compiler_v2_shadow --suite smoke --corpus-root evals/corpus-v2
           --output compiler-v2-shadow-smoke-report.json
       - name: Upload compiler V2 smoke reports
         if: always()
@@ -383,11 +453,11 @@ jobs:
           pip install -r requirements.txt
       - name: Run compiler V2 provider public corpus
         run: >-
-          python -m evals.run --provider compiler-v2 --suite public
+          python -m evals.run --provider compiler-v2 --suite public --corpus-root evals/corpus-v2
           --report compiler-v2-selection-public-report.json
       - name: Compare public V1 and V2 shadow outputs
         run: >-
-          python -m evals.compiler_v2_shadow --suite public
+          python -m evals.compiler_v2_shadow --suite public --corpus-root evals/corpus-v2
           --output compiler-v2-shadow-public-report.json
       - name: Upload compiler V2 public reports
         if: always()
@@ -401,7 +471,7 @@ jobs:
 
   phase16-evidence:
     name: Phase 16 task/state evidence
-    needs: [bandit, secrets, dependency-audit, docker-security, task-state-public]
+    needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, task-state-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -439,7 +509,7 @@ jobs:
 
   phase17-evidence:
     name: Phase 17 router evidence
-    needs: [bandit, secrets, dependency-audit, docker-security, router-public]
+    needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, router-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -459,7 +529,7 @@ jobs:
           path: .phase17-evidence-input
       - name: Run full Router corpus including holdout
         run: >-
-          python -m evals.run --provider router --suite all
+          python -m evals.run --provider router --suite all --corpus-root evals/corpus-v2
           --report .phase17-evidence-input/router-selection-all-report.json
       - name: Run route policy expectations
         run: >-
@@ -467,7 +537,7 @@ jobs:
           --report .phase17-evidence-input/router-route-report.json
       - name: Produce content-free full shadow comparison
         run: >-
-          python -m evals.router_shadow --suite all
+          python -m evals.router_shadow --suite all --corpus-root evals/corpus-v2
           --output .phase17-evidence-input/router-shadow-report.json
       - name: Measure informational Router performance
         run: >-
@@ -492,7 +562,7 @@ jobs:
 
   phase18-evidence:
     name: Phase 18 authority evidence
-    needs: [bandit, secrets, dependency-audit, docker-security, authority-public]
+    needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, authority-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -516,11 +586,11 @@ jobs:
           --output .phase18-evidence-input/authority-policy-all-report.json
       - name: Run full authority selection evaluation
         run: >-
-          python -m evals.run --provider authority --suite all
+          python -m evals.run --provider authority --suite all --corpus-root evals/corpus-v2
           --report .phase18-evidence-input/authority-selection-all-report.json
       - name: Produce content-free full authority shadow comparison
         run: >-
-          python -m evals.authority_shadow --suite all
+          python -m evals.authority_shadow --suite all --corpus-root evals/corpus-v2
           --output .phase18-evidence-input/authority-shadow-report.json
       - name: Generate Phase 18 evidence
         run: >-
@@ -540,7 +610,7 @@ jobs:
 
   phase19-evidence:
     name: Phase 19 compiler V2 evidence
-    needs: [bandit, secrets, dependency-audit, docker-security, compiler-v2-public]
+    needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, compiler-v2-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
@@ -564,11 +634,11 @@ jobs:
           --output .phase19-evidence-input/compiler-v2-policy-all-report.json
       - name: Run full V2 selection evaluation
         run: >-
-          python -m evals.run --provider compiler-v2 --suite all
+          python -m evals.run --provider compiler-v2 --suite all --corpus-root evals/corpus-v2
           --report .phase19-evidence-input/compiler-v2-selection-all-report.json
       - name: Produce full V2 shadow comparison
         run: >-
-          python -m evals.compiler_v2_shadow --suite all
+          python -m evals.compiler_v2_shadow --suite all --corpus-root evals/corpus-v2
           --output .phase19-evidence-input/compiler-v2-shadow-report.json
       - name: Measure informational V2 compiler performance
         run: >-
@@ -591,6 +661,70 @@ jobs:
           path: .phase-evidence/phase19-context-compiler-v2.json
           if-no-files-found: error
 
+  context-engine-foundation-graduation:
+    name: Context Engine Foundation V1 graduation
+    needs: [phase15-evidence, phase16-evidence, phase17-evidence, phase18-evidence, phase19-evidence]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install graduation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest defusedxml==0.7.1
+      - name: Run deterministic cross-phase graduation checks
+        run: >-
+          pytest tests/context_engine tests/test_state_failure_injection.py -m graduation
+          --junitxml=foundation-graduation-junit.xml
+      - name: Download Phase 15 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase15-evaluation-evidence
+          path: .foundation-evidence-input/phase15
+      - name: Download Phase 16 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase16-task-state-evidence
+          path: .foundation-evidence-input/phase16
+      - name: Download Phase 17 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase17-task-aware-router-evidence
+          path: .foundation-evidence-input/phase17
+      - name: Download Phase 18 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase18-authority-conflict-evidence
+          path: .foundation-evidence-input/phase18
+      - name: Download Phase 19 evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: phase19-context-compiler-v2-evidence
+          path: .foundation-evidence-input/phase19
+      - name: Generate revision-bound foundation evidence
+        run: >-
+          python scripts/context_engine_foundation_evidence.py
+          --junit foundation-graduation-junit.xml
+          --phase15 .foundation-evidence-input/phase15/phase15-evaluation.json
+          --phase16 .foundation-evidence-input/phase16/phase16-task-state.json
+          --phase17 .foundation-evidence-input/phase17/phase17-task-aware-router.json
+          --phase18 .foundation-evidence-input/phase18/phase18-authority-conflict.json
+          --phase19 .foundation-evidence-input/phase19/phase19-context-compiler-v2.json
+          --output .phase-evidence/context-engine-foundation-v1.json
+      - name: Upload foundation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-engine-foundation-v1-evidence
+          path: |
+            .phase-evidence/context-engine-foundation-v1.json
+            foundation-graduation-junit.xml
+          if-no-files-found: error
+
   quality:
     name: Coverage gate
     needs: integration
@@ -607,8 +741,9 @@ jobs:
           pip install -r requirements.txt pytest pytest-cov pytest-asyncio
       - name: Enforce coverage threshold
         run: |
-          pytest tests/ --cov=scripts --cov-report=xml --cov-report=html --cov-report=term-missing --junitxml=pytest-results.xml
+          pytest tests/ -m "not integration and not graduation" --cov=scripts --cov=context_router --cov=authority --cov=context_compiler_v2 --cov=evals.baseline --cov=evals.router_provider --cov=evals.authority_provider --cov=evals.compiler_v2_provider --cov-report=xml --cov-report=json --cov-report=html --cov-report=term-missing --junitxml=pytest-results.xml
           coverage report --fail-under=80
+          python scripts/check_context_engine_coverage.py --coverage coverage.json
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -624,6 +759,7 @@ jobs:
           path: |
             htmlcov/
             coverage.xml
+            coverage.json
             pytest-results.xml
 
   bandit:
