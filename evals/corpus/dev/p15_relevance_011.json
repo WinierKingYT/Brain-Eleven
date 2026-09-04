@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_relevance_011",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Select the reliable persistence rule for promtgen relevance scenario 11.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ],
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

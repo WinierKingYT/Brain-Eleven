@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_supersession_002",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Resolve the authoritative replacement rule for eleven_capture scenario 2.",
+    "intent": [
+      "supersession"
+    ],
+    "domains": [
+      "authority"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_ec_resolved_json_cache"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

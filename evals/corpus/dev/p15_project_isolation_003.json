@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_project_isolation_003",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Retrieve only minecraft_mcp context for isolation scenario 3.",
+    "intent": [
+      "scope"
+    ],
+    "domains": [
+      "project-isolation"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ],
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_legacy_export",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

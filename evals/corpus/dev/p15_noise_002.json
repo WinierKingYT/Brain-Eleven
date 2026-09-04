@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_noise_002",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Find essential context from a noise-heavy promtgen vault scenario 2.",
+    "intent": [
+      "relevance"
+    ],
+    "domains": [
+      "noise",
+      "ranking"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_prompt_versioning",
+      "mem_default_scope"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_pg_resolved_cdn"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

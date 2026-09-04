@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_project_isolation_010",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Retrieve only eleven_capture context for isolation scenario 10.",
+    "intent": [
+      "scope"
+    ],
+    "domains": [
+      "project-isolation"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ],
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_legacy_export",
+      "mem_ec_resolved_json_cache"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

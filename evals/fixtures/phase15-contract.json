@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "fixture_id": "phase15_contract",
+  "projects": [
+    {"project_id": "eleven_capture", "status": "active"},
+    {"project_id": "promtgen", "status": "active"},
+    {"project_id": "minecraft_mcp", "status": "active"},
+    {"project_id": "legacy_notes", "status": "archived"}
+  ],
+  "memories": [
+    {"memory_id": "mem_markdown_source_of_truth", "type": "decision", "status": "active", "content": "Markdown is the canonical source of truth.", "scope": "global"},
+    {"memory_id": "mem_windows_target", "type": "lesson", "status": "active", "content": "Use Windows-safe path handling for local vault writes.", "scope": "global"},
+    {"memory_id": "mem_atomic_replace", "type": "decision", "status": "active", "content": "Replace canonical JSON atomically after a complete write.", "scope": "global"},
+    {"memory_id": "mem_file_lock", "type": "decision", "status": "active", "content": "Serialize concurrent canonical-memory writers with a file lock.", "scope": "global"},
+    {"memory_id": "mem_restore_rebuild", "type": "lesson", "status": "active", "content": "Restore canonical memory first, then rebuild derived state.", "scope": "global"},
+    {"memory_id": "mem_default_scope", "type": "decision", "status": "active", "content": "Default retrieval includes global and current-project memory only.", "scope": "global"},
+    {"memory_id": "mem_secret_redaction", "type": "decision", "status": "active", "content": "Never store secrets in public evaluation fixtures or context output.", "scope": "global"},
+    {"memory_id": "mem_utf8_paths", "type": "lesson", "status": "active", "content": "Preserve UTF-8 and Turkish filenames across vault operations.", "scope": "global"},
+    {"memory_id": "mem_backup_canonical", "type": "decision", "status": "active", "content": "Backups preserve canonical memory identity and revision metadata.", "scope": "global"},
+    {"memory_id": "mem_stale_projection", "type": "lesson", "status": "active", "content": "A stale derived projection is never canonical truth.", "scope": "global"},
+    {"memory_id": "mem_explicit_decision", "type": "decision", "status": "active", "content": "Explicit user decisions outrank inferred observations.", "scope": "global"},
+    {"memory_id": "mem_context_budget", "type": "lesson", "status": "active", "content": "Context selection should prefer useful memory over volume.", "scope": "global"},
+    {"memory_id": "mem_schema_version", "type": "decision", "status": "active", "content": "Reject unsupported canonical schema versions rather than repairing silently.", "scope": "global"},
+    {"memory_id": "mem_no_network", "type": "decision", "status": "active", "content": "Public evaluation must run offline without model or network calls.", "scope": "global"},
+
+    {"memory_id": "mem_markdown_before_sqlite", "type": "decision", "status": "active", "content": "Persist Markdown before indexing the note in SQLite.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_ec_sqlite_index", "type": "decision", "status": "active", "content": "Eleven Capture indexes saved Markdown into SQLite after the canonical write.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_ec_vault_manifest", "type": "lesson", "status": "active", "content": "Eleven Capture keeps a vault manifest for deterministic recovery checks.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_ec_local_cache", "type": "observation", "status": "active", "content": "Eleven Capture local cache is derived and may be rebuilt.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_ec_atomic_rename", "type": "decision", "status": "active", "content": "Eleven Capture publishes saved notes through an atomic rename.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_superseded_save_rule", "type": "decision", "status": "superseded", "content": "Write SQLite before Markdown.", "scope": "project", "project_id": "eleven_capture"},
+    {"memory_id": "mem_ec_resolved_json_cache", "type": "open_loop", "status": "resolved", "content": "Investigate the legacy Eleven Capture JSON cache.", "scope": "project", "project_id": "eleven_capture"},
+
+    {"memory_id": "mem_promtgen_storage", "type": "decision", "status": "active", "content": "PromtGen stores generation drafts in IndexedDB.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_prompt_versioning", "type": "decision", "status": "active", "content": "PromtGen versions prompt templates before publishing them.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_indexeddb_backup", "type": "lesson", "status": "active", "content": "PromtGen exports IndexedDB drafts before destructive migrations.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_template_contract", "type": "decision", "status": "active", "content": "PromtGen validates a template contract before generation.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_redis_cache", "type": "observation", "status": "active", "content": "PromtGen Redis cache is optional and never canonical.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_old_localstorage", "type": "decision", "status": "superseded", "content": "PromtGen persists all drafts in browser localStorage.", "scope": "project", "project_id": "promtgen"},
+    {"memory_id": "mem_pg_resolved_cdn", "type": "open_loop", "status": "resolved", "content": "Evaluate a CDN for PromptGen static templates.", "scope": "project", "project_id": "promtgen"},
+
+    {"memory_id": "mem_mc_protocol_version", "type": "decision", "status": "active", "content": "Minecraft MCP validates the server protocol version before commands.", "scope": "project", "project_id": "minecraft_mcp"},
+    {"memory_id": "mem_mc_world_backup", "type": "decision", "status": "active", "content": "Minecraft MCP snapshots a world before destructive commands.", "scope": "project", "project_id": "minecraft_mcp"},
+    {"memory_id": "mem_mc_command_policy", "type": "lesson", "status": "active", "content": "Minecraft MCP command execution follows an explicit allow-list.", "scope": "project", "project_id": "minecraft_mcp"},
+    {"memory_id": "mem_mc_event_stream", "type": "observation", "status": "active", "content": "Minecraft MCP event stream is derived session telemetry.", "scope": "project", "project_id": "minecraft_mcp"},
+    {"memory_id": "mem_mc_old_websocket", "type": "decision", "status": "superseded", "content": "Minecraft MCP uses an unauthenticated raw WebSocket bridge.", "scope": "project", "project_id": "minecraft_mcp"},
+    {"memory_id": "mem_mc_resolved_polling", "type": "open_loop", "status": "resolved", "content": "Measure legacy Minecraft MCP polling latency.", "scope": "project", "project_id": "minecraft_mcp"},
+
+    {"memory_id": "mem_legacy_export", "type": "lesson", "status": "active", "content": "Legacy Notes exports are historical and require explicit retrieval.", "scope": "project", "project_id": "legacy_notes"},
+    {"memory_id": "mem_legacy_import", "type": "decision", "status": "active", "content": "Legacy Notes imports must not alter canonical active-project memory.", "scope": "project", "project_id": "legacy_notes"}
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brain-eleven.local/evals/schemas/golden-task.schema.json",
+  "title": "Brain-Eleven Golden Evaluation Task",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "task", "expected_context", "expected_behavior"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"type": "string", "minLength": 1},
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "prompt", "intent", "domains"],
+      "properties": {
+        "project_id": {"type": ["string", "null"]},
+        "prompt": {"type": "string", "minLength": 1},
+        "intent": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "domains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "expected_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "useful", "forbidden"],
+      "properties": {
+        "required": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "useful": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "forbidden": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "expected_behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wrong_project_allowed": {"type": "boolean", "default": false},
+        "inactive_allowed": {"type": "boolean", "default": false}
+      }
+    },
+    "expectations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authority_resolution": {"const": "future"},
+        "conflict_resolution": {"const": "future"},
+        "ask_user": {"type": "boolean"},
+        "abstain": {"type": "boolean"}
+      }
+    }
+  }
+}

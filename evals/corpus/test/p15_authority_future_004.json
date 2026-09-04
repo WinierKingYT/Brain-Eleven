@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_authority_future_004",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Record the future authority decision case for eleven_capture scenario 4.",
+    "intent": [
+      "authority"
+    ],
+    "domains": [
+      "future-capability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_ec_resolved_json_cache",
+      "mem_pg_template_contract"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

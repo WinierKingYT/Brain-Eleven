@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_relevance_010",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Select the reliable persistence rule for eleven_capture relevance scenario 10.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_ec_resolved_json_cache"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

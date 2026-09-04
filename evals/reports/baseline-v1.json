@@ -1,0 +1,6004 @@
+{
+  "schema_version": 1,
+  "report_type": "brain_eleven_evaluation_report",
+  "provider": {
+    "id": "context_compiler_baseline_v1"
+  },
+  "corpus": {
+    "fixture_id": "phase15_contract",
+    "suite": "public",
+    "task_count": 101,
+    "task_ids": [
+      "eleven_capture_atomic_save_001",
+      "p15_ambiguity_001",
+      "p15_ambiguity_002",
+      "p15_ambiguity_003",
+      "p15_ambiguity_004",
+      "p15_authority_future_001",
+      "p15_authority_future_002",
+      "p15_authority_future_003",
+      "p15_authority_future_004",
+      "p15_authority_future_005",
+      "p15_conflict_001",
+      "p15_conflict_002",
+      "p15_conflict_003",
+      "p15_global_project_001",
+      "p15_global_project_002",
+      "p15_global_project_003",
+      "p15_global_project_004",
+      "p15_global_project_005",
+      "p15_global_project_006",
+      "p15_global_project_007",
+      "p15_global_project_008",
+      "p15_global_project_009",
+      "p15_global_project_010",
+      "p15_lifecycle_001",
+      "p15_lifecycle_002",
+      "p15_lifecycle_003",
+      "p15_lifecycle_004",
+      "p15_lifecycle_005",
+      "p15_lifecycle_006",
+      "p15_lifecycle_007",
+      "p15_lifecycle_008",
+      "p15_lifecycle_009",
+      "p15_lifecycle_010",
+      "p15_lifecycle_011",
+      "p15_lifecycle_012",
+      "p15_lifecycle_013",
+      "p15_lifecycle_014",
+      "p15_noise_001",
+      "p15_noise_002",
+      "p15_noise_003",
+      "p15_noise_004",
+      "p15_noise_005",
+      "p15_noise_006",
+      "p15_noise_007",
+      "p15_noise_008",
+      "p15_project_isolation_001",
+      "p15_project_isolation_002",
+      "p15_project_isolation_003",
+      "p15_project_isolation_004",
+      "p15_project_isolation_005",
+      "p15_project_isolation_006",
+      "p15_project_isolation_007",
+      "p15_project_isolation_008",
+      "p15_project_isolation_009",
+      "p15_project_isolation_010",
+      "p15_project_isolation_011",
+      "p15_project_isolation_012",
+      "p15_project_isolation_013",
+      "p15_project_isolation_014",
+      "p15_project_isolation_015",
+      "p15_project_isolation_016",
+      "p15_project_isolation_017",
+      "p15_project_isolation_018",
+      "p15_project_isolation_019",
+      "p15_project_isolation_020",
+      "p15_relevance_001",
+      "p15_relevance_002",
+      "p15_relevance_003",
+      "p15_relevance_004",
+      "p15_relevance_005",
+      "p15_relevance_006",
+      "p15_relevance_007",
+      "p15_relevance_008",
+      "p15_relevance_009",
+      "p15_relevance_010",
+      "p15_relevance_011",
+      "p15_relevance_012",
+      "p15_relevance_013",
+      "p15_relevance_014",
+      "p15_relevance_015",
+      "p15_relevance_016",
+      "p15_relevance_017",
+      "p15_relevance_018",
+      "p15_relevance_019",
+      "p15_relevance_020",
+      "p15_relevance_021",
+      "p15_relevance_022",
+      "p15_relevance_023",
+      "p15_relevance_024",
+      "p15_supersession_001",
+      "p15_supersession_002",
+      "p15_supersession_003",
+      "p15_supersession_004",
+      "p15_supersession_005",
+      "p15_supersession_006",
+      "p15_supersession_007",
+      "p15_supersession_008",
+      "p15_supersession_009",
+      "p15_supersession_010",
+      "p15_supersession_011",
+      "p15_supersession_012"
+    ]
+  },
+  "source": {
+    "baseline_id": "baseline-v1",
+    "fixture_seed": 0,
+    "noise_count": 24,
+    "runner": "phase15_offline",
+    "source_fingerprint": "sha256:fd9f963168a7a4a6b5a11b9ade266dfbcff249ce597b848b15a7225bdfc02466"
+  },
+  "metrics": {
+    "case_count": 101,
+    "context_precision": 0.18415841584158418,
+    "context_recall": 0.8168316831683168,
+    "selected_items": 505,
+    "relevant_selected_items": 93,
+    "required_items": 120,
+    "required_selected_items": 91,
+    "wrong_project_leakage_rate": 0.0,
+    "forbidden_context_rate": 0.0,
+    "superseded_leakage_rate": 0.0,
+    "resolved_leakage_rate": 0.0,
+    "unlabeled_context_rate": 0.12079207920792079
+  },
+  "invariants": {
+    "forbidden_context": {
+      "state": "pass",
+      "failed_case_ids": [],
+      "unsupported_case_ids": [],
+      "not_applicable_case_ids": []
+    },
+    "resolved_lifecycle_leakage": {
+      "state": "pass",
+      "failed_case_ids": [],
+      "unsupported_case_ids": [],
+      "not_applicable_case_ids": []
+    },
+    "superseded_lifecycle_leakage": {
+      "state": "pass",
+      "failed_case_ids": [],
+      "unsupported_case_ids": [],
+      "not_applicable_case_ids": []
+    },
+    "wrong_project_leakage": {
+      "state": "pass",
+      "failed_case_ids": [],
+      "unsupported_case_ids": [],
+      "not_applicable_case_ids": []
+    }
+  },
+  "cases": [
+    {
+      "task_id": "eleven_capture_atomic_save_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_source_of_truth",
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_windows_target"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_markdown_source_of_truth"
+      ],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "eleven_capture_atomic_save_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_ambiguity_001",
+      "project_id": null,
+      "expected": {
+        "required": [
+          "mem_markdown_source_of_truth"
+        ],
+        "useful": [
+          "mem_atomic_replace"
+        ],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_promtgen_storage",
+          "mem_mc_protocol_version",
+          "mem_legacy_export"
+        ]
+      },
+      "selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "missing_required_ids": [
+        "mem_markdown_source_of_truth"
+      ],
+      "unexpected_selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_ambiguity_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 1,
+        "context_precision": 0.2,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_ambiguity_002",
+      "project_id": null,
+      "expected": {
+        "required": [
+          "mem_atomic_replace"
+        ],
+        "useful": [
+          "mem_file_lock"
+        ],
+        "forbidden": [
+          "mem_ec_sqlite_index",
+          "mem_pg_prompt_versioning",
+          "mem_mc_world_backup",
+          "mem_legacy_export"
+        ]
+      },
+      "selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_secret_redaction",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_ambiguity_002",
+        "selected_count": 5,
+        "relevant_selected_count": 2,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 1,
+        "context_precision": 0.4,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_ambiguity_003",
+      "project_id": null,
+      "expected": {
+        "required": [
+          "mem_file_lock"
+        ],
+        "useful": [
+          "mem_restore_rebuild"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_pg_indexeddb_backup",
+          "mem_mc_command_policy",
+          "mem_legacy_export"
+        ]
+      },
+      "selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_ambiguity_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_ambiguity_004",
+      "project_id": null,
+      "expected": {
+        "required": [
+          "mem_restore_rebuild"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_local_cache",
+          "mem_pg_template_contract",
+          "mem_mc_event_stream",
+          "mem_legacy_export"
+        ]
+      },
+      "selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "missing_required_ids": [
+        "mem_restore_rebuild"
+      ],
+      "unexpected_selected_ids": [
+        "mem_file_lock",
+        "mem_secret_redaction",
+        "mem_atomic_replace",
+        "mem_backup_canonical",
+        "mem_no_network"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_ambiguity_004",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_authority_future_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule",
+          "mem_promtgen_storage"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_authority_future_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_authority_future_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn",
+          "mem_mc_world_backup"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_authority_future_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_authority_future_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_mc_old_websocket",
+          "mem_ec_vault_manifest"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_authority_future_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_authority_future_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache",
+          "mem_pg_template_contract"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_authority_future_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_authority_future_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage",
+          "mem_mc_protocol_version"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_authority_future_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_conflict_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule",
+          "mem_promtgen_storage"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_conflict_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_conflict_002",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache",
+          "mem_pg_prompt_versioning"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_conflict_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_conflict_003",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage",
+          "mem_mc_command_policy"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_conflict_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_source_of_truth",
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_markdown_source_of_truth"
+      ],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_atomic_replace",
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_atomic_replace"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_file_lock",
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [
+        "mem_file_lock"
+      ],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_restore_rebuild",
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_restore_rebuild"
+      ],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_default_scope",
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_default_scope",
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 2,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_secret_redaction",
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [
+        "mem_secret_redaction"
+      ],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_utf8_paths",
+          "mem_ec_sqlite_index"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_pg_prompt_versioning",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_utf8_paths"
+      ],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_008",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_backup_canonical",
+          "mem_pg_indexeddb_backup"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_backup_canonical"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_009",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_stale_projection",
+          "mem_mc_protocol_version"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_ec_local_cache",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [
+        "mem_stale_projection"
+      ],
+      "unexpected_selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_009",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_global_project_010",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_explicit_decision",
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_pg_redis_cache",
+          "mem_legacy_import"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_explicit_decision"
+      ],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_global_project_010",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_mc_old_websocket",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_mc_resolved_polling",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_sqlite_index"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_008",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_indexeddb_backup"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_009",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_protocol_version"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_mc_old_websocket",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_009",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_010",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_010",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_011",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_promtgen_storage"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_011",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_012",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_event_stream"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_mc_resolved_polling",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_012",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_013",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_vault_manifest"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_013",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_lifecycle_014",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_template_contract"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_lifecycle_014",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite",
+          "mem_restore_rebuild"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_restore_rebuild"
+      ],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning",
+          "mem_default_scope"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_default_scope"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy",
+          "mem_secret_redaction"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [
+        "mem_secret_redaction"
+      ],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache",
+          "mem_utf8_paths"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_utf8_paths"
+      ],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache",
+          "mem_backup_canonical"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache",
+        "mem_backup_canonical"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 2,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup",
+          "mem_stale_projection"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [
+        "mem_stale_projection"
+      ],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_sqlite_index",
+          "mem_explicit_decision"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_pg_prompt_versioning",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [
+        "mem_explicit_decision"
+      ],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_noise_008",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_indexeddb_backup",
+          "mem_context_budget"
+        ],
+        "useful": [],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_context_budget"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_noise_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 2,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 0.5,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_legacy_export",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_legacy_export",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_legacy_export",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_legacy_export",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_legacy_export",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_legacy_export",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_sqlite_index"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_prompt_versioning",
+          "mem_legacy_export",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_008",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_indexeddb_backup"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_legacy_export",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_009",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_protocol_version"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_local_cache",
+          "mem_legacy_export",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_009",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_010",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_redis_cache",
+          "mem_legacy_export",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_010",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_011",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_promtgen_storage"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_command_policy",
+          "mem_legacy_export",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_011",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_012",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_event_stream"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_sqlite_index",
+          "mem_legacy_export",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_012",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_013",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_vault_manifest"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_indexeddb_backup",
+          "mem_legacy_export",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_013",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_014",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_template_contract"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_legacy_export",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_014",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_015",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_atomic_rename",
+          "mem_legacy_export",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_015",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_016",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_legacy_export",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_016",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_017",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_legacy_export",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_017",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_018",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_legacy_export",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_018",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_019",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_legacy_export",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_019",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_project_isolation_020",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_legacy_export",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_project_isolation_020",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_markdown_source_of_truth"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_002",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_atomic_replace"
+        ],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_003",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_file_lock"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_004",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_restore_rebuild"
+        ],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_005",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_005",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_secret_redaction"
+        ],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_sqlite_index"
+        ],
+        "useful": [
+          "mem_utf8_paths"
+        ],
+        "forbidden": [
+          "mem_pg_prompt_versioning",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_008",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_indexeddb_backup"
+        ],
+        "useful": [
+          "mem_backup_canonical"
+        ],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_009",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_protocol_version"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_ec_local_cache",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_009",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_010",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_redis_cache",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_010",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_011",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_promtgen_storage"
+        ],
+        "useful": [
+          "mem_context_budget"
+        ],
+        "forbidden": [
+          "mem_mc_command_policy",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_011",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_012",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_event_stream"
+        ],
+        "useful": [
+          "mem_schema_version"
+        ],
+        "forbidden": [
+          "mem_ec_sqlite_index",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_012",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_013",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_vault_manifest"
+        ],
+        "useful": [
+          "mem_no_network"
+        ],
+        "forbidden": [
+          "mem_pg_indexeddb_backup",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_013",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_014",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_template_contract"
+        ],
+        "useful": [
+          "mem_windows_target"
+        ],
+        "forbidden": [
+          "mem_mc_world_backup",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_014",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_015",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_markdown_source_of_truth"
+        ],
+        "forbidden": [
+          "mem_ec_atomic_rename",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_015",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_016",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_atomic_replace"
+        ],
+        "forbidden": [
+          "mem_promtgen_storage",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_016",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_017",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_file_lock"
+        ],
+        "forbidden": [
+          "mem_mc_protocol_version",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_017",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_018",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_restore_rebuild"
+        ],
+        "forbidden": [
+          "mem_ec_vault_manifest",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_018",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_019",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_local_cache"
+        ],
+        "useful": [
+          "mem_default_scope"
+        ],
+        "forbidden": [
+          "mem_pg_template_contract",
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_019",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_020",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_redis_cache"
+        ],
+        "useful": [
+          "mem_secret_redaction"
+        ],
+        "forbidden": [
+          "mem_mc_event_stream",
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [
+        "mem_pg_redis_cache"
+      ],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_020",
+        "selected_count": 5,
+        "relevant_selected_count": 0,
+        "required_count": 1,
+        "required_selected_count": 0,
+        "useful_selected_count": 0,
+        "context_precision": 0.0,
+        "context_recall": 0.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_021",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_protocol_version"
+        ],
+        "useful": [
+          "mem_utf8_paths"
+        ],
+        "forbidden": [
+          "mem_markdown_before_sqlite",
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_021",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_022",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_sqlite_index"
+        ],
+        "useful": [
+          "mem_backup_canonical"
+        ],
+        "forbidden": [
+          "mem_pg_prompt_versioning",
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_022",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_023",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_indexeddb_backup"
+        ],
+        "useful": [
+          "mem_stale_projection"
+        ],
+        "forbidden": [
+          "mem_mc_command_policy",
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_023",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_relevance_024",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_event_stream"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_ec_local_cache",
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_relevance_024",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_001",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_001",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_002",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_002",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_003",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_003",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_004",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_template_contract"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_004",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_005",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_005",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_006",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_006",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_007",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_markdown_before_sqlite"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_superseded_save_rule"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_007",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_008",
+      "project_id": "eleven_capture",
+      "expected": {
+        "required": [
+          "mem_ec_atomic_rename"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_ec_resolved_json_cache"
+        ]
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_local_cache"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_008",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 0
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_009",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_prompt_versioning"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_old_localstorage"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_009",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_010",
+      "project_id": "promtgen",
+      "expected": {
+        "required": [
+          "mem_pg_template_contract"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_pg_resolved_cdn"
+        ]
+      },
+      "selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_promtgen_storage",
+        "mem_pg_prompt_versioning",
+        "mem_pg_indexeddb_backup",
+        "noise_0_0019"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_010",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_011",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_command_policy"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_mc_old_websocket"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_011",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    },
+    {
+      "task_id": "p15_supersession_012",
+      "project_id": "minecraft_mcp",
+      "expected": {
+        "required": [
+          "mem_mc_world_backup"
+        ],
+        "useful": [
+          "mem_explicit_decision"
+        ],
+        "forbidden": [
+          "mem_mc_resolved_polling"
+        ]
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "missing_required_ids": [],
+      "unexpected_selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_0_0002",
+        "mem_mc_command_policy"
+      ],
+      "forbidden_selected_ids": [],
+      "metrics": {
+        "task_id": "p15_supersession_012",
+        "selected_count": 5,
+        "relevant_selected_count": 1,
+        "required_count": 1,
+        "required_selected_count": 1,
+        "useful_selected_count": 0,
+        "context_precision": 0.2,
+        "context_recall": 1.0,
+        "wrong_project_selected_count": 0,
+        "wrong_project_leakage_count": 0,
+        "forbidden_context_count": 0,
+        "superseded_selected_count": 0,
+        "superseded_leakage_count": 0,
+        "resolved_selected_count": 0,
+        "resolved_leakage_count": 0,
+        "unlabeled_selection_count": 1
+      },
+      "invariants": {
+        "forbidden_context": "pass",
+        "resolved_lifecycle_leakage": "pass",
+        "superseded_lifecycle_leakage": "pass",
+        "wrong_project_leakage": "pass"
+      },
+      "violations": [],
+      "passed": true
+    }
+  ]
+}

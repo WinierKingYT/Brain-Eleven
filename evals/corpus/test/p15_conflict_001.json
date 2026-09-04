@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_conflict_001",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Select the non-conflicting current decision for eleven_capture scenario 1.",
+    "intent": [
+      "conflict"
+    ],
+    "domains": [
+      "decision"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_superseded_save_rule",
+      "mem_promtgen_storage"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

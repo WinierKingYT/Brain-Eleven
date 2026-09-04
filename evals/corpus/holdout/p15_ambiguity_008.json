@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_ambiguity_008",
+  "task": {
+    "project_id": null,
+    "prompt": "Answer only from global policy while current project is ambiguous 8.",
+    "intent": [
+      "ambiguity"
+    ],
+    "domains": [
+      "scope"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_backup_canonical"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ],
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_pg_indexeddb_backup",
+      "mem_mc_event_stream",
+      "mem_legacy_export"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

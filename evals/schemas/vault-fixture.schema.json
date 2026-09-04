@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brain-eleven.local/evals/schemas/vault-fixture.schema.json",
+  "title": "Brain-Eleven Synthetic Vault Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "fixture_id", "projects", "memories"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "fixture_id": {"type": "string", "minLength": 1},
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project_id", "status"],
+        "properties": {
+          "project_id": {"type": "string", "minLength": 1},
+          "status": {"enum": ["active", "archived"]}
+        }
+      }
+    },
+    "memories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["memory_id", "type", "status", "content", "scope"],
+        "properties": {
+          "memory_id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["decision", "lesson", "open_loop", "observation"]},
+          "status": {"enum": ["active", "resolved", "superseded"]},
+          "content": {"type": "string", "minLength": 1},
+          "scope": {"enum": ["global", "project"]},
+          "project_id": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

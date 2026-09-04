@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_ambiguity_007",
+  "task": {
+    "project_id": null,
+    "prompt": "Answer only from global policy while current project is ambiguous 7.",
+    "intent": [
+      "ambiguity"
+    ],
+    "domains": [
+      "scope"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_utf8_paths"
+    ],
+    "useful": [
+      "mem_backup_canonical"
+    ],
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_pg_prompt_versioning",
+      "mem_mc_command_policy",
+      "mem_legacy_export"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

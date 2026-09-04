@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_global_project_008",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Combine global engineering rules with promtgen decisions for scenario 8.",
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "domains": [
+      "global",
+      "project"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_backup_canonical",
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ],
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_legacy_import"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}
