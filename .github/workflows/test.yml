@@ -40,7 +40,23 @@ jobs:
           flake8 scripts context_router authority context_compiler_v2 evals tests --count --exit-zero --max-complexity=10
           --max-line-length=127 --statistics
       - name: Run unit tests
-        run: pytest tests/ -v --tb=short -m "not integration and not graduation"
+        id: unit_tests
+        continue-on-error: true
+        run: >-
+          pytest tests/ -v --tb=short -m "not integration and not graduation"
+          --junitxml=unit-test-results-${{ matrix.os }}.xml
+      - name: Upload unit-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results-${{ matrix.os }}
+          path: unit-test-results-${{ matrix.os }}.xml
+          if-no-files-found: error
+      - name: Surface unit-test failure diagnostics
+        if: steps.unit_tests.outcome == 'failure'
+        run: >-
+          python scripts/report_junit_failures.py
+          --junit unit-test-results-${{ matrix.os }}.xml
 
   integration:
     name: Integration tests
