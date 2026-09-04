@@ -32,12 +32,12 @@ jobs:
       - name: Reject fatal lint errors
         if: matrix.os == 'ubuntu-latest'
         run: >-
-          flake8 scripts tests --count --select=E9,F63,F7,F82
+          flake8 scripts context_router authority context_compiler_v2 evals tests --count --select=E9,F63,F7,F82
           --show-source --statistics
       - name: Report advisory lint metrics
         if: matrix.os == 'ubuntu-latest'
         run: >-
-          flake8 scripts tests --count --exit-zero --max-complexity=10
+          flake8 scripts context_router authority context_compiler_v2 evals tests --count --exit-zero --max-complexity=10
           --max-line-length=127 --statistics
       - name: Run unit tests
         run: pytest tests/ -v --tb=short -m "not integration"
@@ -77,6 +77,519 @@ jobs:
           pip install -r requirements.txt pytest pytest-cov pytest-asyncio
       - name: Run API integration tests
         run: pytest tests/ -v --tb=short -m integration
+
+  evaluation-smoke:
+    name: Evaluation smoke suite
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run deterministic evaluation smoke suite
+        run: >-
+          python -m evals.run --provider baseline --suite smoke
+          --report evaluation-smoke-report.json
+      - name: Upload evaluation smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-smoke-report
+          path: evaluation-smoke-report.json
+          if-no-files-found: error
+
+  evaluation-public:
+    name: Evaluation public suite
+    needs: evaluation-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run deterministic public evaluation suite
+        run: >-
+          python -m evals.run --provider baseline --suite public
+          --report evaluation-public-report.json
+      - name: Upload public evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-public-report
+          path: evaluation-public-report.json
+          if-no-files-found: error
+
+  task-state-smoke:
+    name: Phase 16 task/state smoke suite
+    needs: evaluation-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run deterministic task/state smoke suite
+        run: >-
+          python -m evals.task_state_eval --suite smoke
+          --report task-state-smoke-report.json
+      - name: Upload task/state smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-state-smoke-report
+          path: task-state-smoke-report.json
+          if-no-files-found: error
+
+  task-state-public:
+    name: Phase 16 task/state public suite
+    needs: [evaluation-public, task-state-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run deterministic task/state public suite
+        run: >-
+          python -m evals.task_state_eval --suite public
+          --report task-state-public-report.json
+      - name: Upload task/state public report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task-state-public-report
+          path: task-state-public-report.json
+          if-no-files-found: error
+
+  router-smoke:
+    name: Phase 17 router shadow smoke suite
+    needs: [evaluation-smoke, task-state-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run route-policy expectations
+        run: >-
+          python -m evals.router_evaluation
+          --report router-route-smoke-report.json
+      - name: Run Router provider smoke corpus
+        run: >-
+          python -m evals.run --provider router --suite smoke
+          --report router-selection-smoke-report.json
+      - name: Compare baseline and Router in shadow mode
+        run: >-
+          python -m evals.router_shadow --suite smoke
+          --output router-shadow-smoke-report.json
+      - name: Upload router smoke reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17-router-smoke-reports
+          path: |
+            router-route-smoke-report.json
+            router-selection-smoke-report.json
+            router-shadow-smoke-report.json
+          if-no-files-found: error
+
+  router-public:
+    name: Phase 17 router public suite
+    needs: [evaluation-public, router-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Router public corpus
+        run: >-
+          python -m evals.run --provider router --suite public
+          --report router-selection-public-report.json
+      - name: Compare public baseline and Router in shadow mode
+        run: >-
+          python -m evals.router_shadow --suite public
+          --output router-shadow-public-report.json
+      - name: Upload router public reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17-router-public-reports
+          path: |
+            router-selection-public-report.json
+            router-shadow-public-report.json
+          if-no-files-found: error
+
+  authority-smoke:
+    name: Phase 18 authority shadow smoke suite
+    needs: [router-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run metadata authority smoke corpus
+        run: >-
+          python -m evals.authority_evaluation --suite smoke
+          --output authority-policy-smoke-report.json
+      - name: Run authority provider smoke corpus
+        run: >-
+          python -m evals.run --provider authority --suite smoke
+          --report authority-selection-smoke-report.json
+      - name: Compare Router and authority in shadow mode
+        run: >-
+          python -m evals.authority_shadow --suite smoke
+          --output authority-shadow-smoke-report.json
+      - name: Upload authority smoke reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-authority-smoke-reports
+          path: |
+            authority-policy-smoke-report.json
+            authority-selection-smoke-report.json
+            authority-shadow-smoke-report.json
+          if-no-files-found: error
+
+  authority-public:
+    name: Phase 18 authority public suite
+    needs: [router-public, authority-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run metadata authority public corpus
+        run: >-
+          python -m evals.authority_evaluation --suite public
+          --output authority-policy-public-report.json
+      - name: Run authority provider public corpus
+        run: >-
+          python -m evals.run --provider authority --suite public
+          --report authority-selection-public-report.json
+      - name: Compare public Router and authority in shadow mode
+        run: >-
+          python -m evals.authority_shadow --suite public
+          --output authority-shadow-public-report.json
+      - name: Upload authority public reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-authority-public-reports
+          path: |
+            authority-policy-public-report.json
+            authority-selection-public-report.json
+            authority-shadow-public-report.json
+          if-no-files-found: error
+
+  compiler-v2-smoke:
+    name: Phase 19 compiler V2 shadow smoke suite
+    needs: [authority-smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run compiler policy smoke corpus
+        run: >-
+          python -m evals.compiler_v2_evaluation --suite smoke
+          --output compiler-v2-policy-smoke-report.json
+      - name: Run compiler V2 provider smoke corpus
+        run: >-
+          python -m evals.run --provider compiler-v2 --suite smoke
+          --report compiler-v2-selection-smoke-report.json
+      - name: Compare V1 and V2 in shadow mode
+        run: >-
+          python -m evals.compiler_v2_shadow --suite smoke
+          --output compiler-v2-shadow-smoke-report.json
+      - name: Upload compiler V2 smoke reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase19-compiler-v2-smoke-reports
+          path: |
+            compiler-v2-policy-smoke-report.json
+            compiler-v2-selection-smoke-report.json
+            compiler-v2-shadow-smoke-report.json
+          if-no-files-found: error
+
+  compiler-v2-public:
+    name: Phase 19 compiler V2 public suite
+    needs: [authority-public, compiler-v2-smoke]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run compiler V2 provider public corpus
+        run: >-
+          python -m evals.run --provider compiler-v2 --suite public
+          --report compiler-v2-selection-public-report.json
+      - name: Compare public V1 and V2 shadow outputs
+        run: >-
+          python -m evals.compiler_v2_shadow --suite public
+          --output compiler-v2-shadow-public-report.json
+      - name: Upload compiler V2 public reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase19-compiler-v2-public-reports
+          path: |
+            compiler-v2-selection-public-report.json
+            compiler-v2-shadow-public-report.json
+          if-no-files-found: error
+
+  phase16-evidence:
+    name: Phase 16 task/state evidence
+    needs: [bandit, secrets, dependency-audit, docker-security, task-state-public]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt defusedxml==0.7.1
+      - name: Download runtime test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: .phase16-evidence-input
+      - name: Run full task/state evaluation suite
+        run: >-
+          python -m evals.task_state_eval --suite all
+          --report .phase16-evidence-input/task-state-all-report.json
+      - name: Generate Phase 16 evidence
+        run: >-
+          python scripts/phase16_evidence.py
+          --junit .phase16-evidence-input/pytest-results.xml
+          --evaluation .phase16-evidence-input/task-state-all-report.json
+          --output .phase-evidence/phase16-task-state.json
+      - name: Upload Phase 16 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-task-state-evidence
+          path: .phase-evidence/phase16-task-state.json
+          if-no-files-found: error
+
+  phase17-evidence:
+    name: Phase 17 router evidence
+    needs: [bandit, secrets, dependency-audit, docker-security, router-public]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt defusedxml==0.7.1
+      - name: Download runtime test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: .phase17-evidence-input
+      - name: Run full Router corpus including holdout
+        run: >-
+          python -m evals.run --provider router --suite all
+          --report .phase17-evidence-input/router-selection-all-report.json
+      - name: Run route policy expectations
+        run: >-
+          python -m evals.router_evaluation
+          --report .phase17-evidence-input/router-route-report.json
+      - name: Produce content-free full shadow comparison
+        run: >-
+          python -m evals.router_shadow --suite all
+          --output .phase17-evidence-input/router-shadow-report.json
+      - name: Measure informational Router performance
+        run: >-
+          python -m evals.router_benchmark
+          --output .phase17-evidence-input/router-benchmark.json
+      - name: Generate Phase 17 evidence
+        run: >-
+          python scripts/phase17_evidence.py
+          --junit .phase17-evidence-input/pytest-results.xml
+          --route-evaluation .phase17-evidence-input/router-route-report.json
+          --selection-evaluation .phase17-evidence-input/router-selection-all-report.json
+          --shadow-report .phase17-evidence-input/router-shadow-report.json
+          --benchmark .phase17-evidence-input/router-benchmark.json
+          --output .phase-evidence/phase17-task-aware-router.json
+      - name: Upload Phase 17 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase17-task-aware-router-evidence
+          path: .phase-evidence/phase17-task-aware-router.json
+          if-no-files-found: error
+
+  phase18-evidence:
+    name: Phase 18 authority evidence
+    needs: [bandit, secrets, dependency-audit, docker-security, authority-public]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt defusedxml==0.7.1
+      - name: Download runtime test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: .phase18-evidence-input
+      - name: Run full metadata authority corpus including holdout
+        run: >-
+          python -m evals.authority_evaluation --suite all
+          --output .phase18-evidence-input/authority-policy-all-report.json
+      - name: Run full authority selection evaluation
+        run: >-
+          python -m evals.run --provider authority --suite all
+          --report .phase18-evidence-input/authority-selection-all-report.json
+      - name: Produce content-free full authority shadow comparison
+        run: >-
+          python -m evals.authority_shadow --suite all
+          --output .phase18-evidence-input/authority-shadow-report.json
+      - name: Generate Phase 18 evidence
+        run: >-
+          python scripts/phase18_evidence.py
+          --junit .phase18-evidence-input/pytest-results.xml
+          --authority-evaluation .phase18-evidence-input/authority-policy-all-report.json
+          --selection-evaluation .phase18-evidence-input/authority-selection-all-report.json
+          --shadow-report .phase18-evidence-input/authority-shadow-report.json
+          --output .phase-evidence/phase18-authority-conflict.json
+      - name: Upload Phase 18 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase18-authority-conflict-evidence
+          path: .phase-evidence/phase18-authority-conflict.json
+          if-no-files-found: error
+
+  phase19-evidence:
+    name: Phase 19 compiler V2 evidence
+    needs: [bandit, secrets, dependency-audit, docker-security, compiler-v2-public]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt defusedxml==0.7.1
+      - name: Download runtime test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: .phase19-evidence-input
+      - name: Run compiler V2 policy corpus including holdout
+        run: >-
+          python -m evals.compiler_v2_evaluation --suite all
+          --output .phase19-evidence-input/compiler-v2-policy-all-report.json
+      - name: Run full V2 selection evaluation
+        run: >-
+          python -m evals.run --provider compiler-v2 --suite all
+          --report .phase19-evidence-input/compiler-v2-selection-all-report.json
+      - name: Produce full V2 shadow comparison
+        run: >-
+          python -m evals.compiler_v2_shadow --suite all
+          --output .phase19-evidence-input/compiler-v2-shadow-report.json
+      - name: Measure informational V2 compiler performance
+        run: >-
+          python -m evals.compiler_v2_benchmark
+          --output .phase19-evidence-input/compiler-v2-benchmark.json
+      - name: Generate Phase 19 evidence
+        run: >-
+          python scripts/phase19_evidence.py
+          --junit .phase19-evidence-input/pytest-results.xml
+          --compiler-evaluation .phase19-evidence-input/compiler-v2-policy-all-report.json
+          --selection-evaluation .phase19-evidence-input/compiler-v2-selection-all-report.json
+          --shadow-report .phase19-evidence-input/compiler-v2-shadow-report.json
+          --benchmark .phase19-evidence-input/compiler-v2-benchmark.json
+          --output .phase-evidence/phase19-context-compiler-v2.json
+      - name: Upload Phase 19 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase19-context-compiler-v2-evidence
+          path: .phase-evidence/phase19-context-compiler-v2.json
+          if-no-files-found: error
 
   quality:
     name: Coverage gate
@@ -125,7 +638,7 @@ jobs:
       - name: Install Bandit
         run: python -m pip install --upgrade pip 'bandit[toml]'
       - name: Run Bandit hard gate
-        run: bandit -r scripts -f json -o bandit-report.json
+        run: bandit -r scripts context_router authority context_compiler_v2 -f json -o bandit-report.json
       - name: Upload Bandit report
         if: always()
         uses: actions/upload-artifact@v4

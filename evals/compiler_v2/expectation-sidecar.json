@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "privacy": "synthetic_only",
+  "public_case_count": 180,
+  "holdout_case_count": 40,
+  "categories": {
+    "tight_budget": 25,
+    "large_budget": 15,
+    "duplicate_heavy": 25,
+    "conflict_heavy": 20,
+    "current_state_heavy": 20,
+    "history_heavy": 15,
+    "requirement_heavy": 20,
+    "profile": 20,
+    "malicious_context": 20
+  },
+  "holdout_categories": {
+    "tight_budget": 8,
+    "duplicate_heavy": 8,
+    "conflict_heavy": 6,
+    "current_state_heavy": 6,
+    "requirement_heavy": 6,
+    "malicious_context": 6
+  }
+}
