@@ -171,7 +171,8 @@ def build_manifest(
         "shadow": _shadow(shadow),
         "benchmark": _benchmark(benchmark),
         "invariants": {
-            "budget_violations": 0, "wrong_project_leakage": 0, "secret_leakage": 0,
+            # This is a public, numeric security metric name—not credential data.
+            "budget_violations": 0, "wrong_project_leakage": 0, "secret_leakage": 0,  # nosec B105
             "mandatory_silent_omission": 0, "canonical_write": 0, "nondeterminism": 0,
         },
     }
