@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase19_evidence import PASS, Phase19EvidenceError, REQUIRED_TESTS, build_manifest  # noqa: E402
+from phase19_evidence import PASS, Phase19EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write(path: Path, value: dict) -> None:
@@ -72,3 +72,15 @@ def test_phase19_manifest_refuses_forbidden_context_leakage(tmp_path):
 
     with pytest.raises(Phase19EvidenceError, match="safety gates"):
         build_manifest(junit, policy, selection, shadow, benchmark, tmp_path)
+
+
+def test_phase19_evidence_cli_writes_a_runtime_manifest(tmp_path):
+    junit, output = tmp_path / "results.xml", tmp_path / "phase19.json"
+    _junit(junit)
+    policy, selection, shadow, benchmark = _reports(tmp_path)
+
+    assert main([
+        "--junit", str(junit), "--compiler-evaluation", str(policy), "--selection-evaluation", str(selection),
+        "--shadow-report", str(shadow), "--benchmark", str(benchmark), "--output", str(output), "--root", str(ROOT),
+    ]) == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS

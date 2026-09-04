@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 import multiprocessing
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -38,7 +39,10 @@ def _concurrent_requirement_writer(vault_path: str, writer_number: int, outcome_
     """One subprocess writer which retries only on a truthful CAS conflict."""
     service = StateService(vault_path)
     requirement_id = f"req_writer_{writer_number}"
-    for _attempt in range(40):
+    # Contended writers must keep retrying truthful CAS conflicts long enough
+    # to exercise every successful mutation, rather than treating scheduler
+    # pressure as a false lost-update signal.
+    for attempt in range(160):
         revision = service.store.project_revision("brain-eleven")
         try:
             service.add_requirement(
@@ -50,6 +54,7 @@ def _concurrent_requirement_writer(vault_path: str, writer_number: int, outcome_
                 now=NOW,
             )
         except StateStoreConflict:
+            time.sleep(0.001 * (1 + ((writer_number + attempt) % 7)))
             continue
         except Exception as exc:  # pragma: no cover - asserted by the parent process
             outcome_queue.put((False, repr(exc)))
@@ -64,6 +69,31 @@ def _active_service(tmp_path):
     service = StateService(tmp_path)
     service.init_project("brain-eleven", source=SOURCE, now=NOW)
     return service
+
+
+def _assert_concurrent_writers_persist_every_success(tmp_path, writer_count: int) -> None:
+    """Exercise separate processes against the same revisioned state authority."""
+    _active_service(tmp_path)
+    context = multiprocessing.get_context("spawn")
+    outcomes = context.Queue()
+    workers = [
+        context.Process(target=_concurrent_requirement_writer, args=(str(tmp_path), number, outcomes))
+        for number in range(writer_count)
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(timeout=60)
+        assert worker.exitcode == 0
+
+    results = [outcomes.get(timeout=10) for _ in workers]
+    assert all(succeeded for succeeded, _detail in results), results
+    state = StateStore(tmp_path).get_project("brain-eleven")
+    assert state["revision"] == writer_count + 1
+    assert len(state["requirements"]) == writer_count
+    assert {record["id"] for record in state["requirements"]} == {
+        f"req_writer_{number}" for number in range(writer_count)
+    }
 
 
 def test_corrupt_state_and_unsupported_schema_fail_closed(tmp_path):
@@ -120,6 +150,54 @@ def test_lock_timeout_and_write_failure_leave_the_previous_canonical_snapshot_in
     assert StateStore(tmp_path).get_project("brain-eleven")["requirements"] == []
 
 
+def test_atomic_replace_retries_a_transient_windows_sharing_error(tmp_path, monkeypatch):
+    service = _active_service(tmp_path)
+    store = service.store
+    original_replace = Path.replace
+    attempts = 0
+
+    def transient_replace(path, target):
+        nonlocal attempts
+        if path.name.startswith(".project-state-") and attempts == 0:
+            attempts += 1
+            raise PermissionError("synthetic transient sharing lock")
+        attempts += 1
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", transient_replace)
+    service.add_requirement(
+        "brain-eleven",
+        text="retry only transient sharing lock",
+        expected_revision=1,
+        source=SOURCE,
+        record_id="req_transient_replace",
+        now=NOW,
+    )
+
+    assert attempts >= 2
+    assert store.project_revision("brain-eleven") == 2
+
+
+def test_state_read_retries_a_transient_windows_sharing_error(tmp_path, monkeypatch):
+    service = _active_service(tmp_path)
+    store = service.store
+    original_read_text = Path.read_text
+    attempts = 0
+
+    def transient_read_text(path, *args, **kwargs):
+        nonlocal attempts
+        if path == store.path and attempts == 0:
+            attempts += 1
+            raise PermissionError("synthetic transient sharing lock")
+        attempts += 1
+        return original_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", transient_read_text)
+
+    assert store.project_revision("brain-eleven") == 1
+    assert attempts >= 2
+
+
 def test_ai_proposed_state_and_invalid_memory_references_cannot_become_canonical(tmp_path):
     ProjectRegistry(tmp_path).register(tmp_path / "brain-eleven", project_id="brain-eleven")
     ProjectRegistry(tmp_path).register(tmp_path / "other", project_id="other-project")
@@ -152,27 +230,45 @@ def test_ai_proposed_state_and_invalid_memory_references_cannot_become_canonical
 
 
 def test_ten_concurrent_state_writers_persist_every_success_without_lost_updates(tmp_path):
-    service = _active_service(tmp_path)
-    context = multiprocessing.get_context("spawn")
-    outcomes = context.Queue()
-    workers = [
-        context.Process(target=_concurrent_requirement_writer, args=(str(tmp_path), number, outcomes))
-        for number in range(10)
-    ]
-    for worker in workers:
-        worker.start()
-    for worker in workers:
-        worker.join(timeout=30)
-        assert worker.exitcode == 0
+    _assert_concurrent_writers_persist_every_success(tmp_path, writer_count=10)
 
-    results = [outcomes.get(timeout=5) for _ in workers]
-    assert all(succeeded for succeeded, _detail in results)
+
+@pytest.mark.graduation
+def test_fifty_concurrent_state_writers_persist_every_success_without_lost_updates(tmp_path):
+    _assert_concurrent_writers_persist_every_success(tmp_path, writer_count=50)
+
+
+@pytest.mark.graduation
+def test_one_hundred_contested_state_transactions_preserve_every_success(tmp_path):
+    service = _active_service(tmp_path)
+    stale_conflicts = 0
+
+    for number in range(100):
+        current_revision = service.store.project_revision("brain-eleven")
+        if number:
+            with pytest.raises(StateStoreConflict):
+                service.add_requirement(
+                    "brain-eleven",
+                    text=f"stale transaction {number}",
+                    expected_revision=current_revision - 1,
+                    source=SOURCE,
+                    record_id=f"req_stale_{number}",
+                    now=NOW,
+                )
+            stale_conflicts += 1
+        service.add_requirement(
+            "brain-eleven",
+            text=f"contested transaction {number}",
+            expected_revision=current_revision,
+            source=SOURCE,
+            record_id=f"req_contested_{number}",
+            now=NOW,
+        )
+
     state = StateStore(tmp_path).get_project("brain-eleven")
-    assert state["revision"] == 11
-    assert len(state["requirements"]) == 10
-    assert {record["id"] for record in state["requirements"]} == {
-        f"req_writer_{number}" for number in range(10)
-    }
+    assert stale_conflicts == 99
+    assert state["revision"] == 101
+    assert len(state["requirements"]) == 100
 
 
 def test_unknown_project_is_never_created_by_a_failed_mutation(tmp_path):

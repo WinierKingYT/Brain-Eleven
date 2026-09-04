@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import time
+import time
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -455,11 +456,17 @@ class StateStore:
     def _read_unlocked(self) -> dict[str, Any]:
         if not self.path.exists():
             return empty_state_document()
-        try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
-            return validate_state_document(payload)
-        except (OSError, json.JSONDecodeError, StateSchemaError) as exc:
-            raise StateStoreCorrupt(f"Cannot read canonical project state: {self.path}") from exc
+        for attempt in range(8):
+            try:
+                payload = json.loads(self.path.read_text(encoding="utf-8"))
+                return validate_state_document(payload)
+            except PermissionError as exc:
+                if attempt == 7:
+                    raise StateStoreCorrupt(f"Cannot read canonical project state: {self.path}") from exc
+                time.sleep(0.005 * (attempt + 1))
+            except (OSError, json.JSONDecodeError, StateSchemaError) as exc:
+                raise StateStoreCorrupt(f"Cannot read canonical project state: {self.path}") from exc
+        raise AssertionError("unreachable state read retry exhaustion")
 
     def load(self) -> dict[str, Any]:
         """Read the latest valid snapshot; missing and corrupt remain distinct via exists()."""
@@ -490,7 +497,7 @@ class StateStore:
                 handle.write("\n")
                 handle.flush()
                 os.fsync(handle.fileno())
-            temporary.replace(self.path)
+            self._replace_with_retry(temporary)
         except OSError as exc:
             raise StateStorePersistenceError(f"Cannot persist canonical project state: {self.path}") from exc
         finally:
@@ -499,6 +506,17 @@ class StateStore:
                     temporary.unlink()
                 except OSError:
                     pass
+
+    def _replace_with_retry(self, temporary: Path) -> None:
+        """Handle only short-lived Windows sharing locks while holding the write lock."""
+        for attempt in range(8):
+            try:
+                temporary.replace(self.path)
+                return
+            except PermissionError:
+                if attempt == 7:
+                    raise
+                time.sleep(0.005 * (attempt + 1))
 
     @staticmethod
     def _append_event(

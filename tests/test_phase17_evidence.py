@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase17_evidence import PASS, Phase17EvidenceError, REQUIRED_TESTS, build_manifest  # noqa: E402
+from phase17_evidence import PASS, Phase17EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write_junit(path: Path) -> None:
@@ -87,3 +87,15 @@ def test_phase17_manifest_refuses_router_leakage(tmp_path):
 
     with pytest.raises(Phase17EvidenceError, match="wrong-project leakage"):
         build_manifest(junit, route, selection, shadow, benchmark, tmp_path)
+
+
+def test_phase17_evidence_cli_writes_a_runtime_manifest(tmp_path):
+    junit, output = tmp_path / "results.xml", tmp_path / "phase17.json"
+    _write_junit(junit)
+    route, selection, shadow, benchmark = _write_required_reports(tmp_path)
+
+    assert main([
+        "--junit", str(junit), "--route-evaluation", str(route), "--selection-evaluation", str(selection),
+        "--shadow-report", str(shadow), "--benchmark", str(benchmark), "--output", str(output), "--root", str(ROOT),
+    ]) == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS

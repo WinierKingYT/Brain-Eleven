@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase16_evidence import PASS, Phase16EvidenceError, REQUIRED_TESTS, build_manifest  # noqa: E402
+from phase16_evidence import PASS, Phase16EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write_junit(path: Path, *, failing: str | None = None) -> None:
@@ -52,3 +52,12 @@ def test_phase16_manifest_refuses_incomplete_or_leaking_evaluation_evidence(tmp_
 
     with pytest.raises(Phase16EvidenceError, match="non-zero wrong-project"):
         build_manifest(junit, evaluation, tmp_path)
+
+
+def test_phase16_evidence_cli_writes_a_runtime_manifest(tmp_path):
+    junit, evaluation, output = tmp_path / "results.xml", tmp_path / "task-state.json", tmp_path / "phase16.json"
+    _write_junit(junit)
+    _write_evaluation(evaluation)
+
+    assert main(["--junit", str(junit), "--evaluation", str(evaluation), "--output", str(output), "--root", str(ROOT)]) == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
