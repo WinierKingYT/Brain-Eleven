@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_cross_phase_traps_043",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "eleven_capture için cross phase traps bağlamında güvenli aktif kararı seç.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "cross_phase_traps",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_markdown_source_of_truth",
+      "mem_ec_vault_manifest"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_superseded_save_rule"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

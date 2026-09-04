@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_resolved_lifecycle_051",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde resolved lifecycle decision'ını değerlendir; foreign context kullanma.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ],
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

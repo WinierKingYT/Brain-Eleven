@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_global_project_004",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Combine global engineering rules with eleven_capture decisions for scenario 4.",
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "domains": [
+      "global",
+      "project"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_restore_rebuild",
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ],
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_legacy_import"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "corpus_version": 2,
+  "task_count": 160,
+  "suite_counts": {
+    "dev": 70,
+    "test": 60,
+    "holdout": 30
+  },
+  "taxonomy": [
+    "basic_relevance",
+    "lexical_traps",
+    "same_domain_wrong_project",
+    "global_project",
+    "supersession",
+    "resolved_lifecycle",
+    "archived_project",
+    "noise_heavy",
+    "ambiguity",
+    "duplicate_semantics",
+    "contradiction",
+    "authority_traps",
+    "state_relevance",
+    "cross_phase_traps",
+    "secret_forbidden",
+    "malicious_input"
+  ],
+  "languages": [
+    "turkish",
+    "english",
+    "mixed"
+  ],
+  "privacy": "synthetic_only",
+  "document_categories": [
+    "historical_coverage",
+    "basic_relevance",
+    "lexical_traps",
+    "same_domain_wrong_project",
+    "global_project",
+    "supersession",
+    "resolved_lifecycle",
+    "archived_project",
+    "noise_heavy",
+    "ambiguity",
+    "duplicate_semantics",
+    "contradiction",
+    "authority_traps",
+    "state_relevance",
+    "cross_phase_traps",
+    "secret_forbidden",
+    "malicious_input"
+  ]
+}

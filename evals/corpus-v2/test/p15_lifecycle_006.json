@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_lifecycle_006",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Use active minecraft_mcp state while excluding completed lifecycle records 6.",
+    "intent": [
+      "lifecycle"
+    ],
+    "domains": [
+      "memory-lifecycle"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ],
+    "forbidden": [
+      "mem_mc_resolved_polling",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

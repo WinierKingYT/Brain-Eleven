@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_project_isolation_020",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Retrieve only promtgen context for isolation scenario 20.",
+    "intent": [
+      "scope"
+    ],
+    "domains": [
+      "project-isolation"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ],
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_legacy_export",
+      "mem_pg_resolved_cdn"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

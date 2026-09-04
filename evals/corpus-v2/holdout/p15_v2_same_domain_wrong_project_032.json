@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_same_domain_wrong_project_032",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Select only active promtgen context for the same domain wrong project evaluation case.",
+    "intent": [
+      "review"
+    ],
+    "domains": [
+      "same_domain_wrong_project",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ],
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

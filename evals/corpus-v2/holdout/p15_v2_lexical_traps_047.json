@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_lexical_traps_047",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Select only active promtgen context for the lexical traps evaluation case.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "lexical_traps",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ],
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

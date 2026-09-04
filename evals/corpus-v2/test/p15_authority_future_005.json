@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_authority_future_005",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Record the future authority decision case for promtgen scenario 5.",
+    "intent": [
+      "authority"
+    ],
+    "domains": [
+      "future-capability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_mc_protocol_version"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

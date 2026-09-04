@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_conflict_003",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Select the non-conflicting current decision for promtgen scenario 3.",
+    "intent": [
+      "conflict"
+    ],
+    "domains": [
+      "decision"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_mc_command_policy"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

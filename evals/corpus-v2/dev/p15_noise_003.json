@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_noise_003",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Find essential context from a noise-heavy minecraft_mcp vault scenario 3.",
+    "intent": [
+      "relevance"
+    ],
+    "domains": [
+      "noise",
+      "ranking"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_command_policy",
+      "mem_secret_redaction"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

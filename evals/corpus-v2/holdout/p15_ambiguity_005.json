@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_ambiguity_005",
+  "task": {
+    "project_id": null,
+    "prompt": "Answer only from global policy while current project is ambiguous 5.",
+    "intent": [
+      "ambiguity"
+    ],
+    "domains": [
+      "scope"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_default_scope"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ],
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_pg_redis_cache",
+      "mem_mc_protocol_version",
+      "mem_legacy_export"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_ambiguity_001",
+  "task": {
+    "project_id": null,
+    "prompt": "Answer only from global policy while current project is ambiguous 1.",
+    "intent": [
+      "ambiguity"
+    ],
+    "domains": [
+      "scope"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_markdown_source_of_truth"
+    ],
+    "useful": [
+      "mem_atomic_replace"
+    ],
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_promtgen_storage",
+      "mem_mc_protocol_version",
+      "mem_legacy_export"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

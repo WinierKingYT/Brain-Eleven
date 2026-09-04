@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_noise_001",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Find essential context from a noise-heavy eleven_capture vault scenario 1.",
+    "intent": [
+      "relevance"
+    ],
+    "domains": [
+      "noise",
+      "ranking"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_markdown_before_sqlite",
+      "mem_restore_rebuild"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_superseded_save_rule"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

@@ -9,16 +9,16 @@ from typing import Any, Sequence
 
 from .compiler_v2_evaluation import run_compiler_evaluation
 from .reporting import compare_evaluation_reports
-from .run import run_evaluation
+from .run import DEFAULT_CORPUS_ROOT, run_evaluation
 
 
 REPORT_TYPE = "brain_eleven_compiler_v2_shadow_report"
 
 
-def run_shadow_comparison(*, suite: str = "smoke", noise_count: int = 24) -> dict[str, Any]:
+def run_shadow_comparison(*, suite: str = "smoke", noise_count: int = 24, corpus_root: Path = DEFAULT_CORPUS_ROOT) -> dict[str, Any]:
     """Compare V1 selection with V2 shadow output without injecting either result."""
-    baseline = run_evaluation(suite=suite, provider="baseline", noise_count=noise_count)
-    compiler = run_evaluation(suite=suite, provider="compiler-v2", noise_count=noise_count)
+    baseline = run_evaluation(suite=suite, provider="baseline", noise_count=noise_count, corpus_root=corpus_root)
+    compiler = run_evaluation(suite=suite, provider="compiler-v2", noise_count=noise_count, corpus_root=corpus_root)
     comparison = compare_evaluation_reports(baseline, compiler)
     policy = run_compiler_evaluation(suite=suite)
     return {
@@ -38,9 +38,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Compare V1 baseline and V2 compiler in shadow mode")
     parser.add_argument("--suite", choices=("smoke", "public", "holdout", "all"), default="smoke")
     parser.add_argument("--noise-count", type=int, default=24)
+    parser.add_argument("--corpus-root", type=Path, default=DEFAULT_CORPUS_ROOT)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    report = run_shadow_comparison(suite=args.suite, noise_count=args.noise_count)
+    report = run_shadow_comparison(suite=args.suite, noise_count=args.noise_count, corpus_root=args.corpus_root)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

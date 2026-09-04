@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_state_relevance_042",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde state relevance decision'ını değerlendir; foreign context kullanma.",
+    "intent": [
+      "review"
+    ],
+    "domains": [
+      "state_relevance",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_windows_target",
+      "mem_mc_world_backup"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_resolved_polling"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

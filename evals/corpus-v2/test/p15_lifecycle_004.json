@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_lifecycle_004",
+  "task": {
+    "project_id": "eleven_capture",
+    "prompt": "Use active eleven_capture state while excluding completed lifecycle records 4.",
+    "intent": [
+      "lifecycle"
+    ],
+    "domains": [
+      "memory-lifecycle"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ],
+    "forbidden": [
+      "mem_ec_resolved_json_cache",
+      "mem_superseded_save_rule"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

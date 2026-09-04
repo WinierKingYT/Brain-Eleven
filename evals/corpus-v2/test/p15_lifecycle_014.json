@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_lifecycle_014",
+  "task": {
+    "project_id": "promtgen",
+    "prompt": "Use active promtgen state while excluding completed lifecycle records 14.",
+    "intent": [
+      "lifecycle"
+    ],
+    "domains": [
+      "memory-lifecycle"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ],
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_pg_old_localstorage"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

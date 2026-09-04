@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_relevance_015",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the reliable persistence rule for minecraft_mcp relevance scenario 15.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_markdown_source_of_truth"
+    ],
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

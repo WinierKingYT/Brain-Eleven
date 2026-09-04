@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_supersession_006",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Resolve the authoritative replacement rule for minecraft_mcp scenario 6.",
+    "intent": [
+      "supersession"
+    ],
+    "domains": [
+      "authority"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ],
+    "forbidden": [
+      "mem_mc_resolved_polling"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

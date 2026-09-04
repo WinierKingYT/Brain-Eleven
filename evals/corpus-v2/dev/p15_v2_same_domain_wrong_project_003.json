@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_same_domain_wrong_project_003",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde same domain wrong project decision'ını değerlendir; foreign context kullanma.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "same_domain_wrong_project",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ],
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

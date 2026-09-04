@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "task_id": "p15_v2_supersession_021",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde supersession decision'ını değerlendir; foreign context kullanma.",
+    "intent": [
+      "architecture"
+    ],
+    "domains": [
+      "supersession",
+      "reliability"
+    ]
+  },
+  "expected_context": {
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ],
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_old_websocket"
+    ]
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  },
+  "expectations": {
+    "authority_resolution": "future",
+    "conflict_resolution": "future",
+    "ask_user": false,
+    "abstain": false
+  }
+}

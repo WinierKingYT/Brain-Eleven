@@ -13,6 +13,7 @@ from .authority_provider import AUTHORITY_PROVIDER_ID, AuthorityContextProvider
 from .compiler_v2_provider import COMPILER_PROVIDER_ID, CompilerV2ContextProvider
 from .router_provider import ROUTER_PROVIDER_ID, RouterContextProvider
 from .corpus_builder import DEFAULT_CORPUS_ROOT, DEFAULT_FIXTURE_PATH, check_public_corpus
+from .corpus_v2_builder import DEFAULT_CORPUS_ROOT as DEFAULT_CORPUS_V2_ROOT, check_corpus_v2
 from .fixture_generator import build_vault
 from .reporting import build_evaluation_report, write_evaluation_report
 from .schema import load_fixture, load_tasks
@@ -29,6 +30,16 @@ SUITE_DIRECTORIES = {
 
 class EvaluationRunError(ValueError):
     """Raised when an evaluation suite cannot be constructed safely."""
+
+
+def check_corpus(corpus_root: Path | str, fixture) -> None:
+    """Validate the matching versioned corpus before it becomes evaluation input."""
+
+    root = Path(corpus_root).resolve()
+    if root == DEFAULT_CORPUS_V2_ROOT.resolve():
+        check_corpus_v2(root, fixture)
+    else:
+        check_public_corpus(root, fixture)
 
 
 def suite_task_paths(corpus_root: Path | str, suite: str) -> tuple[Path, ...]:
@@ -61,7 +72,7 @@ def run_evaluation(
     if provider not in {"baseline", "router", "authority", "compiler-v2"}:
         raise EvaluationRunError(f"unsupported evaluation provider: {provider}")
     fixture = load_fixture(fixture_path)
-    check_public_corpus(corpus_root, fixture)
+    check_corpus(corpus_root, fixture)
     tasks = load_tasks(suite_task_paths(corpus_root, suite), fixture)
 
     with TemporaryDirectory(prefix="brain-eleven-eval-") as directory:
