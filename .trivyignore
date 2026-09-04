@@ -11,6 +11,11 @@
 # either. They remain scoped to these CVE IDs and expire with this review.
 
 # exp:2026-10-02
+CVE-2026-78409
+# exp:2026-10-02
+CVE-2026-78410
+
+# exp:2026-10-02
 CVE-2026-76642
 # exp:2026-10-02
 CVE-2026-78408
