@@ -52,7 +52,8 @@ class AuthorityShadowRunner:
             )
             if resolution.status != "STALE_INPUT":
                 break
-        assert router_result is not None and resolution is not None
+        if router_result is None or resolution is None:
+            raise RuntimeError("Authority shadow run did not produce a route and resolution")
         return router_result, resolution
 
     @staticmethod

@@ -11,7 +11,7 @@ from .adapters import GraphAdapter, MemoryAdapter, RawCandidate, StateAdapter, i
 from .cache import RouterCache
 from .config import RouterConfig, RouterConfigError
 from .models import Candidate, RetrievalPlan, RetrievalQuery, RouteScope, RouterResult, RoutingOptions
-from .planner import build_plan
+from .planner import FALLBACK_TIER, STRICT_TIER, build_plan
 from .policy import ScopePolicyError, lifecycle_allowed, resolve_history_mode, resolve_profile, resolve_scope
 
 
@@ -281,7 +281,7 @@ class ContextRouter:
                 return cached
 
         raw_candidates: list[RawCandidate] = []
-        strict_memory = [query for query in plan.queries if query.source == "memory" and query.pass_name == "strict"]
+        strict_memory = [query for query in plan.queries if query.source == "memory" and query.pass_name == STRICT_TIER]
         for query in strict_memory:
             raw_candidates.extend(
                 self.memory.retrieve(
@@ -313,7 +313,7 @@ class ContextRouter:
                         )
                     )
             for query in (
-                query for query in plan.queries if query.source == "memory" and query.pass_name == "fallback"
+                query for query in plan.queries if query.source == "memory" and query.pass_name == FALLBACK_TIER
             ):
                 raw_candidates.extend(
                     self.memory.retrieve(

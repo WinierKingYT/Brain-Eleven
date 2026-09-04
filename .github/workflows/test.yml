@@ -853,6 +853,27 @@ jobs:
           context: .
           load: true
           tags: brain-eleven:validation
+      - name: Generate Trivy OS diagnostics
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: brain-eleven:validation
+          format: json
+          output: trivy-results.json
+          severity: HIGH,CRITICAL
+          vuln-type: os
+          exit-code: '0'
+          ignore-unfixed: 'false'
+          trivyignores: .trivyignore
+      - name: Surface Trivy remediation diagnostics
+        if: always()
+        run: python scripts/report_trivy_findings.py --report trivy-results.json
+      - name: Upload Trivy diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-os-report
+          path: trivy-results.json
+          if-no-files-found: warn
       - name: Run Trivy hard gate
         uses: aquasecurity/trivy-action@v0.36.0
         with:

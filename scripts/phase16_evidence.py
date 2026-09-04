@@ -19,7 +19,7 @@ from defusedxml import ElementTree
 
 SCHEMA_VERSION = 1
 PHASE = "16"
-PASS = "PASS"
+SUCCESS = "PASS"
 FAIL = "FAIL"
 REQUIRED_TESTS = frozenset({
     "test_ten_concurrent_state_writers_persist_every_success_without_lost_updates",
@@ -61,7 +61,7 @@ def _test_results(junit_path: Path) -> dict[str, str]:
     results: dict[str, str] = {}
     for case in root.iter("testcase"):
         name = str(case.get("name") or "").split("[", 1)[0]
-        status = FAIL if case.find("failure") is not None or case.find("error") is not None else PASS
+        status = FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
         results[name] = status
     if not results:
         raise Phase16EvidenceError("JUnit evidence contains no test cases")
@@ -95,10 +95,10 @@ def build_manifest(junit_path: Path, evaluation_path: Path, root: Path = Path(".
     test_results = _test_results(junit_path)
     missing = sorted(REQUIRED_TESTS - test_results.keys())
     failed = sorted(
-        name for name in REQUIRED_TESTS if name in test_results and test_results[name] != PASS
+        name for name in REQUIRED_TESTS if name in test_results and test_results[name] != SUCCESS
     )
     evaluation = _evaluation_report(evaluation_path)
-    status = PASS if not missing and not failed else FAIL
+    status = SUCCESS if not missing and not failed else FAIL
     return {
         "schema_version": SCHEMA_VERSION,
         "phase": PHASE,
@@ -116,9 +116,9 @@ def build_manifest(junit_path: Path, evaluation_path: Path, root: Path = Path(".
             "wrong_project_state_leakage": 0
             if evaluation["metrics"]["wrong_project_state_leakage_rate"] == 0 else None,
             "lost_state_updates": 0 if not failed else None,
-            "corrupt_state_fail_closed": PASS
+            "corrupt_state_fail_closed": SUCCESS
             if "test_corrupt_state_and_unsupported_schema_fail_closed" not in failed else FAIL,
-            "bootstrap_state_lineage": PASS
+            "bootstrap_state_lineage": SUCCESS
             if "test_bootstrap_includes_current_state_and_rejects_a_changed_state_revision" not in failed else FAIL,
         },
     }
@@ -161,7 +161,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps({"status": FAIL, "error": str(exc)}, ensure_ascii=False))
         return 2
     print(json.dumps({"status": manifest["status"], "output": str(arguments.output)}, ensure_ascii=False))
-    return 0 if manifest["status"] == PASS else 1
+    return 0 if manifest["status"] == SUCCESS else 1
 
 
 if __name__ == "__main__":

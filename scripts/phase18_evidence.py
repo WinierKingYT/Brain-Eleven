@@ -18,7 +18,7 @@ from defusedxml import ElementTree
 
 SCHEMA_VERSION = 1
 PHASE = "18"
-PASS = "PASS"
+SUCCESS = "PASS"
 FAIL = "FAIL"
 REQUIRED_TESTS = frozenset(
     {
@@ -75,7 +75,7 @@ def _test_results(path: Path) -> dict[str, str]:
     results = {}
     for case in root.iter("testcase"):
         name = str(case.get("name") or "").split("[", 1)[0]
-        results[name] = FAIL if case.find("failure") is not None or case.find("error") is not None else PASS
+        results[name] = FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
     if not results:
         raise Phase18EvidenceError("JUnit evidence contains no test cases")
     return results
@@ -140,7 +140,7 @@ def build_manifest(junit_path: Path, evaluation_path: Path, selection_path: Path
         "phase": PHASE,
         "generated_at": _utc_now(),
         "head_sha": _git_sha(root),
-        "status": PASS if not missing and not failed else FAIL,
+        "status": SUCCESS if not missing and not failed else FAIL,
         "tests": {"required": sorted(REQUIRED_TESTS), "missing": missing, "failed": failed, "passed": len(REQUIRED_TESTS) - len(missing) - len(failed)},
         "authority_evaluation": evaluation,
         "selection_evaluation": selection,
@@ -188,7 +188,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps({"status": FAIL, "error": str(exc)}, ensure_ascii=False))
         return 2
     print(json.dumps({"status": manifest["status"], "output": str(args.output)}, ensure_ascii=False))
-    return 0 if manifest["status"] == PASS else 1
+    return 0 if manifest["status"] == SUCCESS else 1
 
 
 if __name__ == "__main__":

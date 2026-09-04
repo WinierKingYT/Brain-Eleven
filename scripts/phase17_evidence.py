@@ -18,7 +18,7 @@ from defusedxml import ElementTree
 
 SCHEMA_VERSION = 1
 PHASE = "17"
-PASS = "PASS"
+SUCCESS = "PASS"
 FAIL = "FAIL"
 REQUIRED_TESTS = frozenset(
     {
@@ -74,7 +74,7 @@ def _test_results(junit_path: Path) -> dict[str, str]:
     results: dict[str, str] = {}
     for case in root.iter("testcase"):
         name = str(case.get("name") or "").split("[", 1)[0]
-        results[name] = FAIL if case.find("failure") is not None or case.find("error") is not None else PASS
+        results[name] = FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
     if not results:
         raise Phase17EvidenceError("JUnit evidence contains no test cases")
     return results
@@ -169,7 +169,7 @@ def build_manifest(
     selection_evaluation = _router_selection(selection_evaluation_path)
     shadow = _shadow_report(shadow_report_path)
     benchmark = _benchmark(benchmark_path)
-    status = PASS if not missing and not failed else FAIL
+    status = SUCCESS if not missing and not failed else FAIL
     return {
         "schema_version": SCHEMA_VERSION,
         "phase": PHASE,
@@ -238,7 +238,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps({"status": FAIL, "error": str(exc)}, ensure_ascii=False))
         return 2
     print(json.dumps({"status": manifest["status"], "output": str(args.output)}, ensure_ascii=False))
-    return 0 if manifest["status"] == PASS else 1
+    return 0 if manifest["status"] == SUCCESS else 1
 
 
 if __name__ == "__main__":

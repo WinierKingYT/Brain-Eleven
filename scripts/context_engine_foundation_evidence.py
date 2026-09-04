@@ -16,7 +16,7 @@ from typing import Any, Mapping, Sequence
 from defusedxml import ElementTree
 
 
-PASS = "PASS"
+SUCCESS = "PASS"
 FAIL = "FAIL"
 PHASE_FILES = {"15": "phase15", "16": "phase16", "17": "phase17", "18": "phase18", "19": "phase19"}
 REQUIRED_GRADUATION_TESTS = frozenset(
@@ -66,7 +66,7 @@ def _test_results(path: Path) -> dict[str, str]:
         raise FoundationEvidenceError(f"Cannot parse graduation JUnit evidence: {path}") from exc
     result = {
         str(case.get("name") or "").split("[", 1)[0]: (
-            FAIL if case.find("failure") is not None or case.find("error") is not None else PASS
+            FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
         )
         for case in root.iter("testcase")
     }
@@ -77,14 +77,14 @@ def _test_results(path: Path) -> dict[str, str]:
 
 def _phase_manifest(path: Path, phase: str, sha: str) -> Mapping[str, Any]:
     manifest = _load_json(path, f"Phase {phase} evidence")
-    if manifest.get("phase") != phase or manifest.get("status") != PASS:
+    if manifest.get("phase") != phase or manifest.get("status") != SUCCESS:
         raise FoundationEvidenceError(f"Phase {phase} evidence is not a passing manifest")
     if manifest.get("head_sha") != sha:
         raise FoundationEvidenceError(f"Phase {phase} evidence is not bound to the current revision")
     invariants = manifest.get("invariants")
     if not isinstance(invariants, Mapping):
         raise FoundationEvidenceError(f"Phase {phase} evidence has no invariant section")
-    return {"head_sha": sha, "invariants": dict(invariants), "status": PASS}
+    return {"head_sha": sha, "invariants": dict(invariants), "status": SUCCESS}
 
 
 def _zero(invariants: Mapping[str, Any], key: str, phase: str) -> int:
@@ -126,7 +126,7 @@ def build_manifest(
         "foundation": "context-engine-v1",
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "git_sha": sha,
-        "status": PASS,
+        "status": SUCCESS,
         "phases": {phase: result["status"] for phase, result in sorted(phase_results.items())},
         "phase_evidence": phase_results,
         "graduation_tests": {"required": sorted(REQUIRED_GRADUATION_TESTS), "passed": sorted(REQUIRED_GRADUATION_TESTS)},
@@ -167,7 +167,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except FoundationEvidenceError as exc:
         print(json.dumps({"status": FAIL, "error": str(exc)}, ensure_ascii=False))
         return 2
-    print(json.dumps({"status": PASS, "output": str(args.output)}, ensure_ascii=False))
+    print(json.dumps({"status": SUCCESS, "output": str(args.output)}, ensure_ascii=False))
     return 0
 
 

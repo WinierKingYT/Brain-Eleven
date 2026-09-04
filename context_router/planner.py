@@ -27,6 +27,8 @@ _ALIASES = {
     "markdown": ("markdown", "filesystem"),
     "quick-note": ("quick note",),
 }
+STRICT_TIER = "strict"
+FALLBACK_TIER = "fallback"
 
 
 def _unique(values: Iterable[str]) -> tuple[str, ...]:
@@ -82,7 +84,7 @@ def build_plan(task, scope: RouteScope, history_mode: str, config: RouterConfig)
     profile_config: ProfileConfig = config.profiles[profile]
     queries: list[RetrievalQuery] = []
 
-    def add(source: str, strategy: str, terms: tuple[str, ...] = (), pass_name: str = "strict") -> None:
+    def add(source: str, strategy: str, terms: tuple[str, ...] = (), query_tier: str = STRICT_TIER) -> None:
         if len(queries) >= config.max_queries_per_route:
             return
         query_id = f"q{len(queries) + 1:02d}"
@@ -93,7 +95,7 @@ def build_plan(task, scope: RouteScope, history_mode: str, config: RouterConfig)
                 strategy=strategy,
                 terms=terms,
                 memory_types=profile_config.memory_types if source == "memory" else (),
-                pass_name=pass_name,
+                pass_name=query_tier,
             )
         )
 
@@ -113,12 +115,12 @@ def build_plan(task, scope: RouteScope, history_mode: str, config: RouterConfig)
     if scope.project_ids:
         add("state", "CURRENT_PROJECT_STATE")
     if profile == "continuation":
-        add("memory", "RECENT_CONTINUITY", (), "strict")
+        add("memory", "RECENT_CONTINUITY", (), STRICT_TIER)
     aliases = _aliases((*concepts, *domains))
     if aliases:
-        add("memory", "CONCEPT", aliases, "fallback")
+        add("memory", "CONCEPT", aliases, FALLBACK_TIER)
     if profile_config.allow_graph and (getattr(task, "entities", ()) or concepts or domains):
-        add("graph", "RELATION_EXPANSION", _unique((*getattr(task, "entities", ()), *concepts, *domains)), "fallback")
+        add("graph", "RELATION_EXPANSION", _unique((*getattr(task, "entities", ()), *concepts, *domains)), FALLBACK_TIER)
 
     fingerprint = _fingerprint(task, profile, scope, history_mode, config.version)
     route_id = "route_" + fingerprint[:20]

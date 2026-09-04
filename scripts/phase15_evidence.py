@@ -17,7 +17,7 @@ from defusedxml import ElementTree
 
 
 PHASE = "15"
-PASS = "PASS"
+SUCCESS = "PASS"
 FAIL = "FAIL"
 REQUIRED_TESTS = frozenset(
     {
@@ -51,7 +51,7 @@ def _test_results(path: Path) -> dict[str, str]:
         raise Phase15EvidenceError(f"Cannot parse JUnit evidence: {path}") from exc
     results = {
         str(case.get("name") or "").split("[", 1)[0]: (
-            FAIL if case.find("failure") is not None or case.find("error") is not None else PASS
+            FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
         )
         for case in root.iter("testcase")
     }
@@ -126,7 +126,7 @@ def build_manifest(junit: Path, baseline: Path, evaluation: Path, root: Path = P
         "phase": PHASE,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "head_sha": _git_sha(root),
-        "status": PASS if not missing and not failed else FAIL,
+        "status": SUCCESS if not missing and not failed else FAIL,
         "tests": {
             "required": sorted(REQUIRED_TESTS),
             "missing": missing,
@@ -140,7 +140,7 @@ def build_manifest(junit: Path, baseline: Path, evaluation: Path, root: Path = P
             "forbidden_context": 0,
             "superseded_leakage": 0,
             "resolved_leakage": 0,
-            "evaluator_determinism": PASS,
+            "evaluator_determinism": SUCCESS,
         },
     }
 
@@ -176,7 +176,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps({"status": FAIL, "error": str(exc)}, ensure_ascii=False))
         return 2
     print(json.dumps({"status": manifest["status"], "output": str(args.output)}, ensure_ascii=False))
-    return 0 if manifest["status"] == PASS else 1
+    return 0 if manifest["status"] == SUCCESS else 1
 
 
 if __name__ == "__main__":
