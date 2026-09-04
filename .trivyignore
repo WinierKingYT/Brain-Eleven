@@ -5,6 +5,15 @@
 # deliberately short-lived acceptance, not a severity bypass: any new CVE,
 # any fixed CVE, or an expired entry fails the hard gate. Re-review the base
 # image and these entries before the expiry date.
+#
+# Re-reviewed: 2026-09-04. The validation image also contains the two exact
+# Debian 13 base-layer CVEs below; Trivy reports no fixed package version for
+# either. They remain scoped to these CVE IDs and expire with this review.
+
+# exp:2026-10-02
+CVE-2026-76642
+# exp:2026-10-02
+CVE-2026-78408
 
 # exp:2026-10-02
 CVE-2025-69720
