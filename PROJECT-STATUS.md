@@ -1,7 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
 **Last updated:** 2026-09-04
-**Current milestone:** Phase 19 Context Compiler V2 + Token Budgeter — **IMPLEMENTED / LOCAL VALIDATION PASS**; it remains shadow-only. Revision-bound CI evidence and an independent graduation review remain required before any graduation claim.
+**Current milestone:** Context Engine Foundation V1 — **FREEZE CANDIDATE / LOCAL VALIDATION PASS**. Phases 15–19 remain shadow-safe where applicable; revision-bound CI evidence and independent read-only reviews remain required before any graduation or frozen claim.
 
 ## Status vocabulary
 
@@ -29,17 +29,18 @@ paths.
 | Canonical memory authority | **VERIFIED** | `MemoryStore` is the revisioned, locked and atomic canonical write boundary; malformed input and write failures are tested fail-closed. |
 | Cross-project isolation | **VERIFIED** | Default retrieval admits global + current-project memory only; conflict, dedup, graph and context tests cover wrong-project exclusion. |
 | Derived-state safety | **VERIFIED** | Graph and bootstrap are revisioned projections. Missing/corrupt projections rebuild; stale or scope-mismatched bootstrap is rejected. |
-| Concurrent writers | **VERIFIED** | Graduation tests cover 10 simultaneous writers, 20 reopened transactions, stale CAS, lock timeout and writer crash recovery with zero lost updates. |
+| Concurrent writers | **VERIFIED** | Foundation graduation tests cover 10 and 50 simultaneous state writers, 100 contested transactions, stale CAS, lock timeout and writer crash recovery with zero lost updates. |
 | Backup and restore | **VERIFIED** | A manifest/checksum ZIP restores into a blank vault, preserves canonical IDs/revision/lifecycle, then rebuilds graph and context. Corrupt or overwrite targets are refused. |
 | CI and release topology | **VERIFIED** | Unit, integration, coverage, Bandit, secrets, dependency and image-security gates precede the validated-image publish workflow. CI evidence is revision-bound; inspect the matching Actions run for a particular head. |
 | Global `/remember` installer | **PARTIALLY VERIFIED** | The installer and portability tests are versioned; installation into each user’s global Claude configuration remains a local operational action. |
-| Phase 15 evaluation harness | **PARTIALLY VERIFIED** | Offline synthetic corpus, dev/test/holdout boundaries, deterministic metrics and leakage hard gates are implemented. Baseline-v1 covers 101 public cases; compileall, corpus, baseline and smoke/public runners pass locally. Current-worktree GitHub Actions evidence is pending push. |
+| Phase 15 evaluation harness | **PARTIALLY VERIFIED** | Offline synthetic corpus, deterministic metrics and leakage hard gates are implemented. Immutable baseline-v1 preserves the historical 101-case public measurement; versioned baseline-v2 measures a 160-case synthetic corpus with exact 70 dev / 60 test / 30 holdout boundaries. Current-worktree GitHub Actions evidence and final review remain pending. |
 | Phase 15 baseline-v1 | **VERIFIED** | Public suite has 101 cases; forbidden, wrong-project, superseded and resolved leakage invariants all pass. Snapshot source fingerprint: `sha256:e6a14efb84900449924d41b63fdc10a55961d05c0bb7241c7cc13e720976a29f`. |
 | Phase 16 Task + State Model | **PARTIALLY VERIFIED** | `TaskEnvelope`, deterministic analyzer, revisioned `StateStore`, typed state CLI, resolver, state-aware bootstrap lineage, canonical-state backup support, and public task/state evaluation are implemented. The local full task/state suite passes 28 task + 28 state cases with all hard gates green. The complete local suite is 422/422 passing at 84% coverage; remote CI evidence requires a pushed revision, and a separate reviewer must still provide the graduation verdict. |
 | Phase 16 isolation and fail-closed behavior | **PARTIALLY VERIFIED** | The source test suite covers corruption, unsupported schemas, stale CAS, lock/write failure, AI-proposed provenance, invalid cross-project references, bootstrap staleness, and 10 concurrent state writers. The local JUnit/evaluator evidence manifest is PASS, but it is a working-tree run rather than revision-bound remote CI evidence. |
-| Phase 17 Task-Aware Context Router | **PARTIALLY VERIFIED** | A read-only `context_router` now produces content-free retrieval plans and candidates from Phase 16 TaskStateContext. It is limited to `OFF`/`SHADOW`, has no SessionStart or ContextCompiler injection path, and enforces trusted current/global/explicit-selected scope plus revision guards. Local route-policy, router-provider and shadow checks pass; revision-bound CI, full public+holdout evidence and independent review remain required. |
-| Phase 18 Authority & Conflict Resolver | **PARTIALLY VERIFIED** | Read-only `authority` consumes Router references and canonical snapshots without schema changes. It resolves only explicit lifecycle, supersession, duplicate and typed blocker-reference metadata; free-text conflicts remain unresolved. The 150 public + 30 holdout synthetic corpus and shadow-only provider pass locally. Revision-bound CI evidence and an independent review are still required. |
-| Phase 19 Context Compiler V2 + Token Budgeter | **PARTIALLY VERIFIED** | Read-only `context_compiler_v2` rehydrates only Phase 18 canonical references, records router/authority/compiler lineage, enforces a caller-owned conservative token/byte budget, preserves mandatory overflow visibly, and renders safe shadow-only context. Local evidence is PASS: 474 tests, 82% existing script coverage, all 220 public+holdout policy cases, 109 selection cases with zero wrong-project/forbidden leakage, and an informational 100/1,000/10,000-memory benchmark. V1 and SessionStart remain active; V2’s current shadow relevance metrics are diagnostic rather than a promotion claim. |
+| Phase 17 Task-Aware Context Router | **PARTIALLY VERIFIED** | A read-only `context_router` produces content-free retrieval plans and candidates from Phase 16 TaskStateContext. It is limited to `OFF`/`SHADOW`, has no SessionStart or ContextCompiler injection path, and enforces trusted current/global/explicit-selected scope plus revision guards. The 160-case public+holdout suite, shadow report, graph degradation and 100-run determinism checks pass locally; revision-bound CI and independent review remain required. |
+| Phase 18 Authority & Conflict Resolver | **PARTIALLY VERIFIED** | Read-only `authority` consumes Router references and canonical snapshots without schema changes. It resolves only explicit lifecycle, supersession, duplicate and typed blocker-reference metadata; free-text conflicts remain unresolved. The 180-case policy corpus, 160-case selection corpus and shadow-only provider pass locally. Revision-bound CI and independent review remain required. |
+| Phase 19 Context Compiler V2 + Token Budgeter | **PARTIALLY VERIFIED** | Read-only `context_compiler_v2` rehydrates only Phase 18 canonical references, records router/authority/compiler lineage, enforces a caller-owned conservative token/byte budget, preserves mandatory overflow visibly, and renders safe shadow-only context. The 220-case policy corpus, 160-case selection corpus, 100/1,000/10,000-memory benchmark and all scope/secret gates pass locally. V1 and SessionStart remain active; V2’s current shadow relevance metrics are diagnostic rather than a promotion claim. |
+| Context Engine Foundation V1 | **PARTIALLY VERIFIED** | Phase 15–19 manifests, a 50-writer/100-transaction state suite and a 100-run deterministic cross-phase Task → State → Router → Authority → Compiler chain pass locally. The generated foundation manifest is deliberately review-pending until one GitHub Actions SHA and independent reviewers substantiate a freeze. |
 | Live Docker Compose deployment (local Docker Desktop) | **VERIFIED** | On 2026-09-02, `app`, `postgres`, and `redis` became healthy; `127.0.0.1:8000/health` returned 200; the API port was unreachable through a non-loopback IPv4 address. The API key was unset, so its optional auth-gate branch was not applicable. |
 | Public deployment and daily-use telemetry | **NOT VERIFIED** | Outside the local-first memory-foundation graduation boundary. |
 
@@ -81,9 +82,11 @@ runtime check is recorded in the table above.
   revision-bound regression evidence.
 
 - Phase 15 baseline-v1 is reproducible from the committed synthetic corpus:
-  `python -m evals.baseline_snapshot --check` passes with 101 public cases.
-  The final local safety check also passes the 47-case smoke suite and the
-  101-case public suite with zero hard-gate failures. The committed baseline
+  `python -m evals.baseline_snapshot --baseline baseline-v1 --check` verifies
+  its 101-case historical public measurement. The current compatibility
+  baseline is checked with
+  `python -m evals.baseline_snapshot --baseline baseline-v2 --check` against
+  130 public V2 cases. The committed historical baseline
   reports context precision `0.18415841584158418` and context recall
   `0.8168316831683168`; these are the honest baseline measurements, not release
   targets. Independent Phase 15 re-audit returned `SHIP` on 2026-09-03 with no
