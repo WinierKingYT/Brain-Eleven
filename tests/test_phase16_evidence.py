@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase16_evidence import PASS, Phase16EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
+from phase16_evidence import SUCCESS, Phase16EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write_junit(path: Path, *, failing: str | None = None) -> None:
@@ -40,7 +40,7 @@ def test_phase16_manifest_is_pass_only_for_runtime_backed_required_tests_and_eva
 
     manifest = build_manifest(junit, evaluation, tmp_path)
 
-    assert manifest["status"] == PASS
+    assert manifest["status"] == SUCCESS
     assert manifest["invariants"]["wrong_project_state_leakage"] == 0
 
 
@@ -60,4 +60,4 @@ def test_phase16_evidence_cli_writes_a_runtime_manifest(tmp_path):
     _write_evaluation(evaluation)
 
     assert main(["--junit", str(junit), "--evaluation", str(evaluation), "--output", str(output), "--root", str(ROOT)]) == 0
-    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == SUCCESS

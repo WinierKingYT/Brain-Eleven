@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase17_evidence import PASS, Phase17EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
+from phase17_evidence import SUCCESS, Phase17EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write_junit(path: Path) -> None:
@@ -76,7 +76,7 @@ def test_phase17_manifest_requires_green_router_artifacts(tmp_path):
 
     manifest = build_manifest(junit, route, selection, shadow, benchmark, tmp_path)
 
-    assert manifest["status"] == PASS
+    assert manifest["status"] == SUCCESS
     assert manifest["invariants"]["wrong_project_route_leakage"] == 0
 
 
@@ -98,4 +98,4 @@ def test_phase17_evidence_cli_writes_a_runtime_manifest(tmp_path):
         "--junit", str(junit), "--route-evaluation", str(route), "--selection-evaluation", str(selection),
         "--shadow-report", str(shadow), "--benchmark", str(benchmark), "--output", str(output), "--root", str(ROOT),
     ]) == 0
-    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == SUCCESS

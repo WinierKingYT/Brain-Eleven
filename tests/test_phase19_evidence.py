@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase19_evidence import PASS, Phase19EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
+from phase19_evidence import SUCCESS, Phase19EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write(path: Path, value: dict) -> None:
@@ -58,7 +58,7 @@ def test_phase19_manifest_requires_green_budget_and_shadow_artifacts(tmp_path):
 
     manifest = build_manifest(junit, policy, selection, shadow, benchmark, tmp_path)
 
-    assert manifest["status"] == PASS
+    assert manifest["status"] == SUCCESS
     assert manifest["invariants"]["mandatory_silent_omission"] == 0
 
 
@@ -83,4 +83,4 @@ def test_phase19_evidence_cli_writes_a_runtime_manifest(tmp_path):
         "--junit", str(junit), "--compiler-evaluation", str(policy), "--selection-evaluation", str(selection),
         "--shadow-report", str(shadow), "--benchmark", str(benchmark), "--output", str(output), "--root", str(ROOT),
     ]) == 0
-    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == SUCCESS

@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase15_evidence import PASS, Phase15EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
+from phase15_evidence import SUCCESS, Phase15EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write(path: Path, value: dict) -> None:
@@ -52,7 +52,7 @@ def test_phase15_manifest_requires_immutable_baseline_and_full_corpus(tmp_path):
 
     manifest = build_manifest(junit, baseline, evaluation, tmp_path)
 
-    assert manifest["status"] == PASS
+    assert manifest["status"] == SUCCESS
     assert manifest["baseline_v2"]["source"]["baseline_id"] == "baseline-v2"
 
 
@@ -81,5 +81,5 @@ def test_phase15_evidence_cli_atomically_writes_a_content_free_manifest(tmp_path
 
     assert main(["--junit", str(junit), "--baseline", str(baseline), "--evaluation", str(evaluation), "--output", str(output), "--root", str(ROOT)]) == 0
 
-    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == SUCCESS
     assert "private memory" not in capsys.readouterr().out

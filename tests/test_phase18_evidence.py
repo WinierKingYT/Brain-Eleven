@@ -12,7 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from phase18_evidence import PASS, Phase18EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
+from phase18_evidence import SUCCESS, Phase18EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 
 
 def _write(path: Path, document: dict) -> None:
@@ -39,7 +39,7 @@ def test_phase18_manifest_requires_green_metadata_authority_artifacts(tmp_path):
 
     manifest = build_manifest(junit, evaluation, selection, shadow, tmp_path)
 
-    assert manifest["status"] == PASS
+    assert manifest["status"] == SUCCESS
     assert manifest["invariants"]["wrong_project_authority_leakage"] == 0
 
 
@@ -64,4 +64,4 @@ def test_phase18_evidence_cli_writes_a_runtime_manifest(tmp_path):
         "--junit", str(junit), "--authority-evaluation", str(evaluation), "--selection-evaluation", str(selection),
         "--shadow-report", str(shadow), "--output", str(output), "--root", str(ROOT),
     ]) == 0
-    assert json.loads(output.read_text(encoding="utf-8"))["status"] == PASS
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == SUCCESS
