@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, Mapping, Sequence
 
 from .baseline import BASELINE_PROVIDER_ID, BaselineContextProvider
+from .authority_provider import AUTHORITY_PROVIDER_ID, AuthorityContextProvider
 from .router_provider import ROUTER_PROVIDER_ID, RouterContextProvider
 from .corpus_builder import DEFAULT_CORPUS_ROOT, DEFAULT_FIXTURE_PATH, check_public_corpus
 from .fixture_generator import build_vault
@@ -56,7 +57,7 @@ def run_evaluation(
 ) -> dict[str, Any]:
     """Run an offline synthetic vault through one supported provider and suite."""
 
-    if provider not in {"baseline", "router"}:
+    if provider not in {"baseline", "router", "authority"}:
         raise EvaluationRunError(f"unsupported evaluation provider: {provider}")
     fixture = load_fixture(fixture_path)
     check_public_corpus(corpus_root, fixture)
@@ -72,6 +73,7 @@ def run_evaluation(
         context_provider = {
             "baseline": BaselineContextProvider(),
             "router": RouterContextProvider(),
+            "authority": AuthorityContextProvider(),
         }[provider]
         results = [context_provider.select(task, vault.root) for task in tasks]
 
@@ -107,7 +109,7 @@ def _gate_failed(report: dict[str, Any]) -> bool:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run an offline Brain-Eleven evaluation suite.")
-    parser.add_argument("--provider", default="baseline", choices=("baseline", "router"))
+    parser.add_argument("--provider", default="baseline", choices=("baseline", "router", "authority"))
     parser.add_argument("--suite", default="smoke", choices=tuple(SUITE_DIRECTORIES))
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE_PATH)
     parser.add_argument("--corpus-root", type=Path, default=DEFAULT_CORPUS_ROOT)

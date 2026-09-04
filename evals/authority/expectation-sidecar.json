@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "corpus_version": 1,
+  "public_case_count": 150,
+  "holdout_case_count": 30,
+  "privacy": "synthetic_only",
+  "metadata_first": true,
+  "semantic_prose_conflict": "abstain_or_unresolved"
+}
