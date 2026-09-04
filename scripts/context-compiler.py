@@ -25,9 +25,25 @@ from typing import List, Dict, Tuple, Set, Optional
 from memory_scope import filter_memories, infer_memory_scope, resolve_retrieval_project
 from memory_store import MemoryStore, MemoryStoreError
 from project_registry import registry_path as project_registry_path
+from state_resolver import (
+    PROJECT_ARCHIVED,
+    STATE_AVAILABLE,
+    STATE_CORRUPT,
+    STATE_NOT_FOUND,
+    STATE_UNAVAILABLE,
+    CurrentProjectState,
+    StateResolver,
+)
 
 
-CONTEXT_BOOTSTRAP_SCHEMA_VERSION = 2
+CONTEXT_BOOTSTRAP_SCHEMA_VERSION = 3
+_BOOTSTRAP_STATE_STATUSES = frozenset({
+    "NOT_APPLICABLE",
+    "PROJECT_UNKNOWN",
+    PROJECT_ARCHIVED,
+    STATE_AVAILABLE,
+    STATE_NOT_FOUND,
+})
 
 
 class ContextBootstrapError(RuntimeError):
@@ -62,6 +78,7 @@ class ContextCompiler:
         self.vault_path = Path(vault_path)
         self.validated_json = self.vault_path / ".claude/validated-memory.json"
         self.memory_store = MemoryStore(self.vault_path)
+        self.state_resolver = StateResolver(self.vault_path)
         self.last_session_file = self.vault_path / "🔮 Companion/Last Session.md"
         self.open_loops_file = self.vault_path / "🔮 Companion/Açık Döngüler.md"
         self.hamle_dir = self.vault_path / "🗂️ Proje Notları/Kararlar"
@@ -72,6 +89,9 @@ class ContextCompiler:
         self.memories = []
         self.related_notes = []
         self.source_memory_revision: Optional[int] = None
+        self.source_state_revision: Optional[int] = None
+        self.source_state_status = "NOT_APPLICABLE"
+        self.current_project_state: Optional[CurrentProjectState] = None
 
     # ========================================================================
     # LOAD DATA
@@ -89,6 +109,34 @@ class ContextCompiler:
         self.source_memory_revision = int(data["revision"])
         self.memories = data.get("validated_memory", [])
         print(f"✓ Loaded {len(self.memories)} validated memories")
+
+    def _resolve_current_state(self) -> Optional[CurrentProjectState]:
+        """Load bounded current state; corrupted authorities never become empty state."""
+        if self.project_id is None:
+            self.source_state_revision = None
+            self.source_state_status = "NOT_APPLICABLE"
+            self.current_project_state = None
+            return None
+        state = self.state_resolver.resolve(self.project_id)
+        if state.status in {STATE_CORRUPT, STATE_UNAVAILABLE}:
+            raise ContextBootstrapError(
+                f"Current project state is unavailable for bootstrap: {state.status}: {state.error}"
+            )
+        self.source_state_revision = state.state_revision
+        self.source_state_status = state.status
+        self.current_project_state = state
+        return state
+
+    def _state_lineage_is_current(self, source_status: str, source_revision: Optional[int]) -> bool:
+        """Compare derived-state lineage without ever treating corrupt state as absent."""
+        try:
+            self._resolve_current_state()
+        except ContextBootstrapError:
+            return False
+        return (
+            source_status == self.source_state_status
+            and source_revision == self.source_state_revision
+        )
 
     # ========================================================================
     # DERIVED-PROJECTION SAFETY
@@ -110,6 +158,17 @@ class ContextCompiler:
                 f"started at revision {source_revision}, now {current_revision}"
             )
 
+        source_state_status = output.get("source_state_status")
+        source_state_revision = output.get("source_state_revision")
+        if source_state_status not in _BOOTSTRAP_STATE_STATUSES:
+            raise ContextBootstrapError("Bootstrap source state status is unsupported")
+        if source_state_revision is not None and (
+            not isinstance(source_state_revision, int) or source_state_revision < 0
+        ):
+            raise ContextBootstrapError("Bootstrap source state revision must be null or non-negative")
+        if not self._state_lineage_is_current(source_state_status, source_state_revision):
+            raise ContextBootstrapStale("Current project state changed during context compilation")
+
     def bootstrap_status(self, output_file: str = None) -> Dict:
         """Return whether a saved bootstrap is safe for this session to inject.
 
@@ -123,6 +182,8 @@ class ContextCompiler:
             "status": "missing",
             "path": str(bootstrap_path),
             "source_memory_revision": None,
+            "source_state_revision": None,
+            "source_state_status": None,
             "context_block": None,
             "error": None,
         }
@@ -154,6 +215,19 @@ class ContextCompiler:
             status.update(status="corrupt", error="Bootstrap is not marked ready for SessionStart")
             return status
 
+        source_state_revision = data.get("source_state_revision")
+        source_state_status = data.get("source_state_status")
+        status["source_state_revision"] = source_state_revision
+        status["source_state_status"] = source_state_status
+        if source_state_status not in _BOOTSTRAP_STATE_STATUSES:
+            status.update(status="corrupt", error="Bootstrap source state status is unsupported")
+            return status
+        if source_state_revision is not None and (
+            not isinstance(source_state_revision, int) or source_state_revision < 0
+        ):
+            status.update(status="corrupt", error="Bootstrap source state revision is invalid")
+            return status
+
         summary = data.get("summary")
         block = data.get("context_block")
         if not isinstance(summary, dict) or not isinstance(block, str):
@@ -172,6 +246,10 @@ class ContextCompiler:
             status.update(status="source_unavailable", error=str(exc))
             return status
         if source_revision != current_revision:
+            status.update(status="stale")
+            return status
+
+        if not self._state_lineage_is_current(source_state_status, source_state_revision):
             status.update(status="stale")
             return status
 
@@ -331,6 +409,7 @@ class ContextCompiler:
 
         print("\n1. Loading data...")
         self._load_validated_memories()
+        current_state = self._resolve_current_state()
         last_session = self._load_last_session()
         open_loops = self._load_open_loops()
 
@@ -348,6 +427,8 @@ class ContextCompiler:
             "schema_version": CONTEXT_BOOTSTRAP_SCHEMA_VERSION,
             "projection": "context_bootstrap",
             "source_memory_revision": int(self.source_memory_revision),
+            "source_state_revision": self.source_state_revision,
+            "source_state_status": self.source_state_status,
             "generated_by_run": self.generated_by_run,
             "compiled_at": datetime.now().isoformat(),
             "summary": {
@@ -363,7 +444,7 @@ class ContextCompiler:
             "last_session_summary": last_session[:500] if last_session else "",
             "open_loops_summary": open_loops[:300] if open_loops else "",
             "context_block": self._generate_context_block(
-                top_memories, related_hamles, last_session, open_loops
+                top_memories, related_hamles, last_session, open_loops, current_state
             ),
             "ready_for_session_start": True
         }
@@ -375,7 +456,8 @@ class ContextCompiler:
         memories: List[Dict],
         hamles: Dict[str, str],
         last_session: str,
-        open_loops: str
+        open_loops: str,
+        current_state: Optional[CurrentProjectState],
     ) -> str:
         """Generate formatted context block for Claude prompt"""
 
@@ -389,6 +471,24 @@ class ContextCompiler:
         if last_session:
             lines.append("\n## LAST SESSION")
             lines.append(last_session[:400])
+
+        if current_state is not None:
+            lines.append("\n## CURRENT PROJECT STATE")
+            lines.append(f"Status: {current_state.status}")
+            phase_id = current_state.current.get("phase_id")
+            if phase_id:
+                lines.append(f"Phase: {phase_id}")
+            objective = current_state.current.get("objective")
+            if objective:
+                lines.append(f"Objective: {objective['text'][:200]}")
+            if current_state.active_blockers:
+                lines.append("Active blockers:")
+                for blocker in current_state.active_blockers[:3]:
+                    lines.append(f"- {blocker['text'][:160]}")
+            if current_state.constraints:
+                lines.append("Constraints: " + ", ".join(
+                    constraint["text"][:80] for constraint in current_state.constraints[:5]
+                ))
 
         # Top memories
         if memories:

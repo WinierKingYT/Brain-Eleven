@@ -16,6 +16,10 @@ from datetime import datetime, timedelta
 
 import pytest
 
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+from project_registry import ProjectRegistry  # noqa: E402
+from state_store import StateService, StateStore  # noqa: E402
+
 spec = importlib.util.spec_from_file_location(
     "context_compiler", Path(__file__).parent.parent / "scripts" / "context-compiler.py"
 )
@@ -228,7 +232,7 @@ class TestCompileAndSave:
         output = compiler.compile()
 
         assert output["ready_for_session_start"] is True
-        assert output["schema_version"] == 2
+        assert output["schema_version"] == 3
         assert output["projection"] == "context_bootstrap"
         assert output["source_memory_revision"] == 0
         assert "context_block" in output
@@ -349,3 +353,43 @@ class TestCompileAndSave:
         output_path = compiler.save()
 
         assert output_path == str(vault / ".claude" / "context-bootstrap.json")
+
+    def test_bootstrap_includes_current_state_and_rejects_a_changed_state_revision(self, vault):
+        ProjectRegistry(vault).register(vault / "project-a", project_id="project-a")
+        service = StateService(vault)
+        service.init_project("project-a", source={"type": "user", "reference": "test"})
+        service.set_current_milestone(
+            "project-a",
+            phase_id="phase-16",
+            title="Task + State Model",
+            expected_revision=1,
+            source={"type": "user", "reference": "test"},
+            record_id="mil_context_state",
+        )
+        compiler = ContextCompiler(str(vault), project_id="project-a")
+        compiler.save()
+
+        output = json.loads((vault / ".claude" / "context-bootstrap.json").read_text(encoding="utf-8"))
+        assert output["source_state_revision"] == 2
+        assert output["source_state_status"] == "AVAILABLE"
+        assert "CURRENT PROJECT STATE" in output["context_block"]
+        assert "Phase: phase-16" in output["context_block"]
+
+        service.set_current_objective(
+            "project-a",
+            text="A state update invalidates the derived bootstrap",
+            expected_revision=2,
+            source={"type": "user", "reference": "test"},
+            record_id="obj_context_state",
+        )
+        status = ContextCompiler(str(vault), project_id="project-a").bootstrap_status()
+        assert status["status"] == "stale"
+        assert status["context_block"] is None
+
+    def test_corrupt_current_state_is_never_injected_as_empty_bootstrap(self, vault):
+        ProjectRegistry(vault).register(vault / "project-a", project_id="project-a")
+        state_path = StateStore(vault).path
+        state_path.write_text("{not valid json", encoding="utf-8")
+
+        with pytest.raises(context_compiler.ContextBootstrapError, match="unavailable"):
+            ContextCompiler(str(vault), project_id="project-a").compile()

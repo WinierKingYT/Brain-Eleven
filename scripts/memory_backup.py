@@ -32,19 +32,23 @@ from project_registry import (
     ProjectRegistryError,
     registry_path,
 )
+from state_store import StateSchemaError, StateStore, validate_state_document
 
 
-BACKUP_SCHEMA_VERSION = 1
+BACKUP_SCHEMA_VERSION = 2
+SUPPORTED_BACKUP_SCHEMA_VERSIONS = frozenset({1, BACKUP_SCHEMA_VERSION})
 BACKUP_FORMAT = "brain-eleven-memory-backup"
 MANIFEST_PATH = "manifest.json"
 CANONICAL_ARCHIVE_PATH = "canonical/validated-memory.json"
 REGISTRY_ARCHIVE_PATH = "registry/project-registry.json"
 SETTINGS_ARCHIVE_PATH = "config/settings.json"
+STATE_ARCHIVE_PATH = "state/project-state.json"
 
 RESTORE_PATHS = {
     CANONICAL_ARCHIVE_PATH: Path(".claude") / "validated-memory.json",
     REGISTRY_ARCHIVE_PATH: Path(".claude") / REGISTRY_FILENAME,
     SETTINGS_ARCHIVE_PATH: Path(".claude") / "settings.json",
+    STATE_ARCHIVE_PATH: Path(".claude") / "project-state.json",
 }
 
 
@@ -140,6 +144,14 @@ def _validate_registry_payload(payload: bytes) -> Dict:
     return document
 
 
+def _validate_state_payload(payload: bytes) -> Dict:
+    document = _json_object(payload, "project state")
+    try:
+        return validate_state_document(document)
+    except StateSchemaError as exc:
+        raise MemoryBackupError(f"Project state is invalid: {exc}") from exc
+
+
 def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
     if CANONICAL_ARCHIVE_PATH not in payloads:
         raise MemoryBackupError("Backup is missing canonical memory")
@@ -152,6 +164,9 @@ def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
         registry = _validate_registry_payload(payloads[REGISTRY_ARCHIVE_PATH])
     if SETTINGS_ARCHIVE_PATH in payloads:
         _json_object(payloads[SETTINGS_ARCHIVE_PATH], "settings")
+    project_state = None
+    if STATE_ARCHIVE_PATH in payloads:
+        project_state = _validate_state_payload(payloads[STATE_ARCHIVE_PATH])
 
     if project_ids:
         if registry is None:
@@ -163,11 +178,24 @@ def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
                 "Project registry is missing canonical project identities: " + ", ".join(missing)
             )
 
+    if project_state is not None:
+        if registry is None:
+            raise MemoryBackupError("Canonical project state requires a project registry backup")
+        registered_ids = {project["project_id"] for project in registry["projects"]}
+        state_project_ids = set(project_state["projects"])
+        missing_state_projects = sorted(state_project_ids - registered_ids)
+        if missing_state_projects:
+            raise MemoryBackupError(
+                "Project registry is missing canonical state identities: "
+                + ", ".join(missing_state_projects)
+            )
+
     return {
         "canonical": canonical,
         "memory_ids": memory_ids,
         "project_ids": project_ids,
         "registry": registry,
+        "state": project_state,
     }
 
 
@@ -184,6 +212,9 @@ def _read_source_payloads(vault_path: Union[str, Path]) -> Dict[str, bytes]:
     settings_file = vault / RESTORE_PATHS[SETTINGS_ARCHIVE_PATH]
     if settings_file.exists():
         payloads[SETTINGS_ARCHIVE_PATH] = settings_file.read_bytes()
+    state_file = vault / RESTORE_PATHS[STATE_ARCHIVE_PATH]
+    if state_file.exists():
+        payloads[STATE_ARCHIVE_PATH] = state_file.read_bytes()
     _validate_snapshot(payloads)
     return payloads
 
@@ -207,6 +238,10 @@ def _manifest_for(payloads: Dict[str, bytes], snapshot: Dict) -> Dict:
             "revision": int(snapshot["canonical"]["revision"]),
             "memory_count": len(snapshot["memory_ids"]),
             "project_count": len(snapshot["project_ids"]),
+        },
+        "state": {
+            "schema_version": snapshot["state"]["schema_version"] if snapshot["state"] else None,
+            "project_count": len(snapshot["state"]["projects"]) if snapshot["state"] else 0,
         },
         "migration": {
             "name": "scope-v2",
@@ -260,7 +295,7 @@ def _read_and_verify_archive(archive_path: Union[str, Path]) -> Tuple[Dict, Dict
                 raise MemoryBackupError("Backup archive is missing its manifest")
             manifest = _json_object(archive.read(MANIFEST_PATH), "backup manifest")
             if (
-                manifest.get("schema_version") != BACKUP_SCHEMA_VERSION
+                manifest.get("schema_version") not in SUPPORTED_BACKUP_SCHEMA_VERSIONS
                 or manifest.get("format") != BACKUP_FORMAT
             ):
                 raise MemoryBackupError("Unsupported backup manifest")
@@ -309,11 +344,21 @@ def _read_and_verify_archive(archive_path: Union[str, Path]) -> Tuple[Dict, Dict
     migration = manifest.get("migration")
     if not isinstance(migration, dict) or migration.get("name") != "scope-v2":
         raise MemoryBackupError("Backup manifest has invalid migration metadata")
+    if manifest["schema_version"] >= 2:
+        state_meta = manifest.get("state")
+        if not isinstance(state_meta, dict):
+            raise MemoryBackupError("Backup manifest has no project state metadata")
+        state = snapshot["state"]
+        if (
+            state_meta.get("schema_version") != (state["schema_version"] if state else None)
+            or state_meta.get("project_count") != (len(state["projects"]) if state else 0)
+        ):
+            raise MemoryBackupError("Backup manifest does not match canonical project state")
     return manifest, payloads, snapshot
 
 
 def create_backup(vault_path: Union[str, Path], archive_path: Union[str, Path]) -> Dict:
-    """Write a verified ZIP backup without including derived state."""
+    """Write a verified backup of canonical authorities, excluding projections."""
     payloads = _read_source_payloads(vault_path)
     snapshot = _validate_snapshot(payloads)
     output = Path(archive_path).expanduser()
@@ -328,6 +373,7 @@ def create_backup(vault_path: Union[str, Path], archive_path: Union[str, Path]) 
         "canonical_revision": manifest["canonical"]["revision"],
         "memory_count": manifest["canonical"]["memory_count"],
         "project_count": manifest["canonical"]["project_count"],
+        "state_project_count": manifest.get("state", {}).get("project_count", 0),
     }
 
 
@@ -341,6 +387,7 @@ def verify_backup(archive_path: Union[str, Path]) -> Dict:
         "canonical_revision": manifest["canonical"]["revision"],
         "memory_count": manifest["canonical"]["memory_count"],
         "project_count": manifest["canonical"]["project_count"],
+        "state_project_count": manifest.get("state", {}).get("project_count", 0),
     }
 
 
@@ -391,6 +438,7 @@ def restore_backup(archive_path: Union[str, Path], vault_path: Union[str, Path])
         "canonical_revision": manifest["canonical"]["revision"],
         "memory_count": manifest["canonical"]["memory_count"],
         "project_count": manifest["canonical"]["project_count"],
+        "state_project_count": manifest.get("state", {}).get("project_count", 0),
     }
 
 
@@ -411,6 +459,7 @@ def run_disaster_drill(
         restored_vault = Path(temporary_root) / "restored-vault"
         restored = restore_backup(archive_path, restored_vault)
         document = MemoryStore(restored_vault).load()
+        restored_state = StateStore(restored_vault).load()
         source_ids = {
             memory["memory_id"]
             for bucket in ("validated_memory", "rejected_memory")
@@ -447,6 +496,7 @@ def run_disaster_drill(
         "memory_ids": sorted(source_ids),
         "selected_memory_ids": sorted(selected_ids),
         "wrong_project_leakage": 0,
+        "state_project_ids": sorted(restored_state["projects"]),
     }
 
 

@@ -17,6 +17,7 @@ from memory_backup import (  # noqa: E402
     MemoryBackupError,
     REGISTRY_ARCHIVE_PATH,
     SETTINGS_ARCHIVE_PATH,
+    STATE_ARCHIVE_PATH,
     create_backup,
     restore_backup,
     run_disaster_drill,
@@ -25,6 +26,7 @@ from memory_backup import (  # noqa: E402
 from memory_scope import GLOBAL_SCOPE, PROJECT_SCOPE, scoped_fingerprint  # noqa: E402
 from memory_store import MemoryStore  # noqa: E402
 from project_registry import ProjectRegistry  # noqa: E402
+from state_store import StateService  # noqa: E402
 
 
 def _memory(memory_id, content, *, scope=GLOBAL_SCOPE, project_id="", project="", status="active"):
@@ -147,6 +149,34 @@ def test_restore_preserves_identity_then_rebuilds_derived_state(source_vault, tm
 
     graph = EntityExtractor(str(restored_vault)).build_graph()
     assert graph.projection_status()["status"] == "fresh"
+
+
+def test_backup_restore_preserves_canonical_project_state_when_present(source_vault, tmp_path):
+    service = StateService(source_vault)
+    source = {"type": "user", "reference": "backup-test"}
+    service.init_project("proj-alpha", source=source, now="2026-09-03T12:00:00Z")
+    service.set_current_milestone(
+        "proj-alpha",
+        phase_id="phase-16",
+        title="Task + State Model",
+        expected_revision=1,
+        source=source,
+        record_id="mil_backup_state",
+        now="2026-09-03T12:00:00Z",
+    )
+    archive = tmp_path / "canonical-with-state.zip"
+    restored_vault = tmp_path / "restored-with-state"
+
+    created = create_backup(source_vault, archive)
+    with zipfile.ZipFile(archive) as backup:
+        assert STATE_ARCHIVE_PATH in backup.namelist()
+    restored = restore_backup(archive, restored_vault)
+
+    assert created["state_project_count"] == 1
+    assert restored["state_project_count"] == 1
+    restored_state = StateService(restored_vault).store.get_project("proj-alpha")
+    assert restored_state["revision"] == 2
+    assert restored_state["current"]["milestone"]["phase_id"] == "phase-16"
 
 
 def test_disaster_drill_rebuilds_context_without_cross_project_leakage(source_vault, tmp_path):
