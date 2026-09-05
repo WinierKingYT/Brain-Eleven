@@ -19,7 +19,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
-from project_registry import ProjectRegistry, ProjectRegistryError
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
 
 
 CAPTURE_EVENT_SCHEMA_VERSION = 1

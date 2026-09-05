@@ -15,7 +15,10 @@ if str(_SCRIPTS) not in sys.path:
 from knowledge_graph import KnowledgeGraph  # noqa: E402
 from memory_scope import infer_memory_scope  # noqa: E402
 from memory_store import MemoryStore, MemoryStoreError  # noqa: E402
-from project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
+from brain_eleven.projects.registry import (  # noqa: E402
+    ProjectRegistry,
+    ProjectRegistryError,
+)
 from state_resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,

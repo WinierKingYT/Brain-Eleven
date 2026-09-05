@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–2)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–3)
 
 ## Purpose
 
@@ -58,6 +58,18 @@ cover object identity and temporary-vault load/persistence behavior.
 These package surfaces are the supported destination for future caller
 migrations. Legacy imports remain available during the compatibility window.
 
+## Package 3 — read-only caller migration
+
+The first production callers that resolve project identity now import through
+`brain_eleven.projects.registry`: capture-event parsing, task analysis, state
+resolution, and the context-router adapters. Their legacy module names remain
+available for existing scripts and tests, but the caller-level parity tests
+verify that both classes and error types are the same canonical objects.
+
+This package intentionally excludes mutating registry operations and does not
+change project registration, archive handling, path normalization, or CLI
+behavior. Additional callers will move in separate bounded packages.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -70,7 +82,7 @@ migrations. Legacy imports remain available during the compatibility window.
 
 ## Next bounded migrations
 
-1. migrate read-only project-resolution callers;
+1. migrate the remaining read-only project-resolution callers;
 2. migrate one bounded set of memory/state callers to the new surfaces;
 3. move one implementation at a time with import parity tests;
 4. reduce dynamic `sys.path` injection in adapters;
