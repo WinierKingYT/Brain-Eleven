@@ -139,7 +139,7 @@ def test_dry_run_and_scope_or_provenance_errors_do_not_write(tmp_path):
     dry = boundary.apply(_proposal(), expected_revision=1)
     unresolved = boundary.apply(_proposal(project_id=None), expected_revision=1, commit=True, source=SOURCE)
     missing_source = boundary.apply(_proposal(), expected_revision=1, commit=True)
-    bad_source = boundary.apply(_proposal(), expected_revision=1, commit=True, source={"type": "user"})
+    bad_source = boundary.apply(_proposal(), expected_revision=1, commit=True, source={"type": "user", "reference": ""})
 
     assert dry.status == BoundaryStatus.DRY_RUN.value
     assert unresolved.reason_code == "PROJECT_UNRESOLVED"
@@ -170,7 +170,7 @@ def test_resolution_requires_target_but_succeeds_with_explicit_typed_target(tmp_
     boundary = StateBoundary(tmp_path)
     source = {"type": "user", "reference": "correction"}
     blocker = boundary.apply(_proposal(), expected_revision=1, source=source, commit=True)
-    blocker_id = blocker.record_id
+    blocker_id = service.store.get_project("brain-eleven")["blockers"][0]["id"]
     resolved = boundary.apply(_proposal("RESOLVE_BLOCKER", text="Deployment blocker resolved."), expected_revision=2, source=source, commit=True, target_id=blocker_id)
 
     assert resolved.status == BoundaryStatus.SUCCESS.value
