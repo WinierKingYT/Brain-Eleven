@@ -40,8 +40,11 @@ def _phase(phase: str, sha: str) -> dict:
     return {"phase": phase, "status": "PASS", "head_sha": sha, "invariants": invariants}
 
 
-def _junit(path: Path) -> None:
-    cases = "".join(f'<testcase name="{name}" />' for name in sorted(REQUIRED_GRADUATION_TESTS))
+def _junit(path: Path, skipped_case: str = "") -> None:
+    cases = "".join(
+        f'<testcase name="{name}">{"<skipped />" if name == skipped_case else ""}</testcase>'
+        for name in sorted(REQUIRED_GRADUATION_TESTS)
+    )
     path.write_text(f"<testsuite>{cases}</testsuite>", encoding="utf-8")
 
 
@@ -69,6 +72,18 @@ def test_foundation_manifest_refuses_a_phase_evidence_sha_from_another_revision(
         _write(path, _phase(phase, "deadbeef" if phase == "18" else sha))
 
     with pytest.raises(FoundationEvidenceError, match="current revision"):
+        build_manifest(junit=junit, phase_paths=paths, root=ROOT)
+
+
+def test_foundation_manifest_refuses_a_skipped_required_graduation_test(tmp_path):
+    sha = _current_sha()
+    junit = tmp_path / "graduation.xml"
+    _junit(junit, skipped_case=sorted(REQUIRED_GRADUATION_TESTS)[0])
+    paths = {str(phase): tmp_path / f"phase{phase}.json" for phase in range(15, 20)}
+    for phase, path in paths.items():
+        _write(path, _phase(phase, sha))
+
+    with pytest.raises(FoundationEvidenceError, match="required passing test"):
         build_manifest(junit=junit, phase_paths=paths, root=ROOT)
 
 

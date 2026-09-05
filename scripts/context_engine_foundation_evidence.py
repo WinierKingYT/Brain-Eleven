@@ -18,6 +18,7 @@ from defusedxml import ElementTree
 
 SUCCESS = "PASS"
 FAIL = "FAIL"
+SKIPPED = "SKIPPED"
 PHASE_FILES = {"15": "phase15", "16": "phase16", "17": "phase17", "18": "phase18", "19": "phase19"}
 REQUIRED_GRADUATION_TESTS = frozenset(
     {
@@ -64,10 +65,18 @@ def _test_results(path: Path) -> dict[str, str]:
         root = ElementTree.parse(path).getroot()
     except (OSError, ElementTree.ParseError) as exc:
         raise FoundationEvidenceError(f"Cannot parse graduation JUnit evidence: {path}") from exc
+    def outcome(case: Any) -> str:
+        if case.find("failure") is not None or case.find("error") is not None:
+            return FAIL
+        # A skipped graduation case provides no proof of the invariant.  Treating
+        # it as successful would let a required check disappear behind a green
+        # evidence manifest.
+        if case.find("skipped") is not None:
+            return SKIPPED
+        return SUCCESS
+
     result = {
-        str(case.get("name") or "").split("[", 1)[0]: (
-            FAIL if case.find("failure") is not None or case.find("error") is not None else SUCCESS
-        )
+        str(case.get("name") or "").split("[", 1)[0]: outcome(case)
         for case in root.iter("testcase")
     }
     if not result:
@@ -107,8 +116,8 @@ def build_manifest(
     phase_results = {phase: _phase_manifest(path, phase, sha) for phase, path in phase_paths.items()}
     tests = _test_results(junit)
     missing = sorted(REQUIRED_GRADUATION_TESTS - tests.keys())
-    failed = sorted(name for name in REQUIRED_GRADUATION_TESTS if tests.get(name) == FAIL)
-    if missing or failed:
+    not_passing = sorted(name for name in REQUIRED_GRADUATION_TESTS if tests.get(name) != SUCCESS)
+    if missing or not_passing:
         raise FoundationEvidenceError("Graduation JUnit evidence is missing a required passing test")
 
     phase16, phase17, phase18, phase19 = (phase_results[phase]["invariants"] for phase in ("16", "17", "18", "19"))

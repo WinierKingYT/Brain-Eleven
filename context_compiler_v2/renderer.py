@@ -7,7 +7,7 @@ from typing import Any, Iterable, Mapping
 
 from .adapters import RehydratedCandidate
 from .models import ContextItem, ContextSection, TokenEstimate
-from .safety import escape_untrusted_text
+from .safety import contains_secret, escape_untrusted_text
 
 
 SECTION_FOR_ROLE = {
@@ -49,7 +49,14 @@ def render_task(task_state: Any) -> str:
     task = task_state.task
     project = task.project.project_id or "unresolved"
     intent = task.intent.value
-    raw = escape_untrusted_text(task.raw_request).replace("\r\n", "\n").strip()
+    raw_request = task.raw_request
+    # The task request is untrusted model-facing data just like memory content.
+    # Never turn a credential-shaped value into context merely because the user
+    # placed it in the request; retain an explicit, content-free explanation.
+    if contains_secret(raw_request):
+        raw = "[REDACTED: request contains sensitive credential-like content]"
+    else:
+        raw = escape_untrusted_text(raw_request).replace("\r\n", "\n").strip()
     return f"Project: {project}\nIntent: {intent}\nGoal: {raw}"
 
 

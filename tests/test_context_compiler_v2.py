@@ -143,6 +143,19 @@ def test_secret_and_reserved_end_marker_never_reach_rendered_context(tmp_path):
     assert any(item.reason == "sensitive_content_detected" for item in result.omitted)
 
 
+def test_secret_shaped_task_request_is_redacted_before_context_rendering(tmp_path):
+    context, _state, project = _configured(tmp_path)
+    request_secret = "sk_12345678901234567890"
+    context = TaskStateComposer(tmp_path, project).compose(f"Investigate the integration using API_KEY={request_secret}.")
+    resolution = _resolved(tmp_path, context)
+
+    result = ContextCompilerV2(tmp_path).compile(_request(context, resolution))
+
+    assert result.status in {"SUCCESS", "DEGRADED"}
+    assert request_secret not in result.rendered_context
+    assert "REDACTED: request contains sensitive credential-like content" in result.rendered_context
+
+
 def test_wrong_project_resolution_is_an_upstream_scope_failure(tmp_path):
     context, _state, _project = _configured(tmp_path)
     routing = RoutingOptions(scope_mode="SELECTED_PROJECTS", selected_project_ids=("project-a", "project-b"))
