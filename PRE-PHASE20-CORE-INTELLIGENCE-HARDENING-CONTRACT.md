@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-05 VERIFIED / NEXT: PRE-06`
+**Status:** `PRE-06 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -222,6 +222,29 @@ Verification for the PRE-05 implementation commit `9c658456e4e13e2dd7a5040e3e665
   privacy, security, evaluation and Foundation-graduation regression gates.
 - [Docker #61](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33985969322):
   success.
+
+## PRE-06 — Metadata-first memory truth and lifecycle
+
+PRE-06 adds `scripts/memory_truth.py` as a typed truth boundary for
+structured extraction candidates. It does not reinterpret free prose as
+authority and it does not replace the existing MemoryStore or lifecycle
+schema.
+
+- Candidates are validated for commitment, scope, confidence, and secret
+  safety before evaluation. Uncommitted, ambiguous, or missing-target input
+  becomes `REVIEW_REQUIRED`; secrets are rejected.
+- Exact scoped fingerprints produce `DUPLICATE` or explicit confirmation.
+  Optional claim keys can expose an active conflict, but retrieval scores,
+  text similarity, and missing provenance never create a winner.
+- `SUPERSEDE_EXISTING` and `RESOLVE_EXISTING` require an explicit target,
+  matching project scope, active lifecycle, and a checked successor. Cycles,
+  cross-project targets, unknown lifecycle values, and inactive targets are
+  not silently accepted.
+- Commit mode uses the MemoryStore lock/reload/revision transaction. New
+  memory commits are separately opt-in (`commit_new`), while dry-run truth
+  evaluation is read-only. Corrupt canonical input is a hard failure, never
+  empty success, and all result records contain IDs/revisions/reason codes
+  rather than memory text.
 
 ## PRE-00 completion criteria
 
