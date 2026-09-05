@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–3)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–4)
 
 ## Purpose
 
@@ -82,6 +82,34 @@ run passed as well. The corresponding
 [Validation #86](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33995287852)
 run is the revision-bound CI evidence for this package.
 
+## Package 4 — remaining project-resolution callers
+
+The remaining production and evaluation callers now resolve project identity
+through `brain_eleven.projects.registry`: the context compiler, search and
+remember adapters, backup and state-boundary utilities, the project-registry
+CLI wrapper, and the router, authority, compiler, and task-state evaluation
+adapters. This completes the current read-only caller migration without
+changing registry semantics or persistence ownership.
+
+Legacy `project_registry` imports are now limited to intentional compatibility
+edges: the package backing adapter, the canonical state-store implementation,
+and standalone hook/scope fallbacks used when a copied hook environment does
+not contain the repository package tree. An AST parity test guards this list
+and prevents new production callers from bypassing the package boundary.
+
+The migration also refreshed only the mutable compatibility snapshot
+`baseline-v2` because its source fingerprint includes `memory_scope.py`.
+Historical `baseline-v1` remains immutable and unchanged. The generated
+baseline still reports 130 public cases with the same deterministic metrics.
+
+Package 4 verification completed on commit `b9fb67b`: Validation #89 passed
+on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence,
+and Context Engine Foundation graduation. The dependent
+[Docker #89](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33996741038)
+run passed as well. The corresponding
+[Validation #89](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33996442080)
+run is the revision-bound CI evidence for this package.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -94,11 +122,10 @@ run is the revision-bound CI evidence for this package.
 
 ## Next bounded migrations
 
-1. migrate the remaining read-only project-resolution callers;
-2. migrate one bounded set of memory/state callers to the new surfaces;
-3. move one implementation at a time with import parity tests;
-4. reduce dynamic `sys.path` injection in adapters;
-5. keep scripts as thin CLI/hook adapters only.
+1. migrate one bounded set of memory/state callers to the new surfaces;
+2. move one implementation at a time with import parity tests;
+3. reduce dynamic `sys.path` injection in adapters;
+4. keep scripts as thin CLI/hook adapters only.
 
 PRE-12 is not complete merely because the namespace exists.  Completion
 requires one maintained implementation per responsibility, preserved CLI
