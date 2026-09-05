@@ -24,7 +24,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/prompt-counter.sh",
-            "statusMessage": "Her 15 prompt'ta Daily'yi özenle"
+            "statusMessage": "İstem olayını yerel capture kuyruğuna al"
           }
         ]
       }
@@ -35,7 +35,7 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/session-end.sh",
-            "statusMessage": "Daily yazısını özet et"
+            "statusMessage": "Oturum olayını hızlıca yerel capture kuyruğuna al"
           }
         ]
       }

@@ -10,6 +10,9 @@ from capture_event import (
     MAX_HOOK_EVENT_BYTES,
     CaptureEventError,
     CaptureProjectResolutionError,
+    EVENT_SESSION_END,
+    EVENT_USER_PROMPT_SUBMIT,
+    parse_native_hook_event_json,
     parse_hook_event,
     parse_hook_event_json,
 )
@@ -166,3 +169,48 @@ def test_archived_project_is_resolved_as_archived_without_reactivation(tmp_path)
     assert event.project_id == "proj_archived"
     assert event.project_status == "archived"
     assert registry.get("proj_archived")["status"] == "archived"
+
+
+def test_native_hook_normalization_ignores_untrusted_policy_fields_and_never_serializes_prompt(tmp_path):
+    project_root = tmp_path / "project"
+    raw_prompt = "This raw prompt must exist only while normalizing stdin."
+    event = parse_native_hook_event_json(
+        json.dumps(
+            {
+                "session_id": "session_01J0000000000000000000000",
+                "cwd": str(project_root),
+                "prompt": raw_prompt,
+                "timestamp": "2026-09-05T10:00:00Z",
+                "event_type": EVENT_SESSION_END,
+                "project_id": "untrusted-override",
+                "scope": "all-projects",
+            }
+        ),
+        event_type=EVENT_USER_PROMPT_SUBMIT,
+        vault_path=tmp_path / "vault",
+        default_project_root=tmp_path / "trusted-fallback",
+    )
+
+    assert event.event_type == EVENT_USER_PROMPT_SUBMIT
+    assert event.project_id is None
+    assert event.project_root == str(project_root)
+    assert raw_prompt not in event.to_json()
+
+
+def test_native_session_end_requires_a_transcript_locator_and_remains_bounded(tmp_path):
+    with pytest.raises(CaptureEventError) as exc:
+        parse_native_hook_event_json(
+            json.dumps({"session_id": "session_01"}),
+            event_type=EVENT_SESSION_END,
+            vault_path=tmp_path / "vault",
+            default_project_root=tmp_path / "project",
+        )
+    assert exc.value.code == "CAPTURE_EVENT_INVALID"
+
+    with pytest.raises(CaptureEventError, match="exceeds"):
+        parse_native_hook_event_json(
+            b"x" * (MAX_HOOK_EVENT_BYTES + 1),
+            event_type=EVENT_SESSION_END,
+            vault_path=tmp_path / "vault",
+            default_project_root=tmp_path / "project",
+        )

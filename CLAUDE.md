@@ -6,7 +6,7 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 
 1. Vault iskeletı ✓
 2. CLAUDE.md (bu dosya) ✓
-3. Hooks ✓ (SessionStart, SessionEnd, prompt-counter, audit)
+3. Hooks ✓ (SessionStart, bounded capture hand-off, audit)
 4. Companion hafıza (🔮 850-Companion/) ✓
 5. İçerik iskeletı (🧠 Brain-Eleven ana sayfa) ✓
 6. Git (opsiyonel) ✓
@@ -56,4 +56,4 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 
 **v3 thesis**: Memory must be a mechanism, not a discipline. Hooks automate extraction; Claude retrieves context automatically on session start.
 
-**Hooks Status**: ✅ ACTIVE (SessionStart loads context, SessionEnd extracts to JSON, prompt-counter creates checkpoints)
+**Hooks Status**: ✅ ACTIVE (SessionStart loads context; SessionEnd and UserPromptSubmit only enqueue bounded, content-safe local capture events. Transcript reading/extraction is deferred to the worker introduced in the Pre-Phase 20 program.)

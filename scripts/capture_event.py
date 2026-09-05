@@ -253,13 +253,93 @@ def parse_hook_event_json(payload: str | bytes, *, vault_path: str | Path) -> Ho
     return parse_hook_event(document, vault_path=vault_path)
 
 
+def normalize_native_hook_event(
+    payload: Mapping[str, Any],
+    *,
+    event_type: str,
+    vault_path: str | Path,
+    default_project_root: str | Path,
+    received_at: Optional[str] = None,
+) -> HookEvent:
+    """Normalize one Claude hook payload into the strict capture contract.
+
+    ``event_type`` and the fallback project root are trusted command-line
+    inputs supplied by the installed hook.  The stdin payload is untrusted:
+    it may supply only the session locator, a project cwd, a transcript
+    locator, prompt text and an event timestamp.  In particular, stdin can
+    never choose the event type, project identity, scope, or retention policy.
+    """
+    if event_type not in EVENT_TYPES:
+        raise _error("trusted hook event_type is unsupported")
+    if not isinstance(payload, Mapping):
+        raise _error("hook event must be a JSON object")
+    _payload_size(payload)
+
+    # Claude hook payloads can add informational fields over time.  Deliberately
+    # ignore them instead of treating them as authority-bearing input.
+    project_root = payload.get("cwd", default_project_root)
+    event_at = payload.get("event_at", payload.get("timestamp", received_at))
+    if event_at is None:
+        event_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    normalized: dict[str, Any] = {
+        "event_type": event_type,
+        "session_id": payload.get("session_id"),
+        "project_root": project_root,
+        "event_at": event_at,
+    }
+    if event_type == EVENT_SESSION_END:
+        normalized["transcript_path"] = payload.get("transcript_path")
+    else:
+        # Raw prompt text is accepted only long enough to derive its digest in
+        # ``parse_hook_event``.  It is never returned by HookEvent or persisted
+        # by the PRE-02 queue.
+        if "prompt" in payload:
+            normalized["prompt"] = payload.get("prompt")
+        else:
+            normalized["prompt_sha256"] = payload.get("prompt_sha256")
+            normalized["prompt_length"] = payload.get("prompt_length")
+    return parse_hook_event(normalized, vault_path=vault_path)
+
+
+def parse_native_hook_event_json(
+    payload: str | bytes,
+    *,
+    event_type: str,
+    vault_path: str | Path,
+    default_project_root: str | Path,
+    received_at: Optional[str] = None,
+) -> HookEvent:
+    """Parse bounded native hook stdin without granting it policy authority."""
+    if isinstance(payload, str):
+        raw = payload.encode("utf-8")
+    elif isinstance(payload, bytes):
+        raw = payload
+    else:
+        raise _error("hook stdin must be text or bytes")
+    if len(raw) > MAX_HOOK_EVENT_BYTES:
+        raise _error(f"hook event exceeds {MAX_HOOK_EVENT_BYTES} bytes")
+    try:
+        document = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise _error("hook stdin must be UTF-8 JSON") from exc
+    return normalize_native_hook_event(
+        document,
+        event_type=event_type,
+        vault_path=vault_path,
+        default_project_root=default_project_root,
+        received_at=received_at,
+    )
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Expose a future-hook-compatible parser without changing hooks in PRE-01."""
     parser = argparse.ArgumentParser(description="Validate a Brain-Eleven hook event without side effects")
     parser.add_argument("--vault", default=".", help="Vault containing the project registry")
     arguments = parser.parse_args(argv)
     try:
-        event = parse_hook_event_json(sys.stdin.buffer.read(), vault_path=arguments.vault)
+        raw = sys.stdin.buffer.read(MAX_HOOK_EVENT_BYTES + 1)
+        event = parse_hook_event_json(raw, vault_path=arguments.vault)
     except CaptureEventError as exc:
         print(json.dumps({"error": {"code": exc.code, "message": str(exc)}}))
         return 2

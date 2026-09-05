@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-00 BASELINE RECORDED / FOUNDATION FREEZE READY`
+**Status:** `PRE-02 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -114,8 +114,32 @@ SHA-256 digest and length, never raw prompt text.
   caller-supplied project-ID overrides. It does not open transcript paths,
   enqueue jobs, change hooks, or write MemoryStore/StateStore data.
 
-PRE-02 will add the durable at-least-once queue and hook fast-path integration
-on top of this contract.
+## PRE-02 — Fast capture queue
+
+PRE-02 replaces only the active hook hand-off. `SessionEnd` and
+`UserPromptSubmit` now normalize bounded stdin through the PRE-01 contract and
+append a local, idempotent job to `.brain-eleven/capture/`. The spool is
+gitignored and contains `queued`, `processing`, `completed`, and
+`dead-letter` states plus a content-safe JSONL ledger.
+
+- The fast hooks do not read transcript files, call a model/network, compile
+  Daily notes, run the legacy session pipeline, rebuild context, or write
+  MemoryStore/StateStore data.
+- Delivery is at-least-once: a deterministic job ID derives from the PRE-01
+  idempotency key, so replaying an event acknowledges the existing job rather
+  than creating another one. Queue state changes are lock-protected and use
+  atomic local writes/renames; bounded retries and expired-lease recovery send
+  exhausted jobs to dead letter.
+- The queue may retain a transcript *locator* in its local job until a later
+  worker processes it. It never writes raw prompt text. The ledger writes only
+  IDs, hashes, project resolution, state, attempt counts and error codes.
+- Queue backpressure, corrupt jobs, lock timeouts, and write failures are
+  explicit errors. Hooks remain best-effort and return safely to Claude without
+  echoing untrusted evidence.
+
+`scripts/session_pipeline.py` and `scripts/prompt-counter.py` remain legacy
+manual compatibility tools for now; neither is on the active PRE-02 hook path.
+A transcript/evidence worker is explicitly deferred to PRE-03 and later.
 
 ## PRE-00 completion criteria
 
