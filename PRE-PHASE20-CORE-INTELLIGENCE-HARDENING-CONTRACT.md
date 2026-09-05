@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-02 VERIFIED / PRE-03 READY`
+**Status:** `PRE-03 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -148,6 +148,29 @@ Verification for the PRE-02 implementation commit `9397a026fee7c58bd33a8a9a1c504
   privacy, security, evaluation and Foundation-graduation regression gates.
 - [Docker #59](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33971473714):
   success.
+
+## PRE-03 — Evidence reader and retention boundary
+
+PRE-03 adds `scripts/evidence.py`: a local evidence layer that reads bounded
+JSONL transcripts with `user`, `assistant`, `tool`, and `system` role
+attribution, plus a legacy/manual Daily.md adapter. It produces an in-memory
+batch of raw source messages paired with `EvidenceRecord` metadata. Extraction
+is expressly deferred: neither reader classifies claims nor writes memory,
+state, lifecycle, graph, registry, or queue state.
+
+- Persisted records live only under the ignored local capture tree and contain
+  an evidence ID, source type, project/session identity, role, `captured_at`,
+  optional `occurred_at` with precision, hashes, and a source locator. They do
+  not serialize raw transcript/Daily/prompt text or full source paths.
+- The default retention is zero days: `raw_retained=false` and no raw evidence
+  file is created. Reprocessing the same source identity is idempotent.
+- Transcript paths must be absolute regular local files, cannot be symlinks or
+  parent-traversal paths, and are bounded by byte/message limits. Invalid UTF-8,
+  malformed JSONL, changing files, missing files, and unsupported source shape
+  return explicit errors rather than an empty-success result.
+- Transcript message timestamps retain instant precision. A dated Daily entry
+  retains only day precision; the implementation never invents an arbitrary
+  time of day.
 
 ## PRE-00 completion criteria
 
