@@ -37,6 +37,8 @@
 .claude/session-maintenance-report.json
 .claude/context-router-cache.json
 .claude/authority-cache.json
+.claude/memory-usage.json
+.claude/memory-usage.json.lock
 
 # Archive (historical reference only)
 .archived/
