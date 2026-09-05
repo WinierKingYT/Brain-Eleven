@@ -1,7 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
 **Last updated:** 2026-09-06
-**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-11 VERIFIED / NEXT: PRE-12**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; the current head `64604f3` adds private real-use evaluation contracts and derived, non-authoritative usage telemetry. [Validation run #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992641072) and [Docker run #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992964482) passed the cross-platform unit, coverage, security, evaluation, privacy and Foundation graduation gates.
+**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-12 PACKAGE 1 VERIFIED / NEXT: PRE-12 PACKAGE 2**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; the current head `b4315ce` establishes the `brain_eleven.projects` package boundary with legacy registry parity. [Validation run #82](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33993555995) and [Docker run #82](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33993868335) passed.
 
 ## Status vocabulary
 
@@ -67,7 +67,7 @@ program is graduated.
 | PRE-09 Diversity, coverage and density | **VERIFIED** | `f78ffc3` / `4f730b1`; Validation #77; Docker #77. |
 | PRE-10 Compiler V2 production hardening | **VERIFIED** | `53e16c9`; Validation #78; [Docker run #78](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992047104). Profile budgets, final render remeasurement, cache content-safety checks and expanded secret screening are verified. Runtime promotion remains deferred; V1 and SessionStart remain active. |
 | PRE-11 Private real-use evaluation and derived feedback | **VERIFIED** | `64604f3`; [Validation #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992641072); [Docker #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992964482). Local-only annotations, explicit private-data boundary, deterministic scoring and non-authoritative observable usage telemetry are covered. |
-| PRE-12 Repository consolidation | **NEXT** | Consolidate maintained business logic under a `brain_eleven/` package, keep scripts as compatibility adapters, remove duplicate implementations incrementally, and preserve CLI behavior with parity tests. |
+| PRE-12 Repository consolidation | **IN PROGRESS** | Package 1 verified at `b4315ce`: `brain_eleven.projects.registry` exposes the canonical project registry with import/behavior parity. Remaining bounded migrations will establish memory/state surfaces, migrate callers, and reduce legacy adapters without changing CLI or authority semantics. |
 
 ## Runtime graduation evidence
 
