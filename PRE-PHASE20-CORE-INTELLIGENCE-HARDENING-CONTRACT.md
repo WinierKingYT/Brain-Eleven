@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-06 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
+**Status:** `PRE-06 VERIFIED / NEXT: PRE-07`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -245,6 +245,14 @@ schema.
   evaluation is read-only. Corrupt canonical input is a hard failure, never
   empty success, and all result records contain IDs/revisions/reason codes
   rather than memory text.
+
+Verification for the PRE-06 implementation commit `9fdc3293f435c78cf1bb96a1af3d90f84f833f8d`:
+
+- [Validation #65](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33986830183):
+  success, including Ubuntu and Windows unit tests, integration, coverage,
+  privacy, security, evaluation and Foundation-graduation regression gates.
+- [Docker #65](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33987238334):
+  success.
 
 ## PRE-00 completion criteria
 
