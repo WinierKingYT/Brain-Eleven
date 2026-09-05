@@ -1,8 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-05
-**Current milestone:** Context Engine Foundation V1 — **FREEZE READY**. The
-reviewed implementation `8f55131` passed [Validation run #55](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33968422634), including the revision-bound Phase 15–19 and Foundation evidence gates. An independent read-only Foundation review returned `SHIP`. The immutable `context-engine-foundation-v1` tag is created only after this documentation revision also completes full Validation; it is the final binding for the `FROZEN` claim.
+**Last updated:** 2026-09-06
+**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-10 VERIFIED / NEXT: PRE-11**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; the current head `53e16c9` adds verified, non-promoting Compiler V2 hardening on top of that checkpoint. [Validation run #78](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33991705015) passed the cross-platform unit, coverage, security, evaluation, phase evidence and Foundation graduation gates.
 
 ## Status vocabulary
 
@@ -36,16 +35,38 @@ paths.
 | Backup and restore | **VERIFIED** | A manifest/checksum ZIP restores into a blank vault, preserves canonical IDs/revision/lifecycle, then rebuilds graph and context. Corrupt or overwrite targets are refused. |
 | CI and release topology | **VERIFIED** | Unit, integration, coverage, Bandit, secrets, dependency and image-security gates precede the validated-image publish workflow. CI evidence is revision-bound; inspect the matching Actions run for a particular head. |
 | Global `/remember` installer | **PARTIALLY VERIFIED** | The installer and portability tests are versioned; installation into each user’s global Claude configuration remains a local operational action. |
-| Phase 15 evaluation harness | **FREEZE READY** | Offline synthetic corpus, deterministic metrics and leakage hard gates are revision-bound by Validation #55 and covered by the independent Foundation `SHIP` review. It becomes **GRADUATED / FROZEN** only through the immutable Foundation tag. Immutable baseline-v1 preserves the historical 101-case public measurement; versioned baseline-v2 measures a 160-case synthetic corpus with exact 70 dev / 60 test / 30 holdout boundaries. |
+| Phase 15 evaluation harness | **GRADUATED / FROZEN** | Offline synthetic corpus, deterministic metrics and leakage hard gates are bound to the immutable `context-engine-foundation-v1` checkpoint. Immutable baseline-v1 preserves the historical 101-case public measurement; versioned baseline-v2 measures the synthetic corpus with explicit dev/test/holdout boundaries. |
 | Phase 15 baseline-v1 | **VERIFIED** | Public suite has 101 cases; forbidden, wrong-project, superseded and resolved leakage invariants all pass. Snapshot source fingerprint: `sha256:e6a14efb84900449924d41b63fdc10a55961d05c0bb7241c7cc13e720976a29f`. |
-| Phase 16 Task + State Model | **FREEZE READY** | `TaskEnvelope`, deterministic analyzer, revisioned `StateStore`, typed state CLI, resolver, state-aware bootstrap lineage, canonical-state backup support, and public task/state evaluation are revision-bound by Validation #55. The Foundation review verified isolation, stale/revision guards and canonical-write boundaries. Tag-gated graduation applies to this phase. |
-| Phase 16 isolation and fail-closed behavior | **FREEZE READY** | The revision-bound suite covers corruption, unsupported schemas, stale CAS, lock/write failure, AI-proposed provenance, invalid cross-project references, bootstrap staleness and concurrent writers. |
-| Phase 17 Task-Aware Context Router | **FREEZE READY / SHADOW** | A read-only `context_router` produces content-free retrieval plans and candidates from Phase 16 TaskStateContext. It is limited to `OFF`/`SHADOW`, has no SessionStart or ContextCompiler injection path, and enforces trusted current/global/explicit-selected scope plus revision guards. It becomes frozen through the Foundation tag, while remaining shadow-only. |
-| Phase 18 Authority & Conflict Resolver | **FREEZE READY / SHADOW** | Read-only `authority` consumes Router references and canonical snapshots without schema changes. It resolves only explicit lifecycle, supersession, duplicate and typed blocker-reference metadata; free-text conflicts remain unresolved. It becomes frozen through the Foundation tag, while remaining shadow-only. |
-| Phase 19 Context Compiler V2 + Token Budgeter | **FREEZE READY / SHADOW** | Read-only `context_compiler_v2` rehydrates only Phase 18 canonical references, records router/authority/compiler lineage, enforces a caller-owned conservative token/byte budget, preserves mandatory overflow visibly, and renders safe shadow-only context. It becomes frozen through the Foundation tag; V1 and SessionStart remain active because V2 runtime promotion is deferred. |
-| Context Engine Foundation V1 | **FREEZE READY** | Phase 15–19 manifests, the state concurrency suite and deterministic cross-phase Task → State → Router → Authority → Compiler chain passed in Validation #55. The independent Foundation review returned `SHIP`. The state becomes **GRADUATED / FROZEN** when the immutable `context-engine-foundation-v1` tag binds this documentation revision to a successful full Validation run. |
+| Phase 16 Task + State Model | **GRADUATED / FROZEN** | `TaskEnvelope`, deterministic analyzer, revisioned `StateStore`, typed state CLI, resolver, state-aware bootstrap lineage, canonical-state backup support, and public task/state evaluation are bound to the immutable Foundation checkpoint. The Foundation review verified isolation, stale/revision guards and canonical-write boundaries. |
+| Phase 16 isolation and fail-closed behavior | **GRADUATED / FROZEN** | The revision-bound suite covers corruption, unsupported schemas, stale CAS, lock/write failure, AI-proposed provenance, invalid cross-project references, bootstrap staleness and concurrent writers. |
+| Phase 17 Task-Aware Context Router | **GRADUATED / FROZEN / SHADOW** | A read-only `context_router` produces content-free retrieval plans and candidates from Phase 16 TaskStateContext. It is limited to `OFF`/`SHADOW`, has no SessionStart or ContextCompiler injection path, and enforces trusted current/global/explicit-selected scope plus revision guards. |
+| Phase 18 Authority & Conflict Resolver | **GRADUATED / FROZEN / SHADOW** | Read-only `authority` consumes Router references and canonical snapshots without schema changes. It resolves only explicit lifecycle, supersession, duplicate and typed blocker-reference metadata; free-text conflicts remain unresolved. |
+| Phase 19 Context Compiler V2 + Token Budgeter | **GRADUATED / FROZEN / SHADOW** | Read-only `context_compiler_v2` rehydrates only Phase 18 canonical references, records router/authority/compiler lineage, enforces a caller-owned conservative token/byte budget, preserves mandatory overflow visibly, and renders safe shadow-only context. V1 and SessionStart remain active because V2 runtime promotion is deferred. PRE-10 adds profile budgets, final-measurement verification, stronger cache privacy and expanded secret filtering; it is verified by Validation #78. |
+| Context Engine Foundation V1 | **GRADUATED / FROZEN** | Phase 15–19 manifests, the state concurrency suite and deterministic cross-phase Task → State → Router → Authority → Compiler chain passed in Validation #55; the independent Foundation review returned `SHIP`; the immutable `context-engine-foundation-v1` tag binds that checkpoint. Current post-tag hardening is tracked separately below. |
 | Live Docker Compose deployment (local Docker Desktop) | **VERIFIED** | On 2026-09-02, `app`, `postgres`, and `redis` became healthy; `127.0.0.1:8000/health` returned 200; the API port was unreachable through a non-loopback IPv4 address. The API key was unset, so its optional auth-gate branch was not applicable. |
 | Public deployment and daily-use telemetry | **NOT VERIFIED** | Outside the local-first memory-foundation graduation boundary. |
+
+## Pre-Phase 20 execution status
+
+The post-foundation hardening program is being delivered as bounded packages.
+Each package is considered **VERIFIED** only after its implementation commit
+and the matching cross-platform Validation and Docker workflows are green.
+This is package verification, not a claim that the entire Pre-Phase 20
+program is graduated.
+
+| Package | Status | Revision-bound evidence |
+|---|---|---|
+| PRE-01 Capture event contract | **VERIFIED** | `e9f1d11` / `f85245`; Validation #58; Docker #58. |
+| PRE-02 Durable fast-path queue | **VERIFIED** | `9397a02` / `3cad82e`; Validation #60; Docker #60. |
+| PRE-03 Evidence reader and retention | **VERIFIED** | `534a348`; Validation #61; Docker #61. |
+| PRE-04 Extraction V2 foundation | **VERIFIED** | `076ec56`; Validation #62; Docker #62. |
+| PRE-05 Temporal provenance migration | **VERIFIED** | `9c65845` / `129f24d`; Validation #64; Docker #64. |
+| PRE-06 Memory truth and lifecycle | **VERIFIED** | `9fdc329` / `3a962f1`; Validation #66; Docker #66. |
+| PRE-07 State boundary integration | **VERIFIED** | `1ac8a8e` / `0be180e`; Validation #71; Docker #71. |
+| PRE-08 Retrieval decision V2 | **VERIFIED** | `d422788` / `b0ad09b` / `dd8906d`; Validation #75; Docker #75. |
+| PRE-09 Diversity, coverage and density | **VERIFIED** | `f78ffc3` / `4f730b1`; Validation #77; Docker #77. |
+| PRE-10 Compiler V2 production hardening | **VERIFIED** | `53e16c9`; Validation #78; [Docker run #78](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992047104). Profile budgets, final render remeasurement, cache content-safety checks and expanded secret screening are verified. Runtime promotion remains deferred; V1 and SessionStart remain active. |
+| PRE-11 Private real-use evaluation and derived feedback | **NEXT** | Local-only annotations, privacy boundary and non-authoritative usage telemetry. |
 
 ## Runtime graduation evidence
 
