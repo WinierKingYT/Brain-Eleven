@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–6)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–7)
 
 ## Purpose
 
@@ -155,6 +155,27 @@ run passed as well. The corresponding
 [Validation #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998344239)
 run is the revision-bound CI evidence for this package.
 
+## Package 7 — memory mutation and lifecycle caller migration
+
+The bounded canonical-memory mutation callers now import `MemoryStore`, its
+conflict/corruption errors, and the no-op transaction helper through
+`brain_eleven.memory`: the lifecycle, truth-engine, and provenance adapters
+were migrated without changing mutation semantics. Their `memory_scope` and
+`memory_store_lock` imports remain intentional compatibility/backing edges;
+they are not additional persistence authorities and were not broadened by this
+package.
+
+Package 7 keeps the store schema, revisioning, locking, atomic-write behavior,
+CLI behavior, and lifecycle rules unchanged. The migration test adds an AST
+boundary for the three callers and identity checks confirm that their imported
+store class is the same canonical object exposed by the package surface.
+
+Package 7 verification completed on commit `8826117`: Validation #95 passed
+on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence,
+and Context Engine Foundation graduation. The corresponding
+[Validation #95](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999284762)
+run is the revision-bound CI evidence for this package.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -167,8 +188,8 @@ run is the revision-bound CI evidence for this package.
 
 ## Next bounded migrations
 
-1. migrate the next bounded set of canonical memory mutation/lifecycle callers
-   to the new surfaces;
+1. migrate the next bounded set of canonical graph, entity, search, or API
+   callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
