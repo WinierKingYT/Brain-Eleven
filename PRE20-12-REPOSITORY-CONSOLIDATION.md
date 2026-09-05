@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–2)
 
 ## Purpose
 
@@ -39,6 +39,25 @@ must preserve object identity and avoid the historical eager imports in
 `scripts/__init__.py`.  New code may depend on the package namespace; old
 callers remain supported during the parity window.
 
+## Second migration boundary — canonical stores
+
+The canonical stores are now available from stable package namespaces:
+
+```python
+from brain_eleven.memory import MemoryStore
+from brain_eleven.state import StateStore
+```
+
+`brain_eleven.memory.store` and `brain_eleven.state.store` re-export the
+existing implementations from `scripts/memory_store.py` and
+`scripts/state_store.py`. This identity-preserving adapter keeps schema
+versions, revisions, locking, corruption handling, typed state transitions,
+and error classes owned by the existing authorities. Package parity tests
+cover object identity and temporary-vault load/persistence behavior.
+
+These package surfaces are the supported destination for future caller
+migrations. Legacy imports remain available during the compatibility window.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -52,7 +71,7 @@ callers remain supported during the parity window.
 ## Next bounded migrations
 
 1. migrate read-only project-resolution callers;
-2. establish `brain_eleven.memory` and `brain_eleven.state` package surfaces;
+2. migrate one bounded set of memory/state callers to the new surfaces;
 3. move one implementation at a time with import parity tests;
 4. reduce dynamic `sys.path` injection in adapters;
 5. keep scripts as thin CLI/hook adapters only.

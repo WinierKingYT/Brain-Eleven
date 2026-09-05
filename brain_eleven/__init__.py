@@ -4,4 +4,4 @@ Migration is intentionally incremental.  Legacy ``scripts`` entry points may
 remain as compatibility adapters while their implementation moves here.
 """
 
-__all__ = ["projects"]
+__all__ = ["memory", "projects", "state"]
