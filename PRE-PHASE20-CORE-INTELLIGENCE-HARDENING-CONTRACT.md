@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-08 VERIFIED / NEXT: PRE-09`
+**Status:** `PRE-09 VERIFIED / NEXT: PRE-10`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -340,6 +340,48 @@ Verification for PRE-08:
   Authority, Compiler, and Foundation-graduation gates.
 - Validation #73 is retained as a historical failed run from before the
   coverage fixture correction; it is not used as PRE-08 evidence.
+
+## PRE-09 — Diversity, coverage, and context-density decisions
+
+PRE-09 adds the read-only `context_density_v2` package. It consumes the
+content-free PRE-08 `DecisionResult` and applies a bounded, deterministic
+post-selection policy. It does not retrieve new candidates, widen scope,
+change authority, write canonical memory/state, or alter the production
+ContextCompiler/SessionStart path.
+
+- Critical needs are preserved before optional candidates are considered. If
+  the configured selection bound cannot contain all critical candidates, the
+  result fails explicitly with `MANDATORY_CONTEXT_UNSATISFIED` rather than
+  returning silently incomplete context.
+- Candidates are grouped using existing metadata-only identity hints such as
+  dedup fingerprint, claim key, content hash, or an explicit redundancy group.
+  Repeated groups are omitted deterministically unless the candidate covers a
+  previously uncovered critical need.
+- The result reports content-free metrics: selected/input counts, redundancy
+  rate, estimated token totals, context waste ratio, useful context density,
+  critical-need recall, and per-need candidate coverage. Token estimates are
+  metadata supplied by the upstream contract; no provider-specific exact token
+  claim is made.
+- `OFF` remains empty and upstream `STALE_INPUT`, `SCOPE_ERROR`, and failure
+  states remain fail-closed. IDs, canonical references, reasons, revisions,
+  and safe telemetry are the only serialized output; memory text is absent.
+- The package has its own 85% core coverage group and is included in fatal lint,
+  Bandit, and global coverage commands. Focused tests cover duplicate clusters,
+  critical coverage, density metrics, deterministic output, OFF/failure modes,
+  content-free serialization, and bounded options.
+
+Implementation commit:
+
+- `f78ffc3cec919e1e327a7d99c4b2f18d4870d123` — diversity, coverage, and
+  context-density engine with CI coverage/security integration.
+
+Verification for PRE-09:
+
+- Local bundled Python compile and focused contract smoke passed (6 tests).
+- [Validation #76](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33990850693):
+  success on Ubuntu and Windows, including unit, integration, coverage with
+  the new core package, privacy, security, evaluation, Router, Authority,
+  Compiler, and Foundation-graduation gates.
 
 ## PRE-00 completion criteria
 
