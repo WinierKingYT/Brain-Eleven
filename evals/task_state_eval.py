@@ -20,9 +20,9 @@ if str(_SCRIPTS_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIRECTORY))
 
 from brain_eleven.projects.registry import ProjectRegistry
-from memory_store import MemoryStore
+from brain_eleven.memory import MemoryStore
 from state_resolver import StateResolver
-from state_store import StateService
+from brain_eleven.state import StateService
 from task_model import TaskAnalyzer
 
 

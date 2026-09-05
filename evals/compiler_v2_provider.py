@@ -19,7 +19,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from memory_store import MemoryStore  # noqa: E402
+from brain_eleven.memory import MemoryStore  # noqa: E402
 from task_state_context import TaskStateComposer  # noqa: E402
 
 

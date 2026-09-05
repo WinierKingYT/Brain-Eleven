@@ -14,7 +14,7 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from memory_scope import infer_memory_scope  # noqa: E402
-from memory_store import MemoryStore, MemoryStoreError  # noqa: E402
+from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
 from state_resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,
