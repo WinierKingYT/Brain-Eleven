@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-03 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
+**Status:** `PRE-04 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -171,6 +171,28 @@ state, lifecycle, graph, registry, or queue state.
 - Transcript message timestamps retain instant precision. A dated Daily entry
   retains only day precision; the implementation never invents an arbitrary
   time of day.
+
+## PRE-04 — Deterministic extraction V2
+
+PRE-04 adds `scripts/extraction.py`, a deterministic extraction provider over
+the in-memory PRE-03 evidence batch. It preserves the evidence role boundary,
+segments turns into propositions, classifies commitment language, and emits
+either a project-scoped `NewMemoryCandidate`, a typed `StateMutationProposal`,
+or a content-hash-only quarantine record.
+
+- Assistant, tool, and system statements are proposals/observations, never
+  user-backed decisions. Questions, hypotheticals, quoted prose, negations,
+  low-evidence claims, secrets, and unresolved project identity are quarantined
+  with stable reason codes.
+- Current operational facts such as active failures and blocker resolution are
+  routed to state proposals. Durable explicit decisions/lessons/preferences
+  remain memory candidates. Explicit corrections produce a new candidate plus
+  `LIFECYCLE_TARGET_UNKNOWN`; PRE-04 does not guess a prior memory ID or mutate
+  lifecycle.
+- Candidate content exists only in the in-memory extraction result for the
+  later review/truth stage. Machine-safe serialization can omit content, and
+  this package has no canonical write path, model/network dependency, or
+  autonomous lifecycle mutation.
 
 ## PRE-00 completion criteria
 

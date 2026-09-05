@@ -178,7 +178,7 @@ def _safe_source_path(source_path: str | Path) -> Path:
         raise EvidencePathError("evidence path must not be a symbolic link")
     try:
         resolved = original.resolve(strict=True)
-    except OSError as exc:
+    except (OSError, RuntimeError) as exc:
         raise EvidenceMissingError("evidence source is unavailable") from exc
     if not resolved.is_file():
         raise EvidencePathError("evidence source must be a regular file")
