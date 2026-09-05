@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–4)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–5)
 
 ## Purpose
 
@@ -110,6 +110,30 @@ run passed as well. The corresponding
 [Validation #89](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33996442080)
 run is the revision-bound CI evidence for this package.
 
+## Package 5 — canonical memory/state caller migration
+
+The next bounded caller set now uses the canonical memory and state package
+surfaces without changing behavior or persistence ownership. Read-only router
+and authority adapters, together with the Phase 15–19 evaluation and benchmark
+providers, import `MemoryStore` from `brain_eleven.memory` and
+`StateService` from `brain_eleven.state` where required. The legacy modules
+remain the backing implementations and compatibility edges; no schema, path,
+revision, locking, or CLI semantics changed.
+
+Package 5 adds two safeguards: an AST boundary test prevents these migrated
+callers from reintroducing direct legacy store imports, and identity checks
+prove that package and caller references resolve to the same canonical store
+and state-service objects. This keeps the migration strangler-style and avoids
+creating a second persistence authority.
+
+Package 5 verification completed on commit `f095015`: Validation #91 passed
+on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence,
+and Context Engine Foundation graduation. The dependent
+[Docker #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997674238)
+run passed as well. The corresponding
+[Validation #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997369425)
+run is the revision-bound CI evidence for this package.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -122,7 +146,7 @@ run is the revision-bound CI evidence for this package.
 
 ## Next bounded migrations
 
-1. migrate one bounded set of memory/state callers to the new surfaces;
+1. migrate the next bounded set of mutation and CLI callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
