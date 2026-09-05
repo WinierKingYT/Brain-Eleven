@@ -18,6 +18,8 @@
 .claude/validated-memory.json.lock
 .claude/validated-memory.backup.json
 .claude/validated-memory.json.pre-scope-*.bak
+.claude/memory-provenance.json
+.claude/memory-provenance.json.lock-target.lock
 .claude/remember-config.json
 .claude/project-registry.json
 .claude/project-registry.json.lock

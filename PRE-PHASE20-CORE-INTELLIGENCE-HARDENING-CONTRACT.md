@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-04 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
+**Status:** `PRE-05 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -193,6 +193,27 @@ or a content-hash-only quarantine record.
   later review/truth stage. Machine-safe serialization can omit content, and
   this package has no canonical write path, model/network dependency, or
   autonomous lifecycle mutation.
+
+## PRE-05 — Canonical provenance and time projection
+
+PRE-05 adds `scripts/memory_provenance.py`, a revision-bound derived
+projection for temporal and evidence lineage. The Phase 14 canonical
+MemoryStore remains unchanged and authoritative; migration preserves every
+canonical memory ID and revision.
+
+- Legacy `timestamp` values are conservatively mapped to `captured_at`.
+  Daily source IDs may provide a day-precision `occurred_at`; no time of day
+  is invented, and naive timestamps retain `unknown` precision.
+- The projection records separate `occurred_at`, `captured_at`,
+  `canonicalized_at`, `updated_at`, and `last_confirmed_at` slots, along with
+  future evidence/session/job lineage fields. It contains metadata only and
+  never copies memory content.
+- Migration reads both validated and rejected canonical buckets, is
+  revision-bound, idempotent, lock-protected, atomically written, and fails
+  closed on corrupt projection or canonical input. Re-running against the
+  same revision preserves the original projection timestamp.
+- Runtime output is ignored under `.claude/memory-provenance.json`; the
+  projection is derived state and is not a second memory authority.
 
 ## PRE-00 completion criteria
 
