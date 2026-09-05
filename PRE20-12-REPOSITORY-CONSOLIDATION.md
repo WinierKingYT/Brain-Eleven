@@ -174,7 +174,11 @@ Package 7 verification completed on commit `8826117`: Validation #95 passed
 on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence,
 and Context Engine Foundation graduation. The corresponding
 [Validation #95](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999284762)
-run is the revision-bound CI evidence for this package.
+and [Docker #95](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999585254)
+runs are the implementation evidence. The documentation follow-up is commit
+`8b17e40`; [Validation #96](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999656746)
+and [Docker #96](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999938961)
+verify that status record on Ubuntu and Windows as well.
 
 ## Compatibility rules
 
