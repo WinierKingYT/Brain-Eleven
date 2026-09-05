@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-07 VERIFIED / NEXT: PRE-08`
+**Status:** `PRE-08 VERIFIED / NEXT: PRE-09`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -295,6 +295,51 @@ Verification for the PRE-07 implementation commit `964602c74976f148140bb82ddd23c
   graduation gates.
 - The bundled local runtime does not include `pytest`; full test verification
   is recorded from the green remote validation workflow above.
+
+## PRE-08 — Task-need retrieval decision engine
+
+PRE-08 adds the read-only `retrieval_decision_v2` package. It consumes the
+content-free Router and metadata-first Authority contracts and produces a
+deterministic, content-free selection decision. It does not retrieve new
+memory, widen Router scope, change authority, write canonical memory/state,
+or alter the active ContextCompiler/SessionStart path.
+
+- Needs are derived deterministically from task intent, explicit/inherited
+  constraints, context hints, and active state blockers. Need matching is a
+  ranking hint only; it cannot override scope, lifecycle, revision, or
+  authority policy.
+- `CURRENT_PROJECT`, `GLOBAL_ONLY`, and `SELECTED_PROJECTS` remain bounded by
+  the Router plan. Prompt text cannot widen them, selected projects are not
+  compared against one another, and global records are admitted only by the
+  trusted Router scope.
+- Active lifecycle and source-revision filters run before scoring. History is
+  opt-in, superseded/historical/inapplicable/invalid authority outcomes are
+  excluded, duplicate candidates/fingerprint groups are reduced
+  deterministically, and selection budget omissions are explicit.
+- Output contains only IDs, canonical references, source metadata, need and
+  channel signals, scores, omission reasons, revisions, and safe telemetry;
+  memory text is never serialized.
+- Coverage and Bandit gates now include `retrieval_decision_v2`, and the
+  contract suite covers invalid inputs, scope isolation, lifecycle/history,
+  revision races, authority mismatches, duplicate reduction, budget bounds,
+  and content-free output.
+
+Implementation commits:
+
+- `d4227888240b461adeaa6fd53ada4812425c5711` — retrieval decision engine.
+- `a899c247ac8b77028d98bcc4badb8b51094c3c58` — package coverage/security
+  gate hardening and boundary tests.
+- `b0ad09ba1ef97b8e2b96e942ec4d1dc5b1aba812` — coverage fixture update.
+
+Verification for PRE-08:
+
+- Local bundled Python compile and focused contract smoke passed (10 tests).
+- [Validation #74](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33989942218):
+  success on Ubuntu and Windows, including the real retrieval package
+  coverage group, integration, privacy, security, evaluation, Router,
+  Authority, Compiler, and Foundation-graduation gates.
+- Validation #73 is retained as a historical failed run from before the
+  coverage fixture correction; it is not used as PRE-08 evidence.
 
 ## PRE-00 completion criteria
 
