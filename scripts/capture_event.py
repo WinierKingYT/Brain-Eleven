@@ -23,7 +23,15 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+try:
+    from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+except ModuleNotFoundError as exc:
+    # Hook tests and installed hook copies may run with only the legacy
+    # scripts beside capture_event.py.  Keep that standalone deployment
+    # contract while preferring the canonical package in the repository.
+    if exc.name != "brain_eleven":
+        raise
+    from project_registry import ProjectRegistry, ProjectRegistryError
 
 
 CAPTURE_EVENT_SCHEMA_VERSION = 1

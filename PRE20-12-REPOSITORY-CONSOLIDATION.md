@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–3)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–2); package 3 compatibility fix pending CI
 
 ## Purpose
 
@@ -65,6 +65,11 @@ The first production callers that resolve project identity now import through
 resolution, and the context-router adapters. Their legacy module names remain
 available for existing scripts and tests, but the caller-level parity tests
 verify that both classes and error types are the same canonical objects.
+
+The capture hook also retains a narrow standalone fallback to the legacy
+module. This is required for deployed/copied hook environments that contain
+the hook adapter and its local support files but do not install the repository
+package tree; normal repository imports still use the canonical package.
 
 This package intentionally excludes mutating registry operations and does not
 change project registration, archive handling, path normalization, or CLI
