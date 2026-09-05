@@ -8,6 +8,7 @@ from typing import Any, Iterable, Mapping, Optional
 
 from .adapters import RehydratedCandidate
 from .models import UtilityProfile
+from .profile_policy import MANDATORY_ROLES
 from .tokenizer import TokenEstimator
 
 
@@ -87,8 +88,10 @@ def role_for(item: RehydratedCandidate) -> str:
     return _memory_role(item.record)
 
 
-def tier_for(role: str, status: str, profile: str) -> tuple[int, bool, str]:
-    if role in {"CONSTRAINT", "REQUIREMENT", "IMPLEMENTATION_GAP", "CONFLICT"}:
+def tier_for(
+    role: str, status: str, profile: str, mandatory_roles: frozenset[str] = frozenset(MANDATORY_ROLES)
+) -> tuple[int, bool, str]:
+    if role in mandatory_roles:
         return 0, True, "exact"
     if role == "CURRENT_STATE":
         return 1, False, "direct"
@@ -122,13 +125,14 @@ def redundancy_groups(items: Iterable[RehydratedCandidate]) -> Mapping[str, str]
 
 
 def build_drafts(
-    items: Iterable[RehydratedCandidate], profile: str, estimator: TokenEstimator, render_fragment: Any
+    items: Iterable[RehydratedCandidate], profile: str, estimator: TokenEstimator, render_fragment: Any,
+    *, mandatory_roles: frozenset[str] = frozenset(MANDATORY_ROLES),
 ) -> tuple[CandidateDraft, ...]:
     groups = redundancy_groups(items)
     drafts: list[CandidateDraft] = []
     for item in sorted(items, key=lambda value: value.resolution.candidate_id):
         role = role_for(item)
-        tier, mandatory, task_fit = tier_for(role, item.resolution.status, profile)
+        tier, mandatory, task_fit = tier_for(role, item.resolution.status, profile, mandatory_roles)
         rendered = render_fragment(item, role)
         estimate = estimator.estimate(rendered)
         utility = UtilityProfile(

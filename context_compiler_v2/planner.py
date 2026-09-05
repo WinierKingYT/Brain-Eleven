@@ -78,7 +78,10 @@ def _dedupe(drafts: Iterable[CandidateDraft]) -> tuple[list[CandidateDraft], lis
     return retained, omitted
 
 
-def choose(drafts: Iterable[CandidateDraft], budget: BudgetContract, *, allow_history: bool, base_cost: int) -> SelectionPlan:
+def choose(
+    drafts: Iterable[CandidateDraft], budget: BudgetContract, *, allow_history: bool, base_cost: int,
+    optional_budget_percent: int | None = None, max_optional_items: int | None = None,
+) -> SelectionPlan:
     """Select all mandatory information before optional value, with stable ties."""
     eligible: list[CandidateDraft] = []
     omitted: list[OmittedItem] = []
@@ -106,17 +109,37 @@ def choose(drafts: Iterable[CandidateDraft], budget: BudgetContract, *, allow_hi
 
     selected = list(mandatory)
     spent = mandatory_cost
+    if optional_budget_percent is None:
+        optional_limit = budget.usable_tokens - mandatory_cost
+    else:
+        optional_limit = min(
+            budget.usable_tokens - mandatory_cost,
+            budget.usable_tokens * optional_budget_percent // 100,
+        )
+    optional_spent = 0
+    optional_count = 0
     optional = sorted(
         (draft for draft in eligible if not draft.mandatory),
         key=lambda draft: (draft.tier, _STATUS_RANK.get(draft.evidence.resolution.status, 99), draft.evidence.resolution.candidate_id),
     )
     for draft in optional:
         cost = draft.utility.estimated_cost.count
-        if spent + cost <= budget.usable_tokens:
+        if (
+            spent + cost <= budget.usable_tokens
+            and optional_spent + cost <= optional_limit
+            and (max_optional_items is None or optional_count < max_optional_items)
+        ):
             selected.append(draft)
             spent += cost
+            optional_spent += cost
+            optional_count += 1
         else:
-            omitted.append(OmittedItem(draft.evidence.resolution.candidate_id, "budget_exhausted", draft.role, draft.tier))
+            reason = "budget_exhausted"
+            if optional_budget_percent is not None and optional_spent + cost > optional_limit:
+                reason = "profile_budget_exhausted"
+            elif max_optional_items is not None and optional_count >= max_optional_items:
+                reason = "profile_item_limit"
+            omitted.append(OmittedItem(draft.evidence.resolution.candidate_id, reason, draft.role, draft.tier))
     return SelectionPlan(
         tuple(sorted(selected, key=lambda draft: (draft.tier, draft.evidence.resolution.candidate_id))),
         tuple(sorted(omitted, key=lambda item: item.candidate_id)),

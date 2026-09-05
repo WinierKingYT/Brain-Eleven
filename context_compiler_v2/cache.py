@@ -20,7 +20,12 @@ class CompilerCache:
     @staticmethod
     def _content_safe(value: Any) -> bool:
         if isinstance(value, Mapping):
-            return "content" not in value and "rendered_context" not in value and all(
+            forbidden_keys = {
+                "content", "rendered_context", "rendered_text", "raw_request", "prompt", "text"
+            }
+            if any(str(key).casefold() in forbidden_keys for key in value):
+                return False
+            return all(
                 CompilerCache._content_safe(item) for item in value.values()
             )
         if isinstance(value, list):

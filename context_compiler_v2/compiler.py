@@ -38,7 +38,9 @@ class ContextCompilerV2:
         return profile_from_input(request.task_state, request.resolution_result, request.compiler_profile)
 
     @staticmethod
-    def _identifier(request: CompilationRequest, profile: str, policy_version: str) -> str:
+    def _identifier(
+        request: CompilationRequest, profile: str, policy_version: str, profile_policy: Optional[Mapping[str, Any]] = None
+    ) -> str:
         task_id = getattr(request.task_state.task, "task_id", "unknown")
         revisions = request.resolution_result.input_revisions
         payload = json.dumps(
@@ -48,6 +50,7 @@ class ContextCompilerV2:
                 "profile": profile,
                 "budget": request.budget.to_dict(),
                 "policy": policy_version,
+                "profile_policy": dict(profile_policy or {}),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -103,7 +106,10 @@ class ContextCompilerV2:
         try:
             provisional_profile = self._profile(request)
             config = CompilerConfig.load(self.vault_path)
-            compilation_id = self._identifier(request, provisional_profile, config.policy_version)
+            profile_policy = config.profile_budgets[provisional_profile]
+            compilation_id = self._identifier(
+                request, provisional_profile, config.policy_version, profile_policy.to_dict()
+            )
         except (CompilerConfigError, ValueError, TypeError) as exc:
             return self._result("FAILED", "ctx_invalid", provisional_profile, request, error=str(exc))
         if options.mode == "OFF" or config.default_mode == "OFF":
@@ -142,8 +148,16 @@ class ContextCompilerV2:
                 warnings=("mandatory_task_overflow",),
                 telemetry={"mode": "SHADOW", "cache_hit": cache_hit, "base_tokens": base_estimate.count},
             )
-        drafts = build_drafts(snapshot.candidates, provisional_profile, self.estimator, render_fragment)
-        plan = choose(drafts, request.budget, allow_history=options.allow_history, base_cost=base_estimate.count)
+        profile_policy = config.profile_budgets[provisional_profile]
+        drafts = build_drafts(
+            snapshot.candidates, provisional_profile, self.estimator, render_fragment,
+            mandatory_roles=frozenset(profile_policy.mandatory_roles),
+        )
+        plan = choose(
+            drafts, request.budget, allow_history=options.allow_history, base_cost=base_estimate.count,
+            optional_budget_percent=profile_policy.optional_budget_percent,
+            max_optional_items=profile_policy.max_optional_items,
+        )
         if plan.mandatory_cost > request.budget.usable_tokens:
             return self._result(
                 "INSUFFICIENT_BUDGET",
@@ -173,6 +187,13 @@ class ContextCompilerV2:
             )
             rendered = render_bundle(request.task_state, selected_items)
             final_estimate = self.estimator.estimate(rendered)
+            remeasured = self.estimator.estimate(rendered)
+            if remeasured != final_estimate:
+                return self._result(
+                    "FAILED", compilation_id, provisional_profile, request, revisions=snapshot.revisions,
+                    error="Token estimator is not deterministic for the final rendered context",
+                    warnings=("nondeterministic_final_measurement",),
+                )
             if final_estimate.count <= request.budget.usable_tokens and final_estimate.byte_count <= request.budget.hard_byte_limit:
                 break
             optional = [draft for draft in selected_drafts if not draft.mandatory]
@@ -232,6 +253,11 @@ class ContextCompilerV2:
                 "estimated_tokens": final_estimate.count,
                 "remaining_tokens": request.budget.max_context_tokens - final_estimate.count,
                 "token_estimator": final_estimate.to_dict(),
+                "profile_budget": {
+                    "optional_budget_percent": profile_policy.optional_budget_percent,
+                    "max_optional_items": profile_policy.max_optional_items,
+                    "mandatory_roles": list(profile_policy.mandatory_roles),
+                },
             },
             selected=selected_items,
             omitted=tuple(sorted(omissions, key=lambda item: item.candidate_id)),
@@ -250,6 +276,7 @@ class ContextCompilerV2:
                 "selected_count": len(selected_items),
                 "canonical_write": False,
                 "selection_method": "tiered_deterministic",
+                "final_measurement_verified": True,
             },
         )
         if config.cache_enabled and options.cache_enabled:

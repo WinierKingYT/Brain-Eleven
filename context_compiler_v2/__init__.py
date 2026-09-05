@@ -2,5 +2,9 @@
 
 from .compiler import ContextCompilerV2
 from .models import BudgetContract, CompilationOptions, CompilationRequest, ContextBundle
+from .profile_policy import ProfileBudgetPolicy
 
-__all__ = ["BudgetContract", "CompilationOptions", "CompilationRequest", "ContextBundle", "ContextCompilerV2"]
+__all__ = [
+    "BudgetContract", "CompilationOptions", "CompilationRequest", "ContextBundle", "ContextCompilerV2",
+    "ProfileBudgetPolicy",
+]

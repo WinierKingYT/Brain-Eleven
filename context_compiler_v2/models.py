@@ -61,6 +61,8 @@ SELECTION_REASONS = frozenset(
 OMISSION_REASONS = frozenset(
     {
         "budget_exhausted",
+        "profile_budget_exhausted",
+        "profile_item_limit",
         "mandatory_overflow",
         "redundant_exact_duplicate",
         "historical_not_requested",
