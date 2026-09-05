@@ -19,10 +19,12 @@ from .schema import load_fixture
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from project_registry import ProjectRegistry  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from state_resolver import STATE_NOT_FOUND, StateResolver  # noqa: E402
 from state_store import StateService  # noqa: E402
 from task_state_context import TaskStateComposer  # noqa: E402

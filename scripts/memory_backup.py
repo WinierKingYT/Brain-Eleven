@@ -12,11 +12,16 @@ import importlib.util
 import json
 import os
 import shutil
+import sys
 import tempfile
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Dict, Iterable, List, Optional, Tuple, Union
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from entity_extractor import EntityExtractor
 from memory_scope import (
@@ -26,7 +31,7 @@ from memory_scope import (
     scoped_fingerprint,
 )
 from memory_store import CANONICAL_SCHEMA_VERSION, MemoryStore, MemoryStoreCorrupt
-from project_registry import (
+from brain_eleven.projects.registry import (
     REGISTRY_FILENAME,
     ProjectRegistry,
     ProjectRegistryError,

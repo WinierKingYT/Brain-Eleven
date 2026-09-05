@@ -30,6 +30,9 @@ for _stream in (sys.stdout, sys.stderr):
 # Setup path for imports
 SCRIPTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPTS_DIR))
+REPO_ROOT = SCRIPTS_DIR.resolve().parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 # Load .env for local runs (docker-compose already injects real env vars
 # directly, so this is a no-op there - python-dotenv never overrides an
@@ -71,7 +74,7 @@ try:
     from entity_extractor import EntityExtractor
     from chat_interface import ChatAgent
     from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
-    from project_registry import registry_path as project_registry_path
+    from brain_eleven.projects.registry import registry_path as project_registry_path
     from memory_store import MemoryStore, MemoryStoreConflict
     from capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:

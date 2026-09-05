@@ -11,13 +11,18 @@ caller explicitly requests ``commit=True`` and supplies trusted provenance.
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from extraction import NewMemoryCandidate, StateMutationProposal, StateOperation
-from project_registry import ProjectRegistryError
+from brain_eleven.projects.registry import ProjectRegistryError
 from state_store import (
     StateError,
     StateProjectArchived,

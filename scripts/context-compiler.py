@@ -16,15 +16,20 @@ import re
 import argparse
 import io
 import os
+import sys
 import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Set, Optional
 
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from memory_scope import filter_memories, infer_memory_scope, resolve_retrieval_project
 from memory_store import MemoryStore, MemoryStoreError
-from project_registry import registry_path as project_registry_path
+from brain_eleven.projects.registry import registry_path as project_registry_path
 from state_resolver import (
     PROJECT_ARCHIVED,
     STATE_AVAILABLE,

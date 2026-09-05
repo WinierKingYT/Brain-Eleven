@@ -48,7 +48,12 @@ def registered_project_identity(
     """
     if registry_path is None:
         return project_identity(project_root)
-    from project_registry import ProjectRegistry
+    try:
+        from brain_eleven.projects.registry import ProjectRegistry
+    except ModuleNotFoundError as exc:
+        if exc.name != "brain_eleven":
+            raise
+        from project_registry import ProjectRegistry
 
     record = ProjectRegistry(registry_path).register(project_root or Path.cwd())
     return record["project_id"], record["project_label"]
@@ -68,7 +73,12 @@ def resolve_retrieval_project(
     """
     if registry_path is None:
         return None
-    from project_registry import ProjectRegistry
+    try:
+        from brain_eleven.projects.registry import ProjectRegistry
+    except ModuleNotFoundError as exc:
+        if exc.name != "brain_eleven":
+            raise
+        from project_registry import ProjectRegistry
 
     record = ProjectRegistry(registry_path).resolve(project_root or Path.cwd())
     if record is None:

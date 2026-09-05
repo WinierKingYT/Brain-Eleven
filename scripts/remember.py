@@ -19,17 +19,21 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from memory_scope import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     project_identity,
     resolve_capture_scope,
 )
-from project_registry import ProjectRegistry, registry_path as project_registry_path
+from brain_eleven.projects.registry import ProjectRegistry, registry_path as project_registry_path
 from capture_safety import evaluate_capture
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_VAULT = SCRIPT_DIR.parent
 
 

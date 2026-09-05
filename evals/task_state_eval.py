@@ -14,10 +14,12 @@ from typing import Any, Mapping, Sequence
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SCRIPTS_DIRECTORY = _ROOT / "scripts"
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 if str(_SCRIPTS_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIRECTORY))
 
-from project_registry import ProjectRegistry
+from brain_eleven.projects.registry import ProjectRegistry
 from memory_store import MemoryStore
 from state_resolver import StateResolver
 from state_store import StateService
