@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-00 BASELINE RECORDED / FOUNDATION REVIEW PENDING`
+**Status:** `PRE-00 BASELINE RECORDED / FOUNDATION FREEZE READY`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -8,16 +8,18 @@ It does **not** start a Knowledge Engine.
 
 ## Entry evidence
 
-- Candidate SHA: `e5c1069571e966d7b96b564413fb85be3055ca6c`
-- Validation: [GitHub Actions run #52](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33896562025)
+- Reviewed code SHA: `8f5513129d369525d3ffca1090cbd561323e0cfa`
+- Validation: [GitHub Actions run #55](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33968422634)
   completed successfully, including Ubuntu/Windows unit tests, integration,
   coverage, public evaluation, Bandit, secret detection, dependency audit,
   Docker/Trivy, all Phase 15–19 evidence jobs, and the Foundation graduation
   job.
-- The generated Foundation artifact remains review-pending by design. This
-  program may record its baseline but must not call the Foundation frozen,
-  change its authority contracts, or promote V2 runtime paths until the
-  separate independent read-only review has returned `SHIP`.
+- The generated Foundation artifact correctly remained review-pending by
+  design. The separate independent read-only Foundation review has now returned
+  `SHIP`; see `CONTEXT-ENGINE-FOUNDATION-V1-INDEPENDENT-REVIEW.md`.
+  `PRE-01` remains gated on the immutable Foundation tag for the final
+  documentation revision. This program must not change Foundation authority
+  contracts or promote V2 runtime paths before that tag exists.
 
 ## Scope and non-goals
 
@@ -102,4 +104,4 @@ review before the next package changes canonical behavior.
 - Phase 14–19 contracts remain unmodified.
 - Retention, extraction rollout, and canary decisions are explicit.
 - `PRE-01` cannot begin until the independent Foundation review is `SHIP` and
-  the frozen SHA/tag has been recorded.
+  the immutable frozen SHA/tag has been recorded.
