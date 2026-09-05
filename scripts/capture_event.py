@@ -170,7 +170,8 @@ def _event_identity(event_type: str, session_id: str, event_at: str, prompt_sha2
     if event_type == EVENT_SESSION_END:
         key = f"session:{session_id}:end"
     else:
-        assert prompt_sha256 is not None
+        if prompt_sha256 is None:
+            raise _error("USER_PROMPT_SUBMIT requires prompt metadata")
         key = f"prompt:{session_id}:{event_at}:{prompt_sha256}"
     event_id = "evt_" + hashlib.sha256(key.encode("utf-8")).hexdigest()[:26]
     return event_id, key
