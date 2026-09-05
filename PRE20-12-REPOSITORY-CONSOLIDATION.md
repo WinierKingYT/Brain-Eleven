@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–2); package 3 compatibility fix pending CI
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–3)
 
 ## Purpose
 
@@ -74,6 +74,13 @@ package tree; normal repository imports still use the canonical package.
 This package intentionally excludes mutating registry operations and does not
 change project registration, archive handling, path normalization, or CLI
 behavior. Additional callers will move in separate bounded packages.
+
+Package 3 verification completed on commit `375aa4c`: Validation #86 passed
+on Ubuntu and Windows, including the standalone hook tests, and the dependent
+[Docker #86](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33995608696)
+run passed as well. The corresponding
+[Validation #86](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33995287852)
+run is the revision-bound CI evidence for this package.
 
 ## Compatibility rules
 
