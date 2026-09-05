@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-07 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
+**Status:** `PRE-07 VERIFIED / NEXT: PRE-08`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -281,14 +281,20 @@ MemoryStore truth path.
   safety quarantine behavior for proposals, hypotheticals, questions, quotes,
   and secrets.
 
-Local verification for the PRE-07 implementation:
+Verification for the PRE-07 implementation commit `964602c74976f148140bb82ddd23c886061ed31b` and fix commits:
 
 - Bundled Python `compileall` passed for `scripts/` and `tests/`.
 - Focused PRE-07 smoke passed: blocker-to-state commit, memory candidate
   skip, provenance/target rejection, and revision advancement.
+- Boundary tests cover classification, dry-run, all typed operations,
+  lifecycle resolution, invalid transitions, archived/unknown projects,
+  batch isolation, and MemoryStore immutability.
+- [Validation #70](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33988579152):
+  success on Ubuntu and Windows, including unit, integration, coverage,
+  privacy, security, evaluation, router, authority, compiler, and Foundation
+  graduation gates.
 - The bundled local runtime does not include `pytest`; full test verification
-  is therefore delegated to CI and this status remains pending until the
-  remote validation workflow is green.
+  is recorded from the green remote validation workflow above.
 
 ## PRE-00 completion criteria
 
