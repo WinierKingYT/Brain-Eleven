@@ -96,6 +96,27 @@ the V2 capture pipeline graduates.
 Every package must add deterministic tests and receive a separate read-only
 review before the next package changes canonical behavior.
 
+## PRE-01 — Capture event contract
+
+PRE-01 is deliberately limited to parsing and identifying hook events. Its
+versioned contract accepts only `SESSION_END` and `USER_PROMPT_SUBMIT` payloads
+with a bounded session identity, project root and timezone-aware event time.
+Session-end events require a transcript locator; prompt events retain only a
+SHA-256 digest and length, never raw prompt text.
+
+- Project identity is resolved read-only through `ProjectRegistry`; unknown
+  projects remain `unresolved`, archived projects remain archived, and a
+  corrupt registry raises an explicit error.
+- Event and idempotency IDs are deterministic. Replaying the same session-end
+  or prompt event produces the same identifiers; no queue or canonical effect
+  exists in this package.
+- The parser rejects malformed JSON, oversize input, unsupported fields and
+  caller-supplied project-ID overrides. It does not open transcript paths,
+  enqueue jobs, change hooks, or write MemoryStore/StateStore data.
+
+PRE-02 will add the durable at-least-once queue and hook fast-path integration
+on top of this contract.
+
 ## PRE-00 completion criteria
 
 - The Foundation candidate SHA, CI run, and derived evidence are recorded.
