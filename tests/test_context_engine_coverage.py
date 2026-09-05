@@ -18,6 +18,7 @@ def _document(*, core_covered: int = 85, total: float = 85.0) -> dict:
             "context_router/router.py": _file(100, core_covered),
             "authority/resolver.py": _file(100, core_covered),
             "context_compiler_v2/compiler.py": _file(100, core_covered),
+            "retrieval_decision_v2/engine.py": _file(100, core_covered),
             "scripts/task_model.py": _file(100, core_covered),
             "scripts/task_state_context.py": _file(100, core_covered),
             "scripts/state_store.py": _file(100, core_covered),
