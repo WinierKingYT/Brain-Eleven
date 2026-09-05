@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -19,8 +20,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from memory_scope import GLOBAL_SCOPE, infer_memory_scope, scoped_fingerprint
-from memory_store import MemoryStore, MemoryStoreConflict, MemoryStoreCorrupt, no_change
+from brain_eleven.memory import MemoryStore, MemoryStoreConflict, MemoryStoreCorrupt, no_change
 
 
 class TruthError(RuntimeError):

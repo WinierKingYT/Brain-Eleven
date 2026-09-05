@@ -12,13 +12,18 @@ import argparse
 import json
 import os
 import re
+import sys
 import tempfile
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
-from memory_store import MemoryStore, MemoryStoreCorrupt
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.memory import MemoryStore, MemoryStoreCorrupt
 from memory_store_lock import MemoryStoreLockTimeout, file_lock
 
 

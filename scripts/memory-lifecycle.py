@@ -18,7 +18,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
-from memory_store import MemoryStore
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.memory import MemoryStore
 
 
 class MemoryLifecycleManager:

@@ -34,6 +34,12 @@ STATE_MUTATION_CALLERS = (
     "scripts/state_resolver.py",
 )
 
+MEMORY_MUTATION_CALLERS = (
+    "scripts/memory-lifecycle.py",
+    "scripts/memory_truth.py",
+    "scripts/memory_provenance.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -69,6 +75,14 @@ def test_state_resolver_preserves_packaged_store_identity() -> None:
 
     assert ResolverMemoryStore is MemoryStore
     assert ResolverStateStore is StateStore
+
+
+def test_memory_mutation_callers_use_packaged_memory_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in MEMORY_MUTATION_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "memory_store" not in imports, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
 
 
 def test_memory_callers_preserve_canonical_object_identity() -> None:
