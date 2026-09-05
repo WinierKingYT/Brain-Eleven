@@ -219,8 +219,13 @@ class StateBoundary:
                 record = self.service.registry.get(project_id)
             except ProjectRegistryError:
                 return _error_result(BoundaryStatus.FAILED, "PROJECT_REGISTRY_UNAVAILABLE", candidate_id=candidate_id, project_id=project_id, operation=operation)
-            reason = "PROJECT_ARCHIVED" if record and record.get("status") == "archived" else "STATE_NOT_INITIALIZED"
-            status = BoundaryStatus.SCOPE_ERROR if reason == "PROJECT_ARCHIVED" else BoundaryStatus.FAILED
+            if record is None:
+                reason = "PROJECT_UNKNOWN"
+            elif record.get("status") == "archived":
+                reason = "PROJECT_ARCHIVED"
+            else:
+                reason = "STATE_NOT_INITIALIZED"
+            status = BoundaryStatus.SCOPE_ERROR if reason in {"PROJECT_UNKNOWN", "PROJECT_ARCHIVED"} else BoundaryStatus.FAILED
             return _error_result(status, reason, candidate_id=candidate_id, project_id=project_id, operation=operation)
         if not commit:
             return BoundaryResult(

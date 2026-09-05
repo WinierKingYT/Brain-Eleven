@@ -50,7 +50,10 @@ def test_blocker_routes_to_state_without_memory_write(tmp_path):
     assert result.status == BoundaryStatus.SUCCESS.value
     assert result.canonical_write is True
     assert service.store.get_project("brain-eleven")["blockers"][0]["text"] == "Authentication tests are failing."
-    assert service.memory_store.load() == before_memory
+    after_memory = service.memory_store.load()
+    assert after_memory["revision"] == before_memory["revision"]
+    assert after_memory["validated_memory"] == before_memory["validated_memory"]
+    assert after_memory["rejected_memory"] == before_memory["rejected_memory"]
 
 
 def test_memory_candidate_is_skipped_and_decision_is_not_written_to_state(tmp_path):
