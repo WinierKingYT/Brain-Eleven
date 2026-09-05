@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–5)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–6)
 
 ## Purpose
 
@@ -134,6 +134,27 @@ run passed as well. The corresponding
 [Validation #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997369425)
 run is the revision-bound CI evidence for this package.
 
+## Package 6 — state mutation and CLI caller migration
+
+The typed state CLI, state-boundary proposal adapter, and read-only state
+resolver now import canonical stores through `brain_eleven.state` and
+`brain_eleven.memory`. This completes the next bounded caller migration while
+preserving the existing standalone CLI bootstrap, schemas, filesystem paths,
+revision/locking behavior, and persistence ownership. The legacy store modules
+remain compatibility/backing edges; they were not duplicated or rewritten.
+
+Package 6 adds an AST boundary check for the migrated state callers and
+identity checks proving that resolver references are the same canonical
+`MemoryStore` and `StateStore` objects exposed by the package namespaces.
+
+Package 6 verification completed on commit `47ab1d3`: Validation #93 passed
+on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence,
+and Context Engine Foundation graduation. The dependent
+[Docker #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998686433)
+run passed as well. The corresponding
+[Validation #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998344239)
+run is the revision-bound CI evidence for this package.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -146,7 +167,8 @@ run is the revision-bound CI evidence for this package.
 
 ## Next bounded migrations
 
-1. migrate the next bounded set of mutation and CLI callers to the new surfaces;
+1. migrate the next bounded set of canonical memory mutation/lifecycle callers
+   to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.

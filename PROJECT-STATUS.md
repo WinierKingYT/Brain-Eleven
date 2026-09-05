@@ -1,7 +1,7 @@
 # Brain-Eleven v3 — Current Project Status
 
 **Last updated:** 2026-09-06
-**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-12 PACKAGE 5 VERIFIED / NEXT: PRE-12 PACKAGE 6**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; the current head `f095015` extends the package boundary to bounded memory/state callers while preserving legacy parity. [Validation run #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997369425) and [Docker run #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997674238) passed.
+**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-12 PACKAGE 6 VERIFIED / NEXT: PRE-12 PACKAGE 7**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; the current head `47ab1d3` extends the package boundary to typed state mutation, state-boundary, and resolver callers while preserving legacy parity. [Validation run #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998344239) and [Docker run #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998686433) passed.
 
 ## Status vocabulary
 
@@ -67,7 +67,7 @@ program is graduated.
 | PRE-09 Diversity, coverage and density | **VERIFIED** | `f78ffc3` / `4f730b1`; Validation #77; Docker #77. |
 | PRE-10 Compiler V2 production hardening | **VERIFIED** | `53e16c9`; Validation #78; [Docker run #78](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992047104). Profile budgets, final render remeasurement, cache content-safety checks and expanded secret screening are verified. Runtime promotion remains deferred; V1 and SessionStart remain active. |
 | PRE-11 Private real-use evaluation and derived feedback | **VERIFIED** | `64604f3`; [Validation #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992641072); [Docker #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992964482). Local-only annotations, explicit private-data boundary, deterministic scoring and non-authoritative observable usage telemetry are covered. |
-| PRE-12 Repository consolidation | **IN PROGRESS** | Packages 1–5 verified. `brain_eleven.projects.registry`, `brain_eleven.memory`, and `brain_eleven.state` expose the canonical implementations with import/behavior parity; bounded router, authority, evaluation, and benchmark callers now use the memory/state package surfaces. Package 5 is bound to `f095015`, [Validation #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997369425), and [Docker #91](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33997674238). Remaining work is the next bounded mutation/CLI migration and legacy-adapter reduction. |
+| PRE-12 Repository consolidation | **IN PROGRESS** | Packages 1–6 verified. `brain_eleven.projects.registry`, `brain_eleven.memory`, and `brain_eleven.state` expose the canonical implementations with import/behavior parity; bounded router, authority, evaluation, benchmark, typed state CLI, state-boundary, and resolver callers now use the package surfaces. Package 6 is bound to `47ab1d3`, [Validation #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998344239), and [Docker #93](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33998686433). Remaining work is the next bounded canonical memory mutation/lifecycle caller migration and legacy-adapter reduction. |
 
 ## Runtime graduation evidence
 
