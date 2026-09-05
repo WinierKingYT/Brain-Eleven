@@ -23,7 +23,7 @@ if str(_ROOT) not in sys.path:
 
 from extraction import NewMemoryCandidate, StateMutationProposal, StateOperation
 from brain_eleven.projects.registry import ProjectRegistryError
-from state_store import (
+from brain_eleven.state import (
     StateError,
     StateProjectArchived,
     StateProjectUnknown,

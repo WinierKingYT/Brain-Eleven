@@ -13,9 +13,9 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from memory_store import MemoryStore, MemoryStoreError
+from brain_eleven.memory import MemoryStore, MemoryStoreError
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
-from state_store import StateStore, StateStoreCorrupt
+from brain_eleven.state import StateStore, StateStoreCorrupt
 
 
 STATE_AVAILABLE = "AVAILABLE"

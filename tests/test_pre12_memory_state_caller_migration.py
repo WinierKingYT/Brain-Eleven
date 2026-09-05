@@ -28,6 +28,12 @@ CALLERS = (
     "evals/router_benchmark.py",
 )
 
+STATE_MUTATION_CALLERS = (
+    "scripts/state.py",
+    "scripts/state_boundary.py",
+    "scripts/state_resolver.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -44,6 +50,25 @@ def test_core_and_evaluation_callers_use_packaged_store_surfaces() -> None:
         imports = _imports(root / relative_path)
         assert "memory_store" not in imports, relative_path
         assert "state_store" not in imports, relative_path
+
+
+def test_state_mutation_and_cli_callers_use_packaged_state_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in STATE_MUTATION_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "state_store" not in imports, relative_path
+        assert "brain_eleven.state" in imports, relative_path
+
+
+def test_state_resolver_preserves_packaged_store_identity() -> None:
+    from state_resolver import MemoryStore as ResolverMemoryStore
+    from state_resolver import StateStore as ResolverStateStore
+
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.state import StateStore
+
+    assert ResolverMemoryStore is MemoryStore
+    assert ResolverStateStore is StateStore
 
 
 def test_memory_callers_preserve_canonical_object_identity() -> None:
