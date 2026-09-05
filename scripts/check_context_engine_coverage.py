@@ -15,6 +15,7 @@ CORE_GROUPS = {
     "context_router": ("context_router/",),
     "authority": ("authority/",),
     "context_compiler_v2": ("context_compiler_v2/",),
+    "retrieval_decision_v2": ("retrieval_decision_v2/",),
     "task_state": (
         "scripts/task_model.py", "scripts/task_state_context.py", "scripts/state_store.py",
         "scripts/state_resolver.py", "scripts/state.py",
