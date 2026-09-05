@@ -1,6 +1,6 @@
 # Pre-Phase 20 — Core Intelligence Hardening Contract
 
-**Status:** `PRE-06 VERIFIED / NEXT: PRE-07`
+**Status:** `PRE-07 IMPLEMENTED LOCALLY / CI VERIFICATION PENDING`
 
 This is the controlled pre-Phase 20 program. It strengthens how
 Brain-Eleven acquires, validates, represents, selects, and delivers memory.
@@ -253,6 +253,42 @@ Verification for the PRE-06 implementation commit `9fdc3293f435c78cf1bb96a1af3d9
   privacy, security, evaluation and Foundation-graduation regression gates.
 - [Docker #65](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33987238334):
   success.
+
+## PRE-07 — State boundary integration
+
+PRE-07 adds `scripts/state_boundary.py`, the only adapter between extraction
+state proposals and the existing typed `StateService`. Current operational
+facts are routed to canonical project state; durable decisions, lessons,
+preferences, and open-loop memories remain outside this boundary for the
+MemoryStore truth path.
+
+- `ADD_BLOCKER`, `ADD_WORK_ITEM`, `SET_OBJECTIVE`, `SET_CURRENT_PHASE`, and
+  `ADD_REQUIREMENT` use StateService typed mutations. Resolution operations
+  require an explicit target ID; the boundary never guesses a lifecycle
+  target from free text.
+- Unknown or archived projects, missing state initialization, wrong-project
+  proposals, invalid transitions, stale revisions, corrupt state, and invalid
+  provenance fail closed with stable status/reason codes. No project is
+  auto-registered.
+- Only `COMMITTED` and `OBSERVED` proposals with trusted `user`, `system`, or
+  `tool` provenance can be committed. AI-proposed, ambiguous, or missing
+  provenance remains review-only. Dry-run and classification paths perform no
+  canonical write.
+- State routing never writes MemoryStore. Batch routing carries the latest
+  per-project revision forward and rejects proposals for other projects.
+- Extraction now recognizes requirement proposals and treats explicit
+  resolved operational facts as observations, while preserving the existing
+  safety quarantine behavior for proposals, hypotheticals, questions, quotes,
+  and secrets.
+
+Local verification for the PRE-07 implementation:
+
+- Bundled Python `compileall` passed for `scripts/` and `tests/`.
+- Focused PRE-07 smoke passed: blocker-to-state commit, memory candidate
+  skip, provenance/target rejection, and revision advancement.
+- The bundled local runtime does not include `pytest`; full test verification
+  is therefore delegated to CI and this status remains pending until the
+  remote validation workflow is green.
 
 ## PRE-00 completion criteria
 

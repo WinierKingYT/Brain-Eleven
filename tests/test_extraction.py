@@ -104,6 +104,16 @@ def test_secret_candidate_is_quarantined_before_any_memory_or_state_output(tmp_p
     assert result.quarantined[0].reason == "potential_secret"
 
 
+def test_requirement_fact_becomes_typed_state_proposal(tmp_path):
+    result = DeterministicExtractor().extract(
+        _batch(tmp_path, [{"role": "user", "content": "Security requirement must be met."}])
+    )
+
+    assert len(result.candidates) == 1
+    assert isinstance(result.candidates[0], StateMutationProposal)
+    assert result.candidates[0].operation == "ADD_REQUIREMENT"
+
+
 def test_machine_output_can_omit_candidate_text_for_safe_telemetry(tmp_path):
     result = DeterministicExtractor().extract(
         _batch(tmp_path, [{"role": "user", "content": "SQLite kullanacağız."}])

@@ -54,6 +54,8 @@ class StateOperation(str, Enum):
     SET_CURRENT_PHASE = "SET_CURRENT_PHASE"
     ADD_WORK_ITEM = "ADD_WORK_ITEM"
     SET_OBJECTIVE = "SET_OBJECTIVE"
+    ADD_REQUIREMENT = "ADD_REQUIREMENT"
+    RESOLVE_REQUIREMENT = "RESOLVE_REQUIREMENT"
 
 
 @dataclass(frozen=True)
@@ -127,6 +129,7 @@ _PREFERENCE = re.compile(r"\b(?:prefer|preference|favorite|tercih ederim|seviyor
 _CURRENT = re.compile(r"\b(?:currently|right now|still|blocked|blocker|failing|fails|in progress|active|şu anda|hâlâ|engelliyor|blokaj|fail|çalışmıyor|devam ediyor|aktif)\b", re.IGNORECASE)
 _RESOLVED = re.compile(r"\b(?:resolved|fixed|closed|unblocked|çözüldü|kapatıldı|düzeldi|giderildi)\b", re.IGNORECASE)
 _PHASE = re.compile(r"\b(?:phase|faz|aşama)\s*[- ]?(\d+(?:[A-Za-z])?)\b", re.IGNORECASE)
+_REQUIREMENT = re.compile(r"\b(?:requirement|requirements|required|must|gereksinim|zorunlu|olmalı|gerekir)\b", re.IGNORECASE)
 
 
 def _candidate_id(message: EvidenceMessage, index: int, kind: str) -> str:
@@ -155,7 +158,7 @@ def _classify_commitment(content: str, role: str) -> Commitment:
         return Commitment.NEGATED
     if _DECISION.search(content) or re.search(r"\b(?:tamam|evet),?\s+.+\b(?:kullan|yap|geç)\w*", content, re.IGNORECASE):
         return Commitment.COMMITTED
-    if _CURRENT.search(content):
+    if _CURRENT.search(content) or _RESOLVED.search(content) or _REQUIREMENT.search(content):
         return Commitment.OBSERVED
     return Commitment.UNCERTAIN
 
@@ -179,6 +182,10 @@ def _state_operation(content: str) -> Optional[str]:
         return StateOperation.ADD_BLOCKER.value
     if _PHASE.search(content) and re.search(r"\b(?:current|şu anda|aktif|doing|yapıyoruz|üzerindeyiz)\b", content, re.IGNORECASE):
         return StateOperation.SET_CURRENT_PHASE.value
+    if _RESOLVED.search(content) and _REQUIREMENT.search(content):
+        return StateOperation.RESOLVE_REQUIREMENT.value
+    if _REQUIREMENT.search(content):
+        return StateOperation.ADD_REQUIREMENT.value
     return None
 
 
