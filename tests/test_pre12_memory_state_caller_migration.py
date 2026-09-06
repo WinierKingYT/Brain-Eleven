@@ -135,6 +135,10 @@ OPERATIONAL_MEMORY_CALLERS = (
     "scripts/session_pipeline.py",
 )
 
+API_MEMORY_CALLERS = (
+    "scripts/search-api.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -248,6 +252,16 @@ def test_operational_memory_callers_use_packaged_surface() -> None:
     for relative_path in OPERATIONAL_MEMORY_CALLERS:
         imports = _imports(root / relative_path)
         source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_store import" not in source, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_api_memory_callers_use_packaged_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in API_MEMORY_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_scope import" not in source, relative_path
         assert "from memory_store import" not in source, relative_path
         assert "brain_eleven.memory" in imports, relative_path
 

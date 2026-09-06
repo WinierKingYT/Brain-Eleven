@@ -74,9 +74,13 @@ try:
     from brain_eleven.graph import KnowledgeGraph
     from brain_eleven.extraction import EntityExtractor
     from chat_interface import ChatAgent
-    from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
+    from brain_eleven.memory import (
+        filter_memories,
+        infer_memory_scope,
+        scoped_fingerprint,
+    )
     from brain_eleven.projects.registry import registry_path as project_registry_path
-    from memory_store import MemoryStore, MemoryStoreConflict
+    from brain_eleven.memory import MemoryStore, MemoryStoreConflict
     from capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
