@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–7)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–10)
 
 ## Purpose
 
@@ -226,6 +226,33 @@ and [Docker #100](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, and Foundation graduation.
 
+## Package 10 — search surface and caller migration
+
+Search now has a stable package boundary at `brain_eleven.search`. The
+package re-exports the existing `MemoryRetriever`, `HybridSearchEngine`,
+`SearchResult`, and `MLRanker` implementations through one compatibility-safe
+surface. A shared legacy-module loader keeps direct execution portable while
+ensuring package imports and the legacy modules resolve to the same objects.
+
+The chat interface and search API now consume the package surface instead of
+loading the search implementations independently. The historical hyphenated
+scripts remain adapters/backing modules for compatibility; search behavior,
+ranking, result shape, and CLI/API behavior are unchanged. The direct hybrid
+search entrypoint also bootstraps the repository root before importing the
+package, so it remains usable from outside the repository working directory.
+
+Package 10 adds an AST caller-boundary test and an object-identity test. The
+tests reject new direct search implementation imports in migrated callers and
+prove that package and legacy references are identical. The shared loader
+also removes repeated dynamic-loading logic from the migrated search callers
+without changing the remaining legacy adapters.
+
+Package 10 implementation verification completed on commit `5d4dec5`:
+[Validation #103](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34002168314)
+and [Docker #103](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34002459052)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, and Foundation graduation.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -238,7 +265,7 @@ evidence, and Foundation graduation.
 
 ## Next bounded migrations
 
-1. migrate the next bounded search and API callers to the new surfaces;
+1. migrate the next bounded API and support callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
