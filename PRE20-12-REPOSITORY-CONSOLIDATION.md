@@ -419,6 +419,24 @@ and [Docker #119](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3401
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 18 — packaged operational memory callers
+
+Package 18 migrates the operational SessionEnd pipeline and post-session
+maintenance caller to the packaged `brain_eleven.memory` surface. Existing
+standalone behavior, canonical schema, lifecycle semantics, locking, and
+failure handling remain unchanged; the bounded repository-root bootstrap is
+retained where a script is executed directly.
+
+The migration adds AST boundary coverage for the operational callers and
+preserves the package/legacy parity suite. Local verification passed with 42
+targeted tests, zero fatal flake8 findings, and a clean compile check.
+
+Package 18 verification completed on commit `44c31b5`:
+[Validation #121](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34019795759)
+and [Docker #121](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34020117718)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
