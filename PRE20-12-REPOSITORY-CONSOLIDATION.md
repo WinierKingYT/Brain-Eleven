@@ -400,6 +400,25 @@ and [Docker #117](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3401
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 17 — packaged backup and validator callers
+
+Package 17 migrates the canonical backup/restore adapter and the memory
+validator to the packaged `brain_eleven.memory` surface. Backup also uses the
+packaged `brain_eleven.state` surface for state validation. The validator keeps
+its standalone script entry point through a bounded repository-root bootstrap;
+no canonical schema, lifecycle, scope, locking, or restore semantics change.
+
+The migration adds AST boundary coverage for both compatibility callers and
+continues to require package/legacy parity through the existing regression
+suite. Local verification passed with 54 targeted tests, zero fatal flake8
+findings, and a clean compile check.
+
+Package 17 verification completed on commit `5d70931`:
+[Validation #119](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34019373560)
+and [Docker #119](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34019658358)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
