@@ -12,6 +12,7 @@ import secrets
 import json
 import os
 import shutil
+import sys
 import tempfile
 import time
 import time
@@ -20,9 +21,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from memory_store import MemoryStore, MemoryStoreError
-from memory_store_lock import MemoryStoreLockTimeout, file_lock
-from project_registry import ProjectRegistry, ProjectRegistryError
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+try:
+    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
+    from brain_eleven.memory import MemoryStore, MemoryStoreError
+    from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
+    if exc.name != "brain_eleven":
+        raise
+    from memory_store import MemoryStore, MemoryStoreError
+    from memory_store_lock import MemoryStoreLockTimeout, file_lock
+    from project_registry import ProjectRegistry, ProjectRegistryError
 
 
 STATE_SCHEMA_VERSION = 1

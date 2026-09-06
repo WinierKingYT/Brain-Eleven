@@ -158,6 +158,11 @@ LOCK_IMPLEMENTATION_CALLERS = (
     "scripts/project_registry.py",
 )
 
+CORE_IMPLEMENTATION_CALLERS = (
+    "scripts/memory_store.py",
+    "scripts/state_store.py",
+)
+
 STATE_RESOLUTION_CALLERS = (
     "context_router/adapters.py",
     "authority/adapters.py",
@@ -335,6 +340,18 @@ def test_registry_implementation_uses_packaged_locking() -> None:
         imports = _imports(root / relative_path)
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "brain_eleven.infrastructure.locking" in imports, relative_path
+
+
+def test_core_implementations_use_packaged_dependencies() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in CORE_IMPLEMENTATION_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "brain_eleven.infrastructure.locking" in imports, relative_path
+        if relative_path == "scripts/state_store.py":
+            assert "brain_eleven.memory" in imports, relative_path
+            assert "brain_eleven.projects.registry" in imports, relative_path
+        assert "from memory_store import" not in source or relative_path == "scripts/state_store.py"
 
 
 def test_state_resolution_callers_use_packaged_resolver_surface() -> None:

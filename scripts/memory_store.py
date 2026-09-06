@@ -9,13 +9,23 @@ and is protected by the existing cross-platform sidecar lock.
 import json
 import os
 import shutil
+import sys
 import tempfile
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple, Union
 
-from memory_store_lock import memory_store_lock
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+try:
+    from brain_eleven.infrastructure.locking import memory_store_lock
+except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
+    if exc.name != "brain_eleven":
+        raise
+    from memory_store_lock import memory_store_lock
 
 
 CANONICAL_SCHEMA_VERSION = 2
