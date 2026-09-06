@@ -18,27 +18,14 @@ from typing import List, Dict, Optional
 from memory_scope import filter_memories
 from memory_scope import infer_memory_scope
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent))
-
-import importlib.util
+from brain_eleven._legacy import load_legacy_module
 
 # Load semantic search
-spec = importlib.util.spec_from_file_location(
-    "semantic_search",
-    Path(__file__).parent / "semantic-search.py"
-)
-semantic_search_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(semantic_search_module)
+semantic_search_module = load_legacy_module("semantic_search", "semantic-search.py")
 SemanticSearchEngine = semantic_search_module.SemanticSearchEngine
 
 # Load retriever (Phase 4)
-spec = importlib.util.spec_from_file_location(
-    "memory_retriever",
-    Path(__file__).parent / "memory-retriever.py"
-)
-memory_retriever = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(memory_retriever)
+memory_retriever = load_legacy_module("memory_retriever", "memory-retriever.py")
 MemoryRetriever = memory_retriever.MemoryRetriever
 
 

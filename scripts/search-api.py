@@ -53,18 +53,21 @@ def _load_hyphenated_module(name: str, filename: str):
 
 
 # Import our components. cache_manager and logging_config use underscores
-# and are directly importable; the rest use hyphenated filenames and must
-# be loaded via importlib.
+# and are directly importable; the remaining legacy validator/embedding
+# adapters still use importlib until their bounded migrations are complete.
 try:
-    _memory_retriever = _load_hyphenated_module("memory_retriever", "memory-retriever.py")
-    _hybrid_search = _load_hyphenated_module("hybrid_search", "hybrid-search.py")
-    _ml_ranker = _load_hyphenated_module("ml_ranker", "ml-ranker.py")
     _memory_validator = _load_hyphenated_module("memory_validator", "memory-validator.py")
 
-    MemoryRetriever = _memory_retriever.MemoryRetriever
-    SearchResult = _memory_retriever.SearchResult
-    HybridSearchEngine = _hybrid_search.HybridSearchEngine
-    MLRanker = _ml_ranker.MLRanker
+    from brain_eleven.search import (
+        HybridSearchEngine,
+        MLRanker as PackagedMLRanker,
+        MemoryRetriever,
+        SearchResult,
+    )
+
+    # Keep the API's historical names stable while the search surface moves
+    # behind the package boundary.
+    MLRanker = PackagedMLRanker
     MemoryValidator = _memory_validator.MemoryValidator
 
     from cache_manager import CacheManager

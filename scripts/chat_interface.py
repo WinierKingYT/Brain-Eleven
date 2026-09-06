@@ -24,7 +24,6 @@ data - the retrieval/grounding stays deterministic either way.
 import re
 import json
 import uuid
-import importlib.util
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -40,18 +39,9 @@ from summarizer import MemorySummarizer
 from anomaly_detector import AnomalyDetector
 from brain_eleven.graph import KnowledgeGraph
 from memory_scope import filter_memories
+from brain_eleven.search import HybridSearchEngine, MemoryRetriever
 
 logger = setup_logging(__name__)
-
-SCRIPTS_DIR = Path(__file__).parent
-
-
-def _load_hyphenated_module(name: str, filename: str):
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS_DIR / filename)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
 
 class Intent(Enum):
     QUERY = "Query for information"
@@ -116,11 +106,8 @@ class ChatAgent:
         self.intent_classifier = IntentClassifier()
         self.conversations: Dict[str, ConversationContext] = {}
 
-        _memory_retriever = _load_hyphenated_module("memory_retriever", "memory-retriever.py")
-        _hybrid_search = _load_hyphenated_module("hybrid_search", "hybrid-search.py")
-
-        self.memory_retriever = _memory_retriever.MemoryRetriever(str(vault_path))
-        self.hybrid_search = _hybrid_search.HybridSearchEngine(str(vault_path))
+        self.memory_retriever = MemoryRetriever(str(vault_path))
+        self.hybrid_search = HybridSearchEngine(str(vault_path))
         self.summarizer = MemorySummarizer(str(vault_path))
         self.anomaly_detector = AnomalyDetector(str(vault_path))
         self.graph = KnowledgeGraph(str(vault_path))

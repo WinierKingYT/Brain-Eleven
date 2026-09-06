@@ -6,6 +6,12 @@ from pathlib import Path
 from brain_eleven.memory import MemoryStore as PackagedMemoryStore
 from brain_eleven.graph import KnowledgeGraph as PackagedKnowledgeGraph
 from brain_eleven.extraction import EntityExtractor as PackagedEntityExtractor
+from brain_eleven.search import (
+    HybridSearchEngine as PackagedHybridSearchEngine,
+    MLRanker as PackagedMLRanker,
+    MemoryRetriever as PackagedMemoryRetriever,
+    SearchResult as PackagedSearchResult,
+)
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -52,6 +58,11 @@ GRAPH_CALLERS = (
 ENTITY_CALLERS = (
     "scripts/memory_backup.py",
     "scripts/post_session_maintenance.py",
+    "scripts/search-api.py",
+)
+
+SEARCH_CALLERS = (
+    "scripts/chat_interface.py",
     "scripts/search-api.py",
 )
 
@@ -140,3 +151,27 @@ def test_extraction_surface_preserves_canonical_object_identity() -> None:
 def test_state_callers_preserve_canonical_object_identity() -> None:
     assert RouterProviderStateService is PackagedStateService
     assert TaskStateService is PackagedStateService
+
+
+def test_search_callers_use_packaged_search_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in SEARCH_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "brain_eleven.search" in imports, relative_path
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "memory-retriever.py" not in source, relative_path
+        assert "hybrid-search.py" not in source, relative_path
+
+
+def test_search_surface_preserves_cached_legacy_identity() -> None:
+    import importlib
+
+    legacy_retriever = importlib.import_module("memory_retriever")
+    legacy_hybrid = importlib.import_module("hybrid_search")
+    legacy_ranker = importlib.import_module("ml_ranker")
+
+    assert PackagedMemoryRetriever is legacy_retriever.MemoryRetriever
+    assert PackagedSearchResult is legacy_retriever.SearchResult
+    assert PackagedHybridSearchEngine is legacy_hybrid.HybridSearchEngine
+    assert PackagedMLRanker is legacy_ranker.MLRanker
+    assert legacy_hybrid.MemoryRetriever is PackagedMemoryRetriever
