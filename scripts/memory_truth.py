@@ -24,7 +24,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from memory_scope import GLOBAL_SCOPE, infer_memory_scope, scoped_fingerprint
+from brain_eleven.memory import GLOBAL_SCOPE, infer_memory_scope, scoped_fingerprint
 from brain_eleven.memory import MemoryStore, MemoryStoreConflict, MemoryStoreCorrupt, no_change
 
 

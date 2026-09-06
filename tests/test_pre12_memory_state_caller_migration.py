@@ -32,6 +32,11 @@ from brain_eleven.infrastructure.locking import (
     memory_store_lock as PackagedMemoryStoreLock,
 )
 from brain_eleven.lifecycle import MemoryLifecycleManager as PackagedMemoryLifecycleManager
+from brain_eleven.memory.truth import (
+    MemoryTruthEngine as PackagedMemoryTruthEngine,
+    TruthAction as PackagedTruthAction,
+    TruthStatus as PackagedTruthStatus,
+)
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -111,6 +116,10 @@ LIFECYCLE_CALLERS = (
     "scripts/dedupe-validated-memory.py",
 )
 
+TRUTH_SCOPE_CALLERS = (
+    "scripts/memory_truth.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -178,6 +187,23 @@ def test_lifecycle_surface_preserves_legacy_object_identity() -> None:
 
     legacy = importlib.import_module("memory_lifecycle")
     assert PackagedMemoryLifecycleManager is legacy.MemoryLifecycleManager
+
+
+def test_truth_callers_use_packaged_memory_scope_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in TRUTH_SCOPE_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "memory_scope" not in imports, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_truth_surface_preserves_legacy_object_identity() -> None:
+    import importlib
+
+    legacy = importlib.import_module("memory_truth")
+    assert PackagedMemoryTruthEngine is legacy.MemoryTruthEngine
+    assert PackagedTruthAction is legacy.TruthAction
+    assert PackagedTruthStatus is legacy.TruthStatus
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from memory_truth import MemoryTruthEngine, TruthAction, TruthStatus
+from brain_eleven.memory.truth import MemoryTruthEngine, TruthAction, TruthStatus
 
 
 def _store(vault, memories, revision=4):
