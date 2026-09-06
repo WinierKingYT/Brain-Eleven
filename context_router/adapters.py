@@ -12,7 +12,7 @@ _SCRIPTS = _ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from knowledge_graph import KnowledgeGraph  # noqa: E402
+from brain_eleven.graph import KnowledgeGraph  # noqa: E402
 from memory_scope import infer_memory_scope  # noqa: E402
 from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
 from brain_eleven.projects.registry import (  # noqa: E402

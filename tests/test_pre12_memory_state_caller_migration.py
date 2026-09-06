@@ -4,6 +4,7 @@ import ast
 from pathlib import Path
 
 from brain_eleven.memory import MemoryStore as PackagedMemoryStore
+from brain_eleven.graph import KnowledgeGraph as PackagedKnowledgeGraph
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -38,6 +39,13 @@ MEMORY_MUTATION_CALLERS = (
     "scripts/memory-lifecycle.py",
     "scripts/memory_truth.py",
     "scripts/memory_provenance.py",
+)
+
+GRAPH_CALLERS = (
+    "context_router/adapters.py",
+    "scripts/entity_extractor.py",
+    "scripts/chat_interface.py",
+    "scripts/search-api.py",
 )
 
 
@@ -92,6 +100,20 @@ def test_memory_callers_preserve_canonical_object_identity() -> None:
     assert AuthorityProviderMemoryStore is PackagedMemoryStore
     assert CompilerProviderMemoryStore is PackagedMemoryStore
     assert TaskStateMemoryStore is PackagedMemoryStore
+
+
+def test_graph_callers_use_packaged_graph_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in GRAPH_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "knowledge_graph" not in imports, relative_path
+        assert "brain_eleven.graph" in imports, relative_path
+
+
+def test_graph_callers_preserve_canonical_object_identity() -> None:
+    from context_router.adapters import KnowledgeGraph as RouterKnowledgeGraph
+
+    assert RouterKnowledgeGraph is PackagedKnowledgeGraph
 
 
 def test_state_callers_preserve_canonical_object_identity() -> None:

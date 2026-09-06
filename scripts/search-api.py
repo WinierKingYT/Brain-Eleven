@@ -70,7 +70,7 @@ try:
     from cache_manager import CacheManager
     from summarizer import MemorySummarizer
     from anomaly_detector import AnomalyDetector
-    from knowledge_graph import KnowledgeGraph
+    from brain_eleven.graph import KnowledgeGraph
     from entity_extractor import EntityExtractor
     from chat_interface import ChatAgent
     from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
