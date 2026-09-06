@@ -70,9 +70,7 @@ try:
     MLRanker = PackagedMLRanker
     MemoryValidator = _memory_validator.MemoryValidator
 
-    from cache_manager import CacheManager
-    from summarizer import MemorySummarizer
-    from anomaly_detector import AnomalyDetector
+    from brain_eleven.support import CacheManager, AnomalyDetector, MemorySummarizer
     from brain_eleven.graph import KnowledgeGraph
     from brain_eleven.extraction import EntityExtractor
     from chat_interface import ChatAgent
@@ -84,7 +82,7 @@ except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 
 # Setup logging
-from logging_config import setup_logging
+from brain_eleven.support import setup_logging
 logger = setup_logging(__name__)
 
 

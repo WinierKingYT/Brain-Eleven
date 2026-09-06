@@ -12,6 +12,16 @@ from brain_eleven.search import (
     MemoryRetriever as PackagedMemoryRetriever,
     SearchResult as PackagedSearchResult,
 )
+from brain_eleven.support import (
+    AnomalyDetector as PackagedAnomalyDetector,
+    CacheManager as PackagedCacheManager,
+    DiskCache as PackagedDiskCache,
+    LRUCache as PackagedLRUCache,
+    MemorySummarizer as PackagedMemorySummarizer,
+    jaccard_similarity as PackagedJaccardSimilarity,
+    setup_logging as PackagedSetupLogging,
+    tokenize as PackagedTokenize,
+)
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -63,6 +73,12 @@ ENTITY_CALLERS = (
 
 SEARCH_CALLERS = (
     "scripts/chat_interface.py",
+    "scripts/search-api.py",
+)
+
+SUPPORT_CALLERS = (
+    "scripts/chat_interface.py",
+    "scripts/post_session_maintenance.py",
     "scripts/search-api.py",
 )
 
@@ -175,3 +191,31 @@ def test_search_surface_preserves_cached_legacy_identity() -> None:
     assert PackagedHybridSearchEngine is legacy_hybrid.HybridSearchEngine
     assert PackagedMLRanker is legacy_ranker.MLRanker
     assert legacy_hybrid.MemoryRetriever is PackagedMemoryRetriever
+
+
+def test_support_callers_use_packaged_support_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in SUPPORT_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "brain_eleven.support" in imports, relative_path
+        for legacy_name in ("logging_config", "summarizer", "anomaly_detector", "cache_manager"):
+            assert f"from {legacy_name} import" not in source, relative_path
+
+
+def test_support_surface_preserves_cached_legacy_identity() -> None:
+    import importlib
+
+    legacy_logging = importlib.import_module("logging_config")
+    legacy_summarizer = importlib.import_module("summarizer")
+    legacy_anomaly = importlib.import_module("anomaly_detector")
+    legacy_cache = importlib.import_module("cache_manager")
+
+    assert PackagedSetupLogging is legacy_logging.setup_logging
+    assert PackagedMemorySummarizer is legacy_summarizer.MemorySummarizer
+    assert PackagedTokenize is legacy_summarizer.tokenize
+    assert PackagedJaccardSimilarity is legacy_summarizer.jaccard_similarity
+    assert PackagedAnomalyDetector is legacy_anomaly.AnomalyDetector
+    assert PackagedLRUCache is legacy_cache.LRUCache
+    assert PackagedDiskCache is legacy_cache.DiskCache
+    assert PackagedCacheManager is legacy_cache.CacheManager

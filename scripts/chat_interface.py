@@ -34,9 +34,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from logging_config import setup_logging
-from summarizer import MemorySummarizer
-from anomaly_detector import AnomalyDetector
+from brain_eleven.support import AnomalyDetector, MemorySummarizer, setup_logging
 from brain_eleven.graph import KnowledgeGraph
 from memory_scope import filter_memories
 from brain_eleven.search import HybridSearchEngine, MemoryRetriever
