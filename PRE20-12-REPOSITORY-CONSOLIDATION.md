@@ -454,6 +454,23 @@ and [Docker #123](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3402
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 20 — packaged manual capture caller
+
+Package 20 migrates the explicit `/remember` adapter's scope and identity
+imports to the packaged `brain_eleven.memory` surface. The opt-in gate,
+validator/entity-extraction pipeline, canonical write path, and manual capture
+semantics remain unchanged.
+
+The migration adds AST boundary coverage for the manual capture caller and
+preserves the package/legacy parity suite. Local verification passed with 52
+targeted tests, zero fatal flake8 findings, and a clean compile check.
+
+Package 20 verification completed on commit `7156fc6`:
+[Validation #125](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34021204673)
+and [Docker #125](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34021514925)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
