@@ -26,6 +26,11 @@ from brain_eleven.support import (
     setup_logging as PackagedSetupLogging,
     tokenize as PackagedTokenize,
 )
+from brain_eleven.infrastructure.locking import (
+    MemoryStoreLockTimeout as PackagedMemoryStoreLockTimeout,
+    file_lock as PackagedFileLock,
+    memory_store_lock as PackagedMemoryStoreLock,
+)
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -92,6 +97,13 @@ SCOPE_CALLERS = (
     "context_compiler_v2/adapters.py",
     "scripts/chat_interface.py",
     "scripts/hybrid-search.py",
+)
+
+LOCK_CALLERS = (
+    "scripts/capture_queue.py",
+    "scripts/evidence.py",
+    "scripts/memory_provenance.py",
+    "evals/private_eval/usage.py",
 )
 
 
@@ -249,3 +261,23 @@ def test_scope_surface_preserves_cached_legacy_identity() -> None:
 
     assert PackagedFilterMemories is legacy_scope.filter_memories
     assert PackagedInferMemoryScope is legacy_scope.infer_memory_scope
+
+
+def test_lock_callers_use_packaged_infrastructure_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in LOCK_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "brain_eleven.infrastructure.locking" in imports, relative_path
+        if relative_path != "scripts/capture_queue.py":
+            assert "from memory_store_lock import" not in source, relative_path
+
+
+def test_lock_surface_preserves_cached_legacy_identity() -> None:
+    import importlib
+
+    legacy_lock = importlib.import_module("memory_store_lock")
+
+    assert PackagedMemoryStoreLockTimeout is legacy_lock.MemoryStoreLockTimeout
+    assert PackagedFileLock is legacy_lock.file_lock
+    assert PackagedMemoryStoreLock is legacy_lock.memory_store_lock

@@ -10,13 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-try:
-    from memory_store_lock import file_lock
-except ImportError:  # pragma: no cover - direct CLI execution fallback
-    scripts_dir = Path(__file__).resolve().parents[2] / "scripts"
-    if str(scripts_dir) not in sys.path:
-        sys.path.insert(0, str(scripts_dir))
-    from memory_store_lock import file_lock
+_ROOT = Path(__file__).resolve().parents[2]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.infrastructure.locking import file_lock
 
 
 USAGE_SCHEMA_VERSION = 1

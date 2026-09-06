@@ -20,6 +20,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from capture_event import (
     CAPTURE_EVENT_SCHEMA_VERSION,
     EVENT_TYPES,
@@ -28,7 +32,10 @@ from capture_event import (
     HookEvent,
     parse_native_hook_event_json,
 )
-from memory_store_lock import MemoryStoreLockTimeout, file_lock
+try:
+    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
+except ImportError:  # pragma: no cover - deployed copied-hook fallback
+    from memory_store_lock import MemoryStoreLockTimeout, file_lock
 
 
 CAPTURE_QUEUE_SCHEMA_VERSION = 1

@@ -24,7 +24,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.memory import MemoryStore, MemoryStoreCorrupt
-from memory_store_lock import MemoryStoreLockTimeout, file_lock
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 
 
 PROVENANCE_SCHEMA_VERSION = 1
