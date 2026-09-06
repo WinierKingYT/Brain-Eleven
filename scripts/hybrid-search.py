@@ -10,10 +10,15 @@ Together: Best of both worlds
 """
 
 import json
+import sys
 import numpy as np
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from memory_scope import filter_memories
 from memory_scope import infer_memory_scope
