@@ -530,6 +530,17 @@ The implementation and baseline-lineage commits are `c397581` and `6a38fbd`.
 The cumulative head passed [Validation #133](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023255427)
 and [Docker #132](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023381472).
 
+## Final closure audit
+
+The read-only PRE-12 closure audit completed on documented head `a77d88a`.
+The local unit boundary passed 593 tests, with 41 integration/graduation tests
+excluded by policy; critical flake8 findings were zero, compilation was clean,
+and the working tree was clean before the documentation commit. The final
+documentation revision passed [Validation #134](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023737859)
+and [Docker #134](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34024070166)
+on Ubuntu and Windows. This closes PRE-12; future work proceeds in Phase 20
+and must keep the package/legacy parity suite as a regression contract.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -547,8 +558,9 @@ and [Docker #132](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3402
 3. keep scripts as thin CLI/hook adapters only;
 4. retain the package/legacy parity suite as the PRE-12 regression contract.
 
-PRE-12 is complete only when the final audit confirms one maintained
+PRE-12 is complete because the final audit confirms one maintained
 implementation per responsibility, preserved CLI behavior, and a clean
 removal review for each legacy wrapper. Packages 22–24 satisfy the remaining
 caller and implementation-dependency migration; the final audit is a
-read-only closure check, not a new behavior package.
+read-only closure check, not a new behavior package. Phase 20 may now begin
+under the frozen foundation and explicit compatibility rules above.
