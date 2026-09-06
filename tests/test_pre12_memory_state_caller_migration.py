@@ -125,6 +125,11 @@ MEMORY_READ_CALLERS = (
     "scripts/memory-retriever.py",
 )
 
+MEMORY_COMPATIBILITY_CALLERS = (
+    "scripts/memory_backup.py",
+    "scripts/memory-validator.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -218,6 +223,19 @@ def test_memory_read_callers_use_packaged_memory_surface() -> None:
         assert "memory_scope" not in imports, relative_path
         assert "memory_store" not in imports, relative_path
         assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_memory_compatibility_callers_use_packaged_surfaces() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in MEMORY_COMPATIBILITY_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_scope import" not in source, relative_path
+        assert "from memory_store import" not in source, relative_path
+        assert "from state_store import" not in source, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
+        if relative_path == "scripts/memory_backup.py":
+            assert "brain_eleven.state" in imports, relative_path
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:

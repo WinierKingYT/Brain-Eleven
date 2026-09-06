@@ -19,20 +19,25 @@ Pipeline:
 
 import json
 import re
+import sys
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Optional, Tuple
 from enum import Enum
 
-from memory_scope import (
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.memory import (
     GLOBAL_SCOPE,
     fingerprint_aliases,
     infer_memory_scope,
     resolve_capture_scope,
     scoped_fingerprint,
 )
-from memory_store import MemoryStore, no_change
+from brain_eleven.memory import MemoryStore, no_change
 from capture_safety import evaluate_capture, require_safe_capture
 
 try:

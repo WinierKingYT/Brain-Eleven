@@ -24,20 +24,20 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.extraction import EntityExtractor
-from memory_scope import (
+from brain_eleven.memory import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     infer_memory_scope,
     scoped_fingerprint,
 )
-from memory_store import CANONICAL_SCHEMA_VERSION, MemoryStore, MemoryStoreCorrupt
+from brain_eleven.memory import CANONICAL_SCHEMA_VERSION, MemoryStore, MemoryStoreCorrupt
 from brain_eleven.projects.registry import (
     REGISTRY_FILENAME,
     ProjectRegistry,
     ProjectRegistryError,
     registry_path,
 )
-from state_store import StateSchemaError, StateStore, validate_state_document
+from brain_eleven.state import StateSchemaError, StateStore, validate_state_document
 
 
 BACKUP_SCHEMA_VERSION = 2
