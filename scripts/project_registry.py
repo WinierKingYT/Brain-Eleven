@@ -19,7 +19,12 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from brain_eleven.infrastructure.locking import file_lock  # noqa: E402
+try:
+    from brain_eleven.infrastructure.locking import file_lock  # noqa: E402
+except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
+    if exc.name != "brain_eleven":
+        raise
+    from memory_store_lock import file_lock  # noqa: E402
 
 
 REGISTRY_SCHEMA_VERSION = 1

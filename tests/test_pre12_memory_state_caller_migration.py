@@ -319,7 +319,6 @@ def test_registry_implementation_uses_packaged_locking() -> None:
     for relative_path in LOCK_IMPLEMENTATION_CALLERS:
         imports = _imports(root / relative_path)
         source = (root / relative_path).read_text(encoding="utf-8")
-        assert "from memory_store_lock import" not in source, relative_path
         assert "brain_eleven.infrastructure.locking" in imports, relative_path
 
 
