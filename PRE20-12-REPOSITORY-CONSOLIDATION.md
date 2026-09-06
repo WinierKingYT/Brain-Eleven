@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–10)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–11)
 
 ## Purpose
 
@@ -253,6 +253,28 @@ and [Docker #103](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, and Foundation graduation.
 
+## Package 11 — support surface and caller migration
+
+The remaining bounded support callers now consume a stable
+`brain_eleven.support` surface. Logging setup, summarization, anomaly
+detection, and cache management are exposed through one identity-preserving
+package adapter backed by the existing legacy modules. The chat interface,
+post-session maintenance, and search API callers now use that surface instead
+of importing each support implementation independently.
+
+The shared legacy loader remains the compatibility boundary and keeps direct
+script execution portable. No logging, summarization, anomaly, or cache
+behavior changed; the backing implementations, optional dependency behavior,
+and CLI/API contracts remain unchanged. Package 11 adds AST caller-boundary
+coverage and object-identity checks so the migration cannot create a second
+support implementation.
+
+Package 11 implementation verification completed on commit `44537a7`:
+[Validation #105](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34003064320)
+and [Docker #105](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34003378744)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, and Foundation graduation.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -265,7 +287,7 @@ evidence, and Foundation graduation.
 
 ## Next bounded migrations
 
-1. migrate the next bounded API and support callers to the new surfaces;
+1. migrate the remaining API, support, and utility callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
