@@ -180,6 +180,30 @@ runs are the implementation evidence. The documentation follow-up is commit
 and [Docker #96](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33999938961)
 verify that status record on Ubuntu and Windows as well.
 
+## Package 8 — derived graph caller migration
+
+The derived knowledge-graph projection now has a stable package boundary at
+`brain_eleven.graph`. `context_router/adapters.py`,
+`scripts/entity_extractor.py`, `scripts/chat_interface.py`, and
+`scripts/search-api.py` import the graph surface through that package. The
+existing `scripts/knowledge_graph.py` module remains the backing
+implementation; graph schema, revision checks, persistence behavior, and
+projection semantics are unchanged.
+
+The entity extractor also consumes `MemoryStore` through
+`brain_eleven.memory`, keeping the canonical memory boundary consistent while
+leaving its compatibility imports otherwise unchanged. AST boundary checks
+prevent these callers from reintroducing direct graph imports, and an object
+identity test proves that the package surface and caller references resolve to
+the same `KnowledgeGraph` implementation.
+
+Package 8 implementation verification completed on commit `a63dcdc`:
+[Validation #98](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34000366880)
+and the dependent [Docker #98](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34000640863)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, and Foundation graduation. The documentation follow-up will carry
+its own revision-bound CI evidence.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -192,8 +216,8 @@ verify that status record on Ubuntu and Windows as well.
 
 ## Next bounded migrations
 
-1. migrate the next bounded set of canonical graph, entity, search, or API
-   callers to the new surfaces;
+1. migrate the next bounded entity-extraction, search, and API callers to the
+   new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
