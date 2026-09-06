@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–14)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–15)
 
 ## Purpose
 
@@ -353,6 +353,31 @@ and [Docker #111](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 15 — packaged memory truth surface and scope-caller migration
+
+The memory truth engine now has a stable package surface at
+`brain_eleven.memory.truth`. The package re-exports the existing truth
+contracts and `MemoryTruthEngine` from `scripts/memory_truth.py`, preserving
+package/legacy object identity and all deduplication, lifecycle, validation,
+and CLI semantics. No second truth engine or memory authority was introduced.
+
+The truth engine's scope dependency now goes through the packaged
+`brain_eleven.memory` surface. This is a bounded caller migration only:
+canonical MemoryStore behavior, scoped fingerprints, and truth decisions are
+unchanged. The legacy script remains available as a standalone compatibility
+adapter.
+
+Package 15 adds AST checks for the migrated scope caller, package/legacy
+identity checks, and regression coverage for the packaged truth contracts.
+Local verification passed with 27 targeted tests, zero fatal flake8 findings,
+and a clean compile check.
+
+Package 15 verification completed on commit `7a7154f`:
+[Validation #114](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34017703462)
+and [Docker #114](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34017978993)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -365,7 +390,7 @@ evidence, Foundation graduation, and validated-image publishing.
 
 ## Next bounded migrations
 
-1. migrate the remaining memory-compatibility and legacy-adapter callers to the new surfaces;
+1. migrate the remaining memory read/compatibility and legacy-adapter callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
