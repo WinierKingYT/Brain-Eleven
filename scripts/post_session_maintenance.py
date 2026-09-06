@@ -36,7 +36,7 @@ from brain_eleven.support import (  # noqa: E402
     setup_logging,
 )
 from brain_eleven.extraction import EntityExtractor  # noqa: E402
-from memory_store import MemoryStore, MemoryStoreError  # noqa: E402
+from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
 
 logger = setup_logging(__name__)
 
