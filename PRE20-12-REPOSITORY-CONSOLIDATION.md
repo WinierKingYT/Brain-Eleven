@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–15)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–24)
 
 ## Purpose
 
@@ -489,6 +489,47 @@ and [Docker #127](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3402
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 22 — packaged memory implementation dependencies
+
+Package 22 migrates the remaining memory implementation callers to the
+packaged surfaces: entity extraction, summarization, and knowledge-graph
+projection now use `brain_eleven.memory`, while the project registry uses the
+packaged locking boundary with its minimal copied-hook fallback preserved.
+The follow-up fix also makes hook Python-path handling portable across native
+Windows and Git Bash/WSL execution, and refreshes `baseline-v2` only from the
+actual package revision.
+
+The implementation and corrective commits are `14e5f3d`, `ad07f3f`, and
+`b1ce526`. The cumulative head was verified by [Validation #133](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023255427)
+and [Docker #132](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023381472) on Ubuntu and Windows, including coverage,
+security, evaluation evidence, Foundation graduation, and image publishing.
+
+## Package 23 — packaged state resolver callers
+
+Package 23 adds `brain_eleven.state.resolver` as the stable read-only resolver
+surface and migrates router, authority, compiler, evaluator, benchmark, and
+typed state callers to it. The package re-exports the existing fail-closed
+resolver implementation, so state schema, revision, lifecycle, and corruption
+semantics remain unchanged. Eager resolver exports were deliberately avoided
+to preserve the existing state-package import graph.
+
+The implementation and baseline-lineage commits are `72eb441` and `b140a56`.
+The cumulative head is covered by [Validation #133](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023255427)
+and [Docker #132](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023381472).
+
+## Package 24 — packaged core implementation dependencies
+
+Package 24 moves the canonical `MemoryStore` lock dependency and the
+`StateStore` memory, registry, and locking dependencies behind the stable
+package surfaces. Legacy imports remain only in explicit copied-hook fallback
+paths and package backing wrappers; no second implementation, schema change,
+or persistence behavior was introduced. Local memory/state regression tests,
+critical lint, and compilation checks passed before the cumulative CI run.
+
+The implementation and baseline-lineage commits are `c397581` and `6a38fbd`.
+The cumulative head passed [Validation #133](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023255427)
+and [Docker #132](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34023381472).
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -501,11 +542,13 @@ evidence, Foundation graduation, and validated-image publishing.
 
 ## Next bounded migrations
 
-1. migrate the remaining memory compatibility and legacy-adapter callers to the new surfaces;
-2. move one implementation at a time with import parity tests;
-3. reduce dynamic `sys.path` injection in adapters;
-4. keep scripts as thin CLI/hook adapters only.
+1. complete the final read-only compatibility audit;
+2. reduce dynamic `sys.path` injection in adapters where standalone deployment permits;
+3. keep scripts as thin CLI/hook adapters only;
+4. retain the package/legacy parity suite as the PRE-12 regression contract.
 
-PRE-12 is not complete merely because the namespace exists.  Completion
-requires one maintained implementation per responsibility, preserved CLI
-behavior, and a clean removal review for each legacy wrapper.
+PRE-12 is complete only when the final audit confirms one maintained
+implementation per responsibility, preserved CLI behavior, and a clean
+removal review for each legacy wrapper. Packages 22–24 satisfy the remaining
+caller and implementation-dependency migration; the final audit is a
+read-only closure check, not a new behavior package.
