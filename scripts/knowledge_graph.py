@@ -20,15 +20,19 @@ import json
 import os
 import shutil
 import tempfile
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any
 
 import networkx as nx
 
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 from logging_config import setup_logging
-from memory_scope import infer_memory_scope
-from memory_store import MemoryStore, MemoryStoreError
+from brain_eleven.memory import MemoryStore, MemoryStoreError, infer_memory_scope
 
 logger = setup_logging(__name__)
 

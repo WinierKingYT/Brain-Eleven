@@ -148,6 +148,16 @@ LEGACY_MIGRATION_MEMORY_CALLERS = (
     "scripts/migrate-memory-scope.py",
 )
 
+MEMORY_IMPLEMENTATION_CALLERS = (
+    "scripts/entity_extractor.py",
+    "scripts/summarizer.py",
+    "scripts/knowledge_graph.py",
+)
+
+LOCK_IMPLEMENTATION_CALLERS = (
+    "scripts/project_registry.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -292,6 +302,25 @@ def test_legacy_migration_callers_use_packaged_surface() -> None:
         assert "from memory_scope import" not in source, relative_path
         assert "from memory_store import" not in source, relative_path
         assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_memory_implementations_use_packaged_dependencies() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in MEMORY_IMPLEMENTATION_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_scope import" not in source, relative_path
+        assert "from memory_store import" not in source, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_registry_implementation_uses_packaged_locking() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in LOCK_IMPLEMENTATION_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_store_lock import" not in source, relative_path
+        assert "brain_eleven.infrastructure.locking" in imports, relative_path
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:

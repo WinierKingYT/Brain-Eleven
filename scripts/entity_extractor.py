@@ -35,8 +35,7 @@ if str(_ROOT) not in sys.path:
 
 from logging_config import setup_logging
 from brain_eleven.graph import KnowledgeGraph, KnowledgeGraphProjectionStale
-from memory_scope import infer_memory_scope
-from brain_eleven.memory import MemoryStore
+from brain_eleven.memory import MemoryStore, infer_memory_scope
 
 logger = setup_logging(__name__)
 

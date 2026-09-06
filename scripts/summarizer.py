@@ -23,7 +23,7 @@ from typing import List, Dict, Optional
 from collections import defaultdict
 
 from logging_config import setup_logging
-from memory_scope import filter_memories, infer_memory_scope
+from brain_eleven.memory import filter_memories, infer_memory_scope
 
 logger = setup_logging(__name__)
 
