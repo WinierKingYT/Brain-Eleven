@@ -471,6 +471,24 @@ and [Docker #125](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3402
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 21 — packaged legacy migration callers
+
+Package 21 migrates the legacy memory migration CLIs to the packaged
+`brain_eleven.memory` surface. The migration, dry-run, rollback, backup,
+schema-upgrade, and identity-preservation behavior remain unchanged, and both
+scripts retain safe direct execution through a bounded repository-root
+bootstrap.
+
+The migration adds AST boundary coverage for both legacy callers and preserves
+the package/legacy parity suite. Local verification passed with 46 targeted
+tests, zero fatal flake8 findings, and a clean compile check.
+
+Package 21 verification completed on commit `bd90a55`:
+[Validation #127](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34021656161)
+and [Docker #127](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34021985134)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
