@@ -36,7 +36,7 @@ if str(_ROOT) not in sys.path:
 
 from brain_eleven.support import AnomalyDetector, MemorySummarizer, setup_logging
 from brain_eleven.graph import KnowledgeGraph
-from memory_scope import filter_memories
+from brain_eleven.memory.scope import filter_memories
 from brain_eleven.search import HybridSearchEngine, MemoryRetriever
 
 logger = setup_logging(__name__)

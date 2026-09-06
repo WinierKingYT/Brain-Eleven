@@ -4,6 +4,10 @@ import ast
 from pathlib import Path
 
 from brain_eleven.memory import MemoryStore as PackagedMemoryStore
+from brain_eleven.memory import (
+    filter_memories as PackagedFilterMemories,
+    infer_memory_scope as PackagedInferMemoryScope,
+)
 from brain_eleven.graph import KnowledgeGraph as PackagedKnowledgeGraph
 from brain_eleven.extraction import EntityExtractor as PackagedEntityExtractor
 from brain_eleven.search import (
@@ -80,6 +84,14 @@ SUPPORT_CALLERS = (
     "scripts/chat_interface.py",
     "scripts/post_session_maintenance.py",
     "scripts/search-api.py",
+)
+
+SCOPE_CALLERS = (
+    "context_router/adapters.py",
+    "authority/adapters.py",
+    "context_compiler_v2/adapters.py",
+    "scripts/chat_interface.py",
+    "scripts/hybrid-search.py",
 )
 
 
@@ -219,3 +231,21 @@ def test_support_surface_preserves_cached_legacy_identity() -> None:
     assert PackagedLRUCache is legacy_cache.LRUCache
     assert PackagedDiskCache is legacy_cache.DiskCache
     assert PackagedCacheManager is legacy_cache.CacheManager
+
+
+def test_scope_callers_use_packaged_memory_scope_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in SCOPE_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "brain_eleven.memory.scope" in imports, relative_path
+        assert "from memory_scope import" not in source, relative_path
+
+
+def test_scope_surface_preserves_cached_legacy_identity() -> None:
+    import importlib
+
+    legacy_scope = importlib.import_module("memory_scope")
+
+    assert PackagedFilterMemories is legacy_scope.filter_memories
+    assert PackagedInferMemoryScope is legacy_scope.infer_memory_scope
