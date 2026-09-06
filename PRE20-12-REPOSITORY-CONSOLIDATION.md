@@ -204,6 +204,28 @@ passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, and Foundation graduation. The documentation follow-up will carry
 its own revision-bound CI evidence.
 
+## Package 9 — entity extraction caller migration
+
+Deterministic entity extraction now has a stable package boundary at
+`brain_eleven.extraction`. The backup, post-session maintenance, and search
+API callers import `EntityExtractor` through that surface. The existing
+`scripts/entity_extractor.py` module remains the backing implementation, so
+graph rebuild behavior, projection validation, and legacy CLI compatibility
+are unchanged.
+
+The package re-exports the extractor's public lexicon, phase pattern, and
+projection error alongside the extractor itself. A caller-boundary test rejects
+direct production imports and an object-identity test proves that the package
+surface and legacy implementation refer to the same class. The maintenance
+entrypoint now also bootstraps the repository root before importing the package,
+which keeps direct hook execution portable.
+
+Package 9 implementation verification completed on commit `3044b39`:
+[Validation #100](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34001181377)
+and [Docker #100](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34001475029)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, and Foundation graduation.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -216,8 +238,7 @@ its own revision-bound CI evidence.
 
 ## Next bounded migrations
 
-1. migrate the next bounded entity-extraction, search, and API callers to the
-   new surfaces;
+1. migrate the next bounded search and API callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
