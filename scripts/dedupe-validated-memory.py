@@ -30,17 +30,15 @@ Usage:
   python scripts/dedupe-validated-memory.py --apply <vault> # non-default vault
 """
 
-import importlib.util
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-_spec = importlib.util.spec_from_file_location(
-    "memory_lifecycle", Path(__file__).parent / "memory-lifecycle.py"
-)
-memory_lifecycle = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(memory_lifecycle)
-MemoryLifecycleManager = memory_lifecycle.MemoryLifecycleManager
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.lifecycle import MemoryLifecycleManager  # noqa: E402
 
 SUPERSESSION_NOTE = (
     "Auto-dedupe: exact dedup_fingerprint duplicate of canonical {canonical} "

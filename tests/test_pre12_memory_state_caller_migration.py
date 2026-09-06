@@ -31,6 +31,7 @@ from brain_eleven.infrastructure.locking import (
     file_lock as PackagedFileLock,
     memory_store_lock as PackagedMemoryStoreLock,
 )
+from brain_eleven.lifecycle import MemoryLifecycleManager as PackagedMemoryLifecycleManager
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -106,6 +107,10 @@ LOCK_CALLERS = (
     "evals/private_eval/usage.py",
 )
 
+LIFECYCLE_CALLERS = (
+    "scripts/dedupe-validated-memory.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -158,6 +163,21 @@ def test_memory_callers_preserve_canonical_object_identity() -> None:
     assert AuthorityProviderMemoryStore is PackagedMemoryStore
     assert CompilerProviderMemoryStore is PackagedMemoryStore
     assert TaskStateMemoryStore is PackagedMemoryStore
+
+
+def test_lifecycle_callers_use_packaged_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in LIFECYCLE_CALLERS:
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "importlib.util" not in source, relative_path
+        assert "brain_eleven.lifecycle" in source, relative_path
+
+
+def test_lifecycle_surface_preserves_legacy_object_identity() -> None:
+    import importlib
+
+    legacy = importlib.import_module("memory_lifecycle")
+    assert PackagedMemoryLifecycleManager is legacy.MemoryLifecycleManager
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:
