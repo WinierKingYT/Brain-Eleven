@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–13)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–14)
 
 ## Purpose
 
@@ -328,6 +328,31 @@ and [Docker #109](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 14 — packaged lifecycle surface and duplicate-cleanup caller migration
+
+The lifecycle manager now has a stable package surface at
+`brain_eleven.lifecycle`. The package re-exports the existing
+`MemoryLifecycleManager` from `scripts/memory-lifecycle.py`, preserving object
+identity and all lifecycle, persistence, validation, and CLI semantics. No
+second lifecycle or memory authority was introduced.
+
+The duplicate-cleanup CLI now consumes the packaged lifecycle surface instead
+of loading the hyphenated legacy module through an ad-hoc `importlib.util`
+loader. This is a caller-boundary migration only: canonical MemoryStore
+transactions, lifecycle transitions, and standalone script behavior remain
+unchanged.
+
+Package 14 adds AST checks for the removed dynamic loader, package/legacy
+identity checks, and regression coverage for the migrated caller. Local
+verification passed with 31 targeted tests, zero fatal flake8 findings, and a
+clean compile check.
+
+Package 14 verification completed on commit `ea0dd16`:
+[Validation #111](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34005975727)
+and [Docker #111](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34006246762)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -340,7 +365,7 @@ evidence, Foundation graduation, and validated-image publishing.
 
 ## Next bounded migrations
 
-1. migrate the remaining lifecycle, memory-compatibility, and legacy-adapter callers to the new surfaces;
+1. migrate the remaining memory-compatibility and legacy-adapter callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
