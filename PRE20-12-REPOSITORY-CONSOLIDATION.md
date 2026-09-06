@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–12)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–13)
 
 ## Purpose
 
@@ -301,6 +301,33 @@ and [Docker #107](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 13 — packaged locking surface and bounded-caller migration
+
+The shared file-lock implementation now has a stable package surface at
+`brain_eleven.infrastructure.locking`. The package re-exports the existing
+cross-platform lock implementation and timeout exception, preserving object
+identity and all lock, retry, and failure semantics. No second locking or
+persistence authority was introduced.
+
+The capture queue, evidence reader, memory provenance adapter, and private
+usage telemetry caller now consume locking through the package surface. The
+standalone copied-hook fallback remains available for deployed hook bundles
+that intentionally do not contain the repository package. This keeps hook
+portability unchanged while making the repository callers explicit and
+auditable.
+
+Package 13 adds AST boundary checks, package/legacy identity checks, CLI
+smoke coverage, and regression coverage for the migrated callers. Local
+verification passed with 31 targeted tests, 617 regression tests excluding
+the three environment-limited WSL `python3` handoff tests, zero fatal flake8
+findings, and a clean compile check.
+
+Package 13 verification completed on commit `bd6b438`:
+[Validation #109](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34004988836)
+and [Docker #109](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34005296439)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -313,7 +340,7 @@ evidence, Foundation graduation, and validated-image publishing.
 
 ## Next bounded migrations
 
-1. migrate the remaining utility, lifecycle, and compatibility callers to the new surfaces;
+1. migrate the remaining lifecycle, memory-compatibility, and legacy-adapter callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
