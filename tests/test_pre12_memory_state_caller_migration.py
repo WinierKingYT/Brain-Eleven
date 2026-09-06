@@ -5,6 +5,7 @@ from pathlib import Path
 
 from brain_eleven.memory import MemoryStore as PackagedMemoryStore
 from brain_eleven.graph import KnowledgeGraph as PackagedKnowledgeGraph
+from brain_eleven.extraction import EntityExtractor as PackagedEntityExtractor
 from brain_eleven.state import StateService as PackagedStateService
 from authority.adapters import MemoryStore as AuthorityMemoryStore
 from context_router.adapters import MemoryStore as RouterMemoryStore
@@ -45,6 +46,12 @@ GRAPH_CALLERS = (
     "context_router/adapters.py",
     "scripts/entity_extractor.py",
     "scripts/chat_interface.py",
+    "scripts/search-api.py",
+)
+
+ENTITY_CALLERS = (
+    "scripts/memory_backup.py",
+    "scripts/post_session_maintenance.py",
     "scripts/search-api.py",
 )
 
@@ -114,6 +121,20 @@ def test_graph_callers_preserve_canonical_object_identity() -> None:
     from context_router.adapters import KnowledgeGraph as RouterKnowledgeGraph
 
     assert RouterKnowledgeGraph is PackagedKnowledgeGraph
+
+
+def test_entity_callers_use_packaged_extraction_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in ENTITY_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "entity_extractor" not in imports, relative_path
+        assert "brain_eleven.extraction" in imports, relative_path
+
+
+def test_extraction_surface_preserves_canonical_object_identity() -> None:
+    from entity_extractor import EntityExtractor as LegacyEntityExtractor
+
+    assert PackagedEntityExtractor is LegacyEntityExtractor
 
 
 def test_state_callers_preserve_canonical_object_identity() -> None:

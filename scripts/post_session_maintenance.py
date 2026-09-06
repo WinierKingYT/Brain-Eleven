@@ -25,12 +25,15 @@ from datetime import datetime
 from typing import Dict, Any
 
 SCRIPTS_DIR = Path(__file__).parent
+REPO_ROOT = SCRIPTS_DIR.resolve().parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from logging_config import setup_logging  # noqa: E402
 from summarizer import MemorySummarizer  # noqa: E402
 from anomaly_detector import AnomalyDetector  # noqa: E402
-from entity_extractor import EntityExtractor  # noqa: E402
+from brain_eleven.extraction import EntityExtractor  # noqa: E402
 from memory_store import MemoryStore, MemoryStoreError  # noqa: E402
 
 logger = setup_logging(__name__)

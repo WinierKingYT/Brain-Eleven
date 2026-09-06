@@ -71,7 +71,7 @@ try:
     from summarizer import MemorySummarizer
     from anomaly_detector import AnomalyDetector
     from brain_eleven.graph import KnowledgeGraph
-    from entity_extractor import EntityExtractor
+    from brain_eleven.extraction import EntityExtractor
     from chat_interface import ChatAgent
     from memory_scope import filter_memories, infer_memory_scope, scoped_fingerprint
     from brain_eleven.projects.registry import registry_path as project_registry_path

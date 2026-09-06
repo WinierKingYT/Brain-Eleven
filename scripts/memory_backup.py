@@ -23,7 +23,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from entity_extractor import EntityExtractor
+from brain_eleven.extraction import EntityExtractor
 from memory_scope import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
