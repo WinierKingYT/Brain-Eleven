@@ -24,7 +24,7 @@ REPO_ROOT = SCRIPT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from memory_scope import (
+from brain_eleven.memory import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     project_identity,
