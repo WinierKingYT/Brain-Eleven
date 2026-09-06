@@ -437,6 +437,23 @@ and [Docker #121](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3402
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 19 — packaged REST API memory callers
+
+Package 19 migrates the REST API's remaining scope and store imports to the
+packaged `brain_eleven.memory` surface. The API entry point, validation path,
+CRUD behavior, search behavior, and canonical write semantics remain
+unchanged.
+
+The migration adds AST boundary coverage for the API caller and preserves the
+existing API integration/parity suite. Local verification passed with 64
+targeted tests, zero fatal flake8 findings, and a clean compile check.
+
+Package 19 verification completed on commit `b984e95`:
+[Validation #123](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34020714910)
+and [Docker #123](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34021028240)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
