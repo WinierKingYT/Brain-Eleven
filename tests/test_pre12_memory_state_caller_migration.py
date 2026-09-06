@@ -143,6 +143,11 @@ MANUAL_CAPTURE_MEMORY_CALLERS = (
     "scripts/remember.py",
 )
 
+LEGACY_MIGRATION_MEMORY_CALLERS = (
+    "scripts/migrate-legacy-memory.py",
+    "scripts/migrate-memory-scope.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -276,6 +281,16 @@ def test_manual_capture_callers_use_packaged_surface() -> None:
         imports = _imports(root / relative_path)
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "from memory_scope import" not in source, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
+
+
+def test_legacy_migration_callers_use_packaged_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in LEGACY_MIGRATION_MEMORY_CALLERS:
+        imports = _imports(root / relative_path)
+        source = (root / relative_path).read_text(encoding="utf-8")
+        assert "from memory_scope import" not in source, relative_path
+        assert "from memory_store import" not in source, relative_path
         assert "brain_eleven.memory" in imports, relative_path
 
 

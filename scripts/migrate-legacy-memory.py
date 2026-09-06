@@ -7,11 +7,16 @@ Mission: Convert legacy validated-memory.json records
 to use real ULID + fingerprint dedup keys
 """
 
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+import sys
 
-from memory_scope import infer_memory_scope, scoped_fingerprint
-from memory_store import MemoryStore
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.memory import MemoryStore, infer_memory_scope, scoped_fingerprint
 
 try:
     from ulid import ULID

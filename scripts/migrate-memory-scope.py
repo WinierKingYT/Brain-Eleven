@@ -4,13 +4,25 @@
 import argparse
 import json
 import shutil
+import sys
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-from memory_scope import GLOBAL_SCOPE, PROJECT_SCOPE, infer_memory_scope, scoped_fingerprint
-from memory_store import MemoryStore, MemoryStoreCorrupt, no_change
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from brain_eleven.memory import (  # noqa: E402
+    GLOBAL_SCOPE,
+    PROJECT_SCOPE,
+    MemoryStore,
+    MemoryStoreCorrupt,
+    infer_memory_scope,
+    no_change,
+    scoped_fingerprint,
+)
 
 
 MIGRATION_NAME = "scope-v2"
