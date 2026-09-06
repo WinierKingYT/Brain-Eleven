@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from dataclasses import replace
 from typing import Any, Mapping, Optional
 
 from .adapters import CompilerEvidenceAdapter, CompilerEvidenceError, CompilerScopeError, CompilerStaleInput
@@ -51,6 +52,7 @@ class ContextCompilerV2:
                 "budget": request.budget.to_dict(),
                 "policy": policy_version,
                 "profile_policy": dict(profile_policy or {}),
+                **({"selection": request.selection.to_dict()} if request.selection is not None else {}),
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -124,6 +126,21 @@ class ContextCompilerV2:
         try:
             self._validate_upstream(request)
             snapshot = self.evidence.snapshot(request.task_state, request.resolution_result)
+            if request.selection is not None:
+                selection = request.selection
+                if selection.status not in {"SUCCESS", "DEGRADED", "EMPTY"}:
+                    raise CompilerEvidenceError("Selection is unavailable")
+                if dict(selection.input_revisions) != dict(snapshot.revisions):
+                    raise CompilerStaleInput("Selection revisions do not match canonical evidence")
+                selected = {item.candidate_id: item for item in selection.selected}
+                originals = {item.resolution.candidate_id: item for item in snapshot.candidates}
+                if not set(selected) <= set(originals):
+                    raise CompilerScopeError("Selection contains unknown references")
+                for key, item in selected.items():
+                    source = originals[key].resolution
+                    if item.project_id != source.project_id or dict(item.canonical_ref) != dict(source.canonical_ref):
+                        raise CompilerScopeError("Selection reference differs from authority")
+                snapshot = replace(snapshot, candidates=tuple(item for item in snapshot.candidates if item.resolution.candidate_id in selected))
         except CompilerScopeError as exc:
             return self._result("SCOPE_ERROR", compilation_id, provisional_profile, request, error=str(exc))
         except CompilerStaleInput as exc:
@@ -153,10 +170,14 @@ class ContextCompilerV2:
             snapshot.candidates, provisional_profile, self.estimator, render_fragment,
             mandatory_roles=frozenset(profile_policy.mandatory_roles),
         )
+        if request.selection is not None:
+            mandatory_ids = {item.candidate_id for item in request.selection.selected if "MANDATORY_NEED" in item.reason_codes}
+            drafts = tuple(replace(draft, mandatory=True) if draft.evidence.resolution.candidate_id in mandatory_ids else draft for draft in drafts)
         plan = choose(
             drafts, request.budget, allow_history=options.allow_history, base_cost=base_estimate.count,
             optional_budget_percent=profile_policy.optional_budget_percent,
             max_optional_items=profile_policy.max_optional_items,
+            selection_order={item.candidate_id: index for index, item in enumerate(request.selection.selected)} if request.selection is not None else None,
         )
         if plan.mandatory_cost > request.budget.usable_tokens:
             return self._result(
@@ -240,6 +261,9 @@ class ContextCompilerV2:
             )
         )
         status = "EMPTY" if not selected_items else ("DEGRADED" if request.resolution_result.degraded_reasons else "SUCCESS")
+        if request.selection is not None and request.selection.status == "DEGRADED":
+            status = "DEGRADED"
+            warnings = tuple(sorted(set(warnings + request.selection.degraded_reasons)))
         result = ContextBundle(
             status=status,
             compilation_id=compilation_id,

@@ -8,6 +8,7 @@ set -u
 HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 VAULT_PATH="${BRAIN_ELEVEN_VAULT:-${VAULT_DIR:-$(cd "$HOOK_DIR/../.." && pwd)}}"
 PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+[ -f "$VAULT_PATH/.brain-eleven/runtime/native-hooks-installed.json" ] && exit 0
 QUEUE_SCRIPT="$VAULT_PATH/scripts/capture_queue.py"
 PYTHON_BIN="${PYTHON:-python3}"
 PYTHON_NATIVE=0

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from .models import BudgetContract, OmittedItem
 from .safety import contains_secret
@@ -81,6 +81,7 @@ def _dedupe(drafts: Iterable[CandidateDraft]) -> tuple[list[CandidateDraft], lis
 def choose(
     drafts: Iterable[CandidateDraft], budget: BudgetContract, *, allow_history: bool, base_cost: int,
     optional_budget_percent: int | None = None, max_optional_items: int | None = None,
+    selection_order: Mapping[str, int] | None = None,
 ) -> SelectionPlan:
     """Select all mandatory information before optional value, with stable ties."""
     eligible: list[CandidateDraft] = []
@@ -120,7 +121,7 @@ def choose(
     optional_count = 0
     optional = sorted(
         (draft for draft in eligible if not draft.mandatory),
-        key=lambda draft: (draft.tier, _STATUS_RANK.get(draft.evidence.resolution.status, 99), draft.evidence.resolution.candidate_id),
+        key=lambda draft: ((selection_order or {}).get(draft.evidence.resolution.candidate_id, 0), draft.tier, _STATUS_RANK.get(draft.evidence.resolution.status, 99), draft.evidence.resolution.candidate_id),
     )
     for draft in optional:
         cost = draft.utility.estimated_cost.count

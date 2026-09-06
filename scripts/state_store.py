@@ -402,8 +402,11 @@ def empty_state_document() -> dict[str, Any]:
 def validate_state_document(value: Any) -> dict[str, Any]:
     """Validate and normalize a canonical state snapshot without filesystem I/O."""
     document = _mapping(value, "state")
-    _exact_keys(document, "state", {"schema_version", "store_revision", "updated_at", "projects", "events"})
-    if document["schema_version"] != STATE_SCHEMA_VERSION:
+    fields = {"schema_version", "store_revision", "updated_at", "projects", "events"}
+    if document.get("schema_version") == 2:
+        fields.add("operation_receipts")
+    _exact_keys(document, "state", fields)
+    if document["schema_version"] not in {STATE_SCHEMA_VERSION, 2}:
         raise StateSchemaError(f"Unsupported state schema: {document['schema_version']}")
     projects_value = _mapping(document["projects"], "state.projects")
     projects: dict[str, dict[str, Any]] = {}
@@ -424,8 +427,16 @@ def validate_state_document(value: Any) -> dict[str, Any]:
     for event in events:
         if event["project_id"] not in projects:
             raise StateSchemaError(f"state.events references unknown project_id: {event['project_id']}")
+    extras = {}
+    if document["schema_version"] == 2:
+        from brain_eleven.operations import validate_receipts
+        try:
+            extras["operation_receipts"] = validate_receipts(document["operation_receipts"])
+        except ValueError as exc:
+            raise StateSchemaError("Invalid operation receipts") from exc
     return {
-        "schema_version": STATE_SCHEMA_VERSION,
+        **extras,
+        "schema_version": document["schema_version"],
         "store_revision": _integer(document["store_revision"], "state.store_revision"),
         "updated_at": _timestamp(document["updated_at"], "state.updated_at"),
         "projects": projects,
@@ -611,6 +622,17 @@ class StateStore:
                 if project is None:
                     raise StateError(f"STATE_NOT_FOUND for project_id: {project_id}")
                 actual_revision = int(project["revision"])
+                from brain_eleven.operations import operation_id, operation_request, operation_result
+                identity = operation_id.get()
+                if identity:
+                    if state.get("schema_version") != 2:
+                        raise StateError("Runtime receipt migration required")
+                    prior = state["operation_receipts"].get(identity)
+                    if prior is not None:
+                        if prior["project_id"] != project_id or prior["operation"] != operation or prior.get("request_hash") != operation_request.get():
+                            raise StateError("Operation identity mismatch")
+                        operation_result.set({**prior, "replayed": True})
+                        return None, deepcopy(project)
                 if expected_revision != actual_revision:
                     raise StateStoreConflict(project_id, expected_revision, actual_revision)
 
@@ -631,7 +653,12 @@ class StateStore:
                     at=timestamp,
                 )
                 state["updated_at"] = timestamp
+                if identity:
+                    state["operation_receipts"][identity] = {"project_id": project_id, "operation": operation, "record_ids": record_ids,
+                        "request_hash": operation_request.get(), "revision_before": actual_revision, "revision_after": actual_revision + 1}
                 self._write_unlocked(state)
+                if identity:
+                    operation_result.set({**state["operation_receipts"][identity], "replayed": False})
                 return result, deepcopy(candidate)
         except MemoryStoreLockTimeout as exc:
             raise StateStoreLockTimeout(str(exc)) from exc

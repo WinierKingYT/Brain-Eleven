@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import math
+import re
 from typing import Any, Mapping, Optional
 
 from .models import DecisionOptions, DecisionResult, Need, NeedPlan, SelectedCandidate
@@ -11,6 +14,20 @@ from .models import DecisionOptions, DecisionResult, Need, NeedPlan, SelectedCan
 POLICY_VERSION = "retrieval-decision-v2"
 ACTIVE_LIFECYCLES = frozenset({"ACTIVE"})
 HISTORY_LIFECYCLES = frozenset({"ACTIVE", "RESOLVED", "SUPERSEDED", "HISTORICAL"})
+_QUERY_STOP = frozenset('the a an and or to for from with of in on at is are was were be been we i our it this that which what how did do does should would can use using decided decision please implement review explain continue project current previous only while scenario help me my ve veya bir bu şu için ile ne nasıl hangi kullan karar proje devam et'.split())
+
+
+def _terms(text):
+    return {word for word in re.findall(r'[^\W_]+', str(text).casefold()) if len(word) > 2 and not word.isdigit() and word not in _QUERY_STOP}
+
+
+def _text_scores(query, texts):
+    """Ephemeral inverse-frequency term evidence, never corpus labels or IDs."""
+    words = _terms(query)
+    documents = {key: _terms(text) for key, text in texts.items()}
+    weights = {word: math.log(1 + (len(documents) + 1) / (1 + sum(word in doc for doc in documents.values()))) for word in words}
+    total = sum(weights.values()) or 1
+    return {key: sum(weights[word] for word in words & doc) / total for key, doc in documents.items()}, bool(words)
 HARD_AUTHORITY_REJECTIONS = frozenset({"SUPERSEDED", "HISTORICAL", "INAPPLICABLE", "INVALID"})
 
 
@@ -48,7 +65,7 @@ def _revision_map(result: Any) -> Mapping[str, Any]:
 
 
 def _same_revisions(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
-    return dict(left) == dict(right)
+    return all(key in left and key in right and left[key] == right[key] for key in ('memory', 'state'))
 
 
 def build_need_plan(task_state: Any) -> NeedPlan:
@@ -67,6 +84,12 @@ def build_need_plan(task_state: Any) -> NeedPlan:
         needs.append(Need("need_constraints", "constraint", "critical"))
     if active_blockers or "active_blockers" in context_needs:
         needs.append(Need("need_state", "state", "critical"))
+    for record in (*active_blockers, *(_get(state, "constraints", ()) or ())):
+        identity = _get(record, "id", None)
+        if identity:
+            needs.append(Need("need_record_" + str(identity), "record", "critical", domain=str(identity)))
+    for text in explicit:
+        needs.append(Need("need_explicit_" + hashlib.sha256(str(text).encode()).hexdigest()[:16], "task", "critical"))
     if intent in {"DEBUG", "RESEARCH", "REVIEW"} or "previous_lessons" in context_needs:
         needs.append(Need("need_lessons", "lesson", "normal"))
     if not needs:
@@ -81,7 +104,10 @@ def _need_matches(candidate: Any, plan: NeedPlan) -> tuple[str, ...]:
     matched: list[str] = []
     for need in plan.needs:
         kind = need.kind.casefold()
-        if kind == "state" and (source == "state" or content_type in {"blocker", "work_item", "requirement", "risk", "milestone", "objective", "state"}):
+        reference = _get(candidate, "canonical_ref", {})
+        if kind == "record" and _get(reference, "item_id") == need.domain:
+            matched.append(need.need_id)
+        elif kind == "state" and (source == "state" or content_type in {"blocker", "work_item", "requirement", "risk", "milestone", "objective", "state"}):
             matched.append(need.need_id)
         elif kind == "decision" and (content_type in {"decision", "preference", "observation", "open_loop"} or "decision" in signals):
             matched.append(need.need_id)
@@ -122,6 +148,8 @@ def _state_revision_matches(candidate: Any, revisions: Mapping[str, Any]) -> boo
     if isinstance(expected, Mapping):
         project = _get(candidate, "project_id", None)
         expected = expected.get(project)
+        if isinstance(expected, Mapping):
+            expected = expected.get('revision')
     return expected is None or source_revision == expected
 
 
@@ -151,6 +179,7 @@ class RetrievalDecisionEngine:
         resolution_result: Any = None,
         *,
         options: Optional[DecisionOptions] = None,
+        candidate_texts: Optional[Mapping[str, str]] = None,
     ) -> DecisionResult:
         """Return content-free selected references; no canonical writes occur."""
         options = options or DecisionOptions()
@@ -189,6 +218,8 @@ class RetrievalDecisionEngine:
             authorities = {}
 
         candidates = tuple(_get(router_result, "candidates", ()) or ())
+        text_scores, has_query = _text_scores(_task_field(task_state, 'raw_request', ''), candidate_texts or {})
+        best_text = max(text_scores.values(), default=0)
         if options.mode == "OFF":
             return DecisionResult(status="EMPTY", policy_version=self.policy_version, input_revisions=dict(revisions), need_plan=plan, telemetry={"mode": "OFF", "selected": 0})
 
@@ -227,12 +258,20 @@ class RetrievalDecisionEngine:
             need_bonus = 0.35 if needs else 0.0
             critical_bonus = 0.15 if any(need.priority == "critical" and need.need_id in needs for need in plan.needs) else 0.0
             score = round(min(1.0, retrieval_score * 0.5 + need_bonus + critical_bonus), 6)
+            if candidate_texts is not None and has_query:
+                lexical = text_scores.get(candidate_id, 0)
+                if not critical_bonus and (lexical == 0 or lexical < best_text * .35):
+                    omitted[candidate_id] = 'INSUFFICIENT_TASK_RELEVANCE'
+                    continue
+                score = round(min(1.0, lexical * .85 + retrieval_score * .1 + critical_bonus), 6)
             reasons = ("AUTHORITY_UNRESOLVED",) if authority_status in {"UNRESOLVED", "CONTESTED"} else ()
             ranked.append(_Ranked(candidate, needs, score, retrieval_score, _candidate_channels(candidate), reasons))
 
-        ranked.sort(key=lambda item: (-item.score, -item.retrieval_score, item.candidate.candidate_id))
+        critical = {need.need_id for need in plan.needs if need.priority == "critical"}
+        ranked.sort(key=lambda item: (not bool(critical.intersection(item.needs)), -item.score, -item.retrieval_score, _get(item.candidate, "candidate_id")))
         selected: list[SelectedCandidate] = []
         groups: set[str] = set()
+        covered_critical: set[str] = set()
         for item in ranked:
             candidate = item.candidate
             candidate_id = str(_get(candidate, "candidate_id"))
@@ -240,13 +279,14 @@ class RetrievalDecisionEngine:
             claim = _get(authority, "claim", None)
             fingerprint = _get(claim, "dedup_fingerprint", None)
             group = str(fingerprint or candidate_id)
-            if group in groups:
+            if group in groups and not (critical.intersection(item.needs) - covered_critical):
                 omitted[candidate_id] = "REDUNDANT_CLAIM"
                 continue
             if len(selected) >= options.max_selected:
                 omitted[candidate_id] = "DECISION_BUDGET"
                 continue
             groups.add(group)
+            covered_critical.update(critical.intersection(item.needs))
             selected.append(
                 SelectedCandidate(
                     candidate_id=candidate_id,

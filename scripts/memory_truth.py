@@ -312,10 +312,20 @@ class MemoryTruthEngine:
         expected_revision: Optional[int] = None,
         commit: bool = False,
         commit_new: bool = False,
+        operation_id: Optional[str] = None,
     ) -> TruthResult:
         """Evaluate a batch and optionally persist only safe typed effects."""
+        if operation_id is not None:
+            from brain_eleven.operations import operation
+            try:
+                with operation(operation_id):
+                    pass
+            except ValueError:
+                return TruthResult(TruthStatus.INVALID_INPUT.value, None, None, error_code="INVALID_OPERATION_ID")
+        from brain_eleven.runtime.storage import identity
         try:
             normalized = tuple(candidate if isinstance(candidate, TruthCandidate) else TruthCandidate.from_mapping(candidate) for candidate in candidates)
+            request_hash = identity("request_", [asdict(c) for c in normalized])
         except TruthError as exc:
             return TruthResult(TruthStatus.INVALID_INPUT.value, None, None, error_code=exc.code)
         if not normalized:
@@ -327,6 +337,16 @@ class MemoryTruthEngine:
 
         def transact(latest: dict[str, Any]):
             revision = int(latest["revision"])
+            if operation_id and commit:
+                if latest.get("schema_version") != 3:
+                    raise TruthInputError("Runtime receipt migration required")
+                prior = latest["operation_receipts"].get(operation_id)
+                if prior is not None:
+                    if prior.get("request_hash") != request_hash:
+                        raise TruthInputError("Operation identity mismatch")
+                    return no_change(([TruthDecision(**item) for item in prior["decisions"]], False))
+            if commit and expected_revision is not None and expected_revision != revision:
+                raise MemoryStoreConflict(expected_revision, revision)
             memories = [memory for memory in latest.get("validated_memory", []) if isinstance(memory, Mapping)]
             decisions = [self._evaluate_one(candidate, memories, revision) for candidate in normalized]
             if not commit:
@@ -341,6 +361,9 @@ class MemoryTruthEngine:
                     target = self._find_by_id(memories, decision.target_memory_id or "")
                     if target is None:
                         continue
+                    successor = self._new_record(candidate, decision.successor_memory_id)
+                    latest.setdefault("validated_memory", []).append(successor)
+                    memories.append(successor)
                     target["status"] = "superseded"
                     target["resolved_at"] = _utc_now()
                     target["resolved_by"] = candidate.resolved_by
@@ -392,13 +415,16 @@ class MemoryTruthEngine:
                         evidence_refs=candidate.evidence_refs,
                     )
                     mutated = True
+            if operation_id and all(item.action not in {"REJECT", "REVIEW_REQUIRED", "CONFLICT"} for item in decisions):
+                latest["operation_receipts"][operation_id] = {"request_hash": request_hash, "decisions": [asdict(item) for item in decisions]}
+                mutated = True
             if not mutated:
                 return no_change((decisions, False))
             return decisions, True
 
         try:
             if commit:
-                payload, persisted = self.store.transact(transact, expected_revision=expected_revision)
+                payload, persisted = self.store.transact(transact)
                 decisions, mutated = payload
                 status = TruthStatus.SUCCESS.value
                 if any(decision.action in {TruthAction.CONFLICT.value, TruthAction.REVIEW_REQUIRED.value, TruthAction.REJECT.value} for decision in decisions):

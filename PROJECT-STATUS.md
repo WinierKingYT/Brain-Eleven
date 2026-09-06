@@ -1,6 +1,8 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-06
+**Last updated:** 2026-09-07
+**Current work:** PRE-13 runtime integration and technical closure — **IN PROGRESS / PHASE 20 FREEZE BLOCKED**. The installed Claude/Codex runtime is SHADOW. Frozen corpus-v2 quality gates fail; cross-platform CI and final review for this change remain pending. See [PRE-13 closure and operating instructions](PRE13-TECHNICAL-CLOSURE.md). The PRE-12 milestone and evidence below are historical and do not verify the current working tree.
+
 **Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-12 COMPLETE / NEXT: PHASE 20 KNOWLEDGE ENGINE**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; implementation head `6a38fbd` completes the package and implementation-dependency consolidation while preserving canonical memory/state behavior. [Validation #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026682142) and [Docker #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026970572) verify the final documented closure state on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence, Foundation graduation, and validated-image publishing.
 
 ## Status vocabulary

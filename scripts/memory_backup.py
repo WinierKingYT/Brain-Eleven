@@ -118,7 +118,7 @@ def _validate_memory_record(record: Dict, bucket: str, index: int) -> Tuple[str,
 def _validate_canonical_document(payload: bytes) -> Tuple[Dict, List[str], List[str]]:
     """Validate the raw canonical document without normalizing or rewriting it."""
     document = _json_object(payload, "canonical memory")
-    if document.get("schema_version") != CANONICAL_SCHEMA_VERSION:
+    if document.get("schema_version") not in {CANONICAL_SCHEMA_VERSION, 3}:
         raise MemoryBackupError(
             "Canonical memory must use the current schema before backup; "
             "run the scoped-memory migration first"
@@ -250,7 +250,7 @@ def _manifest_for(payloads: Dict[str, bytes], snapshot: Dict) -> Dict:
         },
         "migration": {
             "name": "scope-v2",
-            "canonical_schema_version": CANONICAL_SCHEMA_VERSION,
+            "canonical_schema_version": snapshot["canonical"]["schema_version"],
             "scope_metadata": "embedded_in_canonical_records",
         },
         "files": files,

@@ -1,8 +1,8 @@
 """Create and verify versioned, reproducible Phase 15 baseline snapshots.
 
-``baseline-v1`` is historical evidence.  It must remain byte-for-byte stable
+``baseline-v1`` and ``baseline-v2`` are historical evidence. They remain stable
 even after later phases change a component that its original run happened to
-exercise.  ``baseline-v2`` is the compatibility baseline for the graduated
+exercise.  ``baseline-v3`` is the compatibility baseline for the graduated
 160-task corpus and is the only snapshot compared with current inputs.
 """
 
@@ -22,14 +22,16 @@ BASELINE_V1_ID = "baseline-v1"
 BASELINE_V2_ID = "baseline-v2"
 # Keep these aliases for callers that ask for the current compatibility
 # baseline.  Historical consumers must select V1 explicitly.
-BASELINE_ID = BASELINE_V2_ID
+BASELINE_V3_ID = "baseline-v3"
+BASELINE_ID = BASELINE_V3_ID
 BASELINE_SUITE = "public"
 BASELINE_SEED = 0
 _ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASELINE_V1_PATH = _ROOT / "evals" / "reports" / f"{BASELINE_V1_ID}.json"
 DEFAULT_BASELINE_V1_MANIFEST = _ROOT / "evals" / "reports" / f"{BASELINE_V1_ID}.manifest.json"
 DEFAULT_BASELINE_V2_PATH = _ROOT / "evals" / "reports" / f"{BASELINE_V2_ID}.json"
-DEFAULT_BASELINE_PATH = DEFAULT_BASELINE_V2_PATH
+DEFAULT_BASELINE_V2_MANIFEST = _ROOT / "evals" / "reports" / f"{BASELINE_V2_ID}.manifest.json"
+DEFAULT_BASELINE_PATH = _ROOT / "evals" / "reports" / f"{BASELINE_V3_ID}.json"
 DEFAULT_CORPUS_V2_ROOT = _ROOT / "evals" / "corpus-v2"
 _FINGERPRINT_PATHS = (
     # Keep this deliberately limited to the baseline provider and the shared
@@ -117,7 +119,7 @@ def check_baseline_snapshot(path: Path | str = DEFAULT_BASELINE_PATH, root: Path
     actual = read_evaluation_report(path)
     if actual != expected:
         raise BaselineSnapshotError(
-            "baseline-v2 differs from the deterministic current public-suite result"
+            "baseline-v3 differs from the deterministic current public-suite result"
         )
     return actual
 
@@ -148,12 +150,12 @@ def check_historical_baseline(
         "provider_version", "corpus_version", "metric_version", "public_case_count",
     }:
         raise BaselineSnapshotError("baseline-v1 historical manifest has an unsupported schema")
-    if manifest["schema_version"] != 1 or manifest["baseline_id"] != BASELINE_V1_ID:
+    if manifest["schema_version"] != 1 or manifest["baseline_id"] not in {BASELINE_V1_ID, BASELINE_V2_ID}:
         raise BaselineSnapshotError("baseline-v1 historical manifest has an invalid identity")
     if manifest["report_sha256"] != _sha256(baseline_path):
         raise BaselineSnapshotError("baseline-v1 report does not match its historical manifest")
     report = read_evaluation_report(baseline_path)
-    if report.get("source", {}).get("baseline_id") != BASELINE_V1_ID:
+    if report.get("source", {}).get("baseline_id") != manifest["baseline_id"]:
         raise BaselineSnapshotError("baseline-v1 report has the wrong identity")
     if report.get("metrics", {}).get("case_count") != manifest["public_case_count"]:
         raise BaselineSnapshotError("baseline-v1 report disagrees with its historical manifest")
@@ -165,17 +167,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--write", action="store_true", help="write the deterministic baseline snapshot")
     mode.add_argument("--check", action="store_true", help="verify the committed snapshot without writing")
-    parser.add_argument("--baseline", choices=(BASELINE_V1_ID, BASELINE_V2_ID), default=BASELINE_V2_ID)
+    parser.add_argument("--baseline", choices=(BASELINE_V1_ID, BASELINE_V2_ID, BASELINE_V3_ID), default=BASELINE_V3_ID)
     parser.add_argument("--output", type=Path, default=DEFAULT_BASELINE_PATH)
     args = parser.parse_args(argv)
     if args.baseline == BASELINE_V1_ID and args.output == DEFAULT_BASELINE_PATH:
         args.output = DEFAULT_BASELINE_V1_PATH
+    if args.baseline == BASELINE_V2_ID and args.output == DEFAULT_BASELINE_PATH:
+        args.output = DEFAULT_BASELINE_V2_PATH
 
     try:
-        if args.baseline == BASELINE_V1_ID:
+        if args.baseline in {BASELINE_V1_ID, BASELINE_V2_ID}:
             if args.write:
-                parser.error("baseline-v1 is immutable and cannot be rewritten")
-            report = check_historical_baseline(args.output, DEFAULT_BASELINE_V1_MANIFEST)
+                parser.error("Historical baselines are immutable and cannot be rewritten")
+            report = check_historical_baseline(args.output, DEFAULT_BASELINE_V1_MANIFEST if args.baseline == BASELINE_V1_ID else DEFAULT_BASELINE_V2_MANIFEST)
         else:
             report = write_baseline_snapshot(args.output) if args.write else check_baseline_snapshot(args.output)
     except (BaselineSnapshotError, EvaluationReportError, ValueError) as error:

@@ -104,6 +104,7 @@ class SelectedCandidate:
     decision_score: float
     retrieval_score: float
     reason_codes: tuple[str, ...] = ()
+    estimated_tokens: Optional[int] = None
 
     def __post_init__(self) -> None:
         _string(self.candidate_id, "candidate_id")

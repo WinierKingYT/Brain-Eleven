@@ -166,6 +166,7 @@ class CompilationRequest:
     resolution_result: Any
     budget: BudgetContract
     compiler_profile: Optional[str] = None
+    selection: Any = None
 
     def __post_init__(self) -> None:
         if self.task_state is None or self.resolution_result is None:

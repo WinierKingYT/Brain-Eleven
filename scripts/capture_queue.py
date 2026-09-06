@@ -351,7 +351,7 @@ class CaptureQueue:
         _parse_utc(claimed_at, field="claimed_at")
         try:
             with self._locked():
-                for source in sorted(self._directory(QUEUED).glob("*.json")):
+                for source in sorted(self._directory(QUEUED).glob("*.json"), key=lambda path: (self._read_job(path)["created_at"], path.name)):
                     job = self._read_job(source)
                     # The directory is the durable delivery state.  A crash
                     # between a retry's rename and document rewrite can leave
@@ -370,6 +370,16 @@ class CaptureQueue:
         except MemoryStoreLockTimeout as exc:
             raise CaptureQueueLockError("capture queue lock timed out") from exc
         return None
+
+    def renew(self, job_id: str) -> None:
+        """Renew a claimed job while its single owner is processing evidence."""
+        with self._locked():
+            path = self._job_path(CLAIMED, job_id)
+            job = self._read_job(path)
+            if job['status'] not in {CLAIMED, PROCESSING}:
+                raise CaptureQueueStateError('Job is not owned')
+            job['claimed_at'] = _utc_now()
+            _atomic_write_json(path, job)
 
     def start_processing(self, job_id: str) -> dict[str, Any]:
         self._ensure_layout()

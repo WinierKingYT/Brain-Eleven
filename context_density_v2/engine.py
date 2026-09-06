@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Mapping, Optional
 
 from .models import DensityOptions, DensityResult, DensitySelectedCandidate
@@ -124,7 +125,7 @@ class ContextDensityEngine:
         }
         return metrics, {key: tuple(sorted(value)) for key, value in coverage.items()}
 
-    def select(self, decision_result: Any, *, options: Optional[DensityOptions] = None) -> DensityResult:
+    def select(self, decision_result: Any, *, options: Optional[DensityOptions] = None, candidate_texts: Optional[Mapping[str, str]] = None) -> DensityResult:
         """Return a content-free diverse selection without changing canonical state."""
         options = options or DensityOptions()
         status = str(_get(decision_result, "status", ""))
@@ -141,11 +142,13 @@ class ContextDensityEngine:
                 telemetry={"mode": "OFF", "selected": 0},
             )
         if not candidates:
+            missing = sorted(key for key, priority in priorities.items() if priority == 0)
             return DensityResult(
-                status="EMPTY", policy_version=self.policy_version, input_revisions=dict(_revisions(decision_result)),
+                status="DEGRADED" if missing else "EMPTY", policy_version=self.policy_version, input_revisions=dict(_revisions(decision_result)),
                 metrics={"input_candidates": 0, "selected_candidates": 0, "critical_need_recall": 1.0 if not priorities else 0.0},
                 need_coverage={need_id: () for need_id in priorities},
-                telemetry={"mode": options.mode, "selected": 0},
+                degraded_reasons=("CRITICAL_CONTEXT_MISSING",) if missing else (),
+                telemetry={"mode": options.mode, "selected": 0, "missing_critical_needs": missing},
             )
 
         normalized = []
@@ -162,9 +165,6 @@ class ContextDensityEngine:
             normalized.append(_Candidate(candidate, needs, _group(candidate), _number(_get(candidate, "decision_score", 0.0)), _tokens(candidate)))
 
         mandatory = [item for item in normalized if any(priorities.get(need_id, 2) == 0 for need_id in item.needs)]
-        if len(mandatory) > options.max_selected:
-            return self._error("FAILED", "MANDATORY_CONTEXT_UNSATISFIED", decision_result)
-
         mandatory.sort(key=lambda item: (-item.score, item.group, str(_get(item.source, "candidate_id", ""))))
         optional = [item for item in normalized if item not in mandatory]
         optional.sort(key=lambda item: (-item.score, item.group, str(_get(item.source, "candidate_id", ""))))
@@ -172,10 +172,29 @@ class ContextDensityEngine:
         groups: set[str] = set()
         covered: set[str] = set()
         for item in mandatory:
+            if item.group in groups and not (set(item.needs) - covered):
+                omitted[str(_get(item.source, 'candidate_id'))] = 'REDUNDANT_CONTEXT'
+                continue
             chosen.append(item)
             groups.add(item.group)
             covered.update(item.needs)
-        for item in optional:
+        if len(chosen) > options.max_selected:
+            return self._error("FAILED", "MANDATORY_CONTEXT_UNSATISFIED", decision_result)
+        # Text is ephemeral, supplied only by the canonical evidence adapter.
+        # Neither normalized tokens nor text are serialized into the result.
+        words = {key: set(re.findall(r"\w+", value.casefold())) for key, value in (candidate_texts or {}).items()}
+        def similarity(left, right):
+            a = words.get(str(_get(left.source, "candidate_id", "")), set())
+            b = words.get(str(_get(right.source, "candidate_id", "")), set())
+            if left.group == right.group:
+                return 1.0
+            return len(a & b) / len(a | b) if a and b else 0.0
+        while optional:
+            optional.sort(key=lambda item: (
+                -(options.diversity_lambda * item.score - (1 - options.diversity_lambda) * max((similarity(item, prior) for prior in chosen), default=0)),
+                str(_get(item.source, "candidate_id", "")),
+            ))
+            item = optional.pop(0)
             candidate_id = str(_get(item.source, "candidate_id", ""))
             if len(chosen) >= options.max_selected:
                 omitted[candidate_id] = "DENSITY_BUDGET"
@@ -193,6 +212,9 @@ class ContextDensityEngine:
         )
         metrics, coverage = self._metrics(result_selected, len(normalized), priorities)
         degraded = ("REDUNDANT_CONTEXT_OMITTED",) if any(reason == "REDUNDANT_CONTEXT" for reason in omitted.values()) else ()
+        missing = tuple(sorted(key for key, priority in priorities.items() if priority == 0 and not coverage[key]))
+        if missing:
+            degraded += ("CRITICAL_CONTEXT_MISSING",)
         result_status = "DEGRADED" if degraded else "SUCCESS"
         return DensityResult(
             status=result_status,
@@ -209,5 +231,7 @@ class ContextDensityEngine:
                 "selected": len(result_selected),
                 "omitted": len(omitted),
                 "diversity_lambda": float(options.diversity_lambda),
+                "missing_critical_needs": list(missing),
+                "density_measurement": "estimated_need_coverage",
             },
         )

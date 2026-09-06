@@ -56,4 +56,4 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 
 **v3 thesis**: Memory must be a mechanism, not a discipline. Hooks automate extraction; Claude retrieves context automatically on session start.
 
-**Hooks Status**: ✅ ACTIVE (SessionStart loads context; SessionEnd and UserPromptSubmit only enqueue bounded, content-safe local capture events. Transcript reading/extraction is deferred to the worker introduced in the Pre-Phase 20 program.)
+**Hooks Status (2026-09-07)**: PRE-13 native Claude/Codex hooks are installed in **SHADOW**; quality promotion is blocked. Stop/SessionEnd queue bounded metadata and the local worker reads transcripts incrementally. UserPromptSubmit measures context but SHADOW does not inject it. Windows hooks use `pythonw.exe`; validation helpers must run hidden. When the native-install marker exists, legacy hooks exit to avoid duplicate delivery. See [PRE-13 closure](PRE13-TECHNICAL-CLOSURE.md) for current evidence, trust checks and rollback. Phase 20 is not yet frozen.

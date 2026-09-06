@@ -91,11 +91,17 @@ class MemoryStore:
             raise MemoryStoreCorrupt("Canonical memory store must be a JSON object")
 
         schema_version = data.get("schema_version", 1)
-        if schema_version not in (1, CANONICAL_SCHEMA_VERSION):
+        if schema_version not in (1, CANONICAL_SCHEMA_VERSION, 3):
             raise MemoryStoreCorrupt(f"Unsupported canonical schema version: {schema_version}")
 
         normalized = dict(data)
-        normalized["schema_version"] = CANONICAL_SCHEMA_VERSION
+        normalized["schema_version"] = max(CANONICAL_SCHEMA_VERSION, schema_version)
+        if schema_version == 3:
+            from brain_eleven.operations import validate_receipts
+            try:
+                validate_receipts(normalized.get("operation_receipts"))
+            except ValueError as exc:
+                raise MemoryStoreCorrupt("Invalid operation receipts") from exc
         try:
             normalized["revision"] = int(data.get("revision", 0))
         except (TypeError, ValueError) as exc:
@@ -170,7 +176,7 @@ class MemoryStore:
             if isinstance(result, _NoChange):
                 return result.value, deepcopy(latest)
             latest["revision"] = actual_revision + 1
-            latest["schema_version"] = CANONICAL_SCHEMA_VERSION
+            latest["schema_version"] = max(latest.get("schema_version", 2), CANONICAL_SCHEMA_VERSION)
             latest["updated_at"] = _utc_now()
             self._write_unlocked(latest)
             return result, deepcopy(latest)
@@ -180,7 +186,12 @@ class MemoryStore:
         def mutate(latest):
             replacement = dict(data)
             replacement["revision"] = latest["revision"]
-            replacement["schema_version"] = CANONICAL_SCHEMA_VERSION
+            replacement["schema_version"] = max(latest["schema_version"], replacement.get("schema_version", 2))
+            if latest.get("schema_version") == 3:
+                receipts = latest["operation_receipts"]
+                if receipts and replacement.get("operation_receipts") != receipts:
+                    raise MemoryStoreCorrupt("Replacement would discard runtime operation receipts")
+                replacement["operation_receipts"] = deepcopy(receipts)
             latest.clear()
             latest.update(replacement)
             return None

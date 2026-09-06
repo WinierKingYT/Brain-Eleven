@@ -75,4 +75,6 @@ authority-*-report.json
 # Local Codex verification workspace; never source-controlled.
 .test-tmp/
 .test-deps/
+.venv/
+.brain-eleven/runtime/
 .test-phase19-*/

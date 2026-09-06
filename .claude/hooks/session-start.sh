@@ -8,6 +8,8 @@ set -e
 HOOK_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 VAULT_PATH="${BRAIN_ELEVEN_VAULT:-$(cd "$HOOK_DIR/../.." && pwd)}"
 SCRIPTS_DIR="$VAULT_PATH/scripts"
+# Native PRE-13 hooks own context delivery after explicit installation.
+[ -f "$VAULT_PATH/.brain-eleven/runtime/native-hooks-installed.json" ] && exit 0
 COMPANION_DIR="$VAULT_PATH/🔮 Companion"
 
 echo "📚 Brain-Eleven SessionStart Bootstrap"

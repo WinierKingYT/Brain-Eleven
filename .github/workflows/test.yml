@@ -222,8 +222,10 @@ jobs:
           path: .phase15-evidence-input
       - name: Verify immutable historical baseline
         run: python -m evals.baseline_snapshot --baseline baseline-v1 --check
-      - name: Verify current compatibility baseline
+      - name: Verify immutable baseline-v2
         run: python -m evals.baseline_snapshot --baseline baseline-v2 --check
+      - name: Verify current compatibility baseline
+        run: python -m evals.baseline_snapshot --baseline baseline-v3 --check
       - name: Run full public and holdout evaluation
         run: >-
           python -m evals.run --provider baseline --suite all --corpus-root evals/corpus-v2
