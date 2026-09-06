@@ -120,6 +120,11 @@ TRUTH_SCOPE_CALLERS = (
     "scripts/memory_truth.py",
 )
 
+MEMORY_READ_CALLERS = (
+    "scripts/context-compiler.py",
+    "scripts/memory-retriever.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -204,6 +209,15 @@ def test_truth_surface_preserves_legacy_object_identity() -> None:
     assert PackagedMemoryTruthEngine is legacy.MemoryTruthEngine
     assert PackagedTruthAction is legacy.TruthAction
     assert PackagedTruthStatus is legacy.TruthStatus
+
+
+def test_memory_read_callers_use_packaged_memory_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in MEMORY_READ_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "memory_scope" not in imports, relative_path
+        assert "memory_store" not in imports, relative_path
+        assert "brain_eleven.memory" in imports, relative_path
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:
