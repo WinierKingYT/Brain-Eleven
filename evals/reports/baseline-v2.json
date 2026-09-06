@@ -146,7 +146,7 @@
     "fixture_seed": 0,
     "noise_count": 24,
     "runner": "phase15_offline",
-    "source_fingerprint": "sha256:b64ee4cea5f8e8eae16a16c3e101ebe6bc7f597b6e5d6ab879500820b4bb59f0"
+    "source_fingerprint": "sha256:3e40d53b014dd9bc03d77548033f7a669073370d6020e7adbd2a0996e6c3e790"
   },
   "metrics": {
     "case_count": 130,
