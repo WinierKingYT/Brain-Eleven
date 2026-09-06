@@ -19,7 +19,7 @@ from brain_eleven.projects.registry import (  # noqa: E402
     ProjectRegistry,
     ProjectRegistryError,
 )
-from state_resolver import (  # noqa: E402
+from brain_eleven.state.resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,
     STATE_AVAILABLE,

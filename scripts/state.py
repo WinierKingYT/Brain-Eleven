@@ -13,7 +13,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from state_resolver import StateResolver
+from brain_eleven.state.resolver import StateResolver
 from brain_eleven.state import (
     StateError,
     StateProjectArchived,

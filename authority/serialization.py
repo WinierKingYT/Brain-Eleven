@@ -112,7 +112,7 @@ def task_state_from_dict(document: Mapping[str, Any]):
     scripts = root / "scripts"
     if str(scripts) not in sys.path:
         sys.path.insert(0, str(scripts))
-    from state_resolver import CurrentProjectState
+    from brain_eleven.state.resolver import CurrentProjectState
     from task_model import TaskEnvelope
     from task_state_context import TASK_STATE_CONTEXT_SCHEMA_VERSION, TaskStateContext
 

@@ -17,7 +17,7 @@ if str(_SCRIPTS) not in sys.path:
 
 from brain_eleven.memory.scope import infer_memory_scope  # noqa: E402
 from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
-from state_resolver import (  # noqa: E402
+from brain_eleven.state.resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,
     STATE_AVAILABLE,

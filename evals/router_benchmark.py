@@ -25,7 +25,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
-from state_resolver import STATE_NOT_FOUND, StateResolver  # noqa: E402
+from brain_eleven.state.resolver import STATE_NOT_FOUND, StateResolver  # noqa: E402
 from brain_eleven.state import StateService  # noqa: E402
 from task_state_context import TaskStateComposer  # noqa: E402
 

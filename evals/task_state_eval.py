@@ -21,7 +21,7 @@ if str(_SCRIPTS_DIRECTORY) not in sys.path:
 
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.memory import MemoryStore
-from state_resolver import StateResolver
+from brain_eleven.state.resolver import StateResolver
 from brain_eleven.state import StateService
 from task_model import TaskAnalyzer
 

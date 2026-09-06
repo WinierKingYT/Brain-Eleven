@@ -158,6 +158,21 @@ LOCK_IMPLEMENTATION_CALLERS = (
     "scripts/project_registry.py",
 )
 
+STATE_RESOLUTION_CALLERS = (
+    "context_router/adapters.py",
+    "authority/adapters.py",
+    "context_compiler_v2/adapters.py",
+    "authority/serialization.py",
+    "evals/compiler_v2_benchmark.py",
+    "evals/router_benchmark.py",
+    "evals/router_evaluation.py",
+    "evals/router_provider.py",
+    "evals/task_state_eval.py",
+    "scripts/context-compiler.py",
+    "scripts/state.py",
+    "scripts/task_state_context.py",
+)
+
 
 def _imports(path: Path) -> set[str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -320,6 +335,13 @@ def test_registry_implementation_uses_packaged_locking() -> None:
         imports = _imports(root / relative_path)
         source = (root / relative_path).read_text(encoding="utf-8")
         assert "brain_eleven.infrastructure.locking" in imports, relative_path
+
+
+def test_state_resolution_callers_use_packaged_resolver_surface() -> None:
+    root = Path(__file__).resolve().parents[1]
+    for relative_path in STATE_RESOLUTION_CALLERS:
+        imports = _imports(root / relative_path)
+        assert "brain_eleven.state.resolver" in imports, relative_path
 
 
 def test_graph_callers_use_packaged_graph_surface() -> None:

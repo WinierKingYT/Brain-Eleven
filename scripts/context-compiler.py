@@ -35,7 +35,7 @@ from brain_eleven.memory import (
     resolve_retrieval_project,
 )
 from brain_eleven.projects.registry import registry_path as project_registry_path
-from state_resolver import (
+from brain_eleven.state.resolver import (
     PROJECT_ARCHIVED,
     STATE_AVAILABLE,
     STATE_CORRUPT,
