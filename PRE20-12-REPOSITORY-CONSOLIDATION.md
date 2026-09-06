@@ -378,6 +378,28 @@ and [Docker #114](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3401
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, Foundation graduation, and validated-image publishing.
 
+## Package 16 — packaged memory read callers
+
+Package 16 migrates the remaining high-value memory read callers in
+`scripts/context-compiler.py` and `scripts/memory-retriever.py` to the
+`brain_eleven.memory` package surface. The retriever keeps a small standalone
+root bootstrap so it remains executable as a script; this changes import
+resolution only and does not change MemoryStore, scope, ranking, or output
+semantics.
+
+The migration adds AST coverage proving that these callers no longer import
+the legacy memory modules directly. The compatibility `baseline-v2` snapshot
+was regenerated after the import-only change; historical `baseline-v1` remains
+immutable. Local verification passed with 68 targeted tests, zero fatal
+flake8 findings, and a clean compile check.
+
+Package 16 implementation and compatibility verification completed on
+`dbe6ae7` (implementation `12b8c33`, snapshot refresh `dbe6ae7`):
+[Validation #117](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34018809271)
+and [Docker #117](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34019116198)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -390,7 +412,7 @@ evidence, Foundation graduation, and validated-image publishing.
 
 ## Next bounded migrations
 
-1. migrate the remaining memory read/compatibility and legacy-adapter callers to the new surfaces;
+1. migrate the remaining memory compatibility and legacy-adapter callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
