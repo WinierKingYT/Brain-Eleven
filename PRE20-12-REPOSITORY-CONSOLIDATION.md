@@ -1,6 +1,6 @@
 # PRE-12 — Repository Consolidation
 
-Status: IMPLEMENTED / PARITY VERIFIED (packages 1–11)
+Status: IMPLEMENTED / PARITY VERIFIED (packages 1–12)
 
 ## Purpose
 
@@ -275,6 +275,32 @@ and [Docker #105](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/3400
 passed on Ubuntu and Windows, including coverage, security, Phase 15–19
 evidence, and Foundation graduation.
 
+## Package 12 — packaged memory scope policy and retrieval caller migration
+
+The memory scope policy now has a stable package surface at
+`brain_eleven.memory.scope`. It re-exports the existing implementation from
+`scripts/memory_scope.py`, including scope constants, project identity helpers,
+fingerprint helpers, and retrieval filtering. This is an identity-preserving
+adapter: scope semantics, project isolation, fingerprinting, and retrieval
+behavior remain unchanged.
+
+The context-router, authority, compiler V2, chat, and hybrid-search callers
+now import scope behavior through that package surface. The compiler V2 adapter
+also consumes `MemoryStore` from `brain_eleven.memory`. Legacy scope/store
+modules remain compatibility/backing edges; no second policy or persistence
+authority was introduced.
+
+Package 12 adds AST boundary coverage for all migrated callers and identity
+checks proving that the package and legacy scope functions are the same
+implementation objects. Local verification passed with 58 targeted regression
+tests, fatal flake8 findings at zero, and a clean compile check.
+
+Package 12 verification completed on commit `93620d0`:
+[Validation #107](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34003961582)
+and [Docker #107](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34004264955)
+passed on Ubuntu and Windows, including coverage, security, Phase 15–19
+evidence, Foundation graduation, and validated-image publishing.
+
 ## Compatibility rules
 
 - no parallel registry implementation may be added;
@@ -287,7 +313,7 @@ evidence, and Foundation graduation.
 
 ## Next bounded migrations
 
-1. migrate the remaining API, support, and utility callers to the new surfaces;
+1. migrate the remaining utility, lifecycle, and compatibility callers to the new surfaces;
 2. move one implementation at a time with import parity tests;
 3. reduce dynamic `sys.path` injection in adapters;
 4. keep scripts as thin CLI/hook adapters only.
