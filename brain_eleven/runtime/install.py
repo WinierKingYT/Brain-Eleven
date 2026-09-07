@@ -69,6 +69,28 @@ def remove_owned(document, item):
     return document
 
 
+def suspend_legacy(document, home):
+    """Only replace the exact historical global Brain-Eleven commands."""
+    value = deepcopy(document)
+    suspended = {}
+    base = Path(home).as_posix()
+    wsl = '/mnt/' + base[0].lower() + base[2:] if len(base) > 1 and base[1] == ':' else base
+    for event, filename in [('SessionStart', 'brain-eleven-session-start'), ('SessionEnd', 'brain-eleven-remember-opt-in')]:
+        command = f'bash {base}/.claude/hooks/{filename} || bash {wsl}/.claude/hooks/{filename}'
+        entries = value.get('hooks', {}).get(event, [])
+        kept = []
+        for entry in entries:
+            removed = [hook for hook in entry.get('hooks', []) if hook == {'type': 'command', 'command': command}]
+            remaining = [hook for hook in entry.get('hooks', []) if hook not in removed]
+            if removed:
+                suspended.setdefault(event, []).append({**entry, 'hooks': removed})
+            if remaining or not removed:
+                kept.append({**entry, 'hooks': remaining} if removed else entry)
+        if event in value.get('hooks', {}):
+            value['hooks'][event] = kept
+    return value, suspended
+
+
 def install(vault, *, home=None, clients=('claude', 'codex')):
     from .migration import migrate
     from brain_eleven.projects.registry import ProjectRegistry
@@ -97,7 +119,13 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
             if client == 'codex':
                 additions['UserPromptSubmit']['hooks'][0]['additionalContextLimit'] = 3500
             old = manifest['clients'].get(client, {})
-            plans.append((client, path, before, additions, merge_hooks(remove_owned(before, old), additions)))
+            cleaned = remove_owned(before, old)
+            cleaned, suspended = suspend_legacy(cleaned, path.parent.parent) if client == 'claude' else (cleaned, {})
+            for event, entries in old.get('suspended_legacy', {}).items():
+                for entry in entries:
+                    if entry not in suspended.setdefault(event, []):
+                        suspended[event].append(entry)
+            plans.append((client, path, before, additions, merge_hooks(cleaned, additions), suspended))
         registry = ProjectRegistry(vault)
         project = registry.resolve(Path(vault).resolve())
         if project is None:
@@ -114,13 +142,14 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
         if config['mode'] == 'OFF':
             config['mode'] = 'SHADOW'
         write_json(cfg.path, config)
-        for client, path, before, entries, after in plans:
+        for client, path, before, entries, after, suspended in plans:
             # Journal before each replace permits recovery from partial installs.
             prior = manifest['clients'].get(client, {})
             history = owned_entries(prior)
             if entries not in history:
                 history.append(entries)
             manifest['clients'][client] = {'path': str(path), 'entries': entries, 'owned_entries': history,
+                                           'suspended_legacy': suspended,
                                            'original': prior.get('original', before), 'installed_at': now()}
             write_json(cfg.root / 'installation.json', manifest)
             with file_lock(path):
@@ -148,7 +177,13 @@ def uninstall(vault):
             path = Path(item['path'])
             with file_lock(path):
                 current = read_json(path, {})
-                write_json(path, remove_owned(current, item))
+                restored = remove_owned(current, item)
+                for event, entries in item.get('suspended_legacy', {}).items():
+                    for entry in entries:
+                        hooks = restored.setdefault('hooks', {}).setdefault(event, [])
+                        if entry not in hooks:
+                            hooks.append(entry)
+                write_json(path, restored)
         write_json(cfg.root / 'installation.json', {'clients': {}, 'uninstalled_at': now()})
         (cfg.root / 'native-hooks-installed.json').unlink(missing_ok=True)
     return {'status': 'UNINSTALLED', 'canonical_data': 'PRESERVED'}

@@ -20,8 +20,8 @@ V1 compiler's ranking, typed state and renderer with only safe canonical
 project/global inputs, a conservative budget and final scope/revision checks.
 Unscoped Last Session, Open Loops and linked-note inputs are excluded. The
 installer journals and suspends only exact known global Brain-Eleven legacy
-commands, restoring them on uninstall. Its final test/install evidence is pending;
-the map does not claim the installed correction is already verified. Installed hook trust
+commands, restoring them on uninstall. Focused tests and the current real install
+reconciliation passed; installed hook trust
 and actual client delivery require separate native evidence. Unrelated global
 hooks are outside Brain-Eleven ownership and must be preserved.
 
@@ -29,7 +29,7 @@ hooks are outside Brain-Eleven ownership and must be preserved.
 
 | Node / entry | State | Actual behavior and boundary |
 |---|---|---|
-| Native Claude/Codex SessionStart | ACTIVE V1 path in current implementation | Opt-in scope/config check, local service startup and bounded canonical V1 bootstrap. OFF emits none; final tests and installed reconciliation pending. Checkpoint behavior differed as recorded above. |
+| Native Claude/Codex SessionStart | ACTIVE V1 path in current implementation | Opt-in scope/config check, local service startup and bounded canonical V1 bootstrap. OFF emits none; focused tests and installed reconciliation passed. Native trust remains unverified. Checkpoint behavior differed as recorded above. |
 | Native UserPromptSubmit | SHADOW | Service context request runs TaskStateComposer → Router → Authority → Retrieval Decision → Density → V2 Compiler; baseline comparison records IDs. No V2 injection in SHADOW. |
 | Native Stop / SessionEnd | ACTIVE capture handoff | Bounded event metadata enters durable queue; hook does not read the full transcript or perform extraction. Duplicate events are idempotent. |
 | Repository shell hooks | LEGACY | SessionStart V1 compiler/bootstrap and SessionEnd handoff retained; native installation marker currently suppresses them. Not equivalent to global copied hooks. |

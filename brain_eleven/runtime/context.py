@@ -16,8 +16,50 @@ from context_compiler_v2.tokenizer import ConservativeTokenEstimator
 from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapshot
 
 
-def compile_context(vault, project_root, request, *, client='manual', session='', turn='', budget=3000):
+def compile_bootstrap(vault, project_root, *, budget=3000):
+    """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
+    from brain_eleven._legacy import load_legacy_module
+    from capture_safety import evaluate_capture
+    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
+    runtime = RuntimeConfig(vault)
+    project = allowed(vault, project_root)
+    if runtime.load()['mode'] == 'OFF' or not project:
+        return {'status': 'OFF' if runtime.load()['mode'] == 'OFF' else 'SCOPE_DISABLED', 'context': '', 'selected_ids': [], 'delivered': False}
+    compiler = compiler_type(str(vault), project_id=project['project_id'])
+    document = compiler.memory_store.load()
+    compiler.memories = document['validated_memory']
+    compiler.source_memory_revision = document['revision']
+    state = compiler._resolve_current_state()
+    lineage = {'source_memory_revision': document['revision'], 'source_state_revision': compiler.source_state_revision,
+               'source_state_status': compiler.source_state_status}
+    def safe(text):
+        return not contains_secret(text) and evaluate_capture(text).accepted
+    memories = [item for item in compiler._rank_memories(limit=5) if safe(item['content'])]
+    estimator = ConservativeTokenEstimator()
+    # Unscoped Last Session, Open Loops and linked notes are not canonical
+    # project inputs. Preserve V1 ranking and rendering without those surfaces.
+    context = compiler._generate_context_block(memories, {}, '', '', state)
+    while memories and estimator.estimate(context).count > budget:
+        memories.pop()
+        context = compiler._generate_context_block(memories, {}, '', '', state)
+    status = 'SUCCESS'
+    if not safe(context) or estimator.estimate(context).count > budget:
+        status, context = 'DEGRADED', ''
+    compiler._ensure_output_is_current(lineage)
+    current_project = allowed(vault, project_root)
+    if runtime.load()['mode'] == 'OFF' or not current_project or current_project['project_id'] != project['project_id']:
+        status, context = 'SCOPE_DISABLED', ''
+    return {'status': status, 'context': context, 'selected_ids': [item['id'] for item in memories] if context else [],
+            'project_id': project['project_id'], 'delivered': bool(context), 'provider': 'V1',
+            'estimated_tokens': estimator.estimate(context).count}
+
+
+def compile_context(vault, project_root, request, *, client='manual', session='', turn='', budget=3000, event='UserPromptSubmit'):
     start = perf_counter()
+    if event == 'SessionStart':
+        result = compile_bootstrap(vault, project_root, budget=budget)
+        result['elapsed_ms'] = round((perf_counter() - start) * 1000)
+        return result
     runtime = RuntimeConfig(vault)
     config = runtime.load()
     if config['mode'] == 'OFF':

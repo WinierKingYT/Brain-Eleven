@@ -35,7 +35,8 @@ def request_service(vault, route, payload=None, timeout=.35):
         conn.close()
 
 
-def ensure_service(vault, *, wait=False):
+def ensure_service(vault, *, wait=False, wait_timeout=8):
+    deadline = time.monotonic() + wait_timeout
     cfg = RuntimeConfig(vault)
     if cfg.load()['mode'] == 'OFF':
         return False
@@ -58,7 +59,6 @@ def ensure_service(vault, *, wait=False):
             subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
             write_json(cfg.root / 'launch.json', {'started': time.time()})
     if wait:
-        deadline = time.monotonic() + 8
         while time.monotonic() < deadline:
             try:
                 request_service(vault, '/api/runtime/status', timeout=.2)
@@ -78,10 +78,9 @@ def hook(vault, client, event, payload):
         result = enqueue(vault, client, payload)
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
-    ready = ensure_service(vault)
-    if event == 'SessionStart':
-        return {}
-    if event != 'UserPromptSubmit':
+    deadline = time.monotonic() + 2.5
+    ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
+    if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
     if not ready:
         return {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
@@ -94,14 +93,15 @@ def hook(vault, client, event, payload):
     locator = payload.get('transcript_path')
     size = Path(locator).stat().st_size if locator and Path(locator).is_file() else None
     reliable_turn = payload.get('turn_id') or (identity('turn_', prompt, size) if size is not None else None)
-    turn = reliable_turn or identity('turn_', prompt, time.time_ns())
+    turn = ('bootstrap' if event == 'SessionStart' else reliable_turn or identity('turn_', prompt, time.time_ns()))
     key = identity('delivery_', client, session, turn)
     path = cfg.root / 'deliveries' / (key + '.json')
     with file_lock(path, timeout=.15):
         if read_json(path, {}).get('status') == 'EMITTED':
             return {}
         result = request_service(vault, '/api/context', {'project_root': payload['cwd'], 'request': prompt,
-                                 'client': client, 'session': session, 'turn': str(turn)}, timeout=2)
+                                 'client': client, 'session': session, 'turn': str(turn), 'event': event},
+                                 timeout=max(.05, min(2, deadline - time.monotonic())))
         output = {}
         if result.get('delivered') and result.get('context'):
             output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': result['context']}
@@ -140,7 +140,7 @@ def main(argv=None):
         # Retain ownership through stdout flush and its durable receipt. A
         # second native invocation cannot emit the same turn in that gap.
         delivery_lock = RuntimeConfig(args.vault).root / 'delivery-locks' / identity('session_', args.client, payload.get('session_id'))
-        with file_lock(delivery_lock, timeout=.15) if args.event == 'UserPromptSubmit' else nullcontext():
+        with file_lock(delivery_lock, timeout=.15) if args.event in {'SessionStart', 'UserPromptSubmit'} else nullcontext():
             result = hook(args.vault, args.client, args.event, payload)
             if isinstance(result, tuple):
                 result, path, record = result

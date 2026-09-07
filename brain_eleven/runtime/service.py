@@ -197,11 +197,14 @@ def create_app(vault, *, token=None, background=True):
     async def context(request: Request):
         payload = await body(request)
         required = {'project_root', 'request', 'client', 'session', 'turn'}
-        if set(payload) != required or not all(isinstance(x, str) for x in payload.values()):
+        if set(payload) not in (required, required | {'event'}) or not all(isinstance(x, str) for x in payload.values()):
             raise HTTPException(400, 'Invalid context request')
+        if payload.get('event', 'UserPromptSubmit') not in {'SessionStart', 'UserPromptSubmit'}:
+            raise HTTPException(400, 'Invalid context event')
         try:
             return await asyncio.to_thread(compile_context, vault, payload['project_root'], payload['request'],
-                                           client=payload['client'], session=payload['session'], turn=payload['turn'])
+                                           client=payload['client'], session=payload['session'], turn=payload['turn'],
+                                           event=payload.get('event', 'UserPromptSubmit'))
         except Exception:
             return {'status': 'FAILED', 'context': '', 'warnings': ['CONTEXT_UNAVAILABLE']}
     return app

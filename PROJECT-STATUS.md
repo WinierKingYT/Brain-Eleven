@@ -3,13 +3,13 @@
 **Last updated:** 2026-09-07
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
-**Active package: IG-00 Freeze & Baseline — IN PROGRESS / NOT ACCEPTED**.
+**Active package: IG-00 Freeze & Baseline — IMPLEMENTED / REVIEW PENDING**.
 
 The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 remains complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. No package after IG-00 opens before independent acceptance.
 
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
-Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction and current-change review are pending. Installed native trust and daily-use graduation remain unverified.
+Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. Independent review, installed native trust and daily-use graduation remain unverified.
 
 ## Status vocabulary
 

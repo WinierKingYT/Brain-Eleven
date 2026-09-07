@@ -29,16 +29,32 @@ never force-move or delete it. A mismatch or missing CI blocks baseline closure.
 | Feature freeze | PROJECT-STATUS declares Phase 20 FROZEN and active program IG; graduation remains LOCKED. |
 | Baseline commit | Exact SHA `211bf2eb74cdb457b7b07430848bf6c6665e7f12`: [Validation 34027088697](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker 34027393699](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) both completed successfully. Authenticated run metadata binds both to this SHA. |
 | Immutable baseline tag | Annotated `intelligence-graduation-baseline` created and pushed at the verified PRE-12 SHA; no master reset or force-move. |
-| Runtime truth | RUNTIME-DATAFLOW distinguishes native and legacy installed/repository paths, gates and manual capture. Runtime correction verification remains pending. |
+| Runtime truth | RUNTIME-DATAFLOW distinguishes native and legacy installed/repository paths, gates and manual capture. Native V1 SessionStart compatibility and exact legacy-hook suspension passed focused tests; the real install now has one native Claude SessionStart entry and preserves unrelated `cbm` entries. |
 | Documentation authority | DOCUMENTATION-AUTHORITY defines exact overrides and default path rules; stale scheduling claims are historical. |
 | Validation / review | Current revision checks and independent SHIP pending. PRE-13 quality FAIL retained; it is not converted to a passing intelligence claim. |
 
 Known baseline issue: native SHADOW at the preserved checkpoint measured V2
 without emitting context; local repository legacy hooks exited when the native
 marker existed. An independently installed global Claude V1 hook also exists.
-IG-00 must verify who owns V1 delivery without duplicate output. Native client
-trust and real execution remain operational facts, not inferred from configured
-commands or unit tests.
+IG-00 verified ownership in the installer and synthetic native boundary tests;
+native client trust and real execution remain operational facts, not inferred
+from configured commands or unit tests.
+
+## Current implementation evidence
+
+The correction uses the existing legacy V1 compiler only for the bounded
+SessionStart bootstrap. It rechecks mode, project opt-in and canonical
+revisions before returning context. UserPromptSubmit remains V2 SHADOW and
+does not inject V2 context. A cold Windows native SessionStart test passed in
+under three seconds; the focused IG-00 suite passed 11 tests, and the full
+non-integration regression passed 662 tests with 84.13% runtime coverage.
+
+The current real installation was updated with the windowless installer on
+2026-09-08. `doctor` reports both native clients configured, SHADOW mode and
+service stopped when idle. The old global Claude Brain-Eleven SessionStart and
+SessionEnd entries were removed from the active configuration and journaled for
+uninstall restoration; unrelated `cbm-session-reminder` hooks remain. Native
+client trust is still `VERIFY_IN_NATIVE_CLIENT` and has not been inferred.
 
 ## Review and next-package boundary
 
