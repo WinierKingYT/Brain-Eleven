@@ -2,7 +2,20 @@
 
 Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 
-## Yükleme sırası
+## Güncel program ve belge otoritesi
+
+**PHASE 20: FROZEN. ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG).**
+Önce PROJECT-STATUS.md, INTELLIGENCE-GRADUATION.md, IG00-FREEZE-BASELINE.md ve
+DOCUMENTATION-AUTHORITY.md oku. IG-00 bağımsız kabul edilmeden IG-01 açılmaz.
+Eski faz planları tarihsel/gelecek tasarımdır; Knowledge Engine başlatılmaz.
+Feature freeze, teknik kapanış veya intelligence graduation demek değildir.
+Canonical authority MemoryStore, StateStore ve ProjectRegistry'de kalır.
+Model yalnız öneri üretir; safety ve intelligence ayrı ölçülür.
+
+Aşağıdaki eski vault kurulum/not kullanım rehberi runtime otoritesi değildir.
+Güncel üretim yolları ve kurulu istemci ayrımı RUNTIME-DATAFLOW.md içindedir.
+
+## Yükleme sırası (tarihsel rehber)
 
 1. Vault iskeletı ✓
 2. CLAUDE.md (bu dosya) ✓
@@ -56,4 +69,4 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 
 **v3 thesis**: Memory must be a mechanism, not a discipline. Hooks automate extraction; Claude retrieves context automatically on session start.
 
-**Hooks Status (2026-09-07)**: PRE-13 native Claude/Codex hooks are installed in **SHADOW**; quality promotion is blocked. Stop/SessionEnd queue bounded metadata and the local worker reads transcripts incrementally. UserPromptSubmit measures context but SHADOW does not inject it. Windows hooks use `pythonw.exe`; validation helpers must run hidden. When the native-install marker exists, legacy hooks exit to avoid duplicate delivery. See [PRE-13 closure](PRE13-TECHNICAL-CLOSURE.md) for current evidence, trust checks and rollback. Phase 20 is not yet frozen.
+**Hooks Status (2026-09-07)**: Native Claude/Codex V2 remains **SHADOW**. The preserved PRE-13 checkpoint does not emit V1 through native SHADOW; a separately installed global Claude V1 hook exists. IG-00 reconciles single V1 SessionStart ownership before acceptance. See RUNTIME-DATAFLOW.md for the verified boundary; configured hooks do not prove native trust or actual delivery. Windows hooks and verification helpers must run hidden. Do not open Python consoles or browser panels during background work. PRE13-TECHNICAL-CLOSURE.md preserves prior evidence and limitations; Phase 20 is now feature-frozen under IG, not graduated.

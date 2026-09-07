@@ -1,12 +1,10 @@
 # PRE-13 runtime integration and Phase 20 closure
 
-Updated: 2026-09-07. Status: **IN PROGRESS — FREEZE BLOCKED**.
+Updated: 2026-09-07. Authority: **HISTORICAL DEVELOPMENT CHECKPOINT**.
 
-This record supersedes PRE-12's "next: Phase 20" scheduling statement. PRE-12
-and the immutable Phase 15–19 Foundation remain historical checkpoints.
-Phase 20 has not graduated or been frozen by this work. The installed runtime
-remains **SHADOW** while the independent quality gate fails. No new Phase 20
-features are authorized by this closure package.
+This record preserves PRE-13 work and evidence at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; it does not describe later IG-00 changes as verified. The Intelligence Graduation program supersedes this package's scheduling and former “freeze blocked” terminology. **Phase 20 is FROZEN as a feature decision, not graduated.** Quality failure, current-code CI and real-use limitations remain separate. Read PROJECT-STATUS.md and RUNTIME-DATAFLOW.md for current state.
+
+The following workstream status and operating details describe the checkpoint. They do not open Phase 20, accept IG-00, or authorize runtime promotion.
 
 ## Five closure workstreams
 
@@ -16,7 +14,7 @@ features are authorized by this closure package.
 | Claude / Codex adapters | Native SessionStart, UserPromptSubmit, Stop and SessionEnd adapters; incremental transcript parsing; bounded inputs; warning-and-continue; delivery deduplication; Windows windowless execution. Automated native subprocess tests pass. Installed-client hook trust and actual daily-use observations remain separately unverified. |
 | Durability / operations | Atomic memory/state operation receipts; resumable schema migration; additive hook installation with interrupted-upgrade recovery; review acceptance/rejection/expiry; singleton worker/service; lease recovery; backup/restore preserving receipts. The final synthetic 1,000-record process performance measurement passed. |
 | Validation | Windows tests, runtime coverage, critical lint and runtime security checks passed (details below). The new Windows/Linux runtime workflow is implemented but has no current-revision remote CI result yet. No independent final review has been completed. **OPEN**. |
-| Freeze / handoff | This document and the operating instructions record the actual evidence. A successful technical freeze requires quality, performance, regression, cross-platform CI and final review closure. A local checkpoint is not graduation. **OPEN**. |
+| Freeze / handoff | This document and the operating instructions record the actual evidence. The former technical closure remains unaccepted. IG now freezes features independently; quality, regression, cross-platform CI and review are tracked as separate gates. A local checkpoint is not graduation. **OPEN**. |
 
 ## Quality evidence and corpus limitation
 
@@ -36,8 +34,7 @@ questions that differ only by a scenario number while required IDs rotate
 through unrelated rules. The requested fact is not specified in those
 questions. This prevents interpreting all legacy labels as answerable relevance
 tests. It does not justify silently changing labels, thresholds, or holdout
-results. A separate versioned corpus with explicit questions has been proposed
-to the user; that change is pending their answer. Existing failure evidence is
+results. The IG program authorizes a separate evaluation foundation in IG-01 after IG-00 acceptance. Corpus design and labels must be contracted and frozen before tuning. Existing failure evidence is
 retained either way. No task IDs or expected labels are fed to retrieval.
 
 ## Latest local verification

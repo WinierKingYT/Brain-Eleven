@@ -1,9 +1,15 @@
 # Brain-Eleven v3 — Current Project Status
 
 **Last updated:** 2026-09-07
-**Current work:** PRE-13 runtime integration and technical closure — **IN PROGRESS / PHASE 20 FREEZE BLOCKED**. The installed Claude/Codex runtime is SHADOW. Frozen corpus-v2 quality gates fail; cross-platform CI and final review for this change remain pending. See [PRE-13 closure and operating instructions](PRE13-TECHNICAL-CLOSURE.md). The PRE-12 milestone and evidence below are historical and do not verify the current working tree.
+**PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
+**ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
+**Active package: IG-00 Freeze & Baseline — IN PROGRESS / NOT ACCEPTED**.
 
-**Current milestone:** Pre-Phase 20 Core Intelligence Hardening — **PRE-12 COMPLETE / NEXT: PHASE 20 KNOWLEDGE ENGINE**. The immutable `context-engine-foundation-v1` tag remains the Phase 15–19 foundation checkpoint; implementation head `6a38fbd` completes the package and implementation-dependency consolidation while preserving canonical memory/state behavior. [Validation #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026682142) and [Docker #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026970572) verify the final documented closure state on Ubuntu and Windows, including coverage, security, Phase 15–19 evidence, Foundation graduation, and validated-image publishing.
+The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 remains complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. No package after IG-00 opens before independent acceptance.
+
+The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
+
+Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction and current-change review are pending. Installed native trust and daily-use graduation remain unverified.
 
 ## Status vocabulary
 
@@ -13,7 +19,8 @@
 | **PARTIALLY VERIFIED** | The implementation is present, but a required environment or operational check is still absent. |
 | **NOT VERIFIED** | No adequate evidence exists; this is not a claim of failure. |
 | **HISTORICAL** | A past implementation or validation record; it does not describe the current head. |
-| **GRADUATED / FROZEN** | A completed, review-approved, revision-bound contract recorded by an immutable Foundation tag. |
+| **FROZEN (Phase 20)** | Program feature freeze; does not mean technically complete or graduated. |
+| **GRADUATED / FROZEN (Foundation)** | Historical completed, review-approved contract bound to its immutable Foundation tag. |
 | **SHADOW** | Implemented and evaluated, but intentionally not connected to the active SessionStart delivery path. |
 
 “Implemented” and “verified” are deliberately different: an implementation is
@@ -26,7 +33,7 @@ remains in the vault; API, hooks, context compiler, knowledge graph and search
 layers consume that same validated store rather than creating parallel write
 paths.
 
-## Current evidence-backed state
+## Historical Foundation / PRE-12 evidence-backed state
 
 | Area | Status | Evidence boundary |
 |---|---|---|
@@ -48,7 +55,7 @@ paths.
 | Live Docker Compose deployment (local Docker Desktop) | **VERIFIED** | On 2026-09-02, `app`, `postgres`, and `redis` became healthy; `127.0.0.1:8000/health` returned 200; the API port was unreachable through a non-loopback IPv4 address. The API key was unset, so its optional auth-gate branch was not applicable. |
 | Public deployment and daily-use telemetry | **NOT VERIFIED** | Outside the local-first memory-foundation graduation boundary. |
 
-## Pre-Phase 20 execution status
+## Historical Pre-Phase 20 execution status
 
 The post-foundation hardening program is being delivered as bounded packages.
 Each package is considered **VERIFIED** only after its implementation commit
