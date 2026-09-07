@@ -153,6 +153,10 @@ class ContextCompilerV2:
         cache_hit = False
         if config.cache_enabled and options.cache_enabled:
             cache_hit = self.cache.load(self._cache_key(compilation_id), snapshot.revisions) is not None
+        # The persisted record is a content-free audit manifest. Compilation
+        # still runs below; this flag must not be mistaken for a compiled
+        # context cache hit.
+        audit_cache_hit = cache_hit
         base_estimate = self.estimator.estimate(render_bundle(request.task_state, ()))
         if base_estimate.byte_count > request.budget.hard_byte_limit or base_estimate.count > request.budget.usable_tokens:
             return self._result(
@@ -163,7 +167,7 @@ class ContextCompilerV2:
                 revisions=snapshot.revisions,
                 error="Task identity exceeds the usable context budget",
                 warnings=("mandatory_task_overflow",),
-                telemetry={"mode": "SHADOW", "cache_hit": cache_hit, "base_tokens": base_estimate.count},
+                telemetry={"mode": "SHADOW", "cache_hit": False, "audit_cache_hit": audit_cache_hit, "base_tokens": base_estimate.count},
             )
         profile_policy = config.profile_budgets[provisional_profile]
         drafts = build_drafts(
@@ -191,7 +195,8 @@ class ContextCompilerV2:
                 omitted=plan.omitted,
                 telemetry={
                     "mode": "SHADOW",
-                    "cache_hit": cache_hit,
+                    "cache_hit": False,
+                    "audit_cache_hit": audit_cache_hit,
                     "base_tokens": base_estimate.count,
                     "mandatory_tokens": plan.mandatory_cost,
                 },
@@ -228,7 +233,7 @@ class ContextCompilerV2:
                     error="Rendered mandatory context exceeds budget; it was not truncated",
                     warnings=("mandatory_context_not_silently_truncated",),
                     omitted=tuple(sorted(omissions, key=lambda item: item.candidate_id)),
-                    telemetry={"mode": "SHADOW", "cache_hit": cache_hit, "rendered_tokens": final_estimate.count},
+                    telemetry={"mode": "SHADOW", "cache_hit": False, "audit_cache_hit": audit_cache_hit, "rendered_tokens": final_estimate.count},
                 )
             remove = max(optional, key=lambda draft: (draft.tier, draft.utility.estimated_cost.count, draft.evidence.resolution.candidate_id))
             selected_drafts.remove(remove)
@@ -290,7 +295,8 @@ class ContextCompilerV2:
             rendered_context=rendered,
             telemetry={
                 "mode": "SHADOW",
-                "cache_hit": cache_hit,
+                "cache_hit": False,
+                "audit_cache_hit": audit_cache_hit,
                 "route_id": request.resolution_result.telemetry.get("route_id"),
                 "router_profile": request.resolution_result.telemetry.get("route_profile"),
                 "router_config_version": request.resolution_result.telemetry.get("router_config_version"),

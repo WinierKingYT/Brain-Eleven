@@ -50,6 +50,29 @@ def enable_fake_provider(generator):
     return generator
 
 
+def enable_controlled_provider(generator):
+    """Provide a tiny semantic oracle so ranking tests include a distractor."""
+
+    def vector_for(text):
+        lowered = text.casefold()
+        vector = np.zeros(1536, dtype=np.float32)
+        if any(token in lowered for token in ("postgres", "database", "relational", "datastore")):
+            vector[0] = 1.0
+        elif any(token in lowered for token in ("marketing", "color", "logo")):
+            vector[1] = 1.0
+        else:
+            vector[2] = 1.0
+        return vector.tolist()
+
+    class ControlledEmbeddings:
+        def create(self, *, input, model):
+            return SimpleNamespace(data=[SimpleNamespace(embedding=vector_for(input))])
+
+    generator.use_openai = True
+    generator.client = SimpleNamespace(embeddings=ControlledEmbeddings())
+    return generator
+
+
 @pytest.fixture
 def temp_vault(tmp_path):
     """Create temporary vault for testing"""
@@ -168,6 +191,14 @@ class TestEmbeddingGenerator:
         changed = sample_memories[0]["content"] + " (changed)"
         assert generator.get_embedding(sample_memories[0]["memory_id"], changed) is None
 
+    def test_cache_rejects_source_revision_mutation(self, temp_vault, sample_memories):
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
+        memory = dict(sample_memories[0], source_revision=4)
+        generator.batch_embed([memory])
+
+        assert generator.get_embedding(memory["memory_id"], memory["content"], source_revision=4) is not None
+        assert generator.get_embedding(memory["memory_id"], memory["content"], source_revision=5) is None
+
     def test_cache_rejects_provider_transition(self, temp_vault, sample_memories):
         generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
         generator.batch_embed(sample_memories[:1])
@@ -217,6 +248,19 @@ class TestSemanticSearch:
 
         # Should return at most top_k
         assert len(results) <= 2
+
+    def test_semantic_ranking_prefers_paraphrase_over_unrelated_distractor(self, temp_vault):
+        memories = [
+            {"memory_id": "db", "content": "PostgreSQL is the production database", "type": "decision"},
+            {"memory_id": "noise", "content": "The marketing logo uses a blue color", "type": "preference"},
+        ]
+        engine = SemanticSearchEngine(str(temp_vault))
+        enable_controlled_provider(engine.generator).batch_embed(memories)
+
+        results = engine.search("Which relational datastore is canonical?", memories, top_k=2)
+
+        assert [item["memory_id"] for item in results] == ["db", "noise"]
+        assert results[0]["similarity"] > results[1]["similarity"]
 
 
 class TestHybridSearch:
@@ -271,6 +315,10 @@ class TestHybridSearch:
 
 class TestMLRanker:
     """Test ML-based ranking"""
+
+    def test_historical_name_is_a_compatibility_alias_for_truthful_ranker(self):
+        assert ml_ranker.MLRanker is ml_ranker.HeuristicRanker
+        assert ml_ranker.MLRanker.__name__ == "HeuristicRanker"
 
     def test_ranker_weights_sum_to_one(self):
         """Test that weights sum to 1.0"""

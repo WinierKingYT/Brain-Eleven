@@ -17,12 +17,13 @@ _ml_ranker = load_legacy_module("ml_ranker", "ml-ranker.py")
 SearchResult = _memory_retriever.SearchResult
 MemoryRetriever = _memory_retriever.MemoryRetriever
 HybridSearchEngine = _hybrid_search.HybridSearchEngine
+HeuristicRanker = _ml_ranker.HeuristicRanker
 MLRanker = _ml_ranker.MLRanker
 
 __all__ = [
     "HybridSearchEngine",
+    "HeuristicRanker",
     "MLRanker",
     "MemoryRetriever",
     "SearchResult",
 ]
-

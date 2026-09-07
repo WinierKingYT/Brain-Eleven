@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Optional, Dict, Literal
 import json
+import hashlib
 import os
 import sys
 import importlib.util
@@ -60,14 +61,14 @@ try:
 
     from brain_eleven.search import (
         HybridSearchEngine,
-        MLRanker as PackagedMLRanker,
+        HeuristicRanker as PackagedHeuristicRanker,
         MemoryRetriever,
         SearchResult,
     )
 
     # Keep the API's historical names stable while the search surface moves
     # behind the package boundary.
-    MLRanker = PackagedMLRanker
+    HeuristicRanker = PackagedHeuristicRanker
     MemoryValidator = _memory_validator.MemoryValidator
 
     from brain_eleven.support import CacheManager, AnomalyDetector, MemorySummarizer
@@ -168,6 +169,21 @@ def _rebuild_graph() -> "KnowledgeGraph":
     return graph
 
 
+def _memory_corpus_fingerprint(memories: List[Dict], revision: object = None) -> str:
+    """Create a privacy-safe cache identity for the filtered memory corpus."""
+    records = [
+        {
+            "memory_id": str(memory.get("memory_id", "")),
+            "content_hash": hashlib.sha256(str(memory.get("content", "")).encode("utf-8")).hexdigest(),
+            "status": str(memory.get("status", "")),
+            "updated_at": str(memory.get("updated_at", memory.get("timestamp", ""))),
+        }
+        for memory in memories
+    ]
+    payload = json.dumps({"revision": revision, "records": sorted(records, key=lambda item: item["memory_id"])}, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:32]
+
+
 def _ensure_graph_current() -> "KnowledgeGraph":
     """Recover the graph projection before serving graph-backed responses."""
     if graph is None:
@@ -197,7 +213,7 @@ async def lifespan(app: FastAPI):
         hybrid_engine = HybridSearchEngine(str(vault_path))
         logger.info("✅ Hybrid search engine initialized")
 
-        ranker = MLRanker()
+        ranker = HeuristicRanker()
         logger.info("✅ ML ranker initialized")
 
         # Cache manager (Phase 9A: L1 memory + L2 Redis + L3 disk)
@@ -345,11 +361,11 @@ async def search(request: SearchRequest):
         if not memories:
             return {"results": [], "query": request.query, "count": 0}
 
-        # Cache key incorporates query + top_k + a fingerprint of the memory
-        # set size so a cache entry can't outlive additions to the vault.
+        # Cache key incorporates a content/revision fingerprint. Corpus size
+        # alone lets same-sized mutations reuse stale search results.
         cache_key = CacheManager.make_key(
             "search", request.query, request.top_k, request.project_id or "global-only",
-            request.retrieval_scope, len(memories),
+            request.retrieval_scope, _memory_corpus_fingerprint(memories, data.get("revision")),
         )
 
         def compute_results():
@@ -380,7 +396,7 @@ async def search(request: SearchRequest):
 @app.post("/rank")
 async def rank_results(request: RankRequest):
     """
-    ML-based ranking: applies 5-feature weighting to candidates
+    Deterministic weighted ranking: applies 5-feature weighting to candidates
 
     Features: search_relevance, memory_quality, recency, novelty, match_type
     """

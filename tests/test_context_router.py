@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -14,7 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from context_router import ContextRouter, RoutingOptions  # noqa: E402
+from context_router.adapters import MemoryAdapter, RawCandidate, StateAdapter  # noqa: E402
 from context_router.__main__ import main as router_main  # noqa: E402
+from context_router.models import RetrievalQuery  # noqa: E402
 from project_registry import ProjectRegistry  # noqa: E402
 from state_resolver import StateResolver  # noqa: E402
 from state_store import StateService  # noqa: E402
@@ -292,6 +295,45 @@ def test_stale_graph_is_degraded_and_never_replaces_canonical_memory(tmp_path):
     assert result.status == "DEGRADED"
     assert any(reason.startswith("graph_") for reason in result.degraded_reasons)
     assert "mem_a_sqlite" in {candidate.candidate_id for candidate in result.candidates}
+
+
+def test_recent_continuity_is_age_aware_and_ignores_stale_records():
+    query = RetrievalQuery("continuity", "test", "RECENT_CONTINUITY")
+    fresh = {"memory_id": "fresh", "type": "decision", "updated_at": datetime.now(timezone.utc).isoformat()}
+    old = {
+        "memory_id": "old",
+        "type": "decision",
+        "updated_at": (datetime.now(timezone.utc) - timedelta(days=31)).isoformat(),
+    }
+
+    fresh_match = MemoryAdapter._matches(fresh, query)
+    old_match = MemoryAdapter._matches(old, query)
+
+    assert fresh_match[0] is True
+    assert fresh_match[2] == "continuity_recency"
+    assert old_match[0] is False
+
+
+def test_state_query_keeps_mandatory_records_with_lower_relevance_when_unmatched():
+    query = RetrievalQuery("state", "test", "CONCEPT", terms=("sqlite",))
+
+    matched, score = StateAdapter._matches_query({"text": "SQLite is canonical"}, "project-a", query)
+    unmatched, fallback_score = StateAdapter._matches_query({"text": "Unrelated note"}, "project-a", query)
+
+    assert matched and score > fallback_score
+    assert unmatched and fallback_score == 0.30
+
+
+def test_graph_only_candidates_consume_a_separate_graph_budget():
+    candidates = [
+        RawCandidate("graph-1", "memory", "project-a", "decision", "active", 1, {"memory_id": "graph-1"}, "g", "graph_relation", 0.90),
+        RawCandidate("graph-2", "memory", "project-a", "decision", "active", 1, {"memory_id": "graph-2"}, "g", "graph_relation", 0.80),
+        RawCandidate("lexical-1", "memory", "project-a", "decision", "active", 1, {"memory_id": "lexical-1"}, "m", "concept_match", 0.70),
+    ]
+
+    normalized = ContextRouter._normalize(candidates, {"memory": 1, "graph": 1})
+
+    assert {candidate.candidate_id for candidate in normalized} == {"graph-1", "lexical-1"}
 
 
 def test_second_changed_revision_returns_stale_input_after_single_retry(tmp_path, monkeypatch):

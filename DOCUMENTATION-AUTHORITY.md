@@ -24,8 +24,10 @@ authorize opening Phase 20 or promoting V2.
 | Path | Class / boundary |
 |---|---|
 | `PROJECT-STATUS.md` | CURRENT top-level IG status; explicitly historical sections remain HISTORICAL. |
+| `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
+| `IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |
 | `PRE20-12-REPOSITORY-CONSOLIDATION.md`, `PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT.md` | HISTORICAL closed-program record; “next Phase 20” scheduling superseded by IG. |
@@ -35,7 +37,7 @@ authorize opening Phase 20 or promoting V2.
 | `ORCHESTRATION-STATUS.md`, `PARALLEL-ORCHESTRATION.md` | HISTORICAL prior engineering coordination; current IG sequencing supersedes. |
 | `templates/claude/commands/remember.md` | CURRENT command template, subject to current CLI behavior. |
 | `templates/claude/legacy/remember-v1.md` | HISTORICAL compatibility artifact. |
-| `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
+| `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md`, `evals/intelligence_taxonomy.py` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
 
 ## Default path rules (first match)
 
@@ -57,3 +59,9 @@ Known stale claims include PRE-12's “NEXT: PHASE 20”, Foundation-era V1/V2
 runtime statements, older phase status paragraphs and PRE-13's former “freeze
 blocked” wording. Feature freeze is now a program decision; successful technical
 closure, production promotion and intelligence graduation are separate claims.
+
+Authority boundary: the Authority layer may resolve structured lifecycle and
+provenance metadata, but it does not infer a contradiction from free text. A
+candidate correction whose target is not explicitly identified is quarantined
+for the IG-04 reference-resolution package. This abstention is a safety
+property, not evidence that free-text correction intelligence is complete.

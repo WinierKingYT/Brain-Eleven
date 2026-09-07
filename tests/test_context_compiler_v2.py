@@ -102,6 +102,9 @@ def test_compiler_is_deterministic_budgeted_and_never_writes_canonical_sources(t
     assert first.telemetry["router_config_version"]
     assert first.telemetry["authority_policy_version"] == resolution.policy_version
     assert first.telemetry["compiler_policy_version"] == "context-compiler-v2-policy-v1"
+    assert first.telemetry["cache_hit"] is False
+    assert second.telemetry["cache_hit"] is False
+    assert second.telemetry["audit_cache_hit"] is True
     assert "mem_foreign" not in {item.candidate_id for item in first.selected}
     assert "[END BRAIN-ELEVEN CONTEXT]" in first.rendered_context
     manifest = json.dumps(first.manifest_dict())

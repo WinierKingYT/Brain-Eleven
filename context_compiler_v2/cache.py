@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -48,6 +49,11 @@ class CompilerCache:
         manifest = value.get("manifest")
         if not isinstance(manifest, Mapping) or not self._content_safe(manifest):
             return None
+        value["last_access_ns"] = time.time_ns()
+        try:
+            self.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        except OSError:
+            pass
         return manifest
 
     def store(self, key: str, revisions: Mapping[str, Any], manifest: Mapping[str, Any]) -> None:
@@ -57,9 +63,13 @@ class CompilerCache:
         existing = self.load_all()
         if isinstance(existing, Mapping):
             entries.update(existing)
-        entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest)}
-        # Keep derived cache bounded and deterministic.
-        entries = dict(sorted(entries.items())[-32:])
+        entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest), "last_access_ns": time.time_ns()}
+        # Keep derived cache bounded by least-recently-used access, not key
+        # spelling. The cache is an audit projection, never canonical truth.
+        if len(entries) > 32:
+            stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
+            for stale_key in stale:
+                entries.pop(stale_key, None)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(prefix=".compiler-cache-", suffix=".json", dir=self.path.parent)
         try:

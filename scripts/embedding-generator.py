@@ -27,6 +27,7 @@ class EmbeddingGenerator:
         self.model = "text-embedding-3-small"
         self.dimension = 1536
         self.provider = "openai"
+        self.embedding_schema_version = 2
 
         # Try to use OpenAI if API key available. An empty string counts as
         # "not set" - e.g. a .env with `OPENAI_API_KEY=` (no value) loaded
@@ -138,7 +139,8 @@ class EmbeddingGenerator:
 
                 # Reuse only a cache entry generated for this exact content,
                 # provider, model and dimension.
-                cached = self.get_embedding(mem_id, content)
+                source_revision = memory.get("source_revision", memory.get("revision"))
+                cached = self.get_embedding(mem_id, content, source_revision=source_revision)
                 if cached is not None:
                     embeddings[mem_id] = cached
                     continue
@@ -151,7 +153,7 @@ class EmbeddingGenerator:
                 embeddings[mem_id] = embedding
 
                 # Store in cache
-                self.embeddings[mem_id] = self._cache_entry(content, embedding)
+                self.embeddings[mem_id] = self._cache_entry(content, embedding, source_revision=source_revision)
 
                 if (i + 1) % 10 == 0:
                     print(f"   → {i + 1}/{len(memories)} embedded")
@@ -219,17 +221,25 @@ class EmbeddingGenerator:
     def _content_hash(content: str) -> str:
         return hashlib.sha256(" ".join(str(content).split()).encode("utf-8")).hexdigest()
 
-    def _cache_entry(self, content: str, embedding: np.ndarray) -> Dict:
+    def _cache_entry(self, content: str, embedding: np.ndarray, *, source_revision: Optional[object] = None) -> Dict:
         return {
             "vector": embedding.tolist(),
             "content_hash": self._content_hash(content),
             "provider": self.provider,
             "model": self.model,
             "dimension": self.dimension,
+            "embedding_schema_version": self.embedding_schema_version,
+            "source_revision": source_revision,
             "generated_at": datetime.now().isoformat(),
         }
 
-    def get_embedding(self, memory_id: str, content: Optional[str] = None) -> Optional[np.ndarray]:
+    def get_embedding(
+        self,
+        memory_id: str,
+        content: Optional[str] = None,
+        *,
+        source_revision: Optional[object] = None,
+    ) -> Optional[np.ndarray]:
         """Retrieve a valid provider-backed cached embedding.
 
         Legacy list-only entries are rejected because their provenance cannot
@@ -246,7 +256,11 @@ class EmbeddingGenerator:
                 return None
             if entry.get("model") != self.model or entry.get("dimension") != self.dimension:
                 return None
+            if entry.get("embedding_schema_version") != self.embedding_schema_version:
+                return None
             if content is not None and entry.get("content_hash") != self._content_hash(content):
+                return None
+            if source_revision is not None and entry.get("source_revision") != source_revision:
                 return None
             vector = entry.get("vector")
             if not isinstance(vector, list) or len(vector) != self.dimension:

@@ -32,6 +32,10 @@ def test_explicit_user_decision_becomes_one_project_memory_candidate(tmp_path):
     assert candidate.scope == "project"
     assert candidate.project_id == "brain-eleven"
     assert len(candidate.evidence_refs) == 1
+    assert set(candidate.confidence_components) >= {
+        "commitment", "source_authority", "classification", "scope", "temporal", "reference"
+    }
+    assert candidate.confidence < 0.97
 
 
 def test_assistant_proposal_hypothetical_and_quote_never_become_user_decisions(tmp_path):

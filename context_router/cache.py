@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -29,7 +30,14 @@ class RouterCache:
         if not isinstance(entry, dict) or entry.get("input_revisions") != dict(revisions):
             return None
         result = entry.get("result")
-        return result if isinstance(result, dict) else None
+        if not isinstance(result, dict):
+            return None
+        entry["last_access_ns"] = time.time_ns()
+        try:
+            self.path.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        except OSError:
+            pass
+        return result
 
     def store(self, key: str, revisions: Mapping[str, Any], result: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -42,10 +50,11 @@ class RouterCache:
             except (OSError, json.JSONDecodeError):
                 pass
         entries = document.setdefault("entries", {})
-        entries[key] = {"input_revisions": dict(revisions), "result": dict(result)}
+        entries[key] = {"input_revisions": dict(revisions), "result": dict(result), "last_access_ns": time.time_ns()}
         # Bound derived state; cache is never canonical authority.
         if len(entries) > 32:
-            for stale_key in sorted(entries)[:-32]:
+            stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
+            for stale_key in stale:
                 entries.pop(stale_key, None)
         descriptor, temporary = tempfile.mkstemp(prefix=".context-router-cache-", suffix=".json", dir=self.path.parent)
         try:

@@ -99,6 +99,7 @@ def vault(tmp_path_factory):
 @pytest.fixture(scope="module")
 def client(vault):
     module = _load_search_api(vault)
+    module.app.state.search_api_module = module
     with TestClient(module.app) as c:
         yield c
 
@@ -123,6 +124,16 @@ class TestHealthAndStatus:
 
 
 class TestSearchRankEmbed:
+
+    def test_search_corpus_fingerprint_changes_for_same_size_content_mutation(self, client):
+        module = client.app.state.search_api_module
+        records_a = [make_memory(memory_id="same", content="old content")]
+        records_b = [make_memory(memory_id="same", content="new content")]
+
+        first = module._memory_corpus_fingerprint(records_a, revision=4)
+        second = module._memory_corpus_fingerprint(records_b, revision=4)
+
+        assert first != second
 
     def test_search_returns_results_for_seeded_content(self, client):
         response = client.post("/search", json={"query": "Redis caching", "top_k": 3})

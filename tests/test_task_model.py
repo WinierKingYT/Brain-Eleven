@@ -181,6 +181,8 @@ def test_task_analyzer_is_deterministic_for_turkish_planning_and_explicit_constr
     assert "phase-17" in task.entities
     assert "ContextRouter" in task.entities
     assert "architecture_change" in task.risk_flags
+    assert task.confidence["intent"] < 0.70
+    assert "intent" in task.ambiguities
 
 
 def test_task_analyzer_handles_english_debugging_and_unknown_project_without_side_effects(tmp_path):
@@ -203,6 +205,15 @@ def test_task_analyzer_does_not_match_intent_keywords_inside_larger_words(tmp_pa
     task = analyzer.analyze("Inspect the latest implementation.")
 
     assert task.intent.value == "REVIEW"
+
+
+def test_task_analyzer_does_not_claim_high_confidence_for_competing_intents(tmp_path):
+    analyzer = TaskAnalyzer(tmp_path / "vault", tmp_path / "unknown")
+    task = analyzer.analyze("Review and implement the authentication change.")
+
+    assert task.intent.value == "REVIEW"
+    assert task.confidence["intent"] == 0.40
+    assert "intent" in task.ambiguities
 
 
 def test_task_analyzer_rejects_blank_and_accepts_large_valid_requests(tmp_path):

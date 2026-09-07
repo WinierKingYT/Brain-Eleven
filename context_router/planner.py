@@ -113,7 +113,7 @@ def build_plan(task, scope: RouteScope, history_mode: str, config: RouterConfig)
     if domains:
         add("memory", "DOMAIN", domains)
     if scope.project_ids:
-        add("state", "CURRENT_PROJECT_STATE")
+        add("state", "CURRENT_PROJECT_STATE", _unique((*concepts, *domains)))
     if profile == "continuation":
         add("memory", "RECENT_CONTINUITY", (), STRICT_TIER)
     aliases = _aliases((*concepts, *domains))

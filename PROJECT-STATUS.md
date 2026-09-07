@@ -5,7 +5,7 @@
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **Active package: IG-00 Freeze & Baseline — IMPLEMENTED / REVIEW PENDING**.
 
-The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 remains complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. No package after IG-00 opens before independent acceptance.
+The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. No package after IG-00 opens before independent acceptance.
 
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
@@ -18,11 +18,20 @@ require matching content, provider, model and dimension provenance. This is
 reliability work inside IG-00; it does not open IG-01 or change the Phase 20
 lock.
 
+The current head also closes bounded review findings without promoting any
+shadow runtime: task confidence records ambiguity instead of claiming 0.95
+certainty, state retrieval preserves mandatory records while ranking matches,
+continuity retrieval is age-aware, graph-only candidates have their own budget,
+derived caches use recent-access eviction, compiler telemetry distinguishes an
+audit-manifest hit from a compiled-context hit, extraction records confidence
+components, and the search corpus cache key includes content fingerprints.
+
 ## Status vocabulary
 
 | Status | Meaning |
 |---|---|
 | **VERIFIED** | A bounded claim has reproducible automated evidence or a revision-bound CI result. |
+| **VERIFIED (SURFACE)** | Public import/caller boundaries are verified; implementation ownership may still use a documented compatibility bridge. |
 | **PARTIALLY VERIFIED** | The implementation is present, but a required environment or operational check is still absent. |
 | **NOT VERIFIED** | No adequate evidence exists; this is not a claim of failure. |
 | **HISTORICAL** | A past implementation or validation record; it does not describe the current head. |
@@ -83,7 +92,7 @@ program is graduated.
 | PRE-09 Diversity, coverage and density | **VERIFIED** | `f78ffc3` / `4f730b1`; Validation #77; Docker #77. |
 | PRE-10 Compiler V2 production hardening | **VERIFIED** | `53e16c9`; Validation #78; [Docker run #78](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992047104). Profile budgets, final render remeasurement, cache content-safety checks and expanded secret screening are verified. Runtime promotion remains deferred; V1 and SessionStart remain active. |
 | PRE-11 Private real-use evaluation and derived feedback | **VERIFIED** | `64604f3`; [Validation #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992641072); [Docker #80](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/33992964482). Local-only annotations, explicit private-data boundary, deterministic scoring and non-authoritative observable usage telemetry are covered. |
-| PRE-12 Repository consolidation | **VERIFIED** | Packages 1–24 and the final read-only closure audit are complete. The stable package surfaces cover project identity, memory, state, graph, extraction, search, support, locking, lifecycle, router, authority, compiler, evaluation, hooks, API, backup, validation, maintenance, manual capture, and migration callers. Package 22 hardened cross-platform hook path handling; Package 23 migrated all state resolver callers; Package 24 migrated core `MemoryStore`/`StateStore` implementation dependencies while preserving explicit copied-hook fallbacks. The closure audit baseline is `a77d88a`; [Validation #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026682142) and [Docker #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026970572) passed. Local closure audit: 593 unit tests passed, 41 integration/graduation tests excluded, critical lint findings 0, compilation clean. |
+| PRE-12 Compatibility-surface consolidation | **VERIFIED (SURFACE)** | Packages 1–24 and the final read-only closure audit established stable public package surfaces and migrated callers. The surface covers project identity, memory, state, graph, extraction, search, support, locking, lifecycle, router, authority, compiler, evaluation, hooks, API, backup, validation, maintenance, manual capture, and migration callers. The closure audit baseline is `a77d88a`; [Validation #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026682142) and [Docker #135](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34026970572) passed. Implementation ownership is not yet fully consolidated: selected `brain_eleven.*` modules still bridge to `scripts/` compatibility implementations. |
 
 ## Runtime graduation evidence
 

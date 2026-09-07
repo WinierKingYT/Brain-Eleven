@@ -61,7 +61,11 @@ class SemanticSearchEngine:
                 continue
 
             # Get cached embedding
-            embedding = self.generator.get_embedding(memory_id, memory.get("content", ""))
+            embedding = self.generator.get_embedding(
+                memory_id,
+                memory.get("content", ""),
+                source_revision=memory.get("source_revision", memory.get("revision")),
+            )
             if embedding is None:
                 continue
 

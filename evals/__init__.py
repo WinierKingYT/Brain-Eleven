@@ -43,6 +43,7 @@ from .fixture_generator import (
     build_vault,
     build_vault_from_path,
 )
+from .intelligence_taxonomy import METRICS, TAXONOMY, TAXONOMY_VERSION, taxonomy_manifest, validate_category
 
 __all__ = [
     "BASELINE_CAPABILITIES",
@@ -76,4 +77,9 @@ __all__ = [
     "validate_fixture_documents",
     "validate_task_documents",
     "write_evaluation_report",
+    "METRICS",
+    "TAXONOMY",
+    "TAXONOMY_VERSION",
+    "taxonomy_manifest",
+    "validate_category",
 ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Brain-Eleven ML Ranking Engine
-Machine learning-based ranking combining multiple signals
+ Brain-Eleven weighted ranking engine
+ Deterministic heuristic ranking combining multiple signals
 
 Features ranked:
 - Search relevance (lexical + semantic): 40%
@@ -18,8 +18,12 @@ from datetime import datetime
 from typing import List, Dict, Optional
 
 
-class MLRanker:
-    """Machine learning-based ranking engine"""
+class HeuristicRanker:
+    """Deterministic weighted-signal ranker.
+
+    This class does not train or load a learned model. The historical
+    ``MLRanker`` name remains as a compatibility alias below.
+    """
 
     def __init__(self):
         # Feature weights (must sum to 1.0)
@@ -49,7 +53,7 @@ class MLRanker:
         candidates: List[Dict],
         memories: List[Dict]
     ) -> List[Dict]:
-        """Rank candidates using ML features"""
+        """Rank candidates using deterministic features."""
 
         ranked = []
 
@@ -240,6 +244,11 @@ class MLRanker:
     def get_weights(self) -> Dict[str, float]:
         """Get current ranking weights"""
         return dict(self.weights)
+
+
+# Compatibility for the existing API and legacy scripts. New code should use
+# the truthful name so a hand-tuned heuristic is not mistaken for trained ML.
+MLRanker = HeuristicRanker
 
 
 # ============================================================================

@@ -99,7 +99,12 @@ class ContextRouter:
         by_source: dict[str, list[Candidate]] = defaultdict(list)
         for entry in merged.values():
             candidate = cls._candidate_from_raw(entry["raw"], entry)
-            by_source[candidate.source_type].append(candidate)
+            # Graph expansion resolves back to canonical memory IDs, but its
+            # own budget must still be enforced. A memory found by both a
+            # lexical query and graph expansion stays in the memory bucket;
+            # graph-only candidates consume the graph bucket.
+            bucket = "graph" if entry["signals"] == {"graph_relation"} else candidate.source_type
+            by_source[bucket].append(candidate)
         bounded: list[Candidate] = []
         for source, values in sorted(by_source.items()):
             values.sort(key=lambda candidate: (-candidate.retrieval_score, candidate.candidate_id))

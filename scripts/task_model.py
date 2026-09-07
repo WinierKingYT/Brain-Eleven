@@ -221,6 +221,19 @@ def _all_rule_values(request: str, rules: Sequence[_Rule]) -> tuple[str, ...]:
     )
 
 
+def _rule_confidence(matches: tuple[str, ...], *, single: float = 0.70, ambiguous: float = 0.40) -> float:
+    """Return a bounded rule confidence, separating certainty from match order.
+
+    The first matching rule is only a deterministic tie-breaker. It is not
+    evidence that the request is 95% certain, especially when multiple intents
+    are present in one sentence.
+    """
+
+    if not matches:
+        return 0.0
+    return ambiguous if len(matches) > 1 else single
+
+
 def _extract_entities(raw_request: str) -> tuple[str, ...]:
     """Keep only exact user-provided identifiers; never infer entities."""
     found: list[str] = []
@@ -284,18 +297,21 @@ class TaskAnalyzer:
 
         project = resolve_project(self.vault_path, self.project_root)
         normalized = _normalized_request(raw_request)
-        intent = _first_rule_value(normalized, _INTENT_RULES, "UNKNOWN")
+        intent_matches = _all_rule_values(normalized, _INTENT_RULES)
+        intent = intent_matches[0] if intent_matches else "UNKNOWN"
         domains = _all_rule_values(normalized, _DOMAIN_RULES)
         explicit_constraints = _all_rule_values(normalized, _EXPLICIT_CONSTRAINT_RULES)
         risk_flags = _all_rule_values(normalized, _RISK_RULES)
         risk = _risk_level(risk_flags)
-        intent_confidence = 0.95 if intent != "UNKNOWN" else 0.0
-        domain_confidence = 0.80 if domains else 0.0
+        intent_confidence = _rule_confidence(intent_matches)
+        domain_confidence = _rule_confidence(domains, single=0.70, ambiguous=0.45)
         overall = round((project.confidence + intent_confidence + domain_confidence) / 3, 4)
         ambiguities: list[str] = []
         if project.status == "unresolved":
             ambiguities.append("project")
         if intent == "UNKNOWN":
+            ambiguities.append("intent")
+        elif len(intent_matches) > 1:
             ambiguities.append("intent")
         if not domains:
             ambiguities.append("domain")

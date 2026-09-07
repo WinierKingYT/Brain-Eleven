@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
@@ -85,7 +86,22 @@ class MemoryAdapter:
         if query.strategy == "DIRECT_ID":
             return (memory_id.casefold() in terms, 1.0, "direct_id")
         if query.strategy == "RECENT_CONTINUITY":
-            return (memory.get("type") in {"open_loop", "decision"}, 0.65, "continuity_type")
+            if memory.get("type") not in {"open_loop", "decision"}:
+                return (False, 0.0, "")
+            timestamp = memory.get("updated_at") or memory.get("timestamp") or memory.get("created_at")
+            if not timestamp:
+                return (False, 0.0, "")
+            try:
+                parsed = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                age_days = max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds() / 86400.0)
+            except (TypeError, ValueError):
+                return (False, 0.0, "")
+            if age_days > 30:
+                return (False, 0.0, "")
+            recency = max(0.20, 1.0 - (age_days / 30.0) * 0.60)
+            return (True, round(recency, 4), "continuity_recency")
         if not terms:
             return (False, 0.0, "")
         matched = tuple(term for term in terms if term in haystack)
@@ -205,6 +221,23 @@ class StateAdapter:
             score=score,
         )
 
+    @staticmethod
+    def _matches_query(item: Mapping[str, Any], project_id: str, query: RetrievalQuery) -> tuple[bool, float]:
+        """Score state records against task terms when the planner provides them."""
+        if not query.terms:
+            return True, 1.0
+        haystack = " ".join(
+            str(item.get(key, "")) for key in ("id", "title", "text", "phase_id", "status")
+        ).casefold() + f" {project_id.casefold()}"
+        matched = sum(1 for term in query.terms if term.casefold() in haystack)
+        if not matched:
+            # State records are also the source of mandatory current context.
+            # Keep them available when task terms do not mention their wording;
+            # the lower score lets relevant records win without dropping the
+            # objective, blocker, or constraint required by the compiler.
+            return True, 0.30
+        return True, min(1.0, 0.55 + (matched / len(query.terms)) * 0.40)
+
     def retrieve(self, states: Mapping[str, CurrentProjectState], query: RetrievalQuery) -> list[RawCandidate]:
         result: list[RawCandidate] = []
         for project_id, state in sorted(states.items()):
@@ -215,9 +248,13 @@ class StateAdapter:
             objective = current.get("objective")
             milestone = current.get("milestone")
             if objective:
-                result.append(self._candidate(project_id, revision, "objective", objective, query.query_id, 0.93))
+                matched, relevance = self._matches_query(objective, project_id, query)
+                if matched:
+                    result.append(self._candidate(project_id, revision, "objective", objective, query.query_id, 0.93 * relevance))
             if milestone:
-                result.append(self._candidate(project_id, revision, "milestone", milestone, query.query_id, 0.88))
+                matched, relevance = self._matches_query(milestone, project_id, query)
+                if matched:
+                    result.append(self._candidate(project_id, revision, "milestone", milestone, query.query_id, 0.88 * relevance))
             for kind, records, score in (
                 ("blocker", state.active_blockers, 0.98),
                 ("requirement", state.active_requirements, 0.92),
@@ -226,7 +263,9 @@ class StateAdapter:
                 ("risk", state.risks, 0.80),
             ):
                 for item in records:
-                    result.append(self._candidate(project_id, revision, kind, item, query.query_id, score))
+                    matched, relevance = self._matches_query(item, project_id, query)
+                    if matched:
+                        result.append(self._candidate(project_id, revision, kind, item, query.query_id, score * relevance))
         return result
 
 

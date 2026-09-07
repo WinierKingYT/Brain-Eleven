@@ -199,6 +199,22 @@ def test_derived_caches_are_revision_bound_content_safe_and_corruption_tolerant(
     assert compiler_cache.load("compile", revisions) is None
 
 
+def test_derived_caches_evict_by_recent_access_not_key_order(tmp_path):
+    revisions = {"memory": 7}
+    reference = {"candidate_ids": ["seed"]}
+    for cache_type in (RouterCache, AuthorityCache, CompilerCache):
+        cache = cache_type(tmp_path / cache_type.__name__)
+        cache.store("key-00", revisions, reference)
+        for index in range(1, 17):
+            cache.store(f"key-{index:02d}", revisions, reference)
+        assert cache.load("key-00", revisions) == reference
+        for index in range(17, 34):
+            cache.store(f"key-{index:02d}", revisions, reference)
+
+        assert cache.load("key-00", revisions) == reference
+        assert cache.load("key-01", revisions) is None
+
+
 def test_shadow_runners_and_clis_remain_non_injecting_and_content_free(tmp_path, capsys):
     context, project = _configured(tmp_path)
     route = ContextRouter(tmp_path).route(context)

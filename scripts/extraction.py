@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 from capture_safety import evaluate_capture
 from evidence import EvidenceBatch, EvidenceMessage, EvidenceTime
@@ -67,6 +67,7 @@ class ExtractedBase:
     occurred_at: Optional[EvidenceTime]
     confidence: float
     evidence_refs: tuple[str, ...]
+    confidence_components: Mapping[str, float] = field(default_factory=dict)
     extractor_version: str = EXTRACTOR_VERSION
 
     def to_dict(self) -> dict[str, Any]:
@@ -163,7 +164,48 @@ def _classify_commitment(content: str, role: str) -> Commitment:
     return Commitment.UNCERTAIN
 
 
-def _base(message: EvidenceMessage, index: int, kind: str, commitment: Commitment, confidence: float) -> dict[str, Any]:
+def _confidence_components(message: EvidenceMessage, content: str, commitment: Commitment) -> tuple[float, dict[str, float]]:
+    """Derive transparent confidence from independent evidence signals."""
+    role = message.record.role
+    commitment_signal = {
+        Commitment.COMMITTED: 0.92,
+        Commitment.OBSERVED: 0.68,
+        Commitment.NEGATED: 0.35,
+        Commitment.PROPOSED: 0.20,
+        Commitment.HYPOTHETICAL: 0.18,
+        Commitment.QUESTION: 0.12,
+        Commitment.QUOTED: 0.12,
+        Commitment.UNCERTAIN: 0.25,
+    }[commitment]
+    source_authority = 1.0 if role == "user" else 0.25
+    classification = 0.90 if any(pattern.search(content) for pattern in (_DECISION, _LESSON, _PREFERENCE, _CURRENT, _REQUIREMENT)) else 0.55
+    scope = 1.0 if message.record.project_id else 0.0
+    temporal = 0.80 if message.record.occurred_at is not None else 0.55
+    reference = 0.30 if _EXPLICIT_CORRECTION.search(content) else 0.85
+    components = {
+        "commitment": commitment_signal,
+        "source_authority": source_authority,
+        "classification": classification,
+        "scope": scope,
+        "temporal": temporal,
+        "reference": reference,
+    }
+    confidence = round(
+        commitment_signal * 0.30 + source_authority * 0.20 + classification * 0.20
+        + scope * 0.15 + temporal * 0.10 + reference * 0.05,
+        4,
+    )
+    return confidence, components
+
+
+def _base(
+    message: EvidenceMessage,
+    index: int,
+    kind: str,
+    commitment: Commitment,
+    confidence: float,
+    confidence_components: Mapping[str, float],
+) -> dict[str, Any]:
     return {
         "candidate_id": _candidate_id(message, index, kind),
         "candidate_type": kind,
@@ -172,6 +214,7 @@ def _base(message: EvidenceMessage, index: int, kind: str, commitment: Commitmen
         "occurred_at": message.record.occurred_at,
         "confidence": confidence,
         "evidence_refs": (message.record.evidence_id,),
+        "confidence_components": dict(confidence_components),
     }
 
 
@@ -210,12 +253,13 @@ class DeterministicExtractor:
                 if len(content.strip()) < 3:
                     continue
                 commitment = _classify_commitment(content, message.record.role)
-                base = _base(message, index, CandidateKind.NEW_MEMORY.value, commitment, 0.97)
+                confidence, components = _confidence_components(message, content, commitment)
+                base = _base(message, index, CandidateKind.NEW_MEMORY.value, commitment, confidence, components)
                 safety = evaluate_capture(content)
                 if not safety.accepted:
                     quarantined.append(
                         QuarantineCandidate(
-                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0),
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
                             reason=safety.reason,
                             content_hash=_content_hash(content),
                         )
@@ -224,7 +268,7 @@ class DeterministicExtractor:
                 if message.record.project_id is None:
                     quarantined.append(
                         QuarantineCandidate(
-                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0),
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
                             reason="SCOPE_UNRESOLVED",
                             content_hash=_content_hash(content),
                         )
@@ -240,7 +284,7 @@ class DeterministicExtractor:
                 }:
                     quarantined.append(
                         QuarantineCandidate(
-                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0),
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
                             reason={
                                 Commitment.PROPOSED: "ASSISTANT_PROPOSAL",
                                 Commitment.HYPOTHETICAL: "HYPOTHETICAL_NOT_COMMITMENT",
@@ -258,7 +302,7 @@ class DeterministicExtractor:
                     # PRE-06 may turn this explicit correction into a mutation.
                     quarantined.append(
                         QuarantineCandidate(
-                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0),
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
                             reason="LIFECYCLE_TARGET_UNKNOWN",
                             content_hash=_content_hash(content),
                         )
@@ -267,7 +311,7 @@ class DeterministicExtractor:
                 if operation is not None:
                     accepted.append(
                         StateMutationProposal(
-                            **_base(message, index, CandidateKind.STATE_MUTATION.value, commitment, 0.94),
+                            **_base(message, index, CandidateKind.STATE_MUTATION.value, commitment, confidence, components),
                             operation=operation,
                             text=content,
                         )
