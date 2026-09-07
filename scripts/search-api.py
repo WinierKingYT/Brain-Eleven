@@ -210,7 +210,7 @@ async def lifespan(app: FastAPI):
 
         # ChatAgent builds its own MemoryRetriever/HybridSearchEngine
         # internally rather than reusing the ones above - duplicate init
-        # cost is negligible here (fallback embeddings, no network calls).
+        # cost is negligible here.
         chat_agent = ChatAgent(str(vault_path))
         logger.info("✅ Chat agent initialized")
 
@@ -429,11 +429,16 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
         _embedding_generator = _load_hyphenated_module("embedding_generator", "embedding-generator.py")
         EmbeddingGenerator = _embedding_generator.EmbeddingGenerator
 
-        cache_key = CacheManager.make_key("embed", query)
+        # Version the API cache alongside the provider-backed contract so old
+        # deterministic/fallback vectors cannot be reused after migration.
+        cache_key = CacheManager.make_key("embed-v2", "text-embedding-3-small", query)
 
         def compute_embedding():
             gen = EmbeddingGenerator(str(vault_path))
-            return gen.embed_text(query).tolist()
+            embedding = gen.embed_text(query)
+            if embedding is None:
+                raise RuntimeError("semantic embedding provider unavailable")
+            return embedding.tolist()
 
         embedding = cache.get_or_compute(cache_key, compute_embedding) if cache else compute_embedding()
 
@@ -443,6 +448,9 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
             "dimension": len(embedding),
             "model": "text-embedding-3-small"
         }
+    except RuntimeError as e:
+        logger.info("Embedding unavailable: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Embedding error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

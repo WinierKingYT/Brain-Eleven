@@ -41,8 +41,15 @@ class SemanticSearchEngine:
     def search(self, query: str, memories: List[Dict], top_k: int = 5) -> List[Dict]:
         """Search using semantic similarity"""
 
+        # Never rank with deterministic/hash vectors.  When the configured
+        # provider is unavailable the caller must use lexical retrieval.
+        if not self.generator.semantic_available:
+            return []
+
         # Generate query embedding
         query_embedding = self.generator.embed_text(query)
+        if query_embedding is None:
+            return []
 
         # Compute similarity with all memories
         similarities = []
@@ -54,7 +61,7 @@ class SemanticSearchEngine:
                 continue
 
             # Get cached embedding
-            embedding = self.generator.get_embedding(memory_id)
+            embedding = self.generator.get_embedding(memory_id, memory.get("content", ""))
             if embedding is None:
                 continue
 

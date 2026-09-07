@@ -1,7 +1,7 @@
 # IG-00 — Freeze & Baseline
 
 Status: **IN PROGRESS / NOT ACCEPTED**. Authority: **CONTRACT** with explicitly
-labeled evidence. Updated: 2026-09-07.
+labeled evidence. Updated: 2026-09-08.
 
 ## Bounded contract
 
@@ -55,6 +55,16 @@ service stopped when idle. The old global Claude Brain-Eleven SessionStart and
 SessionEnd entries were removed from the active configuration and journaled for
 uninstall restoration; unrelated `cbm-session-reminder` hooks remain. Native
 client trust is still `VERIFY_IN_NATIVE_CLIENT` and has not been inferred.
+
+On 2026-09-08, the open freeze review also closed a bounded semantic safety
+issue. The legacy hash-seeded vector remains only as an explicitly unused test
+helper; production `embed_text` returns no vector without a real provider,
+`SemanticSearchEngine` abstains, and `HybridSearchEngine` switches to
+lexical-only scoring. Embedding cache entries carry content hash, provider,
+model and dimension metadata and are rejected on mismatch. The focused semantic
+and API suite passed 61 tests; the full non-integration suite passed 665 tests.
+This evidence strengthens IG-00 reliability but does not constitute IG-01
+evaluation or independent acceptance.
 
 ## Review and next-package boundary
 

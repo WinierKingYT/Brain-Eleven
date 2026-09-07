@@ -92,9 +92,15 @@ class HybridSearchEngine:
                     'content': result.content
                 })
 
-        # Get semantic results
-        print(f"   → Semantic search...")
-        semantic_results = self.semantic.search(query, memories, top_k=10)
+        # Get semantic results only when a real provider is available.  A
+        # deterministic/hash vector is not a semantic signal, so lexical
+        # retrieval becomes the complete and explainable fallback.
+        semantic_results = []
+        if self.semantic.generator.semantic_available:
+            print(f"   → Semantic search...")
+            semantic_results = self.semantic.search(query, memories, top_k=10)
+        else:
+            print("   → Semantic provider unavailable; using lexical search only")
 
         # Merge and combine scores
         merged = self._merge_results(query, lexical_results, semantic_results, memories)
@@ -165,12 +171,15 @@ class HybridSearchEngine:
                     'search_type': 'semantic'
                 }
 
-        # Compute combined scores
+        # Compute combined scores.  If the semantic channel is unavailable,
+        # normalize to lexical-only rather than silently applying a 40% cap.
+        semantic_enabled = bool(semantic)
+        lexical_weight = self.lexical_weight if semantic_enabled else 1.0
+        semantic_weight = self.semantic_weight if semantic_enabled else 0.0
         for mem_id, item in combined.items():
-            # Weighted combination: 40% lexical + 60% semantic
             combined_score = (
-                (item['lexical_score'] * self.lexical_weight) +
-                (item['semantic_score'] * self.semantic_weight)
+                (item['lexical_score'] * lexical_weight) +
+                (item['semantic_score'] * semantic_weight)
             )
 
             # Apply freshness boost

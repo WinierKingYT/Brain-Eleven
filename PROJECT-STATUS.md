@@ -1,6 +1,6 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-07
+**Last updated:** 2026-09-08
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **Active package: IG-00 Freeze & Baseline — IMPLEMENTED / REVIEW PENDING**.
@@ -10,6 +10,13 @@ The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “nex
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
 Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. Independent review, installed native trust and daily-use graduation remain unverified.
+
+The open freeze review also includes a bounded semantic safety correction: when
+the real embedding provider is unavailable, semantic search emits no synthetic
+vectors and hybrid retrieval uses lexical-only scoring. Cached vectors now
+require matching content, provider, model and dimension provenance. This is
+reliability work inside IG-00; it does not open IG-01 or change the Phase 20
+lock.
 
 ## Status vocabulary
 

@@ -6,7 +6,9 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-test}
+      # An absent key must leave semantic search unavailable. A placeholder
+      # key would force provider mode and then trigger an unsafe fallback.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       VAULT_PATH: /vault
       REDIS_HOST: redis
       REDIS_PORT: 6379

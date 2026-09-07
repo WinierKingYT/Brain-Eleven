@@ -152,21 +152,19 @@ class TestSearchRankEmbed:
         body = response.json()
         assert "results" in body
 
-    def test_embed_returns_vector_with_expected_dimension(self, client):
+    def test_embed_reports_unavailable_without_provider(self, client):
         response = client.post("/embed", params={"query": "hello world"})
 
-        assert response.status_code == 200
-        body = response.json()
-        assert body["dimension"] == len(body["embedding"])
-        assert body["dimension"] > 0
+        assert response.status_code == 503
+        assert "semantic embedding provider unavailable" in response.json()["detail"]
 
-    def test_embed_is_cached_on_repeat_identical_text(self, client):
-        client.post("/embed", params={"query": "cache probe embedding text"})
-        stats_before = client.get("/cache/stats").json()
-        client.post("/embed", params={"query": "cache probe embedding text"})
-        stats_after = client.get("/cache/stats").json()
+    def test_embed_does_not_cache_an_unavailable_vector(self, client):
+        before = client.get("/cache/stats").json()
+        response = client.post("/embed", params={"query": "cache probe embedding text"})
+        after = client.get("/cache/stats").json()
 
-        assert stats_after["l1"]["hits"] > stats_before["l1"]["hits"]
+        assert response.status_code == 503
+        assert after["l1"]["hits"] == before["l1"]["hits"]
 
 
 class TestMemoryCRUD:

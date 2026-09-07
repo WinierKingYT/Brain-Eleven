@@ -11,6 +11,7 @@ import pytest
 import json
 import numpy as np
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 # Setup path
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -34,6 +35,19 @@ EmbeddingGenerator = embedding_gen.EmbeddingGenerator
 SemanticSearchEngine = semantic_search.SemanticSearchEngine
 HybridSearchEngine = hybrid_search.HybridSearchEngine
 MLRanker = ml_ranker.MLRanker
+
+
+def enable_fake_provider(generator):
+    """Enable a deterministic in-process provider for structural tests only."""
+
+    class FakeEmbeddings:
+        def create(self, *, input, model):
+            vector = generator._embed_fallback(input).tolist()
+            return SimpleNamespace(data=[SimpleNamespace(embedding=vector)])
+
+    generator.use_openai = True
+    generator.client = SimpleNamespace(embeddings=FakeEmbeddings())
+    return generator
 
 
 @pytest.fixture
@@ -95,26 +109,19 @@ def sample_memories(temp_vault):
 class TestEmbeddingGenerator:
     """Test embedding generation and caching"""
 
-    def test_embed_text_fallback(self, temp_vault):
-        """Test fallback embedding generation"""
+    def test_embed_text_unavailable_without_provider(self, temp_vault):
+        """No provider must not produce a fake semantic vector."""
         generator = EmbeddingGenerator(str(temp_vault))
 
         text = "Test embedding generation"
         embedding = generator.embed_text(text)
 
-        # Should be numpy array
-        assert isinstance(embedding, np.ndarray)
-
-        # Should have correct dimension
-        assert embedding.shape == (1536,)
-
-        # Should be normalized (unit vector)
-        norm = np.linalg.norm(embedding)
-        assert abs(norm - 1.0) < 0.01
+        assert embedding is None
+        assert generator.semantic_available is False
 
     def test_embed_deterministic(self, temp_vault):
         """Test that embeddings are deterministic"""
-        generator = EmbeddingGenerator(str(temp_vault))
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
 
         text = "Deterministic test"
         emb1 = generator.embed_text(text)
@@ -125,7 +132,7 @@ class TestEmbeddingGenerator:
 
     def test_batch_embed(self, temp_vault, sample_memories):
         """Test batch embedding"""
-        generator = EmbeddingGenerator(str(temp_vault))
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
 
         embeddings = generator.batch_embed(sample_memories)
 
@@ -138,19 +145,36 @@ class TestEmbeddingGenerator:
 
     def test_cache_persistence(self, temp_vault, sample_memories):
         """Test that embeddings are cached"""
-        generator = EmbeddingGenerator(str(temp_vault))
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
 
         # First run
         embeddings = generator.batch_embed(sample_memories[:2])
         generator.save()
 
         # Second run - should use cache
-        generator2 = EmbeddingGenerator(str(temp_vault))
-        cached_emb = generator2.get_embedding(sample_memories[0]["memory_id"])
+        generator2 = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
+        cached_emb = generator2.get_embedding(
+            sample_memories[0]["memory_id"], sample_memories[0]["content"]
+        )
 
         # Should have cached value
         assert cached_emb is not None
         assert cached_emb.shape == (1536,)
+
+    def test_cache_rejects_content_mutation(self, temp_vault, sample_memories):
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
+        generator.batch_embed(sample_memories[:1])
+
+        changed = sample_memories[0]["content"] + " (changed)"
+        assert generator.get_embedding(sample_memories[0]["memory_id"], changed) is None
+
+    def test_cache_rejects_provider_transition(self, temp_vault, sample_memories):
+        generator = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
+        generator.batch_embed(sample_memories[:1])
+        generator.save()
+
+        unavailable = EmbeddingGenerator(str(temp_vault))
+        assert unavailable.get_embedding(sample_memories[0]["memory_id"], sample_memories[0]["content"]) is None
 
 
 class TestSemanticSearch:
@@ -203,7 +227,7 @@ class TestHybridSearch:
         engine = HybridSearchEngine(str(temp_vault))
 
         # Pre-generate embeddings
-        engine.semantic.generator.batch_embed(sample_memories)
+        enable_fake_provider(engine.semantic.generator).batch_embed(sample_memories)
 
         # Perform hybrid search
         results = engine.search("database production", sample_memories, top_k=3)
@@ -212,10 +236,18 @@ class TestHybridSearch:
         assert len(results) > 0
         assert all('combined_score' in r for r in results)
 
+    def test_unavailable_semantic_provider_uses_lexical_only(self, temp_vault, sample_memories):
+        engine = HybridSearchEngine(str(temp_vault))
+        results = engine.search("PostgreSQL database", sample_memories, top_k=5)
+
+        assert results
+        assert all(result["semantic_score"] == 0.0 for result in results)
+        assert all(result["search_type"] == "lexical" for result in results)
+
     def test_search_type_identification(self, temp_vault, sample_memories):
         """Test that search type is correctly identified"""
         engine = HybridSearchEngine(str(temp_vault))
-        engine.semantic.generator.batch_embed(sample_memories)
+        enable_fake_provider(engine.semantic.generator).batch_embed(sample_memories)
 
         results = engine.search("PostgreSQL", sample_memories, top_k=5)
 
@@ -226,7 +258,7 @@ class TestHybridSearch:
     def test_search_quality_analysis(self, temp_vault, sample_memories):
         """Test search quality analysis"""
         engine = HybridSearchEngine(str(temp_vault))
-        engine.semantic.generator.batch_embed(sample_memories)
+        enable_fake_provider(engine.semantic.generator).batch_embed(sample_memories)
 
         results = engine.search("API design", sample_memories, top_k=3)
         quality = engine.get_search_quality(results)
@@ -363,12 +395,13 @@ class TestPhase7Integration:
     def test_full_semantic_pipeline(self, temp_vault, sample_memories):
         """Test complete semantic search pipeline"""
         # Generate embeddings
-        gen = EmbeddingGenerator(str(temp_vault))
+        gen = enable_fake_provider(EmbeddingGenerator(str(temp_vault)))
         embeddings = gen.batch_embed(sample_memories)
         gen.save()
 
         # Semantic search
         engine = SemanticSearchEngine(str(temp_vault))
+        enable_fake_provider(engine.generator)
         sem_results = engine.search("database", sample_memories, top_k=3)
 
         # Should get results
@@ -377,7 +410,7 @@ class TestPhase7Integration:
     def test_full_hybrid_pipeline(self, temp_vault, sample_memories):
         """Test complete hybrid search pipeline"""
         hybrid = HybridSearchEngine(str(temp_vault))
-        hybrid.semantic.generator.batch_embed(sample_memories)
+        enable_fake_provider(hybrid.semantic.generator).batch_embed(sample_memories)
 
         results = hybrid.search("PostgreSQL API design", sample_memories, top_k=3)
 
@@ -387,7 +420,7 @@ class TestPhase7Integration:
     def test_hybrid_plus_ml_ranking(self, temp_vault, sample_memories):
         """Test hybrid search + ML ranking"""
         hybrid = HybridSearchEngine(str(temp_vault))
-        hybrid.semantic.generator.batch_embed(sample_memories)
+        enable_fake_provider(hybrid.semantic.generator).batch_embed(sample_memories)
 
         hybrid_results = hybrid.search("database", sample_memories, top_k=5)
 

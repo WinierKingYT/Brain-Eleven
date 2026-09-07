@@ -26,13 +26,14 @@ class EmbeddingGenerator:
         self.embedding_cache = self.vault_path / ".claude/embeddings.json"
         self.model = "text-embedding-3-small"
         self.dimension = 1536
+        self.provider = "openai"
 
         # Try to use OpenAI if API key available. An empty string counts as
         # "not set" - e.g. a .env with `OPENAI_API_KEY=` (no value) loaded
         # via python-dotenv sets the env var to "", and os.getenv() returns
         # that "" rather than None, so `is not None` alone would wrongly
         # treat an empty key as present and initialize a client that fails
-        # on the first real call instead of using the fallback embeddings.
+        # on the first real call instead of reporting semantic unavailability.
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.use_openai = bool(self.api_key)
 
@@ -42,10 +43,10 @@ class EmbeddingGenerator:
                 self.client = OpenAI(api_key=self.api_key)
                 print("✅ OpenAI API initialized")
             except ImportError:
-                print("⚠️  OpenAI library not installed, using fallback embeddings")
+                print("⚠️  OpenAI library not installed; semantic search is unavailable")
                 self.use_openai = False
         else:
-            print("⚠️  No OpenAI API key, using deterministic fallback embeddings")
+            print("⚠️  No OpenAI API key; semantic search is unavailable")
 
         self.embeddings = {}
         self._load_cache()
@@ -54,15 +55,24 @@ class EmbeddingGenerator:
     # EMBEDDING GENERATION
     # ========================================================================
 
-    def embed_text(self, text: str) -> np.ndarray:
-        """Generate embedding for text using OpenAI or fallback"""
+    @property
+    def semantic_available(self) -> bool:
+        """Whether this generator can produce trustworthy semantic vectors."""
 
-        if self.use_openai:
-            return self._embed_openai(text)
-        else:
-            return self._embed_fallback(text)
+        return bool(self.use_openai and hasattr(self, "client"))
 
-    def _embed_openai(self, text: str) -> np.ndarray:
+    def embed_text(self, text: str) -> Optional[np.ndarray]:
+        """Generate a provider-backed embedding, or ``None`` when unavailable.
+
+        A hash-seeded random vector is intentionally not used as a production
+        fallback: it has no semantic meaning and can corrupt hybrid ranking.
+        """
+
+        if not self.semantic_available:
+            return None
+        return self._embed_openai(text)
+
+    def _embed_openai(self, text: str) -> Optional[np.ndarray]:
         """Generate embedding using OpenAI API"""
 
         try:
@@ -71,18 +81,24 @@ class EmbeddingGenerator:
                 model=self.model
             )
             embedding = response.data[0].embedding
-            return np.array(embedding, dtype=np.float32)
+            vector = np.array(embedding, dtype=np.float32)
+            if vector.shape != (self.dimension,) or not np.isfinite(vector).all():
+                raise ValueError("provider returned an invalid embedding vector")
+            return vector
 
         except Exception as e:
             print(f"❌ OpenAI API error: {e}")
-            print("   Falling back to deterministic embedding")
-            return self._embed_fallback(text)
+            self.use_openai = False
+            return None
 
     def _embed_fallback(self, text: str) -> np.ndarray:
-        """Deterministic fallback embedding (for development/testing)"""
+        """Legacy deterministic vector helper retained for old tooling only.
 
-        # Create deterministic embedding based on text hash
-        # For production, this would be replaced with actual OpenAI embeddings
+        It is never called by ``embed_text`` or any production search path.
+        """
+
+        # Create a deterministic vector for legacy tests/tools only. Production
+        # search never consumes this helper.
 
         # Normalize text
         normalized = ' '.join(text.lower().split())
@@ -116,17 +132,26 @@ class EmbeddingGenerator:
                 mem_id = memory["memory_id"]
                 content = memory["content"]
 
-                # Skip if already cached
-                if mem_id in self.embeddings:
-                    embeddings[mem_id] = np.array(self.embeddings[mem_id])
+                if not self.semantic_available:
+                    skipped += 1
+                    continue
+
+                # Reuse only a cache entry generated for this exact content,
+                # provider, model and dimension.
+                cached = self.get_embedding(mem_id, content)
+                if cached is not None:
+                    embeddings[mem_id] = cached
                     continue
 
                 # Generate embedding
                 embedding = self.embed_text(content)
+                if embedding is None:
+                    skipped += 1
+                    continue
                 embeddings[mem_id] = embedding
 
                 # Store in cache
-                self.embeddings[mem_id] = embedding.tolist()
+                self.embeddings[mem_id] = self._cache_entry(content, embedding)
 
                 if (i + 1) % 10 == 0:
                     print(f"   → {i + 1}/{len(memories)} embedded")
@@ -165,6 +190,8 @@ class EmbeddingGenerator:
             data = {
                 "embeddings": self.embeddings,
                 "metadata": {
+                    "schema_version": 2,
+                    "provider": self.provider if self.semantic_available else "unavailable",
                     "model": self.model,
                     "dimension": self.dimension,
                     "last_updated": datetime.now().isoformat(),
@@ -188,16 +215,48 @@ class EmbeddingGenerator:
     # UTILITY METHODS
     # ========================================================================
 
-    def get_embedding(self, memory_id: str) -> Optional[np.ndarray]:
-        """Retrieve cached embedding"""
+    @staticmethod
+    def _content_hash(content: str) -> str:
+        return hashlib.sha256(" ".join(str(content).split()).encode("utf-8")).hexdigest()
+
+    def _cache_entry(self, content: str, embedding: np.ndarray) -> Dict:
+        return {
+            "vector": embedding.tolist(),
+            "content_hash": self._content_hash(content),
+            "provider": self.provider,
+            "model": self.model,
+            "dimension": self.dimension,
+            "generated_at": datetime.now().isoformat(),
+        }
+
+    def get_embedding(self, memory_id: str, content: Optional[str] = None) -> Optional[np.ndarray]:
+        """Retrieve a valid provider-backed cached embedding.
+
+        Legacy list-only entries are rejected because their provenance cannot
+        prove that they match the current content or provider.
+        """
 
         if memory_id in self.embeddings:
-            return np.array(self.embeddings[memory_id], dtype=np.float32)
+            entry = self.embeddings[memory_id]
+            if not isinstance(entry, dict):
+                return None
+            if not self.semantic_available:
+                return None
+            if entry.get("provider") != self.provider:
+                return None
+            if entry.get("model") != self.model or entry.get("dimension") != self.dimension:
+                return None
+            if content is not None and entry.get("content_hash") != self._content_hash(content):
+                return None
+            vector = entry.get("vector")
+            if not isinstance(vector, list) or len(vector) != self.dimension:
+                return None
+            return np.array(vector, dtype=np.float32)
         return None
 
     def embedding_exists(self, memory_id: str) -> bool:
         """Check if embedding is cached"""
-        return memory_id in self.embeddings
+        return self.get_embedding(memory_id) is not None
 
     def clear_cache(self):
         """Clear all embeddings"""

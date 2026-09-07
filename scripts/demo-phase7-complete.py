@@ -291,10 +291,10 @@ def main():
 
     print(f"🎯 Key Features:")
     print(f"   • Cosine similarity for vector matching")
-    print(f"   • Weighted scoring (40% lexical + 60% semantic)")
+    print(f"   • Weighted scoring with lexical-only fallback when semantic provider is unavailable")
     print(f"   • Recency decay function (exp(-days/30))")
     print(f"   • Match type scoring (exact > partial > fuzzy)")
-    print(f"   • Deterministic fallback embeddings (no API key)")
+    print(f"   • No fake semantic vectors when the provider is unavailable")
     print()
 
     print(f"🚀 Ready for Phase 8: Deployment & CI/CD")
