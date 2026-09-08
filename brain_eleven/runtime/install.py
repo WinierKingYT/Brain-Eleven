@@ -189,6 +189,25 @@ def uninstall(vault):
     return {'status': 'UNINSTALLED', 'canonical_data': 'PRESERVED'}
 
 
+def _session_start_health(vault):
+    path = Path(vault) / '.claude' / 'session-run-result.json'
+    try:
+        result = read_json(path, {})
+    except (OSError, ValueError, TypeError):
+        result = {}
+    timestamp = result.get('timestamp') if isinstance(result, dict) else None
+    exit_status = result.get('exit_status') if isinstance(result, dict) else None
+    if type(exit_status) is int:
+        state = 'ok' if exit_status == 0 else 'failed'
+    else:
+        state = 'unknown'
+    if isinstance(timestamp, str) and timestamp:
+        message = f'last SessionStart: {state} at {timestamp}'
+    else:
+        message = 'last SessionStart: unknown'
+    return message, state == 'failed'
+
+
 def doctor(vault, *, home=None):
     cfg = RuntimeConfig(vault)
     checks = {'python': {'version': sys.version.split()[0], 'executable': sys.executable}}
@@ -208,5 +227,10 @@ def doctor(vault, *, home=None):
     except (OSError, ValueError, KeyError):
         checks['service'] = 'STOPPED'
     checks['last_hook'] = read_json(cfg.root / 'last-hook.json')
-    checks['status'] = 'READY' if all(checks['dependencies'].values()) and all(x['configured'] for x in checks['clients'].values()) else 'ATTENTION'
+    checks['last_session_start'], session_failed = _session_start_health(vault)
+    checks['status'] = 'READY' if (
+        all(checks['dependencies'].values())
+        and all(x['configured'] for x in checks['clients'].values())
+        and not session_failed
+    ) else 'ATTENTION'
     return checks

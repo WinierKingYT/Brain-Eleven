@@ -59,6 +59,8 @@ def main(argv=None):
                 webbrowser.open(url)
             result = {'url': url}
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == 'doctor' and result.get('status') != 'READY':
+            return 1
         return 0
     except (ValueError, OSError) as exc:
         print(json.dumps({'status': 'FAILED', 'error': str(exc)}, ensure_ascii=False))
