@@ -1,8 +1,11 @@
-"""Stable IG-01 evaluation taxonomy.
+"""Shared evaluation vocabulary for the IG program.
 
-The taxonomy is deliberately separate from the production router and extractor.
-It names what a corpus case measures so a suite cannot appear stronger merely
-by selecting every available memory.
+This is an IG-00 shared contract artifact retained for the future IG-01
+evaluator.  It declares corpus families, categories and metric names only; it
+contains no evaluator, ranking or tuning implementation and does not open
+IG-01.  The taxonomy is deliberately separate from the production router and
+extractor so a suite cannot appear stronger merely by selecting every
+available memory.
 """
 
 from __future__ import annotations
@@ -82,4 +85,3 @@ def validate_category(family: str, category: str) -> None:
         raise ValueError(f"unknown taxonomy family: {family}")
     if category not in TAXONOMY[family]:
         raise ValueError(f"unknown {family} category: {category}")
-

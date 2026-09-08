@@ -45,9 +45,10 @@ from configured commands or unit tests.
 The correction uses the existing legacy V1 compiler only for the bounded
 SessionStart bootstrap. It rechecks mode, project opt-in and canonical
 revisions before returning context. UserPromptSubmit remains V2 SHADOW and
-does not inject V2 context. A cold Windows native SessionStart test passed in
-under three seconds; the focused IG-00 suite passed 11 tests, and the full
-non-integration regression passed 662 tests with 84.13% runtime coverage.
+does not inject V2 context. The exact review revision
+`0db7f5a2dd132b1e5e6e8248c2ee13032544845e` passed 680 non-integration tests,
+42 integration/graduation tests and 179 requested focused tests. The local
+coverage gate passed after four fail-closed router tests were added.
 
 The current real installation was updated with the windowless installer on
 2026-09-08. `doctor` reports both native clients configured, SHADOW mode and
@@ -67,23 +68,31 @@ This evidence strengthens IG-00 reliability but does not constitute IG-01
 evaluation or independent acceptance.
 
 On 2026-09-08, exact-head local verification at
-`b8d8fa2a6f99f51c672d148d4c4e1506971e91de` passed 718 non-integration tests,
-39 integration tests and 21 focused IG-00 hook/queue tests. Critical flake8
-checks, `git diff --check` and `pyproject.toml` parsing also passed. The
-isolated native smoke used temporary Claude and Codex configuration/vaults
-only: Claude emitted successful `SessionStart` and `UserPromptSubmit` hook
-responses, Codex emitted a successful `UserPromptSubmit` hook, and separate
-Claude/Codex Golden E2E runs produced queue terminal states
-`COMMITTED`/`PROCESSED` with verified canonical effects. No live user
-configuration was changed. Client model calls were unavailable without
-credentials, so this is hook/runtime evidence rather than a successful model
-turn or installed-client trust decision.
+`0db7f5a2dd132b1e5e6e8248c2ee13032544845e` also passed critical flake8,
+Bandit, `git diff --check`, `pyproject.toml` parsing and import/compile
+sanity. The isolated native smoke used temporary Claude and Codex
+configuration/vaults only: Claude emitted successful `SessionStart` and
+`UserPromptSubmit` hook responses, Codex emitted a successful
+`UserPromptSubmit` hook, and separate Claude/Codex Golden E2E runs produced
+queue terminal states `COMMITTED`/`PROCESSED` with verified canonical effects.
+No live user configuration was changed. Client model calls were unavailable
+without credentials, so this is hook/runtime evidence rather than a successful
+model turn or installed-client trust decision.
 
-The required master-targeted draft PR could not be created: the GitHub
-connector returned HTTP 403 (`Resource not accessible by integration`) and no
-local `gh` CLI or signed-in browser session is available. Consequently exact
-head GitHub CI and an independent read-only review remain open, and IG-00 is
-not accepted.
+The review branch now triggers exact-head remote workflows. [Validation
+34264515612](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515612)
+completed successfully at the exact SHA, including cross-platform tests,
+coverage, privacy, security, dependency and Docker jobs. Public/evidence jobs
+conditioned on `master` were skipped. [PRE-13 runtime
+34264515476](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515476)
+passed both runtime OS jobs and security checks; its overall failure is the
+visible historical PRE-13 holdout quality failure (runtime precision 0.1368,
+required recall 0.2941, zero leakage).
+
+The preferred master-targeted draft PR could not be created because the GitHub
+connector returned HTTP 403 (`Resource not accessible by integration`); exact
+push-triggered CI remains revision-bound. No independent read-only reviewer is
+available, so IG-00 remains not accepted.
 
 ## Review and next-package boundary
 

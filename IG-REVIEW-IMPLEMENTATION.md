@@ -28,3 +28,10 @@ The remaining review-derived correctness fixes are:
 These changes preserve canonical authority and keep V2 shadow-only. They do
 not claim semantic extraction, correction resolution, task-aware quality, or
 real-use graduation. Those remain explicit IG gates.
+
+The exact-head follow-up at `0db7f5a2dd132b1e5e6e8248c2ee13032544845e` added
+only four fail-closed router coverage tests and review-branch CI triggers.
+Validation run 34264515612 passed at that SHA. The PRE-13 runtime workflow's
+Ubuntu/Windows jobs passed, while its historical holdout quality job remains a
+visible failure. This record is still not an independent review and does not
+authorize IG-01.

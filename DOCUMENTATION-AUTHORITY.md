@@ -1,6 +1,6 @@
 # Documentation authority
 
-Authority: **CURRENT**. Updated: 2026-09-07. This registry classifies documentation;
+Authority: **CURRENT**. Updated: 2026-09-08. This registry classifies documentation;
 it does not make personal notes canonical MemoryStore or StateStore records.
 
 ## Reading and precedence
@@ -38,7 +38,8 @@ authorize opening Phase 20 or promoting V2.
 | `ORCHESTRATION-STATUS.md`, `PARALLEL-ORCHESTRATION.md` | HISTORICAL prior engineering coordination; current IG sequencing supersedes. |
 | `templates/claude/commands/remember.md` | CURRENT command template, subject to current CLI behavior. |
 | `templates/claude/legacy/remember-v1.md` | HISTORICAL compatibility artifact. |
-| `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md`, `evals/intelligence_taxonomy.py` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
+| `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
+| `evals/intelligence_taxonomy.py` | CURRENT **IG-00 shared evaluation vocabulary** retained for IG-01; category/metric names only, with no evaluator, ranking or tuning implementation. |
 
 ## Default path rules (first match)
 
