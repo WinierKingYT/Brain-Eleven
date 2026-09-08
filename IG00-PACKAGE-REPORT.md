@@ -1,7 +1,7 @@
 # IG-00 Package Report — Freeze & Baseline Closure
 
 **PACKAGE:** IG-00 Freeze & Baseline
-**REVISION:** `62871ff496b0cb46998aa9ea21dbcf9d5e03d27f`
+**REVISION:** `762b5332f578c08d79fabf4d972b0371ae6de3a2`
 **DATE:** 2026-09-08
 **CONTRACT:** `IG00-FREEZE-BASELINE.md`
 **DOCUMENTATION NOTE:** This report is a follow-up evidence record; the
@@ -56,19 +56,19 @@ introduced.
 | Import and compile sanity | **PASS** |
 
 The local commands were run against `git rev-parse HEAD =
-62871ff496b0cb46998aa9ea21dbcf9d5e03d27f` with hidden Windows execution.
+762b5332f578c08d79fabf4d972b0371ae6de3a2` with hidden Windows execution.
 
 ## REMOTE CI EVIDENCE
 
 All run and job results below report `head_sha =
-62871ff496b0cb46998aa9ea21dbcf9d5e03d27f`.
+762b5332f578c08d79fabf4d972b0371ae6de3a2`.
 
-- [Validation run 34266090585](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090585): **SUCCESS**.
+- [Validation run 34267204480](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34267204480): **SUCCESS**.
   Ubuntu/Windows unit, integration, evaluation smoke, privacy, task/state,
   router/authority/compiler shadow smoke, coverage, secret, dependency, Docker
   and Bandit jobs passed. Public/evidence jobs conditioned on `master` were
   `SKIPPED`; skipped jobs are recorded as not applicable, never as passes.
-- [PRE-13 runtime run 34266090649](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090649): overall **FAILURE** because its historical
+- [PRE-13 runtime run 34267204477](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34267204477): overall **FAILURE** because its historical
   independent holdout quality job failed. Ubuntu and Windows runtime jobs both
   passed, including runtime coverage and Bandit. The retained holdout report
   measured runtime precision `0.1368`, required recall `0.2941`, with zero
@@ -99,7 +99,7 @@ IG-01 deliverable.
 
 | Dimension | Before | After |
 |---|---|---|
-| Exact-head local validation | Older revision only | **62871ff: PASS** |
+| Exact-head local validation | Older revision only | **762b533: PASS** |
 | Review-branch Validation CI | Not triggered | **PASS** |
 | Runtime infrastructure | Partially evidenced | **Ubuntu/Windows PASS** |
 | Historical PRE-13 quality | Failing | **Failure retained and visible** |

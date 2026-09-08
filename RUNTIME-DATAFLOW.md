@@ -4,8 +4,8 @@ Authority: **CURRENT**. Audit date: 2026-09-08. This map distinguishes repositor
 implementation, installed configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
 See IG00-FREEZE-BASELINE for exact revision and review limitations. The latest
-revision-bound Validation evidence is run 34266090585 at
-`62871ff496b0cb46998aa9ea21dbcf9d5e03d27f`; the PRE-13 runtime quality failure
+revision-bound Validation evidence is run 34267204480 at
+`762b5332f578c08d79fabf4d972b0371ae6de3a2`; the PRE-13 runtime quality failure
 is retained as historical intelligence evidence.
 
 ## Observed checkpoint behavior and delivery ownership

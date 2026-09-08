@@ -29,9 +29,9 @@ These changes preserve canonical authority and keep V2 shadow-only. They do
 not claim semantic extraction, correction resolution, task-aware quality, or
 real-use graduation. Those remain explicit IG gates.
 
-The exact-head follow-up at `62871ff496b0cb46998aa9ea21dbcf9d5e03d27f` records
+The exact-head follow-up at `762b5332f578c08d79fabf4d972b0371ae6de3a2` records
 the four fail-closed router coverage tests, review-branch CI triggers and
-evidence corrections. Validation run 34266090585 passed at that SHA. The
+evidence corrections. Validation run 34267204480 passed at that SHA. The
 PRE-13 runtime workflow's
 Ubuntu/Windows jobs passed, while its historical holdout quality job remains a
 visible failure. This record is still not an independent review and does not
