@@ -32,12 +32,13 @@ authorize opening Phase 20 or promoting V2.
 | `IG-00-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-00; bound to reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`. |
 | `IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
-| `PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |
-| `PRE20-12-REPOSITORY-CONSOLIDATION.md`, `PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT.md` | HISTORICAL closed-program record; “next Phase 20” scheduling superseded by IG. |
-| `CONTEXT-ENGINE-FOUNDATION-V1.md` | HISTORICAL immutable Foundation record; not live-use or current-head verification. |
-| `PHASE16-TASK-STATE-CONTRACT.md`, `PHASE17-TASK-AWARE-CONTEXT-ROUTER-CONTRACT.md`, `PHASE18-AUTHORITY-CONFLICT-CONTRACT.md`, `PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md` | CONTRACT for their bounded Foundation components; runtime connection/status statements are historical checkpoint facts. |
-| `TESTING.md`, `TESTING-FRAMEWORK.md`, `DEPLOYMENT-STACK.md`, `INTEGRATION-CHECKLIST.md` | HISTORICAL operational guidance until independently reconciled; do not infer current CI/deployment from them. |
-| `ORCHESTRATION-STATUS.md`, `PARALLEL-ORCHESTRATION.md` | HISTORICAL prior engineering coordination; current IG sequencing supersedes. |
+| `docs/history/**` | Archived phase plans, PRE-package records, Foundation records, phase contracts, phase independent reviews and historical operational guides. Retained for provenance only; never infer current behavior, CI, deployment or runtime connection from them. See per-file notes below. |
+| `docs/history/PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |
+| `docs/history/PRE20-12-REPOSITORY-CONSOLIDATION.md`, `docs/history/PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT.md` | HISTORICAL closed-program record; “next Phase 20” scheduling superseded by IG. |
+| `docs/history/CONTEXT-ENGINE-FOUNDATION-V1.md` | HISTORICAL immutable Foundation record; not live-use or current-head verification. |
+| `docs/history/PHASE16-TASK-STATE-CONTRACT.md`, `docs/history/PHASE17-TASK-AWARE-CONTEXT-ROUTER-CONTRACT.md`, `docs/history/PHASE18-AUTHORITY-CONFLICT-CONTRACT.md`, `docs/history/PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md` | CONTRACT for their bounded Foundation components; runtime connection/status statements are historical checkpoint facts. |
+| `docs/history/TESTING.md`, `docs/history/TESTING-FRAMEWORK.md`, `docs/history/DEPLOYMENT-STACK.md`, `docs/history/INTEGRATION-CHECKLIST.md` | HISTORICAL operational guidance until independently reconciled; do not infer current CI/deployment from them. |
+| `docs/history/ORCHESTRATION-STATUS.md`, `docs/history/PARALLEL-ORCHESTRATION.md` | HISTORICAL prior engineering coordination; current IG sequencing supersedes. |
 | `templates/claude/commands/remember.md` | CURRENT command template, subject to current CLI behavior. |
 | `templates/claude/legacy/remember-v1.md` | HISTORICAL compatibility artifact. |
 | `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
@@ -53,8 +54,9 @@ authorize opening Phase 20 or promoting V2.
 4. Future `IG??-*-CONTRACT.md` files are CONTRACT; an unaccepted contract does not
    authorize skipping the previous package. Other new IG documents require an
    explicit registry entry before becoming CURRENT.
-5. Remaining `PHASE*.md`, `PRE*.md`, roadmaps and old plans are HISTORICAL. Phase
-   20 future design is preserved under this rule, not deleted or redesigned.
+5. Remaining `PHASE*.md`, `PRE*.md`, roadmaps and old plans are HISTORICAL and
+   live under `docs/history/`. Phase 20 future design is preserved under this
+   rule, not deleted or redesigned.
 6. Vault companion, project-note, source, daily, template and archived markdown
    is HISTORICAL/domain content, not implementation or release authority.
 7. All remaining documentation defaults to HISTORICAL until explicitly classified.

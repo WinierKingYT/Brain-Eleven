@@ -171,13 +171,13 @@ runtime check is recorded in the table above.
   synthetic Phase 15 corpus can be measured with
   `python -m evals.run --provider router --suite smoke`. Graduation also
   requires public+holdout, performance and independent-review evidence as
-  specified in `PHASE17-TASK-AWARE-CONTEXT-ROUTER-CONTRACT.md`.
+  specified in `docs/history/PHASE17-TASK-AWARE-CONTEXT-ROUTER-CONTRACT.md`.
 
 - Phase 18 is intentionally an authority annotation layer, not a semantic
   truth engine or final context selector. `python -m authority shadow --request
   "..." --json` is content-free and never injects a result into a prompt.
   `python -m evals.authority_evaluation --suite all` validates the 180-case
-  metadata-first corpus. See `PHASE18-AUTHORITY-CONFLICT-CONTRACT.md` for the
+  metadata-first corpus. See `docs/history/PHASE18-AUTHORITY-CONFLICT-CONTRACT.md` for the
   frozen scope, provenance and rollout boundaries.
 
 - Phase 19 is intentionally a constrained downstream compiler, not a router,
@@ -188,7 +188,7 @@ runtime check is recorded in the table above.
   `python -m evals.compiler_v2_shadow --suite all` to compare the existing V1
   baseline and V2 without promotion. The current shadow comparison has lower
   relevance recall than V1, so V2 stays shadow-only pending improvement and
-  independent review. See `PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md`.
+  independent review. See `docs/history/PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md`.
 
 ## Historical planning documents
 

@@ -78,3 +78,7 @@ authority-*-report.json
 .venv/
 .brain-eleven/runtime/
 .test-phase19-*/
+
+# Loose local test/coverage artifacts (regenerated)
+coverage.json
+pytest-results-local.xml

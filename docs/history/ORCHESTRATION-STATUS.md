@@ -3,7 +3,7 @@
 **Original orchestration date:** 2026-08-29
 **Original strategy:** 7 parallel agents across 3 phases
 **Status:** **HISTORICAL — this orchestration is closed; no agents are currently running under this plan.**
-**Current authority:** [`PROJECT-STATUS.md`](PROJECT-STATUS.md)
+**Current authority:** [`PROJECT-STATUS.md`](../../PROJECT-STATUS.md)
 
 > The remaining content is retained as an archived planning snapshot. Its
 > occurrences of “Running”, “NOW”, ETAs, and unchecked deliverables describe
