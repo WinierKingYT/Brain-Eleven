@@ -33,3 +33,35 @@
 - Tests: 729 passed before; 732 passed after; both runs emitted the existing 2
   deprecation warnings.
 - Out of scope: T3 was not started.
+
+## T3 — remove the hyphen/underscore duplicate modules
+
+- Audit: `scripts/project-registry.py` ↔ `scripts/project_registry.py` was the
+  only exact `-`/`_` twin in the full `git ls-files scripts/` set. The other
+  hyphenated Python files — `context-compiler.py`, `dedupe-validated-memory.py`,
+  `demo-phase7-complete.py`, `embedding-generator.py`, `hybrid-search.py`,
+  `install-cross-project-memory.py`, `memory-compiler.py`, `memory-lifecycle.py`,
+  `memory-retriever.py`, `memory-validator.py`, `migrate-legacy-memory.py`,
+  `migrate-memory-scope.py`, `ml-ranker.py`, `prompt-counter.py`, `search-api.py`,
+  and `semantic-search.py` — have no same-name underscore counterpart; no
+  underscore file had a missing hyphen twin.
+- Changed: moved the hyphenated registry CLI `main()` into
+  `scripts/project_registry.py` and removed `scripts/project-registry.py`.
+  The canonical `ProjectRegistry` implementation and the
+  `brain_eleven.projects.registry` bridge were not changed.
+- Callers updated: `tests/test_remember.py` now loads `project_registry.py`;
+  `tests/test_pre12_project_caller_migration.py` no longer inventories the
+  deleted wrapper. No hook, Dockerfile, Makefile, docker-compose, or runtime
+  caller referenced this exact wrapper; history documentation was left stale
+  only where applicable.
+- Decision: runtime loading remains on the underscore implementation through
+  the existing package bridge; distinct hyphenated legacy entry points were
+  deliberately left in place because they are not separator twins.
+- Test artifact: regenerated `evals/reports/baseline-v3.json` so its
+  deterministic source fingerprint includes the consolidated canonical module.
+- Tests: 732 passed before; 732 passed after; both runs emitted the existing 2
+  deprecation warnings. The first post-change run found the expected stale
+  baseline fingerprint (`731 passed, 1 failed`), which was regenerated before
+  the final green run.
+- Out of scope: `sys.path.insert` sprawl, the `brain_eleven` ↔ `scripts`
+  bridge, and all non-twin hyphenated modules.

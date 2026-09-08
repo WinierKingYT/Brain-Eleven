@@ -170,7 +170,7 @@ def test_legacy_migration_cli_enables_canonical_registry_policy(vault, tmp_path,
         encoding="utf-8",
     )
 
-    registry_cli = _load_script("project_registry_cli", "project-registry.py")
+    registry_cli = _load_script("project_registry_cli", "project_registry.py")
     assert registry_cli.main(
         ["--vault", str(vault), "migrate-legacy-opt-in", "--config", str(config)]
     ) == 0
