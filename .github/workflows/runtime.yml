@@ -2,9 +2,9 @@ name: PRE-13 runtime gates
 
 on:
   push:
-    branches: [master, develop]
+    branches: [master, develop, ig/00-freeze-baseline]
   pull_request:
-    branches: [master, develop]
+    branches: [master, develop, ig/00-freeze-baseline]
   workflow_dispatch:
 
 permissions:
