@@ -34,5 +34,7 @@ the four fail-closed router coverage tests, review-branch CI triggers and
 evidence corrections. Validation run 34267204480 passed at that SHA. The
 PRE-13 runtime workflow's
 Ubuntu/Windows jobs passed, while its historical holdout quality job remains a
-visible failure. This record is still not an independent review and does not
-authorize IG-01.
+visible failure. This record is the implementation review only and is not the
+independent acceptance decision. Independent acceptance is recorded separately
+in [IG-00-INDEPENDENT-REVIEW.md](IG-00-INDEPENDENT-REVIEW.md), which returned
+SHIP for the reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`.

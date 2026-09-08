@@ -2,10 +2,15 @@
 
 **PACKAGE:** IG-00 Freeze & Baseline
 **REVISION:** `762b5332f578c08d79fabf4d972b0371ae6de3a2`
+**REVIEWED IMPLEMENTATION/EVIDENCE HEAD:** `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`
 **DATE:** 2026-09-08
 **CONTRACT:** `IG00-FREEZE-BASELINE.md`
 **DOCUMENTATION NOTE:** This report is a follow-up evidence record; the
 revision above is the exact code/test revision used for the reported checks.
+The reviewed follow-up HEAD is documentation/evidence-only relative to that
+code/test revision.
+
+**CLOSURE STATUS:** **CLOSED / SHIPPED**
 
 ## OBJECTIVE
 
@@ -15,6 +20,8 @@ exact review revision, and keep every missing acceptance gate visible.
 
 ## FILES CHANGED
 
+- `IG-00-INDEPENDENT-REVIEW.md`: independent read-only acceptance record with
+  verdict `SHIP`, P0 `0` and P1 `0`.
 - `.github/workflows/test.yml` and `.github/workflows/runtime.yml`: include the
   review branch in push/PR filters so exact-head CI can run.
 - `tests/test_context_router.py`: add fail-closed branch coverage required by
@@ -76,6 +83,13 @@ All run and job results below report `head_sha =
   required recall `0.7059`. This is an explicit PRE-13 intelligence-quality
   failure for later IG work, not a hidden infrastructure pass.
 
+The reviewed implementation/evidence HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`
+also passed [Validation 34268326236](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34268326236).
+Its branch-conditioned public/evidence jobs were recorded as skipped/not
+applicable, not as passes. [PRE-13 runtime 34268326222](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34268326222)
+passed Ubuntu, Windows and Bandit while retaining the same historical quality
+failure.
+
 ## NATIVE CLIENT TRUST / PRIVACY
 
 Read-only inspection confirms the live Claude and Codex configuration contains
@@ -104,7 +118,7 @@ IG-01 deliverable.
 | Runtime infrastructure | Partially evidenced | **Ubuntu/Windows PASS** |
 | Historical PRE-13 quality | Failing | **Failure retained and visible** |
 | Native client trust | Configuration-only | **Bounded; live trust unverified** |
-| Independent review | Pending | **Pending** |
+| Independent review | Pending | **SHIP** |
 
 ## SAFETY METRICS
 
@@ -117,20 +131,18 @@ IG-01 deliverable.
 
 ## KNOWN LIMITATIONS / OPEN FAILURES
 
-1. No independent read-only reviewer is available in this execution context;
-   self-review cannot satisfy the independent `SHIP` gate.
-2. The GitHub connector rejected creation of the preferred master-targeted
+1. The GitHub connector rejected creation of the preferred master-targeted
    draft PR with HTTP 403. Exact-head push-triggered CI is available and passed
    the Validation workflow, but the draft PR itself was not created.
-3. Historical PRE-13 holdout quality remains below its thresholds and must stay
+2. Historical PRE-13 holdout quality remains below its thresholds and must stay
    visible for IG-01 onward.
-4. Conditional public/evidence jobs were skipped on the review branch and are
+3. Conditional public/evidence jobs were skipped on the review branch and are
    not represented as successful evidence.
 
 ## INDEPENDENT REVIEW
 
-**NOT AVAILABLE — no independent read-only reviewer was present.** The local
-self-review below is explicitly non-independent and cannot change the verdict.
+**SHIP** — independent read-only acceptance is recorded in
+[`IG-00-INDEPENDENT-REVIEW.md`](IG-00-INDEPENDENT-REVIEW.md). P0 = 0 and P1 = 0.
 
 ## SCORE BEFORE / AFTER
 
@@ -140,8 +152,8 @@ extraction, correction, retrieval quality and daily-use scores remain unchanged.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED**
+**SHIP**
 
-The exact-head local and Validation evidence is complete, but IG-00 cannot be
-accepted without an independent read-only `SHIP` review. Phase 20 remains
-**FROZEN / LOCKED**, IG-01 remains **CLOSED**, and V2 remains **SHADOW**.
+IG-00 SHIP is package closure only; it is not Brain-Eleven intelligence
+graduation. Phase 20 remains **FROZEN / LOCKED**, IG-01 remains **CLOSED / READY
+TO OPEN**, and V2 remains **SHADOW**.
