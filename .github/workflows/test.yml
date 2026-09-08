@@ -2,9 +2,9 @@ name: Validation
 
 on:
   push:
-    branches: [master, develop, ig/00-freeze-baseline]
+    branches: [master, develop, "ig/**"]
   pull_request:
-    branches: [master, develop, ig/00-freeze-baseline]
+    branches: [master, develop, "ig/**"]
   schedule:
     - cron: '0 2 * * *'
 

@@ -28,8 +28,9 @@ authorize opening Phase 20 or promoting V2.
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
 | `IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
-| `IG00-PACKAGE-REPORT.md` | REVIEW/evidence record bound to the IG-00 review HEAD; its SHIP verdict closes IG-00 but does not authorize IG-01 or Phase 20 by itself. |
+| `IG00-PACKAGE-REPORT.md` | REVIEW/evidence record bound to the IG-00 review HEAD; its SHIP verdict closes IG-00 but does not authorize Phase 20 by itself. |
 | `IG-00-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-00; bound to reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`. |
+| `IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |
 | `PRE20-12-REPOSITORY-CONSOLIDATION.md`, `PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT.md` | HISTORICAL closed-program record; “next Phase 20” scheduling superseded by IG. |

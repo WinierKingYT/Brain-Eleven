@@ -4,20 +4,20 @@
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: IG-00 Freeze & Baseline — CLOSED / SHIPPED**.
-**NEXT PACKAGE: IG-01 Product Evaluation Foundation — CLOSED / READY TO OPEN**.
+**ACTIVE PACKAGE: IG-01 Product Evaluation Foundation — ACTIVE / IN PROGRESS**.
 
-The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. IG-01 remains unopened until its separate opening package is authorized.
+The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. IG-01 is now open under its separate [evaluation foundation contract](IG01-EVALUATION-FOUNDATION.md); implementation remains bounded to measurement work and does not authorize intelligence tuning.
 
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
-Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [IG-00 independent review](IG-00-INDEPENDENT-REVIEW.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. The reviewed implementation/evidence HEAD is `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`; [Validation run 34268326236](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34268326236) is green at that exact SHA. [PRE-13 runtime run 34268326222](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34268326222) passes runtime/security jobs but retains its historical holdout quality failure. Independent review is SHIP; live native-client trust remains bounded and unverified.
+Read [IG-01 contract](IG01-EVALUATION-FOUNDATION.md), then [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [IG-00 independent review](IG-00-INDEPENDENT-REVIEW.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. IG-00 remains closed at `18e88876495db77a2e99ea927f01a2d28c5d9ed6`; the IG-01 opening branch is derived from that exact closure revision. Existing validation/runtime evidence and the historical PRE-13 holdout quality failure remain visible. Independent review is SHIP; live native-client trust remains bounded and unverified.
 
-The open freeze review also includes a bounded semantic safety correction: when
+The closed IG-00 review included a bounded semantic safety correction: when
 the real embedding provider is unavailable, semantic search emits no synthetic
 vectors and hybrid retrieval uses lexical-only scoring. Cached vectors now
 require matching content, provider, model and dimension provenance. This is
-reliability work inside IG-00; it does not open IG-01 or change the Phase 20
-lock.
+reliability work completed inside IG-00; it does not alter the IG-01
+measurement-only boundary or the Phase 20 lock.
 
 The current head also closes bounded review findings without promoting any
 shadow runtime: task confidence records ambiguity instead of claiming 0.95
