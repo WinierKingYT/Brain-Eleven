@@ -7,6 +7,7 @@ import sys
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -16,8 +17,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from context_router import ContextRouter, RoutingOptions  # noqa: E402
 from context_router.adapters import MemoryAdapter, RawCandidate, StateAdapter  # noqa: E402
+from context_router.config import RouterConfig  # noqa: E402
 from context_router.__main__ import main as router_main  # noqa: E402
-from context_router.models import RetrievalQuery  # noqa: E402
+from context_router.models import RetrievalPlan, RetrievalQuery, RouteScope  # noqa: E402
 from project_registry import ProjectRegistry  # noqa: E402
 from state_resolver import StateResolver  # noqa: E402
 from state_store import StateService  # noqa: E402
@@ -334,6 +336,63 @@ def test_graph_only_candidates_consume_a_separate_graph_budget():
     normalized = ContextRouter._normalize(candidates, {"memory": 1, "graph": 1})
 
     assert {candidate.candidate_id for candidate in normalized} == {"graph-1", "lexical-1"}
+
+
+def test_graph_candidates_rehydrate_only_allowed_fresh_in_scope_memories(tmp_path, monkeypatch):
+    router = ContextRouter(tmp_path)
+    graph_query = RetrievalQuery("graph", "graph", "CONCEPT", terms=("sqlite",))
+    scope = RouteScope("CURRENT_PROJECT", ("project-a",), include_global=True)
+    plan = RetrievalPlan(
+        route_id="route_01J00000000000000000000000",
+        task_id="task_01J00000000000000000000000",
+        route_profile="implementation",
+        scope=scope,
+        history_mode="ACTIVE_ONLY",
+        queries=(graph_query,),
+        candidate_budget={"memory": 30, "graph": 8},
+        router_config_version=1,
+        fingerprint="fingerprint",
+    )
+    records = (
+        _memory("keep", "project-a", "SQLite decision"),
+        _memory("foreign", "project-b", "SQLite decision"),
+        _memory("old", "project-a", "SQLite decision", status="superseded"),
+        _memory("wrong-type", "project-a", "SQLite note", memory_type="observation"),
+    )
+    monkeypatch.setattr(router.graph, "expand", lambda *args, **kwargs: ({"keep", "foreign", "old", "wrong-type", "missing"}, None))
+
+    candidates, reason = router._graph_candidates(
+        graph_query, plan, (records[0], records[1], records[2], records[3]), 7, RouterConfig()
+    )
+
+    assert reason is None
+    assert [candidate.candidate_id for candidate in candidates] == ["keep"]
+    assert candidates[0].signal == "graph_relation"
+
+
+def test_malformed_cached_router_result_abstains():
+    assert ContextRouter._cached_result({"plan": {"scope": {}}}) is None
+
+
+def test_inputs_current_fails_closed_on_revision_and_state_errors(tmp_path, monkeypatch):
+    router = ContextRouter(tmp_path)
+    monkeypatch.setattr(router.memory, "revision", lambda: 2)
+    assert router._inputs_current({}, 1) is False
+
+    monkeypatch.setattr(router.memory, "revision", lambda: 1)
+    monkeypatch.setattr(
+        router.state.resolver,
+        "resolve",
+        lambda project_id: SimpleNamespace(status="changed", state_revision=2),
+    )
+    prior = {"status": "available", "state_revision": 1}
+    assert router._inputs_current({"project-a": SimpleNamespace(**prior)}, 1) is False
+
+
+def test_invalid_task_is_rejected_without_routing(tmp_path):
+    result = ContextRouter(tmp_path).route(None)
+
+    assert result.status == "INVALID_TASK"
 
 
 def test_second_changed_revision_returns_stale_input_after_single_retry(tmp_path, monkeypatch):
