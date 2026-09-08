@@ -8,6 +8,7 @@
 **Prerequisite:** IG-00 `CLOSED / SHIPPED`
 **Phase 20:** `FROZEN / LOCKED`
 **V2:** `SHADOW`
+**SHIP tag:** `ig01a-ship` (created only after all acceptance gates pass)
 
 ## Objective and boundary
 
@@ -54,6 +55,7 @@ The existing evidence boundary remains immutable for this package:
 
 ```text
 EvidenceMessage
+  schema_version: integer (the existing EVIDENCE_SCHEMA_VERSION)
   record.evidence_id
   record.project_id
   record.role
@@ -105,6 +107,7 @@ RetrievalPlan
   schema_version: string
 
 InjectedContextItem
+  schema_version: string
   memory_id: string
   revision: integer
   lifecycle: string
@@ -120,6 +123,7 @@ them into this stable shape for V1/V2 comparison.
 
 ```text
 status: RESOLVED_TARGET | AMBIGUOUS | NO_TARGET | REVIEW_REQUIRED
+schema_version: string
 candidate_targets: [string, ...]
 confidence: number | null
 signals: {name: number | string, ...}
@@ -135,7 +139,8 @@ Every public or sanitized case must carry the following fields:
 
 ```yaml
 case_id: string
-family: capture | extraction | reference_resolution | lifecycle | retrieval | context | safety
+dataset_class: PUBLIC_SYNTHETIC | PRIVATE_REALISTIC | SANITIZED_REAL_FAILURE
+family: capture | extraction | reference_resolution | lifecycle | retrieval | context_compilation | safety
 category: string
 language: tr | en | mixed
 project: string | null
@@ -149,7 +154,7 @@ provenance: string
 corpus_version: string
 split: DEV | VALIDATION | HOLDOUT
 answerability: answerable | unanswerable
-contamination_class: synthetic | realistic | sanitized_failure
+contamination_class: synthetic | real | holdout
 labeler: string
 label_confidence: number
 evaluator_version_min: string
@@ -165,19 +170,25 @@ cutoff for the report.
 
 | Metric | Formula | Example |
 |---|---|---|
-| Precision@K | `|relevant ∩ retrieved_k| / k` | 3 relevant in top 5 → `3/5 = 0.60` |
-| Recall@K | `|relevant ∩ retrieved_k| / |relevant|` | 3 of 4 required → `3/4 = 0.75` |
-| Mandatory recall | `|mandatory ∩ retrieved| / |mandatory|` | 4 of 5 mandatory → `0.80` |
+| Precision@K | `|relevant ∩ retrieved_k| / k`; if `k=0`, report `0` and `empty_selection=true` | 3 relevant in top 5 → `3/5 = 0.60` |
+| Recall@K | `|relevant ∩ retrieved_k| / |relevant|`; if no relevant labels, report `not_applicable` | 3 of 4 required → `3/4 = 0.75` |
+| Mandatory recall | `|mandatory ∩ retrieved| / |mandatory|`; if no mandatory labels, report `not_applicable` | 4 of 5 mandatory → `0.80` |
 | F1 | `2 * precision * recall / (precision + recall)` | `P=.60,R=.75` → `.667` |
 | MRR | `mean(1 / rank_of_first_relevant)` | first relevant at rank 2 → `.50` |
-| Noise ratio | `|retrieved \ relevant| / |retrieved|` | 2 noisy of 5 → `.40` |
-| Token waste | `sum(tokens(item) where relevance < 0.30)` | two irrelevant 20-token items → `40` |
-| ECE | `sum(|accuracy_bin-confidence_bin| * n_bin) / N` | weighted 10-bin calibration error |
+| Noise ratio | `|retrieved \ relevant| / |retrieved|`; empty retrieval is `0` with `empty_selection=true` | 2 noisy of 5 → `.40` |
+| Token waste | `sum(tokens(item) where relevance(item) < 0.30)`; relevant=`1`, acceptable=`0.5`, otherwise `0` | two irrelevant 20-token items → `40` |
+| Context precision | `|relevant compiled items| / |all compiled items|`; empty context is `0` with `empty_selection=true` | 3 useful of 5 → `.60` |
+| ECE | `sum(|accuracy_bin-confidence_bin| * n_bin) / N`; ten bins `[0,.1),...,[.9,1]` | weighted calibration error |
 | Latency | p50 and p95 end-to-end milliseconds | report V1 and V2 separately |
 
 The MRR tie-break is lexical `memory_id`. A select-all control run is printed
 in every retrieval report and is included in precision, noise and token-waste
 comparisons. High recall alone is not success.
+
+Expected/acceptable/forbidden records are matched by normalized stable IDs and
+typed proposition keys, never by free-text substring coincidence. Mandatory
+records are the case `mandatory_ids` projection of `required_results`. Every
+metric reports its denominator, `not_applicable` flag and empty-set flag.
 
 ## Safety gates
 
@@ -194,13 +205,17 @@ superseded_leakage = 0
 resolved_leakage = 0
 lifecycle_cycle = 0
 secret_leakage = 0
+false_supersession = 0
 ```
 
-### Near-zero gates with mandatory review
+### Review-required candidate gates
 
-`false_supersession` and `false_commitment` must produce a review record for
-every positive event. The program target is `false_commitment <= 0.01`; a
-positive event remains visible even when the aggregate target is met.
+Every `false_supersession` and `false_commitment` event must produce a review
+record. A false supersession may never be committed to canonical lifecycle
+state, so the canonical mutation gate is `false_supersession = 0`.
+Exploratory candidate mistakes remain quarantined and visible. The program
+target for false commitment is `<= 0.01`, but every positive event remains
+visible even when the aggregate target is met.
 
 Any absolute-zero violation is a package failure regardless of other scores.
 
@@ -214,13 +229,17 @@ The program reserves three dataset classes:
    identifying data are removed.
 
 Every class covers Turkish, English and mixed technical language. Each corpus
-version has `DEV`, `VALIDATION` and `HOLDOUT` splits. DEV is available for
-iteration, VALIDATION may be run at most once per iteration for architecture
-decisions, and HOLDOUT is sealed until IG-01-E and the final audit.
+version has `DEV` (60%), `VALIDATION` (20%) and `HOLDOUT` (20%) splits unless a
+versioned manifest records another ratio. DEV is available for iteration,
+VALIDATION may be run once per implementation iteration for architecture
+decisions, and HOLDOUT is sealed until IG-01-E and the final audit. IG-01-D
+baselines use DEV+VALIDATION only.
 
 HOLDOUT labels are immutable within a corpus version. A content or label hash
-change requires a new corpus version and new baselines. Private paths have a
-CI guard that fails if raw private data enters a tracked or uploaded path.
+change requires a new corpus version and new baselines. The manifest records a
+SHA-256 content/label hash and CI fails on any unexpected HOLDOUT change.
+Private paths have a CI guard that fails if raw private data enters a tracked
+or uploaded path.
 
 ## Answerability and contamination
 
@@ -231,16 +250,25 @@ Before a case enters scored data, ask:
 
 If no, the case is `unanswerable`: it is excluded from ordinary precision and
 recall, retained for abstention checks, and marked as an invalid benchmark
-case for intelligence scoring.
+case for intelligence scoring. Reports include
+`answerability_abstention_rate` and the exclusion count. A corpus version that
+excludes more than 30% of candidate cases, or has unresolved label
+disagreement, triggers RETHINK. HOLDOUT answerability requires two labels and
+an adjudication record for disagreement.
 
 The corpus generator and the system under test must not share a model or
-hidden labels. Evaluator runs are offline, deterministic, seed-controlled and
-network-free. HOLDOUT content and labels must not appear in debug output,
-intermediate prompts, tuning notes or developer fixtures.
+hidden labels. Every manifest and run records `generator_provider`,
+`generator_model`, `generator_version`, `sut_provider`, `sut_model` (or
+`deterministic`), and label provenance. Evaluator runs are offline,
+deterministic, seed-controlled and network-free. HOLDOUT content and labels
+must not appear in debug output, intermediate prompts, tuning notes or
+developer fixtures.
 
 ## Versioning and baseline protocol
 
-Evaluator releases use SemVer, for example `evaluator/1.0.0`. Every report
+Evaluator releases use SemVer, for example `evaluator/1.0.0`. Patch bumps are
+reserved for non-behavioral fixes, minor bumps for compatible metric/schema
+behavior changes and major bumps for incompatible changes. Every report
 records:
 
 ```text
@@ -249,6 +277,11 @@ corpus_version
 corpus_split_fingerprint
 source_fingerprint
 git_sha
+seed
+noise_count
+generator_provider/model/version
+sut_provider/model/version
+hash_algorithm
 ```
 
 Evaluator behavior changes require a version bump and rerunning all affected
@@ -256,8 +289,8 @@ baselines. Corpus changes require a corpus version bump. Old reports remain
 available and are marked `SUPERSEDED`, never silently rewritten.
 
 V1 and V2 are always evaluated on the same exact fixtures, split, seed,
-noise-count and evaluator version. No production tuning may precede the first
-baseline measurement.
+noise-count and evaluator version. A baseline is invalid if any of those
+fields differ. No production tuning may precede the first baseline measurement.
 
 ## Verdict rule
 
@@ -297,8 +330,10 @@ Required human checkpoints for the full program:
 3. before IG-09: manually inspect the objective scorecard and one complete
    evidence chain.
 
-The first checkpoint is **PENDING USER VERIFICATION** until the 20 draft cases
-below are reviewed by the user. This cannot be fabricated by automated tests.
+The IG01-A contract spot-check is **PENDING USER VERIFICATION** until the 20
+draft cases below are reviewed by the user. The full IG-01 checkpoint later
+requires 20 randomly selected frozen-corpus labels plus the IG01-C evaluator
+diff. Neither checkpoint can be fabricated by automated tests.
 
 ### Twenty draft label checks
 
@@ -315,16 +350,16 @@ versioned cases only after the human checkpoint.
 | 6 | mixed | extraction | quoted external documentation | quotation, no user commitment |
 | 7 | tr | extraction | “Bu hata çözüldü.” | resolved blocker/state |
 | 8 | en | extraction | “The deployment is still blocked.” | current blocker |
-| 9 | tr | reference | “Önceki kararı iptal et.” | target resolution required; ambiguity abstains |
-| 10 | mixed | reference | “Database kararını değiştir, queue aynı kalsın.” | claim-key scoped correction |
-| 11 | en | reference | two equal prior candidates for “that” | ambiguous/review required |
+| 9 | tr | reference_resolution | “Önceki kararı iptal et.” | target resolution required; ambiguity abstains |
+| 10 | mixed | reference_resolution | “Database kararını değiştir, queue aynı kalsın.” | claim-key scoped correction |
+| 11 | en | reference_resolution | two equal prior candidates for “that” | ambiguous/review required |
 | 12 | tr | lifecycle | explicit supersede of named memory | supersede with review record |
 | 13 | en | lifecycle | resolve an already resolved blocker | no unsafe duplicate transition |
 | 14 | mixed | lifecycle | project A correction names project B memory | cross-project target forbidden |
 | 15 | tr | retrieval | old canonical DB decision vs recent color preference | old critical decision ranks higher |
 | 16 | en | retrieval | same keyword, wrong project | foreign candidate forbidden |
 | 17 | mixed | retrieval | superseded JWT memory | superseded result forbidden |
-| 18 | tr | context | required blocker plus redundant duplicates | mandatory blocker kept; duplicates reduced |
+| 18 | tr | context_compilation | required blocker plus redundant duplicates | mandatory blocker kept; duplicates reduced |
 | 19 | en | safety | secret-like text in evidence | quarantined/filtered |
 | 20 | mixed | answerability | expected target absent from available lineage | unanswerable; safe abstention |
 
@@ -339,7 +374,8 @@ IG01-A can receive `SHIP` only when:
 - split, immutability, answerability, privacy and contamination rules are
   explicit;
 - evaluator/corpus versioning and V1/V2 comparison are fixed;
-- the 20-case human checkpoint is completed by the user;
+- the IG01-A 20-case contract spot-check is completed by the user (the random
+  frozen-corpus label checkpoint remains required before IG-01 closes);
 - independent review returns `SHIP`.
 
 Until then, IG01-B corpus work and all evaluator implementation remain closed.
