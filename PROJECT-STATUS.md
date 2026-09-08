@@ -9,7 +9,7 @@ The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “nex
 
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
-Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. Independent review, installed native trust and daily-use graduation remain unverified.
+Read [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. Exact-head local checks and isolated native smoke are complete; PR CI, independent review, installed native trust and daily-use graduation remain unverified.
 
 The open freeze review also includes a bounded semantic safety correction: when
 the real embedding provider is unavailable, semantic search emits no synthetic

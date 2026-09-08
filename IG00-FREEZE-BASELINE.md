@@ -31,7 +31,7 @@ never force-move or delete it. A mismatch or missing CI blocks baseline closure.
 | Immutable baseline tag | Annotated `intelligence-graduation-baseline` created and pushed at the verified PRE-12 SHA; no master reset or force-move. |
 | Runtime truth | RUNTIME-DATAFLOW distinguishes native and legacy installed/repository paths, gates and manual capture. Native V1 SessionStart compatibility and exact legacy-hook suspension passed focused tests; the real install now has one native Claude SessionStart entry and preserves unrelated `cbm` entries. |
 | Documentation authority | DOCUMENTATION-AUTHORITY defines exact overrides and default path rules; stale scheduling claims are historical. |
-| Validation / review | Current revision checks and independent SHIP pending. PRE-13 quality FAIL retained; it is not converted to a passing intelligence claim. |
+| Validation / review | Exact-head local regression and isolated native smoke pass; draft PR creation is blocked by GitHub write permission and independent SHIP remains pending. PRE-13 quality FAIL retained; it is not converted to a passing intelligence claim. |
 
 Known baseline issue: native SHADOW at the preserved checkpoint measured V2
 without emitting context; local repository legacy hooks exited when the native
@@ -65,6 +65,25 @@ model and dimension metadata and are rejected on mismatch. The focused semantic
 and API suite passed 61 tests; the full non-integration suite passed 665 tests.
 This evidence strengthens IG-00 reliability but does not constitute IG-01
 evaluation or independent acceptance.
+
+On 2026-09-08, exact-head local verification at
+`b8d8fa2a6f99f51c672d148d4c4e1506971e91de` passed 718 non-integration tests,
+39 integration tests and 21 focused IG-00 hook/queue tests. Critical flake8
+checks, `git diff --check` and `pyproject.toml` parsing also passed. The
+isolated native smoke used temporary Claude and Codex configuration/vaults
+only: Claude emitted successful `SessionStart` and `UserPromptSubmit` hook
+responses, Codex emitted a successful `UserPromptSubmit` hook, and separate
+Claude/Codex Golden E2E runs produced queue terminal states
+`COMMITTED`/`PROCESSED` with verified canonical effects. No live user
+configuration was changed. Client model calls were unavailable without
+credentials, so this is hook/runtime evidence rather than a successful model
+turn or installed-client trust decision.
+
+The required master-targeted draft PR could not be created: the GitHub
+connector returned HTTP 403 (`Resource not accessible by integration`) and no
+local `gh` CLI or signed-in browser session is available. Consequently exact
+head GitHub CI and an independent read-only review remain open, and IG-00 is
+not accepted.
 
 ## Review and next-package boundary
 

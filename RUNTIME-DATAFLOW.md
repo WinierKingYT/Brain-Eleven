@@ -25,6 +25,16 @@ reconciliation passed; installed hook trust
 and actual client delivery require separate native evidence. Unrelated global
 hooks are outside Brain-Eleven ownership and must be preserved.
 
+An isolated native smoke on 2026-09-08 exercised the installed hook definitions
+without touching the user's vault or client configuration. Claude produced
+successful native `SessionStart` and `UserPromptSubmit` responses; Codex
+produced a successful native `UserPromptSubmit` response after its temporary
+hook definition was explicitly trust-bypassed for the test. Separate Golden
+E2E launcher runs for both client transcript shapes reached queue terminal
+states and verified canonical effects. These results prove the bounded hook
+and queue paths, not trust of the user's live installation or successful model
+authentication.
+
 ## Paths and node states
 
 | Node / entry | State | Actual behavior and boundary |

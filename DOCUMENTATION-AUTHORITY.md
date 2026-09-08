@@ -28,6 +28,7 @@ authorize opening Phase 20 or promoting V2.
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
 | `IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
+| `IG00-PACKAGE-REPORT.md` | REVIEW/evidence record bound to the IG-00 review HEAD; its pending verdict does not authorize IG-01 or Phase 20. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |
 | `PRE20-12-REPOSITORY-CONSOLIDATION.md`, `PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT.md` | HISTORICAL closed-program record; “next Phase 20” scheduling superseded by IG. |
