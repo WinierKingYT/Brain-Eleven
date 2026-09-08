@@ -1,7 +1,9 @@
 # IG01-A Package Report — Evaluation Contract
 
 **PACKAGE:** IG01-A — Evaluation Contract
-**REVISION:** `06bc1cc5f0c12f80cc48ad0ceecca0348fd39aec`
+**REVISION UNDER REVIEW:** `84ed60d69e554dd893497b184db6de5bcecfceaa`
+**REPORT COMMIT:** this evidence file is attached after the reviewed revision;
+all test/review claims below are bound to `REVISION UNDER REVIEW`.
 **BASE REVISION:** `0f68e75cf71ba32065a90c7b2c8fd03fc476fde6`
 **DATE:** 2026-09-09
 **CONTRACT:** `IG01-A-EVALUATION-CONTRACT.md`
@@ -39,9 +41,16 @@ No production or evaluator tests were added. This package is contract-only.
 
 ## TESTS EXECUTED
 
-- `git diff --check`: PASS.
-- Exact-head [Validation run 34286972242](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34286972242): SUCCESS at this revision. Unit, integration, privacy, smoke, coverage, Bandit, dependency, secret and Docker jobs passed; master-only public/evidence jobs were skipped as not applicable.
-- Exact-head [PRE-13 runtime run 34286972245](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34286972245): Ubuntu PASS, Windows PASS, Bandit PASS; historical quality job FAIL retained.
+- Exact-head local focused suites at `da9ef22`: **179 passed**; the following
+  contract-only gate-normalization commit changed no runtime code.
+- Exact-head local syntax/critical checks: `flake8` critical **PASS**,
+  `pyproject.toml` parse **PASS**, compile/import sanity **PASS**, `git diff --check`
+  **PASS**.
+- Exact-head local full unit/integration collection was **blocked by the host
+  environment** because `defusedxml` is not installed in the active interpreter;
+  no repository change caused this collection error.
+- [Validation run 34289631318](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34289631318) at the reviewed revision: **SUCCESS**. Ubuntu/Windows unit, integration, privacy, smoke, coverage, Bandit, dependency, secret and Docker jobs passed; master-only public/evidence jobs are `NOT APPLICABLE`.
+- [PRE-13 runtime run 34289631307](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34289631307) at the reviewed revision: Ubuntu runtime **PASS**, Windows runtime **PASS**; historical quality job **FAIL** remains visible and is deferred to later intelligence packages.
 
 ## QUALITY METRICS BEFORE / AFTER
 
@@ -69,8 +78,14 @@ candidate or canonical mutation was executed by this document-only package.
   addressed in subsequent commits.
 - Review at `72fed79…`: FIX-FIRST; required coverage, context precision,
   denominator, provenance and V2 target gaps were addressed in `06bc1cc…`.
-- Fresh review of `06bc1cc…`: pending at report creation; it must return SHIP
-  before package closure.
+- Review at `759c03e…`: FIX-FIRST; family formulas, fail-closed case coverage,
+  NA safeguards, safety alignment, comparability fields, package ordering and
+  retrieval preference coverage were addressed in `da9ef22…`.
+- Review at `da9ef22…`: FIX-FIRST; the nine-gate cardinality and report
+  revision binding were the remaining document blockers; the gate set is
+  normalized in `84ed60d…` and this report binds its evidence to that revision.
+- Fresh review of `84ed60d…`: pending; it must return SHIP before package
+  closure.
 
 ## SCORE BEFORE / AFTER
 
