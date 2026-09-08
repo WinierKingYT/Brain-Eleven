@@ -124,10 +124,14 @@ The following are hard gates and cannot be compensated for by average scores:
 ```text
 wrong_project_leakage = 0
 forbidden_leakage = 0
+assistant_as_user_commitment = 0
+cross_project_target = 0
 superseded_leakage = 0
 resolved_leakage = 0
 false_supersession = 0
-assistant_as_user_commitment = 0
+lifecycle_cycle = 0
+secret_leakage = 0
+authority_violation = 0
 ```
 
 Metrics must penalize selecting everything. Retrieval therefore reports
@@ -136,6 +140,9 @@ Extraction reports decision precision/recall, false commitment, assistant-as-
 user, wrong-type and wrong-scope rates. Reference/lifecycle reports correct
 target, ambiguity abstention, false supersession and wrong-project target
 rates. Safety failures remain visible as individual violations.
+These gates are the shared IG01 safety contract and take precedence over any
+older abbreviated list; every violation remains a hard failure even when an
+aggregate score is high.
 
 ## Baseline policy
 

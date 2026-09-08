@@ -135,7 +135,8 @@ never an acceptable substitute.
 
 ## Case schema
 
-Every public or sanitized case must carry the following fields:
+Every case in every dataset class, including `PRIVATE_REALISTIC`, must carry the
+following fields:
 
 ```yaml
 case_id: string
@@ -165,6 +166,10 @@ sut_identity: string
 source_case_ids: [string, ...]
 ```
 
+`case_kind=abstention` is valid only with `answerability=unanswerable`; an
+`unanswerable` case must use `case_kind=abstention`. `answerable`,
+`adversarial` and `control` cases must be answerable and remain in ordinary
+scoring (an adversarial case may still contain forbidden expected outcomes).
 Unanswerable cases are retained in a separate abstention set and do not count
 as ordinary intelligence failures.
 
@@ -197,7 +202,7 @@ lifecycle:
 
 retrieval:
   exact_relevant, paraphrase, related_relevant, old_critical_decision,
-  current_state, current_blocker, historical_context, global_lesson,
+  current_state, current_blocker, historical_context, global_lesson, preference,
   recent_irrelevant, lexical_trap, wrong_project, superseded_or_resolved
 
 context_compilation:
@@ -213,9 +218,20 @@ safety:
 The manifest records coverage counts by `dataset_class`, language, family,
 category, split, `case_kind` and `answerability`. Every category/language pair
 must contain at least one `answerable` case and one `adversarial` case; every
-`abstention` case must be `unanswerable`. CI fails closed when any count is
-missing or inconsistent. Coverage gaps are a package failure, not a tuning
-opportunity.
+`abstention` case must be `unanswerable`, and every `unanswerable` case must be
+`abstention`. Family/category compatibility is validated against the vocabulary
+above; the manifest also records and validates the allowed
+`dataset_class`/`data_lineage`/`contamination_class` combinations. CI fails
+closed when any count is missing or inconsistent. Coverage gaps are a package
+failure, not a tuning opportunity.
+
+The manifest validator uses a closed family-to-category map (the map above),
+rejects unknown combinations, and checks lineage compatibility row by row:
+`PUBLIC_SYNTHETIC` requires `data_lineage=synthetic`,
+`PRIVATE_REALISTIC` requires `data_lineage=private_realistic`, and
+`SANITIZED_REAL_FAILURE` requires `data_lineage=sanitized_failure`.
+`contamination_class` remains an independent cross-split control, but every
+value and its counts must be present in the manifest.
 
 ## Metric definitions
 
@@ -259,6 +275,13 @@ otherwise, aggregate values are macro means over answerable cases with a
 published case count; zero-denominator cases are `not_applicable` and cannot
 be silently dropped.
 
+Case-scored metrics use the unweighted macro mean across eligible cases.
+Event/job/operation rates (capture, replay, lifecycle and authority) use a
+pooled numerator and denominator within each family/language/split and also
+publish the per-case counts; they are not allowed to be reweighted by a
+different case mix. All family aggregates publish both the numerator and
+denominator so macro and pooled interpretations remain auditable.
+
 | Family metric | Formula | Example |
 |---|---|---|
 | Capture loss rate | `lost_events / emitted_events` | `1/100 = .01` |
@@ -276,6 +299,14 @@ be silently dropped.
 | Wrong-project target rate | `cross_project_targets / target_attempts` | `0/50 = 0` |
 | Lifecycle transition safety | `safe_transitions / lifecycle_operations` | `50/50 = 1` |
 | Leakage rate | `forbidden_or_wrong_scope_hits / selected_items` | `0/100 = 0` |
+| Mandatory context coverage | `mandatory_items_present / mandatory_items_expected` | `9/10 = .90` |
+| Irrelevant-context rate | `irrelevant_compiled_items / compiled_items` | `1/10 = .10` |
+| Contradiction visibility rate | `contradictions_explicitly_marked / detected_contradictions` | `4/4 = 1` |
+| Context token usage | `sum(rendered_context_tokens)` | `820 tokens` |
+| Redundancy rate | `duplicate_or_equivalent_items / compiled_items` | `2/10 = .20` |
+| Context latency | nearest-rank p50/p95 over end-to-end samples | `p95=180ms` |
+| False correction rate | `false_corrections / correction_attempts` | `0/20 = 0` |
+| Authority violation rate | `authority_violations / authority_decisions` | `0/50 = 0` |
 | Answerability abstention rate | `correct_abstentions / unanswerable_cases` | `9/10 = .90` |
 
 For MRR, a case with relevant labels but no retrieved relevant item contributes
@@ -283,6 +314,18 @@ For MRR, a case with relevant labels but no retrieved relevant item contributes
 expected labels yields `0`. For answerability abstention, no unanswerable
 cases is `not_applicable`. Safety rates retain raw violation counts in
 addition to aggregates so that a zero aggregate cannot hide a single violation.
+
+### Minimum evidence and not-applicable safeguards
+
+Each release-gating report must contain at least five answerable cases per
+applicable family and language, plus at least one positive denominator for
+each metric it claims. A required family with fewer than five scored cases, or
+a run in which all cases for a required metric are `not_applicable` or empty,
+is `INVALID_BENCHMARK_RUN` and cannot pass a floor. A genuinely inapplicable
+family must be declared in the manifest with its reason; it may not be created
+by removing cases after seeing results. Reports publish per-family and
+per-language denominators, `not_applicable` counts, empty-selection counts,
+and excluded-case counts before any aggregate is computed.
 
 ## Safety gates
 
@@ -299,6 +342,7 @@ superseded_leakage = 0
 resolved_leakage = 0
 lifecycle_cycle = 0
 secret_leakage = 0
+authority_violation = 0
 false_supersession = 0
 ```
 
@@ -350,9 +394,13 @@ If no, the case is `unanswerable`: it is excluded from ordinary precision and
 recall, retained for abstention checks, and marked as an invalid benchmark
 case for intelligence scoring. Reports include
 `answerability_abstention_rate` and the exclusion count. A corpus version that
-excludes more than 30% of candidate cases, or has unresolved label
-disagreement, triggers RETHINK. HOLDOUT answerability requires two labels and
-an adjudication record for disagreement.
+excludes more than 30% of candidate cases (where
+`exclusion_rate = unanswerable_candidates / all_candidate_cases` before
+filtering), or has unresolved label disagreement, triggers RETHINK. HOLDOUT
+answerability requires two labels, each with confidence in `[0,1]`, and an
+adjudication record for disagreement. The manifest stores both the numerator
+and denominator; developers may not redefine the candidate pool after seeing
+results.
 
 The corpus generator and the system under test must not share a model or
 hidden labels. Every manifest and run records `generator_provider`,
@@ -379,6 +427,7 @@ corpus_version
 corpus_split_fingerprint
 source_fingerprint
 git_sha
+retrieval_k
 seed
 noise_count
 generator_provider/model/version
@@ -390,9 +439,13 @@ Evaluator behavior changes require a version bump and rerunning all affected
 baselines. Corpus changes require a corpus version bump. Old reports remain
 available and are marked `SUPERSEDED`, never silently rewritten.
 
-V1 and V2 are always evaluated on the same exact fixtures, split, seed,
-noise-count and evaluator version. A baseline is invalid if any of those
-fields differ. No production tuning may precede the first baseline measurement.
+V1 and V2 are always evaluated on the same exact fixtures, split, `k`,
+seed, noise-count, evaluator version, source fingerprint and report revision.
+The run also records the exact production `git_sha` for each path and the
+same privacy/safety configuration. A baseline is invalid if any of those
+fields differ or if either path has a safety violation; clean-safety is a
+conjunction, not an averaged comparison. No production tuning may precede the
+first baseline measurement.
 
 Before any later tuning, IG-01-D must record an accepted V1-equivalent recall
 threshold using the same corpus and evaluator. The V2 promotion gate is
