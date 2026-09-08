@@ -142,6 +142,7 @@ case_id: string
 dataset_class: PUBLIC_SYNTHETIC | PRIVATE_REALISTIC | SANITIZED_REAL_FAILURE
 family: capture | extraction | reference_resolution | lifecycle | retrieval | context_compilation | safety
 category: string (one of the required coverage vocabulary keys below)
+case_kind: answerable | adversarial | control | abstention
 language: tr | en | mixed
 project: string | null
 query_or_conversation: object | string
@@ -210,7 +211,10 @@ safety:
 ```
 
 The manifest records coverage counts by `dataset_class`, language, family,
-category and split. Coverage gaps are a package failure, not a tuning
+category, split, `case_kind` and `answerability`. Every category/language pair
+must contain at least one `answerable` case and one `adversarial` case; every
+`abstention` case must be `unanswerable`. CI fails closed when any count is
+missing or inconsistent. Coverage gaps are a package failure, not a tuning
 opportunity.
 
 ## Metric definitions
@@ -247,6 +251,38 @@ its denominator, `not_applicable` flag and empty-set flag. False-commitment
 rate uses the number of expected committed decisions as denominator; with none,
 it is `not_applicable`. Answerability-abstention rate uses only cases labeled
 `unanswerable` as its denominator.
+
+## Family metric formulas and aggregation
+
+The following formulas complete the family-level contract. Unless stated
+otherwise, aggregate values are macro means over answerable cases with a
+published case count; zero-denominator cases are `not_applicable` and cannot
+be silently dropped.
+
+| Family metric | Formula | Example |
+|---|---|---|
+| Capture loss rate | `lost_events / emitted_events` | `1/100 = .01` |
+| Duplicate canonical effect rate | `duplicate_effects / replayed_events` | `0/20 = 0` |
+| Replay correctness | `idempotent_correct_replays / replayed_events` | `20/20 = 1` |
+| Terminal/effect agreement | `completed_jobs_with_verified_effect / completed_jobs` | `9/10 = .90` |
+| Decision precision | `correct_decisions / predicted_decisions` | `8/10 = .80` |
+| Decision recall | `correct_decisions / expected_decisions` | `8/10 = .80` |
+| False commitment rate | `false_commitments / expected_committed_decisions` | `1/100 = .01` |
+| Assistant-as-user rate | `assistant_committed_as_user / assistant_proposals` | `0/20 = 0` |
+| Wrong type/scope rate | `wrong_type_or_scope / typed_predictions` | `1/25 = .04` |
+| Correct target rate | `correct_targets / resolvable_targets` | `9/10 = .90` |
+| Ambiguous abstention rate | `correct_abstentions / ambiguous_cases` | `10/10 = 1` |
+| False supersession rate | `false_supersessions / supersession_attempts` | `0/20 = 0` |
+| Wrong-project target rate | `cross_project_targets / target_attempts` | `0/50 = 0` |
+| Lifecycle transition safety | `safe_transitions / lifecycle_operations` | `50/50 = 1` |
+| Leakage rate | `forbidden_or_wrong_scope_hits / selected_items` | `0/100 = 0` |
+| Answerability abstention rate | `correct_abstentions / unanswerable_cases` | `9/10 = .90` |
+
+For MRR, a case with relevant labels but no retrieved relevant item contributes
+`0`; a case with no relevant labels is `not_applicable`. For F1, P=R=0 with
+expected labels yields `0`. For answerability abstention, no unanswerable
+cases is `not_applicable`. Safety rates retain raw violation counts in
+addition to aggregates so that a zero aggregate cannot hide a single violation.
 
 ## Safety gates
 
