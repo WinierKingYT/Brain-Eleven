@@ -128,10 +128,9 @@ assistant_as_user_commitment = 0
 cross_project_target = 0
 superseded_leakage = 0
 resolved_leakage = 0
-false_supersession = 0
 lifecycle_cycle = 0
-secret_leakage = 0
-authority_violation = 0
+false_supersession <= 0.01
+false_commitment <= 0.01
 ```
 
 Metrics must penalize selecting everything. Retrieval therefore reports
@@ -140,9 +139,10 @@ Extraction reports decision precision/recall, false commitment, assistant-as-
 user, wrong-type and wrong-scope rates. Reference/lifecycle reports correct
 target, ambiguity abstention, false supersession and wrong-project target
 rates. Safety failures remain visible as individual violations.
-These gates are the shared IG01 safety contract and take precedence over any
-older abbreviated list; every violation remains a hard failure even when an
-aggregate score is high.
+These seven absolute-zero and two near-zero gates are the shared IG01 safety
+contract and take precedence over older abbreviated lists. `secret_leakage` and
+`authority_violation` remain separately reported with raw counts and review
+records; they do not change the nine-gate IG01-A cardinality.
 
 ## Baseline policy
 

@@ -331,7 +331,10 @@ and excluded-case counts before any aggregate is computed.
 
 These are reported as independent rows and never averaged away.
 
-### Absolute-zero gates
+### Nine IG01-A hard gates
+
+The IGFULLPLAN cardinality is fixed at nine gates: seven absolute-zero gates
+and two near-zero gates that require review for every positive event.
 
 ```text
 wrong_project_leakage = 0
@@ -341,21 +344,25 @@ cross_project_target = 0
 superseded_leakage = 0
 resolved_leakage = 0
 lifecycle_cycle = 0
-secret_leakage = 0
-authority_violation = 0
-false_supersession = 0
 ```
 
 ### Review-required candidate gate
 
-Every `false_commitment` event must produce a review record. The program target
-for false commitment is `<= 0.01`, but every positive event remains visible
-even when the aggregate target is met. Every `false_supersession` violation in
-the absolute-zero list also produces a review record; exploratory candidate
+Every `false_commitment` and `false_supersession` event must produce a review
+record. The program target for each is `<= 0.01`, but every positive event
+remains visible even when the aggregate target is met. Exploratory candidate
 mistakes remain quarantined and may never be committed to canonical lifecycle
-state.
+state. These two near-zero gates plus the seven absolute-zero gates are the
+complete nine-gate IG01-A set.
+
+`secret_leakage` and `authority_violation` remain independently reported safety
+metrics with raw violation counts and review records. They are monitored here
+without changing the IG01-A nine-gate cardinality; later runtime/security
+packages may promote them to an explicit release gate.
 
 Any absolute-zero violation is a package failure regardless of other scores.
+Any near-zero rate above `0.01`, or any positive event without its required
+review record, is also a package failure.
 
 ## Dataset, split and privacy policy
 
