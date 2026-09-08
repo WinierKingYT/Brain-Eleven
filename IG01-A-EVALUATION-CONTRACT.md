@@ -141,7 +141,7 @@ Every public or sanitized case must carry the following fields:
 case_id: string
 dataset_class: PUBLIC_SYNTHETIC | PRIVATE_REALISTIC | SANITIZED_REAL_FAILURE
 family: capture | extraction | reference_resolution | lifecycle | retrieval | context_compilation | safety
-category: string
+category: string (one of the required coverage vocabulary keys below)
 language: tr | en | mixed
 project: string | null
 query_or_conversation: object | string
@@ -154,14 +154,64 @@ provenance: string
 corpus_version: string
 split: DEV | VALIDATION | HOLDOUT
 answerability: answerable | unanswerable
+data_lineage: synthetic | private_realistic | sanitized_failure
 contamination_class: synthetic | real | holdout
 labeler: string
 label_confidence: number
 evaluator_version_min: string
+generator_identity: string
+sut_identity: string
+source_case_ids: [string, ...]
 ```
 
 Unanswerable cases are retained in a separate abstention set and do not count
 as ordinary intelligence failures.
+
+## Required coverage vocabulary
+
+`category` is not an unrestricted label. Each corpus version must include at
+least one answerable and one adversarial case for every required category below
+in each applicable language (Turkish, English and mixed technical language).
+The corpus manifest fails closed if a category is missing.
+
+```text
+capture:
+  duplicate_event, replayed_event, crash_after_evidence_read,
+  crash_before_canonical_write, crash_after_canonical_write,
+  crash_before_receipt, lock_timeout, corrupt_transcript, deleted_transcript,
+  invalid_project, corrupt_queue_record, expired_lease,
+  statestore_conflict, memorystore_cas_conflict, golden_e2e
+
+extraction:
+  explicit_decision, implicit_decision, preference, lesson, requirement,
+  blocker, resolved_blocker, suggestion, hypothetical, question, negation,
+  correction, assistant_proposal, quoted_material, mixed_statement
+
+reference_resolution:
+  exact_named_target, previous_decision, pronoun_reference, claim_key_target,
+  ambiguous_target, no_valid_target, wrong_project_target, inactive_target
+
+lifecycle:
+  confirm, supersede, correct, resolve, reopen, lifecycle_cycle
+
+retrieval:
+  exact_relevant, paraphrase, related_relevant, old_critical_decision,
+  current_state, current_blocker, historical_context, global_lesson,
+  recent_irrelevant, lexical_trap, wrong_project, superseded_or_resolved
+
+context_compilation:
+  mandatory_coverage, minimum_sufficient_context, redundancy_reduction,
+  contradiction_visibility, token_budget, latency
+
+safety:
+  wrong_project_leakage, forbidden_leakage, superseded_leakage,
+  resolved_leakage, secret_leakage, assistant_as_user,
+  false_supersession, cross_project_target
+```
+
+The manifest records coverage counts by `dataset_class`, language, family,
+category and split. Coverage gaps are a package failure, not a tuning
+opportunity.
 
 ## Metric definitions
 
@@ -173,13 +223,13 @@ cutoff for the report.
 | Precision@K | `|relevant ∩ retrieved_k| / k`; if `k=0`, report `0` and `empty_selection=true` | 3 relevant in top 5 → `3/5 = 0.60` |
 | Recall@K | `|relevant ∩ retrieved_k| / |relevant|`; if no relevant labels, report `not_applicable` | 3 of 4 required → `3/4 = 0.75` |
 | Mandatory recall | `|mandatory ∩ retrieved| / |mandatory|`; if no mandatory labels, report `not_applicable` | 4 of 5 mandatory → `0.80` |
-| F1 | `2 * precision * recall / (precision + recall)` | `P=.60,R=.75` → `.667` |
-| MRR | `mean(1 / rank_of_first_relevant)` | first relevant at rank 2 → `.50` |
+| F1 | `2 * precision * recall / (precision + recall)`; if both are zero with relevant labels, report `0`; with no relevant labels, `not_applicable` | `P=.60,R=.75` → `.667` |
+| MRR | `mean(1 / rank_of_first_relevant)`; no relevant result contributes `0`, while a case with no relevant labels is `not_applicable` | first relevant at rank 2 → `.50` |
 | Noise ratio | `|retrieved \ relevant| / |retrieved|`; empty retrieval is `0` with `empty_selection=true` | 2 noisy of 5 → `.40` |
 | Token waste | `sum(tokens(item) where relevance(item) < 0.30)`; relevant=`1`, acceptable=`0.5`, otherwise `0` | two irrelevant 20-token items → `40` |
 | Context precision | `|relevant compiled items| / |all compiled items|`; empty context is `0` with `empty_selection=true` | 3 useful of 5 → `.60` |
-| ECE | `sum(|accuracy_bin-confidence_bin| * n_bin) / N`; ten bins `[0,.1),...,[.9,1]` | weighted calibration error |
-| Latency | p50 and p95 end-to-end milliseconds | report V1 and V2 separately |
+| ECE | `sum(|accuracy_bin-confidence_bin| * n_bin) / N`; ten bins `[0,.1),...,[.9,1]`; `N=0` is `not_applicable` | weighted calibration error |
+| Latency | p50 and p95 end-to-end milliseconds over at least 5 samples, using nearest-rank percentiles; fewer samples are `not_applicable` | report V1 and V2 separately |
 
 The MRR tie-break is lexical `memory_id`. A select-all control run is printed
 in every retrieval report and is included in precision, noise and token-waste
@@ -187,8 +237,16 @@ comparisons. High recall alone is not success.
 
 Expected/acceptable/forbidden records are matched by normalized stable IDs and
 typed proposition keys, never by free-text substring coincidence. Mandatory
-records are the case `mandatory_ids` projection of `required_results`. Every
-metric reports its denominator, `not_applicable` flag and empty-set flag.
+records are the case `mandatory_ids` projection of `required_results`.
+`context_precision` is computed per answerable case as
+`count(selected IDs in required ∪ acceptable and not forbidden) /
+count(selected IDs)`, with an empty selection reported as `0` and an explicit
+flag. The aggregate is the macro mean across answerable cases; forbidden IDs
+are always counted separately as a hard-gate violation. Every metric reports
+its denominator, `not_applicable` flag and empty-set flag. False-commitment
+rate uses the number of expected committed decisions as denominator; with none,
+it is `not_applicable`. Answerability-abstention rate uses only cases labeled
+`unanswerable` as its denominator.
 
 ## Safety gates
 
@@ -208,14 +266,14 @@ secret_leakage = 0
 false_supersession = 0
 ```
 
-### Review-required candidate gates
+### Review-required candidate gate
 
-Every `false_supersession` and `false_commitment` event must produce a review
-record. A false supersession may never be committed to canonical lifecycle
-state, so the canonical mutation gate is `false_supersession = 0`.
-Exploratory candidate mistakes remain quarantined and visible. The program
-target for false commitment is `<= 0.01`, but every positive event remains
-visible even when the aggregate target is met.
+Every `false_commitment` event must produce a review record. The program target
+for false commitment is `<= 0.01`, but every positive event remains visible
+even when the aggregate target is met. Every `false_supersession` violation in
+the absolute-zero list also produces a review record; exploratory candidate
+mistakes remain quarantined and may never be committed to canonical lifecycle
+state.
 
 Any absolute-zero violation is a package failure regardless of other scores.
 
@@ -227,6 +285,10 @@ The program reserves three dataset classes:
 2. `PRIVATE_REALISTIC` — local-only, never uploaded as a CI artifact;
 3. `SANITIZED_REAL_FAILURE` — derived from dogfood after raw content and
    identifying data are removed.
+
+`dataset_class` describes storage/privacy, `data_lineage` describes origin,
+and `contamination_class` describes synthetic/real/holdout contamination
+controls. They are orthogonal fields and may not be collapsed into one label.
 
 Every class covers Turkish, English and mixed technical language. Each corpus
 version has `DEV` (60%), `VALIDATION` (20%) and `HOLDOUT` (20%) splits unless a
@@ -259,10 +321,14 @@ an adjudication record for disagreement.
 The corpus generator and the system under test must not share a model or
 hidden labels. Every manifest and run records `generator_provider`,
 `generator_model`, `generator_version`, `sut_provider`, `sut_model` (or
-`deterministic`), and label provenance. Evaluator runs are offline,
-deterministic, seed-controlled and network-free. HOLDOUT content and labels
-must not appear in debug output, intermediate prompts, tuning notes or
-developer fixtures.
+`deterministic`), and label provenance. Each case records `data_lineage`,
+`source_case_ids`, generator identity and SUT identity. A CI overlap check
+compares normalized content hashes across DEV/VALIDATION/HOLDOUT and fails on
+cross-split duplicates. The manifest must also assert that generator identity
+and SUT identity differ, unless the generator is explicitly deterministic and
+has no hidden labels. Evaluator runs are offline, deterministic, seed-controlled
+and network-free. HOLDOUT content and labels must not appear in debug output,
+intermediate prompts, tuning notes or developer fixtures.
 
 ## Versioning and baseline protocol
 
@@ -291,6 +357,13 @@ available and are marked `SUPERSEDED`, never silently rewritten.
 V1 and V2 are always evaluated on the same exact fixtures, split, seed,
 noise-count and evaluator version. A baseline is invalid if any of those
 fields differ. No production tuning may precede the first baseline measurement.
+
+Before any later tuning, IG-01-D must record an accepted V1-equivalent recall
+threshold using the same corpus and evaluator. The V2 promotion gate is
+always `V2_precision > V1_precision` and
+`V2_mandatory_recall >= accepted_v1_equivalent_recall`; the accepted threshold
+may not be lower than the program floor `0.80`. The exact numeric threshold is
+`TBD` until IG-01-D, but the rule itself is frozen now.
 
 ## Verdict rule
 
