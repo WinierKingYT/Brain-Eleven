@@ -5,17 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
-
 from brain_eleven.state.resolver import CurrentProjectState, StateResolver
-from task_model import TaskAnalyzer, TaskEnvelope, TaskProjectResolutionError, TaskValidationError
+try:
+    from scripts.task_model import TaskAnalyzer, TaskEnvelope, TaskProjectResolutionError, TaskValidationError
+except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
+    if exc.name != "scripts":
+        raise
+    from task_model import TaskAnalyzer, TaskEnvelope, TaskProjectResolutionError, TaskValidationError
 
 
 TASK_STATE_CONTEXT_SCHEMA_VERSION = 1

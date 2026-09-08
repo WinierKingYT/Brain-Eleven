@@ -9,7 +9,8 @@ import subprocess
 import sys
 import time
 
-# Supports an absolute script command even when the client cwd is another repo.
+# Native hooks invoke this module directly by absolute file path. Keep the
+# direct-file bootstrap while installed/module invocations use normal imports.
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))

@@ -10,7 +10,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 specification = importlib.util.spec_from_file_location("phase16_state_cli", SCRIPTS / "state.py")
 state_cli = importlib.util.module_from_spec(specification)

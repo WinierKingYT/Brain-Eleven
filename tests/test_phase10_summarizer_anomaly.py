@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from summarizer import MemorySummarizer, tokenize, jaccard_similarity  # noqa: E402
 from anomaly_detector import AnomalyDetector  # noqa: E402

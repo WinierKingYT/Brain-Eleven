@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from knowledge_graph import KnowledgeGraph  # noqa: E402
 from project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402

@@ -5,16 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import tempfile
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
-_SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
-
-from task_state_context import TaskStateComposer  # noqa: E402
+from scripts.task_state_context import TaskStateComposer  # noqa: E402
 
 from .models import RoutingOptions
 from .router import ContextRouter

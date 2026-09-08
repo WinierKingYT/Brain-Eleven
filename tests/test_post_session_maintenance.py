@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from post_session_maintenance import (  # noqa: E402
     run_maintenance, save_report, summarize_for_shell, SURFACE_THRESHOLD,

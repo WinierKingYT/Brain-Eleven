@@ -8,16 +8,7 @@ graph projection behavior remains unchanged.
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-
-_ROOT = Path(__file__).resolve().parents[2]
-_SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
-
-from entity_extractor import (  # noqa: E402
+from scripts.entity_extractor import (
     PHASE_PATTERN,
     TECH_LEXICON,
     EntityExtractor,

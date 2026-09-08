@@ -72,10 +72,6 @@ def _load_context_compiler() -> Type[Any]:
 
     if not _CONTEXT_COMPILER_PATH.is_file():
         raise BaselineAdapterError(f"ContextCompiler not found: {_CONTEXT_COMPILER_PATH}")
-    scripts_directory = str(_SCRIPTS_DIRECTORY)
-    if scripts_directory not in sys.path:
-        sys.path.insert(0, scripts_directory)
-
     module = sys.modules.get(_MODULE_NAME)
     if module is None:
         specification = importlib.util.spec_from_file_location(_MODULE_NAME, _CONTEXT_COMPILER_PATH)

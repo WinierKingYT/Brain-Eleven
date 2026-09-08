@@ -9,17 +9,7 @@ drift during consolidation.
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-_ROOT = Path(__file__).resolve().parents[2]
-_SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
-
-# Import the established implementation without importing the ``scripts``
-# package (whose historical __init__ eagerly loads legacy entry points).
-from project_registry import (  # noqa: E402
+from scripts.project_registry import (
     REGISTRY_FILENAME,
     REGISTRY_SCHEMA_VERSION,
     VALID_STATUSES,

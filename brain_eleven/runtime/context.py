@@ -4,7 +4,7 @@ import re
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, write_json
 from brain_eleven.runtime.worker import allowed
-from task_state_context import TaskStateComposer
+from scripts.task_state_context import TaskStateComposer
 from context_router import ContextRouter, RoutingOptions
 from authority import AuthorityResolver, AuthorityOptions
 from retrieval_decision_v2 import RetrievalDecisionEngine, DecisionOptions, NeedPlan
@@ -19,7 +19,7 @@ from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapsh
 def compile_bootstrap(vault, project_root, *, budget=3000):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
     from brain_eleven._legacy import load_legacy_module
-    from capture_safety import evaluate_capture
+    from scripts.capture_safety import evaluate_capture
     compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     runtime = RuntimeConfig(vault)
     project = allowed(vault, project_root)

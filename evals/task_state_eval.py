@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,17 +12,11 @@ from typing import Any, Mapping, Sequence
 
 
 _ROOT = Path(__file__).resolve().parents[1]
-_SCRIPTS_DIRECTORY = _ROOT / "scripts"
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
-if str(_SCRIPTS_DIRECTORY) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS_DIRECTORY))
-
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.memory import MemoryStore
 from brain_eleven.state.resolver import StateResolver
 from brain_eleven.state import StateService
-from task_model import TaskAnalyzer
+from scripts.task_model import TaskAnalyzer
 
 
 TASK_STATE_EVAL_SCHEMA_VERSION = 1

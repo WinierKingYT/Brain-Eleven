@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from extraction import NewMemoryCandidate, StateMutationProposal  # noqa: E402
 from project_registry import ProjectRegistry  # noqa: E402

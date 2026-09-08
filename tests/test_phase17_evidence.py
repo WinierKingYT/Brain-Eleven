@@ -10,7 +10,6 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from phase17_evidence import SUCCESS, Phase17EvidenceError, REQUIRED_TESTS, build_manifest, main  # noqa: E402
 

@@ -19,7 +19,12 @@ from pathlib import Path
 from typing import Any, Optional
 import threading
 
-from logging_config import setup_logging
+try:
+    from scripts.logging_config import setup_logging
+except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
+    if exc.name != "scripts":
+        raise
+    from logging_config import setup_logging
 
 logger = setup_logging(__name__)
 

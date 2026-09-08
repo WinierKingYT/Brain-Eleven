@@ -11,7 +11,6 @@ import hashlib
 import json
 import os
 import subprocess  # nosec B404 - runs only this repository's fixed scripts.
-import sys
 import tempfile
 import time
 import uuid
@@ -19,10 +18,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
-
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.memory import MemoryStore, MemoryStoreError
 

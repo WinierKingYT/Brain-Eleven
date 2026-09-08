@@ -8,7 +8,6 @@ import pytest
 
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 import graduation_evidence as evidence  # noqa: E402
 

@@ -20,18 +20,26 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
-
-from capture_event import (
-    CAPTURE_EVENT_SCHEMA_VERSION,
-    EVENT_TYPES,
-    MAX_HOOK_EVENT_BYTES,
-    CaptureEventError,
-    HookEvent,
-    parse_native_hook_event_json,
-)
+try:
+    from scripts.capture_event import (
+        CAPTURE_EVENT_SCHEMA_VERSION,
+        EVENT_TYPES,
+        MAX_HOOK_EVENT_BYTES,
+        CaptureEventError,
+        HookEvent,
+        parse_native_hook_event_json,
+    )
+except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
+    if exc.name not in {"scripts", "scripts.capture_event"}:
+        raise
+    from capture_event import (
+        CAPTURE_EVENT_SCHEMA_VERSION,
+        EVENT_TYPES,
+        MAX_HOOK_EVENT_BYTES,
+        CaptureEventError,
+        HookEvent,
+        parse_native_hook_event_json,
+    )
 try:
     from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 except ImportError:  # pragma: no cover - deployed copied-hook fallback

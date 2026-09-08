@@ -11,7 +11,6 @@ import pytest
 
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 from capture_safety import (  # noqa: E402
     CaptureSafetyError,

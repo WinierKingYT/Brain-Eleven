@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -13,11 +12,6 @@ from .compiler import ContextCompilerV2
 from .models import BudgetContract, CompilationOptions, CompilationRequest, ContextBundle
 
 
-_ROOT = Path(__file__).resolve().parents[1]
-_SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
-
 
 class CompilerShadowRunner:
     """Compose → route → resolve → compile without touching SessionStart or V1."""
@@ -27,7 +21,7 @@ class CompilerShadowRunner:
         self.project_root = Path(project_root)
 
     def run(self, request_text: str, budget: BudgetContract, routing: RoutingOptions | None = None) -> tuple[Any, Any, ContextBundle]:
-        from task_state_context import TaskStateComposer
+        from scripts.task_state_context import TaskStateComposer
 
         routing = routing or RoutingOptions()
         task_state = TaskStateComposer(self.vault_path, self.project_root).compose(request_text)

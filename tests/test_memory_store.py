@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from memory_store import (  # noqa: E402
     CANONICAL_SCHEMA_VERSION,
