@@ -31,6 +31,7 @@ authorize opening Phase 20 or promoting V2.
 | `IG00-PACKAGE-REPORT.md` | REVIEW/evidence record bound to the IG-00 review HEAD; its SHIP verdict closes IG-00 but does not authorize Phase 20 by itself. |
 | `IG-00-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-00; bound to reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`. |
 | `IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
+| `IG01-A-EVALUATION-CONTRACT.md` | CURRENT **CONTRACT** for the active IG01-A bounded measurement-contract package; it freezes evaluation semantics and does not authorize corpus/evaluator implementation. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `docs/history/**` | Archived phase plans, PRE-package records, Foundation records, phase contracts, phase independent reviews and historical operational guides. Retained for provenance only; never infer current behavior, CI, deployment or runtime connection from them. See per-file notes below. |
 | `docs/history/PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |

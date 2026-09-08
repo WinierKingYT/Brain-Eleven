@@ -4,7 +4,7 @@
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: IG-00 Freeze & Baseline — CLOSED / SHIPPED**.
-**ACTIVE PACKAGE: IG-01 Product Evaluation Foundation — ACTIVE / IN PROGRESS**.
+**ACTIVE PACKAGE: IG01-A Evaluation Contract — ACTIVE / IN PROGRESS**.
 
 The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. IG-01 is now open under its separate [evaluation foundation contract](IG01-EVALUATION-FOUNDATION.md); implementation remains bounded to measurement work and does not authorize intelligence tuning.
 
