@@ -1,7 +1,7 @@
 # IG-00 Package Report — Freeze & Baseline Closure
 
 **PACKAGE:** IG-00 Freeze & Baseline
-**REVISION:** `0db7f5a2dd132b1e5e6e8248c2ee13032544845e`
+**REVISION:** `62871ff496b0cb46998aa9ea21dbcf9d5e03d27f`
 **DATE:** 2026-09-08
 **CONTRACT:** `IG00-FREEZE-BASELINE.md`
 **DOCUMENTATION NOTE:** This report is a follow-up evidence record; the
@@ -48,6 +48,7 @@ introduced.
 | `pytest tests -m "not integration and not graduation"` | **680 passed**, 42 deselected, 2 warnings |
 | `pytest tests -m "integration or graduation"` | **42 passed**, 680 deselected, 2 warnings |
 | Requested IG-00 focused set | **179 passed**, 2 warnings |
+| Taxonomy + router smoke | **27 passed** |
 | Critical flake8 (`E9,F63,F7,F82`) | **PASS** |
 | Bandit runtime (`brain_eleven/runtime`) | **PASS** |
 | `git diff --check` | **PASS** |
@@ -55,19 +56,19 @@ introduced.
 | Import and compile sanity | **PASS** |
 
 The local commands were run against `git rev-parse HEAD =
-0db7f5a2dd132b1e5e6e8248c2ee13032544845e` with hidden Windows execution.
+62871ff496b0cb46998aa9ea21dbcf9d5e03d27f` with hidden Windows execution.
 
 ## REMOTE CI EVIDENCE
 
 All run and job results below report `head_sha =
-0db7f5a2dd132b1e5e6e8248c2ee13032544845e`.
+62871ff496b0cb46998aa9ea21dbcf9d5e03d27f`.
 
-- [Validation run 34264515612](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515612): **SUCCESS**.
+- [Validation run 34266090585](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090585): **SUCCESS**.
   Ubuntu/Windows unit, integration, evaluation smoke, privacy, task/state,
   router/authority/compiler shadow smoke, coverage, secret, dependency, Docker
   and Bandit jobs passed. Public/evidence jobs conditioned on `master` were
   `SKIPPED`; skipped jobs are recorded as not applicable, never as passes.
-- [PRE-13 runtime run 34264515476](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515476): overall **FAILURE** because its historical
+- [PRE-13 runtime run 34266090649](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090649): overall **FAILURE** because its historical
   independent holdout quality job failed. Ubuntu and Windows runtime jobs both
   passed, including runtime coverage and Bandit. The retained holdout report
   measured runtime precision `0.1368`, required recall `0.2941`, with zero
@@ -98,7 +99,7 @@ IG-01 deliverable.
 
 | Dimension | Before | After |
 |---|---|---|
-| Exact-head local validation | Older revision only | **0db7f5a: PASS** |
+| Exact-head local validation | Older revision only | **62871ff: PASS** |
 | Review-branch Validation CI | Not triggered | **PASS** |
 | Runtime infrastructure | Partially evidenced | **Ubuntu/Windows PASS** |
 | Historical PRE-13 quality | Failing | **Failure retained and visible** |

@@ -46,7 +46,7 @@ The correction uses the existing legacy V1 compiler only for the bounded
 SessionStart bootstrap. It rechecks mode, project opt-in and canonical
 revisions before returning context. UserPromptSubmit remains V2 SHADOW and
 does not inject V2 context. The exact review revision
-`0db7f5a2dd132b1e5e6e8248c2ee13032544845e` passed 680 non-integration tests,
+`62871ff496b0cb46998aa9ea21dbcf9d5e03d27f` passed 680 non-integration tests,
 42 integration/graduation tests and 179 requested focused tests. The local
 coverage gate passed after four fail-closed router tests were added.
 
@@ -68,7 +68,7 @@ This evidence strengthens IG-00 reliability but does not constitute IG-01
 evaluation or independent acceptance.
 
 On 2026-09-08, exact-head local verification at
-`0db7f5a2dd132b1e5e6e8248c2ee13032544845e` also passed critical flake8,
+`62871ff496b0cb46998aa9ea21dbcf9d5e03d27f` also passed critical flake8,
 Bandit, `git diff --check`, `pyproject.toml` parsing and import/compile
 sanity. The isolated native smoke used temporary Claude and Codex
 configuration/vaults only: Claude emitted successful `SessionStart` and
@@ -80,11 +80,11 @@ without credentials, so this is hook/runtime evidence rather than a successful
 model turn or installed-client trust decision.
 
 The review branch now triggers exact-head remote workflows. [Validation
-34264515612](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515612)
+34266090585](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090585)
 completed successfully at the exact SHA, including cross-platform tests,
 coverage, privacy, security, dependency and Docker jobs. Public/evidence jobs
 conditioned on `master` were skipped. [PRE-13 runtime
-34264515476](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34264515476)
+34266090649](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34266090649)
 passed both runtime OS jobs and security checks; its overall failure is the
 visible historical PRE-13 holdout quality failure (runtime precision 0.1368,
 required recall 0.2941, zero leakage).
