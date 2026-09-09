@@ -1,7 +1,7 @@
 # IG01-C Package Report — Evaluation Engine
 
 **PACKAGE:** IG01-C  
-**REVISION:** `32dc91074d4751a901f85effd18596b779505cbe`
+**REVISION:** `320450c13eb7a28c8e8cbaaf8b101be3badc069b`
 **OBJECTIVE:** Implement a deterministic, production-independent evaluator
 for the frozen IG01-B corpus and normalized outputs.
 
@@ -46,25 +46,19 @@ fields. It does not import production intelligence or write canonical state.
 - Local pytest: **NOT AVAILABLE** in the desktop runtime (`pytest` is not
   installed); the dedicated revision-bound GitHub Validation job is required
   evidence and is not replaced by this local check.
-- Exact-head GitHub Validation run [#34325013315](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34325013315): **PASS**.
-  The IG01-C evaluator job reported `9 passed in 0.11s`; unit, integration,
-  privacy, router/authority/compiler shadow and coverage jobs also passed.
-- Exact-head PRE-13 runtime run [#34325013480](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34325013480): runtime Linux/Windows and
-  Bandit/security steps **PASS**. The historical independent PRE-13 quality
-  holdout remains **FAIL** (`precision=0.6667`, `required_recall=0.7059`), as
-  expected; this is retained as a future intelligence-remediation failure and
-  does not get relabeled as an evaluator failure.
-- Review remediation: the independent review of `faba5c6` returned
-  **FIX-FIRST** for aggregation, proposition identity, privacy, anti-gaming,
-  scope, token-waste, ECE and counter-invariant defects. Those findings are
-  addressed in `32dc910` and the exact-head revalidation below.
-- Exact-head GitHub Validation run [#34326922992](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34326922992): **PASS**.
-  Evaluator, unit, integration, privacy, shadow, coverage and security jobs
-  passed.
-- Exact-head PRE-13 runtime run [#34326923032](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34326923032): runtime Linux/Windows and
+- Review remediation chain: independent reviews returned **FIX-FIRST** for
+  `faba5c6`, `32dc910` and `89b426e`; the findings covered aggregation,
+  proposition identity, privacy, anti-gaming, scope, token-waste, ECE,
+  counter invariants, report controls, context exclusion and auditability.
+  They are addressed in `32dc910`, `c018b38`, `89b426e`, `fe3affd` and
+  `320450c`.
+- Exact-head GitHub Validation run [#34330234587](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34330234587): **PASS**.
+  IG01-C evaluator, unit, integration, privacy, shadow, coverage and security
+  jobs passed.
+- Exact-head PRE-13 runtime run [#34330234633](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34330234633): runtime Linux/Windows and
   security steps **PASS**; the historical PRE-13 quality holdout remains
-  visibly **FAIL**.
-- Independent read-only re-review of `32dc910`: **PENDING**.
+  visibly **FAIL** and is retained for later intelligence work.
+- Independent read-only final review of this exact revision: **PENDING**.
 
 ## Quality and safety metrics
 
@@ -77,12 +71,15 @@ positive near-zero events require review records.
 
 The evaluator tests use deterministic primitive controls and do not constitute
 V1/V2 baseline measurement. Human label review and baseline measurement belong
-to the later bounded packages. Synthetic control outputs cannot establish
+to the later bounded packages. The current IG01-B V2 corpus has only three
+reference-resolution cases per language, so release-mode benchmark validation
+will reject that corpus until it is expanded/versioned; exploratory smoke uses
+an explicit non-release mode. Synthetic control outputs cannot establish
 production quality.
 
 ## Open failures
 
-Independent read-only re-review and final package acceptance remain open.
+Independent read-only final review and package acceptance remain open.
 IG01-D is not started. The exact implementation-head CI gate is closed by the
 two revision-bound runs above.
 
