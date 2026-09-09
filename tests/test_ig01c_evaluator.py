@@ -313,6 +313,43 @@ def test_report_rejects_raw_content_and_near_zero_events_without_review():
     with pytest.raises(EvaluationContractError, match="review records incomplete"):
         validate_report(broken)
 
+    broken = copy.deepcopy(report)
+    broken["safety_gates"]["false_commitment"]["count"] = 1
+    broken["safety_gates"]["false_commitment"]["denominator"] = 1
+    broken["safety_gates"]["false_commitment"]["rate"] = 1.0
+    broken["safety_gates"]["false_commitment"]["event_case_ids"] = ["retrieval-1"]
+    broken["safety_gates"]["false_commitment"]["review_records"] = [{"note": "raw transcript"}]
+    with pytest.raises(EvaluationContractError, match="invalid safety event shape"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["safety_gates"]["false_commitment"]["count"] = 1
+    broken["safety_gates"]["false_commitment"]["denominator"] = 1
+    broken["safety_gates"]["false_commitment"]["rate"] = 1.0
+    broken["safety_gates"]["false_commitment"]["event_case_ids"] = ["retrieval-1"]
+    broken["safety_gates"]["false_commitment"]["review_records"] = [{
+        "gate": "false_commitment",
+        "case_id": "retrieval-1",
+        "detail_code": "raw transcript",
+        "review_required": True,
+    }]
+    with pytest.raises(EvaluationContractError, match="detail_code is not content-free"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["safety_gates"]["false_commitment"]["count"] = 1
+    broken["safety_gates"]["false_commitment"]["denominator"] = 1
+    broken["safety_gates"]["false_commitment"]["rate"] = 0.0
+    broken["safety_gates"]["false_commitment"]["event_case_ids"] = ["retrieval-1"]
+    broken["safety_gates"]["false_commitment"]["review_records"] = [{
+        "gate": "false_commitment",
+        "case_id": "retrieval-1",
+        "detail_code": "unexpected_commitment",
+        "review_required": True,
+    }]
+    with pytest.raises(EvaluationContractError, match="rate is inconsistent"):
+        validate_report(broken)
+
     for field in ("token", "secret"):
         broken = copy.deepcopy(report)
         broken["cases"][0][field] = "raw"

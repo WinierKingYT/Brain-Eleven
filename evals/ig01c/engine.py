@@ -16,6 +16,7 @@ from .contracts import (
     ALL_GATES,
     EVALUATOR_VERSION,
     HARD_ZERO_GATES,
+    NEAR_ZERO_GATES,
     REPORT_SCHEMA_VERSION,
     EvaluationContractError,
     MetricValue,
@@ -64,6 +65,8 @@ _CORPUS_KEYS = frozenset({
     "excluded_case_count", "case_ids",
 })
 _METRIC_KEYS = frozenset({"value", "numerator", "denominator", "not_applicable", "empty_selection"})
+_SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$")
+_SAFETY_EVENT_KEYS = frozenset({"gate", "case_id", "detail_code", "review_required"})
 
 
 def _safe_scalar(value: Any, field: str) -> Any:
@@ -465,6 +468,38 @@ def _walk_report(value: Any, path: str = "report") -> None:
         raise EvaluatorError(f"{path} contains a non-finite number")
 
 
+def _validate_review_records(
+    records: Any,
+    gate: str,
+    event_case_ids: Sequence[str],
+    corpus_case_ids: Sequence[str],
+) -> None:
+    """Validate content-free SafetyEvent records and their gate linkage."""
+
+    if not isinstance(records, list):
+        raise EvaluatorError(f"{gate} review_records must be a list")
+    known_cases = set(corpus_case_ids)
+    event_cases = set(event_case_ids)
+    for index, record in enumerate(records):
+        if not isinstance(record, Mapping) or set(record) != _SAFETY_EVENT_KEYS:
+            raise EvaluatorError(f"{gate} review_records[{index}] has invalid safety event shape")
+        if record.get("gate") != gate:
+            raise EvaluatorError(f"{gate} review_records[{index}] gate mismatch")
+        case_id = record.get("case_id")
+        detail_code = record.get("detail_code")
+        if (
+            not isinstance(case_id, str)
+            or not _SAFE_ID_RE.fullmatch(case_id)
+            or case_id not in known_cases
+            or case_id not in event_cases
+        ):
+            raise EvaluatorError(f"{gate} review_records[{index}] case_id is invalid")
+        if not isinstance(detail_code, str) or not _SAFE_ID_RE.fullmatch(detail_code):
+            raise EvaluatorError(f"{gate} review_records[{index}] detail_code is not content-free")
+        if record.get("review_required") is not True:
+            raise EvaluatorError(f"{gate} review_records[{index}] must require review")
+
+
 def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     """Validate report shape, finite metrics and the nine independent gates."""
 
@@ -532,6 +567,13 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
             raise EvaluatorError(f"invalid hard gate counts: {gate}")
         if any(not isinstance(value, str) for value in row["event_case_ids"]):
             raise EvaluatorError(f"invalid hard gate event IDs: {gate}")
+        if row["event_case_ids"] != sorted(set(row["event_case_ids"])):
+            raise EvaluatorError(f"hard gate event IDs must be sorted and unique: {gate}")
+        if row["count"] < len(row["event_case_ids"]):
+            raise EvaluatorError(f"hard gate count is below event ID count: {gate}")
+        if row["count"] == 0 and row["event_case_ids"]:
+            raise EvaluatorError(f"hard gate event IDs present with zero count: {gate}")
+        _validate_review_records(row["review_records"], gate, row["event_case_ids"], ids)
     for gate in ("false_supersession", "false_commitment"):
         row = gates[gate]
         if (
@@ -553,6 +595,16 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
             raise EvaluatorError(f"invalid near-zero gate counts: {gate}")
         if any(not isinstance(value, str) for value in row["event_case_ids"]):
             raise EvaluatorError(f"invalid near-zero gate event IDs: {gate}")
+        if row["event_case_ids"] != sorted(set(row["event_case_ids"])):
+            raise EvaluatorError(f"near-zero gate event IDs must be sorted and unique: {gate}")
+        if row["count"] < len(row["event_case_ids"]):
+            raise EvaluatorError(f"near-zero gate count is below event ID count: {gate}")
+        expected_rate = row["count"] / row["denominator"] if row["denominator"] else 0.0
+        if not math.isclose(float(row["rate"]), expected_rate, rel_tol=1e-12, abs_tol=1e-12):
+            raise EvaluatorError(f"near-zero gate rate is inconsistent: {gate}")
+        if float(row["threshold"]) != float(NEAR_ZERO_GATES[gate]):
+            raise EvaluatorError(f"near-zero gate threshold is inconsistent: {gate}")
+        _validate_review_records(reviews, gate, row["event_case_ids"], ids)
     cases = report.get("cases")
     if not isinstance(cases, list) or [item.get("case_id") for item in cases] != ids:
         raise EvaluatorError("report.cases must match sorted case IDs")
