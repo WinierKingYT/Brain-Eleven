@@ -39,6 +39,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-B-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG01-B; bound to reviewed head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`. |
 | `IG01-C-EVALUATOR-CONTRACT.md` | CURRENT **CONTRACT** for the production-independent deterministic evaluator; it does not authorize production intelligence tuning, V2 promotion or Phase 20. |
 | `IG01-C-PACKAGE-REPORT.md` | REVIEW/evidence record for the bounded IG01-C evaluator; exact revision and CI evidence are recorded in the report and its independent verdict is `SHIP`. |
+| `IG01-D-BASELINE-CONTRACT.md` | CURRENT **CONTRACT** for the bounded V1/V2 baseline measurement; it forbids tuning, holdout execution, V2 promotion and Phase 20 work. |
+| `IG01-D-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-D; it remains `FIX-FIRST / NOT ACCEPTED` until exact paired evidence and independent `SHIP` exist. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
 | `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
 | `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |

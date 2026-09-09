@@ -1,0 +1,169 @@
+"""Contract tests for the production-independent IG01-D baseline adapter."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+
+import pytest
+
+from evals.ig01d.contracts import BaselineContractError, validate_baseline_report, validate_pair_report
+from evals.ig01d.fingerprint import corpus_split_fingerprint
+from evals.ig01d.spike import run_feasibility_probe
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CORPUS = ROOT / "evals" / "corpus-v2"
+
+
+def _provider_report(provider_id: str = "context_compiler_baseline_v1") -> dict:
+    task_id = "p15_v2_basic_relevance_001"
+    return {
+        "schema_version": 1,
+        "report_type": "brain_eleven_ig01d_baseline",
+        "evaluator_version": "ig01c-1.0.0",
+        "provider": {"id": provider_id, "role": "v1", "capabilities": {"selection": "existing_provider_adapter", "production_mutation": False}},
+        "corpus": {
+            "corpus_version": "phase15-corpus-v2",
+            "fixture_id": "phase15_contract",
+            "suite": "public",
+            "split": ["dev", "test"],
+            "task_count": 1,
+            "task_ids": [task_id],
+            "split_fingerprint": "sha256:" + "a" * 64,
+        },
+        "source": {
+            "git_sha": "a" * 40,
+            "corpus_version": "phase15-corpus-v2",
+            "evaluator_version": "ig01c-1.0.0",
+            "evaluation_source_fingerprint": "sha256:" + "b" * 64,
+            "seed": 17,
+            "noise_count": 24,
+        },
+        "metrics": {
+            "case_count": 1,
+            "context_precision": 1.0,
+            "context_recall": 1.0,
+            "selected_items": 1,
+            "relevant_selected_items": 1,
+            "required_items": 1,
+            "required_selected_items": 1,
+            "wrong_project_leakage_rate": 0.0,
+            "forbidden_context_rate": 0.0,
+            "superseded_leakage_rate": 0.0,
+            "resolved_leakage_rate": 0.0,
+            "unlabeled_context_rate": 0.0,
+        },
+        "invariants": {},
+        "measurement": {
+            "elapsed_ms": 1.0,
+            "case_count": 1,
+            "per_case_mean_ms": 1.0,
+            "p50_ms": None,
+            "p95_ms": None,
+            "budget_measurement": "token counts unavailable in normalized provider contract",
+        },
+        "cases": [{
+            "task_id": task_id,
+            "project_id": "promtgen",
+            "expected": {"required": ["mem_promtgen_storage"], "useful": [], "forbidden": []},
+            "selected_ids": ["mem_promtgen_storage"],
+            "missing_required_ids": [],
+            "unexpected_selected_ids": [],
+            "forbidden_selected_ids": [],
+            "metrics": {},
+            "invariants": {},
+            "violations": [],
+            "passed": True,
+        }],
+    }
+
+
+def _pair_report() -> dict:
+    v1 = _provider_report()
+    v2 = _provider_report("context_compiler_v2")
+    v2["provider"]["role"] = "v2"
+    return {
+        "schema_version": 1,
+        "report_type": "brain_eleven_ig01d_pair",
+        "evaluator_version": "ig01c-1.0.0",
+        "corpus": {
+            "corpus_version": "phase15-corpus-v2",
+            "fixture_id": "phase15_contract",
+            "suite": "public",
+            "split": ["dev", "test"],
+            "task_count": 1,
+            "task_ids": ["p15_v2_basic_relevance_001"],
+            "split_fingerprint": "sha256:" + "a" * 64,
+        },
+        "source": v1["source"],
+        "providers": {"v1": v1, "v2": v2},
+        "comparison": {
+            "baseline": {"provider_id": v1["provider"]["id"]},
+            "candidate": {"provider_id": v2["provider"]["id"]},
+            "metric_deltas": {},
+            "invariant_changes": {},
+            "candidate_gate": {"passed": True, "failed_invariants": {}, "unsupported_invariants": {}},
+            "outcome": "unchanged",
+        },
+        "measurement": {"v1_elapsed_ms": 1.0, "v2_elapsed_ms": 1.0, "budget_measurement": "unavailable"},
+        "feasibility": {"status": "SEMANTIC_UNAVAILABLE", "holdout_included": False},
+    }
+
+
+def test_pair_report_accepts_same_inputs():
+    assert validate_pair_report(_pair_report())["report_type"] == "brain_eleven_ig01d_pair"
+
+
+def test_pair_report_rejects_provider_task_mismatch():
+    report = _pair_report()
+    report["providers"]["v2"]["corpus"]["task_ids"] = ["p15_v2_basic_relevance_002"]
+    with pytest.raises(BaselineContractError, match="task IDs"):
+        validate_pair_report(report)
+
+
+def test_baseline_report_rejects_holdout_split():
+    report = _provider_report()
+    report["corpus"]["split"] = ["dev", "test", "holdout"]
+    with pytest.raises(BaselineContractError, match="public suite"):
+        validate_baseline_report(report)
+
+
+def test_report_rejects_raw_content_key_recursively():
+    report = _provider_report()
+    report["cases"][0]["raw_prompt"] = "must never be persisted"
+    with pytest.raises(BaselineContractError, match="content-free"):
+        validate_baseline_report(report)
+
+
+def test_public_fingerprint_does_not_read_holdout(tmp_path):
+    source = CORPUS
+    target = tmp_path / "corpus"
+    target.mkdir()
+    for relative in (Path("manifest.json"), Path("dev/p15_case.json"), Path("test/p15_case.json"), Path("holdout/p15_case.json")):
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if relative == Path("manifest.json"):
+            destination.write_text("{}\n", encoding="utf-8")
+        else:
+            destination.write_text(relative.as_posix(), encoding="utf-8")
+    before = corpus_split_fingerprint(target)
+    (target / "holdout/p15_case.json").write_text("changed holdout", encoding="utf-8")
+    assert corpus_split_fingerprint(target) == before
+    assert source.exists()
+
+
+def test_spike_is_dev_only_and_content_free():
+    result = run_feasibility_probe(
+        root=ROOT,
+        corpus_root=CORPUS,
+        fixture_path=ROOT / "evals/fixtures/phase15-contract.json",
+        git_sha="a" * 40,
+    )
+    assert result["case_count"] == 50
+    assert result["split"] == "dev"
+    assert result["holdout_included"] is False
+    assert result["status"] in {"SEMANTIC_UNAVAILABLE", "MEASURED"}
+    assert "content" not in json.dumps(result).lower()
+

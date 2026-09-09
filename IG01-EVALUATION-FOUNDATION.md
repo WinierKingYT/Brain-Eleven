@@ -1,6 +1,6 @@
 # IG-01 Product Evaluation Foundation
 
-**Status:** ACTIVE / IG01-C SHIPPED; IG01-D NOT STARTED
+**Status:** ACTIVE / IG01-C SHIPPED; IG01-D IN PROGRESS
 **Authority:** CONTRACT
 **Opened from:** `18e88876495db77a2e99ea927f01a2d28c5d9ed6`
 **Branch:** `ig/01-evaluation-foundation`
@@ -53,14 +53,15 @@ previous package has an independent **SHIP** verdict.
 | **IG01-A — Evaluation Contract** | Freeze families, labels, answerability, privacy, metrics, hard gates and split/version rules. | Contract reviewed and SHIP. |
 | **IG01-B — Corpus & Ground Truth** | Build public synthetic, private realistic and sanitized real-failure corpus mechanisms with immutable labels per version. | Corpus provenance and splits reviewed and SHIP. |
 | **IG01-C — Evaluation Engine** | Implement deterministic metric and safety-gate calculations; test evaluator behavior independently of production algorithms. | Evaluator tests and anti-gaming checks reviewed and SHIP. |
-| **IG01-D — Baseline Measurement** | Measure V1 and V2 on the same frozen corpus without tuning production. | Revision-bound baseline report reviewed and SHIP. |
+| **IG01-D — Baseline Measurement** | Measure V1 and V2 on the same frozen corpus without tuning production. | Paired revision-bound report, no-HOLDOUT proof, feasibility result and independent SHIP. |
 | **IG01-E — Independent Evaluation Audit** | Read-only audit of benchmark integrity, privacy, holdout discipline and interpretability. | Independent SHIP closes IG-01. |
 
 IG01-A is shipped under the immutable `ig01a-ship` gate and IG01-B is shipped
 under the immutable `ig01b-ship` closure. IG01-C is shipped under its exact
 revision-bound package report and independent `SHIP`; implementation remains
 limited to its approved contract and evidence. IG01-D baseline measurement is
-the next bounded package and remains unopened in this turn.
+the next bounded package and is active only for its paired baseline evidence;
+IG01-E remains unopened until IG01-D ships.
 The full program keeps the following order
 after IG-01: IG-03 semantic extraction, IG-02 capture closure, IG-04
 correction/reference, IG-05 task-aware retrieval, IG-06 V2 runtime promotion,

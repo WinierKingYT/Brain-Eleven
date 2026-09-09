@@ -149,6 +149,40 @@ jobs:
           path: evaluation-smoke-report.json
           if-no-files-found: error
 
+  ig01d-baseline:
+    name: IG01-D paired V1/V2 baseline measurement
+    needs: evaluation-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install measurement dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Run revision-bound paired baseline
+        run: >-
+          python -m evals.ig01d.baseline
+          --output ig01d-baseline-pair.json
+      - name: Test IG01-D report contract
+        run: >-
+          pytest tests/test_ig01d_baseline.py -q
+          --junitxml=ig01d-baseline-tests.xml
+      - name: Upload IG01-D evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ig01d-baseline-evidence
+          path: |
+            ig01d-baseline-pair.json
+            ig01d-baseline-tests.xml
+          if-no-files-found: error
+
   evaluation-public:
     name: Evaluation public suite
     needs: evaluation-smoke
