@@ -1,7 +1,7 @@
 # IG-02 Autonomous Capture Closure Contract
 
 **PACKAGE:** IG-02  
-**STATUS:** CURRENT CONTRACT / IMPLEMENTATION IN PROGRESS  
+**STATUS:** CURRENT CONTRACT / IMPLEMENTATION COMPLETE / ACCEPTANCE PENDING
 **BOUNDARY:** Claude/Codex hook delivery through queue, worker, evidence and
 canonical-effect verification
 
@@ -37,8 +37,9 @@ native hook
 
 1. Hook fast paths never read transcript content or invoke extraction.
 2. Queue jobs are idempotent by event identity and replay-safe.
-3. A `COMMITTED` queue job must have a matching `EFFECT_VERIFIED` receipt whose
-   job and event identities match.
+3. A `COMMITTED` queue job must have a matching schema-versioned
+   `EFFECT_VERIFIED` receipt whose job, event, project and checkpoint identities
+   match.
 4. Canonical writes remain behind MemoryStore/StateStore transaction receipts.
 5. Review effects are durable and content-safe; a failed review write keeps the
    queue retryable.
@@ -47,10 +48,14 @@ native hook
 7. Receipts contain identifiers, counts, hashes or statuses only; no prompt,
    transcript, token or memory content.
 8. Replaying a job after a crash before queue acknowledgement never creates a
-   second canonical memory or state record.
-9. Unknown, corrupt, deleted or rewritten evidence fails visibly and never
+   second canonical memory or state record; a receipt is accepted only when its
+   canonical operation receipts and surviving effects are still present.
+9. Cursor progress is persisted only after the effect receipt is durable. A
+   receipt write failure therefore replays from the prior cursor rather than
+   silently acknowledging an empty tail.
+10. Unknown, corrupt, deleted or rewritten evidence fails visibly and never
    produces a successful queue acknowledgement.
-10. Project and client scope remain fail-closed.
+11. Project and client scope remain fail-closed.
 
 ## Acceptance tests
 
