@@ -49,11 +49,11 @@ def _provider_report(provider_id: str = "context_compiler_baseline_v1") -> dict:
         },
         "metrics": {
             "case_count": 1,
-            "context_precision": 1.0,
-            "context_recall": 1.0,
+            "context_precision": 0.5,
+            "context_recall": 0.5,
             "selected_items": 1,
             "relevant_selected_items": 1,
-            "required_items": 1,
+            "required_items": 2,
             "required_selected_items": 1,
             "wrong_project_leakage_rate": 0.0,
             "forbidden_context_rate": 0.0,
@@ -129,8 +129,8 @@ def _pair_report() -> dict:
             "candidate": {"provider_id": v2["provider"]["id"]},
             "corpus": {"fixture_id": "phase15_contract", "suite": "public", "task_count": 1},
             "metric_deltas": {
-                "context_precision": {"baseline": 1.0, "candidate": 1.0, "delta": 0.0},
-                "context_recall": {"baseline": 1.0, "candidate": 1.0, "delta": 0.0},
+                "context_precision": {"baseline": 0.5, "candidate": 0.5, "delta": 0.0},
+                "context_recall": {"baseline": 0.5, "candidate": 0.5, "delta": 0.0},
             },
             "invariant_changes": {
                 name: {"new_failed_case_ids": [], "resolved_failed_case_ids": [], "new_unsupported_case_ids": [], "resolved_unsupported_case_ids": []}
@@ -139,11 +139,11 @@ def _pair_report() -> dict:
             "candidate_gate": {"passed": True, "failed_invariants": {}, "unsupported_invariants": {}},
             "outcome": "unchanged",
         },
-        "measurement": {"v1_elapsed_ms": 1.0, "v2_elapsed_ms": 1.0, "budget_measurement": "unavailable"},
+        "measurement": {"v1_elapsed_ms": 1.0, "v2_elapsed_ms": 1.0, "budget_measurement": "token counts unavailable in normalized provider contract"},
         "feasibility": {
             "status": "SEMANTIC_UNAVAILABLE",
             "provider_id": "none",
-            "reason": "no real provider",
+            "reason": "no real embedding or cross-encoder provider is installed",
             "case_count": 50,
             "split": "dev",
             "holdout_included": False,
@@ -151,7 +151,7 @@ def _pair_report() -> dict:
             "precision": None,
             "empirical_ceiling": None,
             "elapsed_ms": 1.0,
-            "measurement": "no score",
+            "measurement": "no score without a real embedding plus cross-encoder pair",
         },
         "target_derivation": {
             "formula": "max(program_floor + margin, baseline + realistic_gain)",
@@ -159,8 +159,8 @@ def _pair_report() -> dict:
             "realistic_gain": 0.10,
             "program_floor": {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85},
             "targets": {
-                "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 1.0},
-                "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 1.0},
+                "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.5},
+                "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.5},
                 "mrr": {"value": 0.85, "status": "METRIC_UNAVAILABLE_IN_NORMALIZED_PROVIDER_CONTRACT", "baseline": None},
             },
             "quality_visibility": {"v2_must_exceed_v1": True, "promotion_allowed": False, "spike_status": "SEMANTIC_UNAVAILABLE"},
