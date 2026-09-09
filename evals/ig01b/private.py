@@ -3,24 +3,67 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from .integrity import assert_private_path
-from .schema import validate_case
+from .schema import REQUIRED_FIELDS, validate_case
 
-_RAW_KEYS = frozenset({"prompt", "transcript", "raw_text", "memory_content", "token", "secret", "password", "query", "conversation", "text", "content"})
+_RAW_KEYS = frozenset({
+    "prompt", "raw_prompt", "transcript", "raw_transcript", "raw_text", "memory_content",
+    "raw_memory", "token", "secret", "password", "query", "raw_query", "conversation",
+    "text", "content", "free_text", "diagnostic", "details", "message",
+})
+PRIVATE_ALLOWED_ROOT_KEYS = frozenset((set(REQUIRED_FIELDS) - {"query"}) | {
+    "query_hash", "evidence_refs", "expected", "forbidden", "labels",
+})
+SAFE_HASH = re.compile(r"sha256:[0-9a-f]{64}")
+SAFE_TEXT_KEYS = frozenset({"rationale", "reason"})
+SAFE_TEXT_VALUES = frozenset({"fixture-label", "hash-only", "redacted"})
+SAFE_TOKEN_KEYS = frozenset({
+    "author", "generator", "label_owner", "source_id", "privacy_status", "created_at",
+    "lineage_id", "event_time", "ingested_at", "annotator_id", "method", "protocol",
+})
+SAFE_TOKEN = re.compile(r"[A-Za-z0-9_.:/+-]{1,128}")
+SAFE_PROVENANCE_SOURCE = re.compile(r"(?:dogfood-turn-hash|manual-review|synthetic-regression|ig08-dogfood|sha256:[0-9a-f]{64})")
+_SAFE_NESTED_KEYS = frozenset({
+    "primary", "confidence", "double_annotation", "annotator_a", "annotator_b", "adjudicated",
+    "category", "expected_memory_type", "memory_type", "commitment", "temporal", "scope", "lifecycle",
+    "abstain", "correction", "correction_target", "state_operation", "target_behavior", "source_role",
+    "status", "canonical_commit", "false_commitment", "wrong_type",
+    "annotator_id", "method", "label", "disagreement", "protocol", "lineage_id", "event_time",
+    "ingested_at", "author", "generator", "label_owner", "source_id", "privacy_status", "created_at",
+    "reason", "source",
+})
 
 
-def _assert_content_free(value: Any, path: str = "case") -> None:
+def _assert_content_free(value: Any, path: str = "case", key: str | None = None) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
+            if path == "case" and str(key) not in PRIVATE_ALLOWED_ROOT_KEYS:
+                raise ValueError(f"private realistic data contains unapproved root field: {path}.{key}")
             if str(key).lower() in _RAW_KEYS:
                 raise ValueError(f"private realistic data contains forbidden raw field: {path}.{key}")
-            _assert_content_free(child, f"{path}.{key}")
+            if path != "case" and str(key) not in _SAFE_NESTED_KEYS:
+                raise ValueError(f"private realistic data contains unapproved free-text field: {path}.{key}")
+            _assert_content_free(child, f"{path}.{key}", str(key))
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            _assert_content_free(child, f"{path}[{index}]")
+            _assert_content_free(child, f"{path}[{index}]", key)
+    elif isinstance(value, str):
+        if key in {"project_id", "query_hash"} and not SAFE_HASH.fullmatch(value):
+            raise ValueError(f"private realistic {key} must be a sha256 hash")
+        if key in SAFE_TEXT_KEYS and value not in SAFE_TEXT_VALUES and not SAFE_HASH.fullmatch(value):
+            raise ValueError(f"private realistic {key} contains unapproved free-text; must be redacted or hashed")
+        if key == "source" and not SAFE_PROVENANCE_SOURCE.fullmatch(value):
+            raise ValueError("private realistic provenance.source must be a bounded code or hash")
+        if not value:
+            return
+        if not SAFE_TOKEN.fullmatch(value) and key not in SAFE_TEXT_KEYS:
+            raise ValueError(f"private realistic {key} must be a bounded token")
+        if len(value) > 256 or any(char in value for char in "\r\n"):
+            raise ValueError(f"private realistic data contains unbounded text: {path}")
 
 
 def private_root(repository_root: Path) -> Path:

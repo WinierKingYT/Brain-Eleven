@@ -90,6 +90,9 @@ data into this corpus:
 | [Mem0](https://arxiv.org/abs/2504.19413) | explicit ADD/UPDATE/NOOP conflict labels and latency/token metrics | destructive delete semantics and dropped unanswerable cases |
 | [Graphiti/Zep](https://arxiv.org/abs/2501.13956) | episode provenance and event/system time axes | automatic LLM contradiction supersession |
 | [Letta archival memory](https://docs.letta.com/v1-sdk/memory/archival-memory) | current/archive tiers and on-demand retrieval | tags alone replacing evidence/lifecycle labels |
+| [Supermemory API/repository](https://github.com/supermemoryai/supermemory) | source/provenance separation, memory-vs-RAG distinction and context-size measurement | hosted ranking and vendor benchmark claims are not copied into the benchmark |
+| [ConvoMem paper](https://arxiv.org/abs/2511.10523) and [repository](https://github.com/SalesforceAIResearch/ConvoMem) | multi-message evidence distance, changing facts and explicit abstention strata | workload-specific full-context/RAG findings are not generalized without matched cases |
+| [RAG evaluation survey](https://arxiv.org/abs/2405.07437) | candidate precision/recall, rank quality, answerability and efficiency/noise metrics | aggregate answer quality cannot mask candidate safety violations or mandatory-context misses |
 
 These observations inform the data contract only. Any production change needs
 its own later package and evaluation evidence.

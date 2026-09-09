@@ -15,6 +15,9 @@ benchmark data, scores, or production algorithms.
 | [Mem0 paper](https://arxiv.org/abs/2504.19413) | explicit ADD/UPDATE/NOOP conflict labels, token and latency measurements | destructive delete and silently dropped unanswerable cases violate canonical history/abstention rules |
 | [Graphiti/Zep paper](https://arxiv.org/abs/2501.13956) and [docs](https://help.getzep.com/graphiti/getting-started/overview) | episode provenance, entity/edge labels and two time axes | automatic LLM contradiction supersession is not a Brain-Eleven truth rule |
 | [Letta archival memory](https://docs.letta.com/v1-sdk/memory/archival-memory) and [MemGPT paper](https://arxiv.org/abs/2310.08560) | current/archive tiers and on-demand retrieval labels | tiers/tags cannot replace evidence, scope and lifecycle labels |
+| [Supermemory API/repository](https://github.com/supermemoryai/supermemory) | separate memory-vs-RAG retrieval concerns, source/provenance metadata and context-size reporting | vendor-reported benchmark scores are not imported; external connectors and opaque hosted ranking stay out of this corpus |
+| [ConvoMem paper](https://arxiv.org/abs/2511.10523) and [benchmark repository](https://github.com/SalesforceAIResearch/ConvoMem) | multi-message evidence distance, user/assistant facts, changing facts and explicit abstention strata | full-context-vs-RAG comparisons are workload-dependent; no claim is generalized without same-case measurement |
+| [RAG evaluation survey](https://arxiv.org/abs/2405.07437) | independent retrieval precision/recall, ranking and answerability metrics plus efficiency/noise reporting | one end-to-end answer score cannot replace candidate-level safety gates or mandatory-context recall |
 
 Cross-source conclusions adopted by the contract:
 

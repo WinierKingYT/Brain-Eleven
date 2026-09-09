@@ -17,6 +17,7 @@ promote V2, or change Phase 20.
 - `IG01-B-PRIOR-ART.md`
 - `evals/ig01b/schema.py`
 - `evals/ig01b/generator.py`
+- `evals/ig01b/annotator_b.py`
 - `evals/ig01b/integrity.py`
 - `evals/ig01b/private.py`
 - `evals/ig01b/failures.py`
@@ -84,9 +85,11 @@ runtime paths are unchanged; Phase 20 remains `FROZEN / LOCKED` and V2 remains
 
 - The public seed is deterministic synthetic data, not dogfood data; realistic
   private cases are intentionally still empty.
-- The two holdout labels use separate blind annotation passes and identities;
-  this deterministic synthetic seed happens to agree on every case. Human
-  dogfood disagreement will be added through the IG-08 failure corpus.
+- The two holdout labels use separate blind annotation passes, implementations
+  and identities; this deterministic synthetic seed happens to agree on every
+  case. This is process-level independence for generated fixtures, not human
+  annotator agreement. Human/dogfood disagreement will be added through the
+  IG-08 failure corpus.
 - Full evaluator metrics, baseline snapshots and tuning are explicitly deferred
   to IG01-C.
 

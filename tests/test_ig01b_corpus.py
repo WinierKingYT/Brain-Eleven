@@ -63,13 +63,13 @@ def test_sanitized_failure_ingestion_is_strict_and_reserved_for_ig08(tmp_path: P
         "taxonomy": "RETRIEVAL_NOISE",
         "corpus_version": "ig-failures-v1",
         "sanitized": True,
-        "project_hash": "sha256:project",
-        "task_hash": "sha256:task",
+        "project_hash": "sha256:" + "c" * 64,
+        "task_hash": "sha256:" + "d" * 64,
         "expected": {"required_ids": ["mem-1"]},
         "actual": {"selected_ids": ["mem-2"]},
         "root_cause": "ranking_signal",
         "provenance": {"source": "dogfood-turn-hash"},
-        "sanitization": ["remove raw prompt", "hash project and task", "remove memory content"],
+        "sanitization": ["remove_raw_prompt", "hash_project", "hash_task", "remove_memory_content"],
     }
     path = ingest_failure(case, tmp_path)
     assert path.exists()
@@ -77,13 +77,21 @@ def test_sanitized_failure_ingestion_is_strict_and_reserved_for_ig08(tmp_path: P
         validate_failure_case({**case, "prompt": "private"})
     with pytest.raises(ValueError, match="raw prompt"):
         validate_failure_case({**case, "expected": {"conversation": [{"role": "user", "text": "private"}]}})
+    with pytest.raises(ValueError, match="sha256 hash"):
+        validate_failure_case({**case, "project_hash": "project-name"})
+    with pytest.raises(ValueError, match="bounded token"):
+        validate_failure_case({**case, "provenance": {"source": "dogfood-turn-hash", "source_id": "raw prompt"}})
 
 
 def test_private_realistic_writer_requires_same_ground_truth_schema(tmp_path: Path):
     public_case = json.loads((PUBLIC_ROOT / "dev.jsonl").read_text(encoding="utf-8").splitlines()[0])
     public_case["dataset_class"] = "PRIVATE_REALISTIC"
+    public_case["project_id"] = "sha256:" + "a" * 64
+    public_case["provenance"]["author"] = "private-curator"
     public_case["provenance"]["privacy_status"] = "local-only-sanitized"
-    public_case["query_hash"] = "sha256:query"
+    public_case["rationale"] = "fixture-label"
+    public_case["answerability"]["reason"] = "fixture-label"
+    public_case["query_hash"] = "sha256:" + "b" * 64
     public_case.pop("query")
     public_case.pop("conversation", None)
     path = write_private_case(tmp_path, public_case)
@@ -92,3 +100,9 @@ def test_private_realistic_writer_requires_same_ground_truth_schema(tmp_path: Pa
         write_private_case(tmp_path, {**public_case, "dataset_class": "PUBLIC_SYNTHETIC"})
     with pytest.raises(ValueError, match="raw field"):
         write_private_case(tmp_path, {**public_case, "conversation": [{"role": "user", "text": "raw"}]})
+    with pytest.raises(ValueError, match="root field|raw field"):
+        write_private_case(tmp_path, {**public_case, "diagnostic": "raw prompt"})
+    with pytest.raises(ValueError, match="unapproved free-text"):
+        write_private_case(tmp_path, {**public_case, "answerability": {"reason": "raw prompt text"}})
+    with pytest.raises(ValueError, match="provenance.source"):
+        write_private_case(tmp_path, {**public_case, "provenance": {**public_case["provenance"], "source": "raw prompt"}})

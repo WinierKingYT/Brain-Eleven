@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,23 @@ FAILURE_TAXONOMY = frozenset({
     "STALE_CONTEXT", "TOKEN_WASTE",
 })
 RAW_FIELDS = frozenset({"prompt", "transcript", "memory_content", "token", "secret", "raw_text", "query", "conversation", "text", "content"})
+FAILURE_ROOT_CAUSES = frozenset({
+    "capture_boundary", "event_delivery", "worker_crash", "idempotency", "queue_corruption",
+    "evidence_missing", "extraction_classifier", "state_routing", "authority_resolution",
+    "reference_resolution", "ranking_signal", "scope_filter", "lifecycle_filter",
+    "context_budget", "provider_unavailable", "configuration", "unknown",
+})
+SAFE_EXPECTED_ACTUAL_KEYS = frozenset({
+    "required_ids", "acceptable_ids", "forbidden_ids", "mandatory_ids", "selected_ids",
+    "memory_ids", "memory_type", "state_operation", "target_behavior", "scope", "lifecycle",
+    "category", "commitment", "status", "reason_code", "hash", "count",
+})
+SAFE_SANITIZATION_STEPS = frozenset({
+    "remove_raw_prompt", "remove_transcript", "remove_memory_content", "hash_project",
+    "hash_task", "strip_secrets", "strip_pii", "drop_free_text",
+})
+SAFE_PROVENANCE_KEYS = frozenset({"source", "source_id", "reviewer_id", "created_at"})
+SAFE_TOKEN = re.compile(r"[A-Za-z0-9_.:/+-]{1,128}")
 REQUIRED_FIELDS = frozenset({
     "failure_id", "taxonomy", "corpus_version", "sanitized", "project_hash",
     "task_hash", "expected", "actual", "root_cause", "provenance", "sanitization",
@@ -35,7 +53,31 @@ def _reject_raw_fields(value: Any, path: str = "case") -> None:
             _reject_raw_fields(child, f"{path}[{index}]")
 
 
+def _validate_safe_metadata(value: Any, path: str) -> None:
+    """Permit only bounded machine-readable expected/actual metadata."""
+
+    if isinstance(value, dict):
+        unknown = set(value) - SAFE_EXPECTED_ACTUAL_KEYS
+        if unknown:
+            raise ValueError(f"{path} contains an unapproved free-text field: {sorted(unknown)}")
+        for key, child in value.items():
+            _validate_safe_metadata(child, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _validate_safe_metadata(child, f"{path}[{index}]")
+    elif isinstance(value, str):
+        if len(value) > 128 or any(char in value for char in "\r\n"):
+            raise ValueError(f"{path} contains unbounded free text")
+        if value and not re.fullmatch(r"[A-Za-z0-9_.:/+-]+", value):
+            raise ValueError(f"{path} contains unapproved free text")
+    elif not isinstance(value, (bool, int, float)) and value is not None:
+        raise ValueError(f"{path} contains an unsupported metadata value")
+
+
 def validate_failure_case(case: dict[str, Any]) -> None:
+    unknown = set(case) - REQUIRED_FIELDS
+    if unknown:
+        raise ValueError(f"failure case contains unapproved fields: {sorted(unknown)}")
     missing = REQUIRED_FIELDS - set(case)
     if missing:
         raise ValueError(f"failure case missing fields: {sorted(missing)}")
@@ -44,12 +86,34 @@ def validate_failure_case(case: dict[str, Any]) -> None:
     if case["sanitized"] is not True:
         raise ValueError("real failures must be explicitly sanitized")
     _reject_raw_fields(case)
+    for section in ("expected", "actual"):
+        value = case[section]
+        if not isinstance(value, dict):
+            raise ValueError(f"{section} contains an unapproved free-text field")
+        _validate_safe_metadata(value, section)
     for field in ("failure_id", "corpus_version", "project_hash", "task_hash", "root_cause"):
         if not isinstance(case[field], str) or not case[field].strip():
             raise ValueError(f"{field} must be a non-empty string")
-    if not isinstance(case["provenance"], dict) or not case["provenance"].get("source"):
+    for field in ("failure_id", "corpus_version"):
+        if not SAFE_TOKEN.fullmatch(case[field]):
+            raise ValueError(f"{field} must be a bounded token")
+    for field in ("project_hash", "task_hash"):
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", case[field]):
+            raise ValueError(f"{field} must be a sha256 hash")
+    if case["root_cause"] not in FAILURE_ROOT_CAUSES and not re.fullmatch(r"sha256:[0-9a-f]{64}", case["root_cause"]):
+        raise ValueError("root_cause must be a controlled code or sha256 hash")
+    provenance = case["provenance"]
+    if not isinstance(provenance, dict) or set(provenance) - SAFE_PROVENANCE_KEYS:
+        raise ValueError("failure provenance contains unapproved fields")
+    source = provenance.get("source")
+    if not isinstance(source, str) or not re.fullmatch(r"(?:dogfood-turn-hash|manual-review|synthetic-regression|ig08-dogfood|sha256:[0-9a-f]{64})", source):
         raise ValueError("failure provenance.source is required")
-    if not isinstance(case["sanitization"], list) or not case["sanitization"]:
+    for field, value in provenance.items():
+        if field == "source":
+            continue
+        if not isinstance(value, str) or not SAFE_TOKEN.fullmatch(value):
+            raise ValueError(f"failure provenance.{field} must be a bounded token")
+    if not isinstance(case["sanitization"], list) or not case["sanitization"] or any(step not in SAFE_SANITIZATION_STEPS for step in case["sanitization"]):
         raise ValueError("sanitization steps are required")
 
 
