@@ -81,8 +81,20 @@ schema_version: string
 ```
 
 Unknown fields, duplicate IDs, malformed types, non-finite numbers and
-out-of-range confidence components are rejected. Provider-specific metadata is
-kept in a bounded provenance envelope and is not copied into the proposition.
+out-of-range confidence components are rejected. `unknown` is accepted only as
+an explicitly non-authoritative source label; it can never yield a committed
+or canonical-eligible proposition. Provider-specific metadata is kept in a
+bounded provenance envelope and is not copied into the proposition.
+
+Nested objects are closed as well. `temporal_scope` contains only `start`,
+`end` and `precision`; `correction_clues` contains only `explicit`,
+`old_value`, `new_value`, `claim_key` and `reason`; `target_clues` contains
+only `named_id`, `claim_key`, `lineage_id` and `reference_kind`. `value` may be
+a scalar or a JSON object/array of scalar semantic values, with a bounded
+depth. Every nested object rejects reserved authority/content keys such as
+`canonical_commit`, `write_memory`, `write_state`, `prompt`, `transcript`,
+`content`, `token`, `secret` and `password`. Provider and review metadata use
+the same recursive content-free key check.
 
 The builder must preserve semantic identity. A type-only answer such as
 `decision` without a meaningful claim/value is incomplete and cannot score as
@@ -95,8 +107,11 @@ Validation runs after parsing and before any evaluator or downstream caller.
 1. `source_role` of `assistant`, `tool` or `system` can never produce
    `COMMITTED`. The validator emits a review/quarantine result instead.
 2. A question or hypothetical can never produce `COMMITTED`, regardless of the
-   provider's label.
-3. Quoted or externally attributed material is never a user commitment.
+   provider's label. The prefilter attaches immutable evidence-derived flags
+   to the provider call; the validator checks those flags independently of
+   model output.
+3. Quoted or externally attributed material is never a user commitment. Its
+   prefilter flag cannot be cleared by a provider.
 4. A missing or invalid `project_id` is `unresolved`; it cannot become a
    canonical project memory or state effect.
 5. Temporal fields must be structurally valid and cannot claim an end before a
@@ -149,13 +164,17 @@ wrong scope and ECE, with denominators and applicability flags.
 
 Reference targets from the IG plan are:
 
-* decision precision `≥ 0.95` stretch, or the measured IG01-D ceiling minus
-  the documented margin for the package gate;
+* decision precision `≥ 0.95` stretch, or the IG01-D derived gate target
+  (`max(program floor + 0.05, measured baseline + 0.10)`) when a measured
+  ceiling is available;
 * decision recall `≥ 0.90` stretch and never below the program floor;
 * false commitment `≤ 0.01`, with a review record for every positive event;
 * assistant-as-user commitment `= 0`;
 * question/hypothetical commitment `= 0`;
-* ECE `≤ 0.10` where confidence is applicable.
+* ECE `≤ 0.10` where confidence is applicable. Confidence components are
+  finite values in `[0,1]`, and the derived scalar is their arithmetic mean;
+  missing components make calibration `not_applicable`, never a fabricated
+  confidence.
 
 If the measured provider cannot meet the target but all absolute safety gates
 are clean and a named improvement backlog is credible, the reviewer may use
@@ -202,4 +221,3 @@ IG-03 can be proposed for independent review only when all are true:
 Until that verdict, IG-03 remains open and IG-02 implementation may not begin.
 IG-01 is already closed, but Phase 20 stays locked and V2 stays shadow even if
 IG-03 eventually ships.
-

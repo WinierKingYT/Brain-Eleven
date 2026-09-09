@@ -71,7 +71,8 @@ canonical truth by itself.
 
 * Role handling is present in `_classify_commitment`; assistant, tool and
   system messages become `PROPOSED` and are quarantined before a user memory
-  candidate is returned.
+  candidate is returned. Unknown or legacy source roles are not trusted for a
+  committed proposition and must remain review/quarantine outcomes in IG-03.
 * Question, hypothetical, quote, negation and uncertain paths are quarantined.
 * `capture_safety.evaluate_capture` runs before candidate acceptance, and an
   unscoped message is quarantined as `SCOPE_UNRESOLVED`.
@@ -161,4 +162,3 @@ proposition contract, but no production semantic extractor, provider
 benchmark, semantic validator or calibrated provider evidence. IG-03 is
 therefore ready for a bounded contract and implementation package; it is not
 ready for a SHIP verdict. This audit records the starting truth only.
-
