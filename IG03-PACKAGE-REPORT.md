@@ -126,4 +126,4 @@ Phase 20/V2 locks. P0/P1/P2 findings: none.
 **SHIP** — exact implementation/test evidence, exact-head Validation CI and
 independent read-only review all pass. The historical PRE-13 quality failure
 remains visible as a later intelligence-quality item. IG-02 may begin its own
-bounded audit/contract sequence; Phase 20 remains `FROZEN / LOCKED`.
+bounded audit/contract sequence in the mandated IG-03 → IG-02 → IG-04 order; Phase 20 remains `FROZEN / LOCKED`.
