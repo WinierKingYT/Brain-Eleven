@@ -42,7 +42,7 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-D-BASELINE-CONTRACT.md` | CURRENT **CONTRACT** for the bounded V1/V2 baseline measurement; it forbids tuning, holdout execution, V2 promotion and Phase 20 work. |
 | `IG01-D-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-D; exact paired evidence, independent technical `SHIP` and user `IG01-D human checkpoint PASS` close the package. |
 | `IG01-E-AUDIT-CONTRACT.md` | CURRENT **CONTRACT** for the read-only independent evaluation-foundation audit; it does not change production intelligence, open Phase 20 or promote V2. |
-| `IG01-E-AUDIT-REPORT.md` | GENERATED EVIDENCE / revision-bound IG01-E audit output; it is not an instruction and requires independent review plus the IG-01 closure checkpoint. |
+| `IG01-E-AUDIT-REPORT.md` | GENERATED EVIDENCE / revision-bound IG01-E audit output; independent review is `SHIP` at `a384330`; it still requires the IG-01 closure checkpoint and does not authorize production tuning. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
 | `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
 | `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |
