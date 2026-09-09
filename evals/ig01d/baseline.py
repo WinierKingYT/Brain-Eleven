@@ -9,7 +9,11 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ..corpus_v2_builder import check_corpus_v2
+from ..corpus_v2_builder import (
+    _render,
+    corpus_v2_manifest,
+    validate_corpus_v2_documents,
+)
 from ..fixture_generator import build_vault
 from ..reporting import compare_evaluation_reports
 from ..run import run_evaluation, suite_task_paths
@@ -33,6 +37,31 @@ NOISE_COUNT = 24
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FIXTURE_PATH = DEFAULT_ROOT / "evals" / "fixtures" / "phase15-contract.json"
 DEFAULT_CORPUS_ROOT = DEFAULT_ROOT / "evals" / "corpus-v2"
+
+
+def _check_public_corpus_only(corpus_root: Path, fixture) -> None:
+    """Validate public inputs without opening any HOLDOUT file."""
+
+    documents = validate_corpus_v2_documents(fixture)
+    expected = {
+        corpus_root / relative
+        for relative in documents
+        if relative.parts[0] in {"dev", "test"}
+    }
+    actual = set()
+    for split in ("dev", "test"):
+        actual.update((corpus_root / split).glob("p15_*.json"))
+    if actual != expected:
+        raise BaselineContractError("IG01-D public corpus paths differ from the deterministic source")
+    for relative, document in documents.items():
+        if relative.parts[0] not in {"dev", "test"}:
+            continue
+        path = corpus_root / relative
+        if path.read_text(encoding="utf-8") != _render(document):
+            raise BaselineContractError(f"IG01-D public corpus content differs: {relative}")
+    manifest_path = corpus_root / "manifest.json"
+    if json.loads(manifest_path.read_text(encoding="utf-8")) != corpus_v2_manifest():
+        raise BaselineContractError("IG01-D corpus manifest differs from the deterministic source")
 
 
 def _git_sha(root: Path) -> str:
@@ -134,7 +163,7 @@ def build_pair_report(
     fixture_file = Path(fixture_path).resolve()
     corpus = Path(corpus_root).resolve()
     fixture = load_fixture(fixture_file)
-    check_corpus_v2(corpus, fixture)
+    _check_public_corpus_only(corpus, fixture)
     tasks = load_tasks(suite_task_paths(corpus, "public"), fixture)
     task_ids = sorted(task.task_id for task in tasks)
     if not task_ids or any("holdout" in task_id.lower() for task_id in task_ids):
