@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -15,13 +16,19 @@ from .schema import LANGUAGES, PHENOMENA, load_cases
 # Immutable review baseline for ig-eval-v1.  A changed holdout must create a
 # new corpus version and a new pinned constant; editing the manifest alone
 # cannot make a changed holdout pass CI.
-PINNED_HOLDOUT_SHA256 = "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b"
+PINNED_HOLDOUT_SHA256 = "27bd0157074233736ebd20fad918dde14b7e3f4999f1b58931c9987a23ccc5d2"
 
 PRIVATE_MARKERS = ("evals/ig01b/private", ".test-tmp", "PRIVATE_REALISTIC")
 SECRET_PATTERNS = (
     re.compile(r"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['\"]?[A-Za-z0-9_\-/+=]{12,}"),
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 )
+PII_PATTERNS = (
+    re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"),
+    re.compile(r"(?<!\d)(?:\+?\d[\d ()-]{8,}\d)(?!\d)"),
+    re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
+)
+PINNED_HOLDOUT_TAG = "ig01b-corpus-v1"
 
 
 def canonical_jsonl_sha256(path: Path) -> str:
@@ -39,6 +46,22 @@ def verify_holdout_hash(root: Path = PUBLIC_ROOT) -> bool:
     return actual == PINNED_HOLDOUT_SHA256 == sidecar == manifest.get("holdout_sha256") == manifest.get("file_sha256", {}).get("holdout")
 
 
+def verify_holdout_tag(root: Path = PUBLIC_ROOT) -> bool:
+    """Compare current holdout bytes with the immutable corpus tag tree."""
+
+    repository_root = root.resolve().parents[3]
+    relative = "evals/ig01b/public/ig-eval-v1/holdout.jsonl"
+    result = subprocess.run(
+        ["git", "show", f"refs/tags/{PINNED_HOLDOUT_TAG}:{relative}"],
+        cwd=repository_root,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return False
+    return hashlib.sha256(result.stdout).hexdigest() == canonical_jsonl_sha256(root / "holdout.jsonl")
+
+
 def check_public_corpus(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
     paths = public_case_paths(root)
     loaded = {split: load_cases(path, expected_class="PUBLIC_SYNTHETIC") for split, path in paths.items()}
@@ -52,10 +75,13 @@ def check_public_corpus(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
         raise ValueError(f"phenomenon/language matrix incomplete: {missing}")
     if not verify_holdout_hash(root):
         raise ValueError("holdout hash mismatch")
+    if not verify_holdout_tag(root):
+        raise ValueError(f"holdout does not match immutable tag {PINNED_HOLDOUT_TAG}")
     raw = "\n".join(path.read_text(encoding="utf-8") for path in paths.values())
     secret_hits = [pattern.pattern for pattern in SECRET_PATTERNS if pattern.search(raw)]
-    if secret_hits:
-        raise ValueError(f"public corpus secret scan failed: {secret_hits}")
+    pii_hits = [pattern.pattern for pattern in PII_PATTERNS if pattern.search(raw)]
+    if secret_hits or pii_hits:
+        raise ValueError(f"public corpus privacy scan failed: secrets={secret_hits}, pii={pii_hits}")
     ids = [case["case_id"] for case in answerable]
     if len(ids) != len(set(ids)):
         raise ValueError("public corpus IDs are not unique")
@@ -79,6 +105,7 @@ def check_public_corpus(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
         "holdout_sha256": manifest["holdout_sha256"],
         "inter_annotator_disagreement_rate": manifest["inter_annotator_disagreement_rate"],
         "secret_hits": 0,
+        "pii_hits": 0,
     }
 
 

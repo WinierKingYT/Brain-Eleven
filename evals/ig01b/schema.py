@@ -62,7 +62,10 @@ def _require_list(value: Any, field: str) -> None:
 def validate_case(case: dict[str, Any], *, expected_class: str | None = None) -> None:
     """Validate one case and reject ambiguous or incomplete labels."""
 
-    missing = REQUIRED_FIELDS - set(case)
+    required = REQUIRED_FIELDS - ({"query"} if case.get("dataset_class") == "PRIVATE_REALISTIC" else set())
+    if case.get("dataset_class") == "PRIVATE_REALISTIC":
+        required = required | {"query_hash"}
+    missing = required - set(case)
     if missing:
         raise ValueError(f"{case.get('case_id', '<unknown>')} missing fields: {sorted(missing)}")
     _require_string(case["case_id"], "case_id")
@@ -86,7 +89,10 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
     _require_string(case["sut_identity"], "sut_identity")
     _require_list(case["source_case_ids"], "source_case_ids")
     _require_string(case["project_id"], "project_id")
-    _require_string(case["query"], "query")
+    if case["dataset_class"] == "PRIVATE_REALISTIC":
+        _require_string(case["query_hash"], "query_hash")
+    else:
+        _require_string(case["query"], "query")
     for field in ("candidate_ids", "required_ids", "acceptable_ids", "forbidden_ids", "mandatory_ids"):
         _require_list(case[field], field)
     answerability = case["answerability"]
@@ -111,6 +117,26 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
         _require_string(provenance.get(field), f"provenance.{field}")
     if not isinstance(case["data_lineage"], dict) or not case["data_lineage"].get("lineage_id"):
         raise ValueError(f"{case['case_id']} data_lineage.lineage_id is required")
+    if case["family"] == "extraction":
+        conversation = case.get("conversation")
+        if not isinstance(conversation, list) or not conversation:
+            raise ValueError(f"{case['case_id']} extraction case needs conversation turns")
+        if any(not isinstance(turn, dict) or turn.get("role") not in {"user", "assistant", "system"} or not isinstance(turn.get("text"), str) or not turn["text"].strip() for turn in conversation):
+            raise ValueError(f"{case['case_id']} has invalid conversation turn")
+        expected = case.get("expected")
+        forbidden = case.get("forbidden")
+        if not isinstance(expected, dict) or not isinstance(forbidden, dict):
+            raise ValueError(f"{case['case_id']} extraction expected/forbidden labels are required")
+        for field in ("commitment", "memory_type", "state_operation", "correction", "target_behavior", "scope", "source_role"):
+            if field not in expected:
+                raise ValueError(f"{case['case_id']} expected.{field} is required")
+        for field in ("canonical_commit", "wrong_type", "false_commitment"):
+            if field not in forbidden:
+                raise ValueError(f"{case['case_id']} forbidden.{field} is required")
+        if case["category"] == "assistant_proposal" and conversation[0]["role"] != "assistant":
+            raise ValueError(f"{case['case_id']} assistant proposal must have assistant source role")
+        if case["category"] == "quoted_material" and expected["source_role"] != "quoted_external":
+            raise ValueError(f"{case['case_id']} quoted material needs quoted_external source role")
     labels = case["labels"]
     if not isinstance(labels, dict) or not labels.get("primary"):
         raise ValueError(f"{case['case_id']} needs primary ground-truth labels")
@@ -120,8 +146,12 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
             raise ValueError(f"{case['case_id']} has invalid label confidence")
     if case["split"] == "holdout":
         double = labels.get("double_annotation")
-        if not isinstance(double, dict) or not double.get("annotator_a") or not double.get("annotator_b"):
+        if not isinstance(double, dict) or not isinstance(double.get("annotator_a"), dict) or not isinstance(double.get("annotator_b"), dict):
             raise ValueError(f"{case['case_id']} holdout case is not double-labeled")
+        if double["annotator_a"].get("annotator_id") == double["annotator_b"].get("annotator_id"):
+            raise ValueError(f"{case['case_id']} holdout annotators must be distinct")
+        if not double.get("adjudicated") or "disagreement" not in double:
+            raise ValueError(f"{case['case_id']} holdout adjudication is incomplete")
 
 
 def load_cases(path: Path, *, expected_class: str | None = None) -> list[dict[str, Any]]:

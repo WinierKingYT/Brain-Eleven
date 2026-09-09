@@ -26,10 +26,13 @@ def test_public_corpus_matrix_and_holdout_are_complete():
     assert 30 <= report["splits"]["holdout"] <= 50
     assert report["inter_annotator_disagreement_rate"] <= 0.15
     assert report["secret_hits"] == 0
+    assert report["pii_hits"] == 0
 
 
 def test_holdout_hash_matches_manifest_and_sidecar():
     assert verify_holdout_hash(PUBLIC_ROOT)
+    from evals.ig01b.integrity import verify_holdout_tag
+    assert verify_holdout_tag(PUBLIC_ROOT)
     manifest = json.loads((PUBLIC_ROOT / "manifest.json").read_text(encoding="utf-8"))
     sidecar = (PUBLIC_ROOT / "holdout.sha256").read_text(encoding="utf-8").split()[0]
     assert sidecar == manifest["holdout_sha256"]
@@ -78,6 +81,8 @@ def test_private_realistic_writer_requires_same_ground_truth_schema(tmp_path: Pa
     public_case = json.loads((PUBLIC_ROOT / "dev.jsonl").read_text(encoding="utf-8").splitlines()[0])
     public_case["dataset_class"] = "PRIVATE_REALISTIC"
     public_case["provenance"]["privacy_status"] = "local-only-sanitized"
+    public_case["query_hash"] = "sha256:query"
+    public_case.pop("query")
     path = write_private_case(tmp_path, public_case)
     assert path.parent == (tmp_path / "evals" / "private").resolve()
     with pytest.raises(ValueError, match="PRIVATE_REALISTIC"):

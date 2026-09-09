@@ -9,7 +9,7 @@ from typing import Any
 from .integrity import assert_private_path
 from .schema import validate_case
 
-_RAW_KEYS = frozenset({"prompt", "transcript", "raw_text", "memory_content", "token", "secret", "password"})
+_RAW_KEYS = frozenset({"prompt", "transcript", "raw_text", "memory_content", "token", "secret", "password", "query"})
 
 
 def _assert_content_free(value: Any, path: str = "case") -> None:

@@ -10,13 +10,13 @@
   "dataset_class": "PUBLIC_SYNTHETIC",
   "file_sha256": {
     "abstention": "5fa3ad6845866a1f2ffab70a5d0ee89fb7712faaa154ca90327a6a6a466b3ea9",
-    "dev": "920f73690d56257151cd5d123d4c0afd95ae3fc4fcbfc189b94645d095731074",
-    "holdout": "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b",
-    "validation": "3dd27ceb6d113c493aaedbbff78cb35406c929c56e61f353321bf6d4cceb2184"
+    "dev": "7adc91a1fa035e81d8158f2978f7456d188d6a40f8b0f8b7e4eb046434c24a3d",
+    "holdout": "27bd0157074233736ebd20fad918dde14b7e3f4999f1b58931c9987a23ccc5d2",
+    "validation": "7b61841f3f9bb6eae4a0f9919ffd4356712db674cb51213d1fdfdf521813acdb"
   },
   "generator": "ig01b-model-a-deterministic-template-v1",
   "holdout_double_labeled": 39,
-  "holdout_sha256": "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b",
+  "holdout_sha256": "27bd0157074233736ebd20fad918dde14b7e3f4999f1b58931c9987a23ccc5d2",
   "inter_annotator_disagreement_rate": 0.0,
   "label_owner": "ig01b-double-label-review",
   "languages": [

@@ -33,10 +33,109 @@ _FAMILY = {
 }
 
 _LANGUAGE_TEXT = {
-    "tr": "Kimlik doğrulamada SQLite kullanacağız.",
-    "en": "We will use SQLite for authentication.",
-    "tr-en": "Auth için SQLite kullanacağız; session flow sabit kalacak.",
+    "tr": ("Kimlik doğrulamada SQLite kullanacağız.", "Auth için SQLite tercihimiz.", "Oturum doğrulamasını SQLite ile yapacağız."),
+    "en": ("We will use SQLite for authentication.", "SQLite is our authentication choice.", "Authentication will run on SQLite."),
+    "tr-en": ("Auth için SQLite kullanacağız; session flow sabit kalacak.", "Auth için SQLite tercihimiz; session flow aynı.", "Authentication SQLite ile çalışacak; session flow stable."),
 }
+
+_EXTRACTION_TEXT = {
+    "explicit_decision": {
+        "tr": ("SQLite kullanacağız.", "Kararımız SQLite kullanmak.", "Bu projede SQLite seçiyoruz."),
+        "en": ("We will use SQLite.", "Our decision is to use SQLite.", "This project chooses SQLite."),
+        "tr-en": ("SQLite kullanacağız.", "Decision: SQLite kullanıyoruz.", "Bu projede SQLite seçiyoruz; decision kesin."),
+    },
+    "preference": {
+        "tr": ("Koyu temayı tercih ediyorum.", "Benim tercihim koyu tema.", "UI için dark mode daha iyi."),
+        "en": ("I prefer the dark theme.", "My preference is dark mode.", "Dark mode is better for this UI."),
+        "tr-en": ("Koyu theme tercih ediyorum.", "My preference dark mode.", "UI için dark mode tercihimiz."),
+    },
+    "lesson": {
+        "tr": ("Küçük migration'ları önce test etmek bir ders oldu.", "Bu işte önce fixture yazmak gerektiğini öğrendik.", "Retry davranışını ölçmeden deploy etmemeliyiz."),
+        "en": ("Testing small migrations first was a lesson.", "We learned to write the fixture first.", "We should measure retries before deploying."),
+        "tr-en": ("Small migration'ları test etmek bir lesson oldu.", "Fixture first yazmak gerektiğini öğrendik.", "Deploy öncesi retry davranışını ölçmeliyiz."),
+    },
+    "requirement": {
+        "tr": ("Her istekte proje kapsamı zorunlu olmalı.", "Bu özellik için audit kaydı gereklidir.", "CI'da secret taraması şart."),
+        "en": ("Every request must carry project scope.", "This feature requires an audit record.", "Secret scanning is required in CI."),
+        "tr-en": ("Her request project scope taşımalı.", "Bu feature için audit record gerekli.", "CI'da secret scanning şart."),
+    },
+    "suggestion": {
+        "tr": ("İstersen SQLite'ı deneyebiliriz.", "Belki küçük bir cache ekleyebiliriz.", "Bence önce smoke testi çalıştıralım."),
+        "en": ("We could try SQLite if you want.", "Maybe we could add a small cache.", "I suggest running the smoke test first."),
+        "tr-en": ("İstersen SQLite'ı try edebiliriz.", "Maybe küçük bir cache ekleyebiliriz.", "Bence önce smoke test run edelim."),
+    },
+    "hypothetical": {
+        "tr": ("SQLite kullansaydık migration nasıl olurdu?", "Eğer Redis olsaydı ne değişirdi?", "Varsayalım auth servisi ayrı çalışıyor."),
+        "en": ("What if we used SQLite for this migration?", "If Redis existed, what would change?", "Suppose the auth service ran separately."),
+        "tr-en": ("SQLite kullansaydık migration nasıl olurdu?", "If Redis olsaydı ne değişirdi?", "Suppose auth service ayrı çalışıyor."),
+    },
+    "question": {
+        "tr": ("SQLite kullanmalı mıyız?", "Bu karar için hangi kanıt var?", "Auth akışı nasıl çalışıyor?"),
+        "en": ("Should we use SQLite?", "What evidence supports this decision?", "How does the auth flow work?"),
+        "tr-en": ("SQLite kullanalım mı?", "Bu decision için what evidence var?", "Auth flow nasıl çalışıyor?"),
+    },
+    "negation": {
+        "tr": ("JWT kullanmayacağız.", "Redis kullanmıyoruz.", "Bu yaklaşımı seçmiyoruz."),
+        "en": ("We will not use JWT.", "We are not using Redis.", "We do not choose this approach."),
+        "tr-en": ("JWT kullanmayacağız.", "Redis kullanmıyoruz.", "Bu approach'u seçmiyoruz."),
+    },
+    "quoted_material": {
+        "tr": ("Dokümandan alıntı: 'JWT kullanın.'", "Kullanıcı şöyle yazdı: 'Redis zorunlu.'", "Notta şu cümle geçiyor: 'Deploy bugün.'"),
+        "en": ("Quoted document: 'Use JWT.'", "The user wrote: 'Redis is required.'", "The note says: 'Deploy today.'"),
+        "tr-en": ("Quoted doc: 'JWT kullanın.'", "User note: 'Redis zorunlu.'", "The note says: 'Deploy bugün.'"),
+    },
+    "assistant_proposal": {
+        "tr": ("SQLite kullanalım mı?", "Cache eklemeyi öneriyorum.", "Önce smoke test çalıştırmayı tavsiye ederim."),
+        "en": ("Should we use SQLite?", "I propose adding a cache.", "I recommend running the smoke test first."),
+        "tr-en": ("SQLite kullanalım mı?", "Cache eklemeyi propose ediyorum.", "Önce smoke test run etmeyi öneriyorum."),
+    },
+    "correction": {
+        "tr": ("JWT kullanmayacağız; session cookie'ye geçelim.", "JWT yerine session cookie kullanıyoruz.", "Auth kararını düzeltiyorum: session cookie."),
+        "en": ("We will not use JWT; switch to a session cookie.", "Use a session cookie instead of JWT.", "Correction: authentication uses a session cookie."),
+        "tr-en": ("JWT kullanmayacağız; session cookie'ye geçelim.", "JWT yerine session cookie kullanıyoruz.", "Correction: auth için session cookie."),
+    },
+}
+
+_RETRIEVAL_TEXT = {
+    "old_critical_decision": {
+        "tr": ("Auth migrationını sürdür.", "Kimlik doğrulama migration'ına devam et.", "Eski kritik auth kararını uygula."),
+        "en": ("Continue the auth migration.", "Proceed with the authentication migration.", "Apply the old critical auth decision."),
+        "tr-en": ("Auth migration'a devam edelim.", "Authentication migration'ı proceed edelim.", "Eski critical auth kararını uygula."),
+    },
+    "irrelevant_recent_memory": {
+        "tr": ("Auth hatasını düzelt.", "Kimlik doğrulama bug'ını çöz.", "Session auth sorununu incele."),
+        "en": ("Fix the auth bug.", "Resolve the authentication issue.", "Investigate the session auth problem."),
+        "tr-en": ("Auth bug'ını düzelt.", "Authentication issue'yu resolve et.", "Session auth problem'i incele."),
+    },
+    "wrong_project_candidate": {
+        "tr": ("Alpha auth kararını getir.", "Bu projedeki auth kararını bul.", "Current project authentication bilgisini getir."),
+        "en": ("Retrieve the Alpha auth decision.", "Find this project's auth decision.", "Retrieve current-project authentication context."),
+        "tr-en": ("Alpha auth kararını getir.", "Bu project's auth decision'ını bul.", "Current project auth context'i getir."),
+    },
+    "superseded_memory": {
+        "tr": ("Güncel auth kararını kullan.", "Artık geçerli olan authentication kararını getir.", "Superseded auth kararını dışarıda bırak."),
+        "en": ("Use the current auth decision.", "Retrieve the active authentication decision.", "Exclude the superseded auth decision."),
+        "tr-en": ("Güncel auth kararını kullan.", "Active authentication decision'ı getir.", "Superseded auth kararını exclude et."),
+    },
+    "resolved_blocker": {
+        "tr": ("Çözülmüş auth blocker'ı geri getirme.", "Artık kapanmış blocker'ı hariç tut.", "Resolved authentication engelini seçme."),
+        "en": ("Do not return the resolved auth blocker.", "Exclude the closed authentication blocker.", "Do not select the resolved auth issue."),
+        "tr-en": ("Resolved auth blocker'ı getirme.", "Closed authentication blocker'ı exclude et.", "Resolved auth issue'yu seçme."),
+    },
+    "ambiguous_reference": {
+        "tr": ("Önceki kararı iptal et.", "Az önceki kararı geri al.", "Bunu iptal edelim."),
+        "en": ("Cancel the previous decision.", "Undo the decision just mentioned.", "Cancel that one."),
+        "tr-en": ("Önceki auth kararını iptal edelim.", "Az önceki auth decision'ı undo edelim.", "Bunu cancel edelim."),
+    },
+}
+
+
+def _variant_text(category: str, language: str, variant: int) -> str:
+    if category in _EXTRACTION_TEXT:
+        return _EXTRACTION_TEXT[category][language][variant - 1]
+    if category in _RETRIEVAL_TEXT:
+        return _RETRIEVAL_TEXT[category][language][variant - 1]
+    return _LANGUAGE_TEXT[language][variant - 1]
 
 
 def _split(index: int) -> str:
@@ -53,18 +152,18 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
     case_id = f"{CORPUS_VERSION}-{category}-{language}-{variant}"
     answer_id, distractor_id = _ids(category, language, variant)
     split = _split(index)
-    query = _LANGUAGE_TEXT[language]
+    query = _variant_text(category, language, variant)
     required = [answer_id]
     forbidden: list[str] = []
     candidate_ids = [answer_id, distractor_id]
     rationale = "The evidence and expected label are explicit and sufficient for a competent system."
     primary: dict[str, Any] = {"category": category, "expected_memory_type": category}
+    extraction_expected: dict[str, Any] | None = None
+    extraction_forbidden: dict[str, Any] | None = None
 
     if category == "old_critical_decision":
-        query = {"tr": "Auth migrationını sürdür.", "en": "Continue the auth migration.", "tr-en": "Auth migration'a devam edelim."}[language]
         primary.update(expected_memory_type="decision", temporal="historical-critical")
     elif category == "irrelevant_recent_memory":
-        query = {"tr": "Auth hatasını düzelt.", "en": "Fix the auth bug.", "tr-en": "Auth bug'ını düzelt."}[language]
         primary.update(expected_memory_type="decision")
         forbidden = [distractor_id]
     elif category == "wrong_project_candidate":
@@ -82,7 +181,6 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
         primary.update(expected_memory_type="state", lifecycle="resolved-excluded")
         forbidden = [distractor_id]
     elif category == "ambiguous_reference":
-        query = {"tr": "Önceki kararı iptal et.", "en": "Cancel the previous decision.", "tr-en": "Önceki auth kararını iptal edelim."}[language]
         candidate_ids = [answer_id, distractor_id]
         required = []
         primary.update(expected_memory_type="review", abstain=True)
@@ -100,10 +198,34 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
         required = []
         forbidden = [answer_id]
     elif category == "correction":
-        query = {"tr": "JWT kullanmayacağız; session cookie'ye geçelim.", "en": "We will not use JWT; switch to a session cookie.", "tr-en": "JWT kullanmayacağız; session cookie'ye geçelim."}[language]
         primary.update(expected_memory_type="correction", correction_target="jwt")
     else:
         raise ValueError(category)
+
+    if _FAMILY[category] == "extraction":
+        role = "assistant" if category == "assistant_proposal" else "user"
+        commitment = "explicit" if category == "explicit_decision" else "none"
+        memory_type = {
+            "explicit_decision": "decision", "preference": "preference", "lesson": "lesson",
+            "requirement": "requirement", "correction": "correction", "negation": "no_commitment",
+            "suggestion": "no_commitment", "hypothetical": "no_commitment", "question": "no_commitment",
+            "quoted_material": "no_commitment", "assistant_proposal": "no_commitment",
+        }[category]
+        operation = {"explicit_decision": "ADD", "preference": "ADD", "lesson": "ADD", "requirement": "ADD", "correction": "CORRECT"}.get(category, "NOOP")
+        extraction_expected = {
+            "commitment": commitment,
+            "memory_type": memory_type,
+            "state_operation": operation,
+            "correction": category == "correction",
+            "target_behavior": "resolve" if category == "correction" else "none",
+            "scope": "project-local",
+            "source_role": "quoted_external" if category == "quoted_material" else role,
+        }
+        extraction_forbidden = {
+            "canonical_commit": category in {"suggestion", "hypothetical", "question", "negation", "quoted_material", "assistant_proposal"},
+            "wrong_type": "decision" if category != "explicit_decision" else "",
+            "false_commitment": category in {"suggestion", "hypothetical", "question", "negation", "quoted_material", "assistant_proposal"},
+        }
 
     case: dict[str, Any] = {
         "case_id": case_id,
@@ -116,12 +238,15 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
         "split": split,
         "project_id": "project-alpha",
         "query": query,
+        "conversation": ([{"role": "assistant" if category == "assistant_proposal" else "user", "text": query}] if _FAMILY[category] == "extraction" else []),
         "candidate_ids": candidate_ids,
         "required_ids": required,
         "acceptable_ids": required[:],
         "forbidden_ids": forbidden,
         "mandatory_ids": required[:],
         "rationale": rationale,
+        "expected": extraction_expected,
+        "forbidden": extraction_forbidden,
         "data_lineage": {"lineage_id": f"lineage-{category}-{language}-{variant}", "event_time": f"2025-01-{(index % 28) + 1:02d}T10:00:00Z", "ingested_at": f"2025-02-{(index % 28) + 1:02d}T10:00:00Z"},
         "contamination_class": "synthetic-template",
         "generator_identity": GENERATOR_ID,
@@ -143,9 +268,9 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
             "primary": primary,
             "confidence": {"annotator_a": 1.0, "annotator_b": 1.0, "adjudicated": 1.0},
             "double_annotation": ({
-                "annotator_a": primary,
-                "annotator_b": primary,
-                "adjudicated": primary,
+                "annotator_a": {"annotator_id": "ig01b-annotator-a", "label": dict(primary), "confidence": 1.0},
+                "annotator_b": {"annotator_id": "ig01b-annotator-b", "label": dict(primary), "confidence": 1.0},
+                "adjudicated": dict(primary),
                 "disagreement": False,
             } if split == "holdout" else None),
         },
