@@ -133,7 +133,12 @@ def _audit_public_corpus(root: Path) -> dict[str, Any]:
     if cells != {(phenomenon, language) for phenomenon in PHENOMENA for language in LANGUAGES}:
         raise AuditError("public corpus phenomenon/language coverage is incomplete")
     holdout_double = sum(1 for case in loaded["holdout"] if case["labels"].get("double_annotation"))
-    holdout_adjudicated = sum(1 for case in loaded["holdout"] if case["labels"].get("double_annotation", {}).get("adjudicated") is True)
+    holdout_adjudicated = sum(
+        1
+        for case in loaded["holdout"]
+        if isinstance(case["labels"].get("double_annotation"), dict)
+        and isinstance(case["labels"]["double_annotation"].get("adjudicated"), dict)
+    )
     if result["corpus_version"] != "ig-eval-v2" or result["total_answerable"] != 153:
         raise AuditError("public corpus population is not the frozen IG01-B v2 population")
     if result["splits"].get("dev") != 76 or result["splits"].get("validation") != 38 or result["splits"].get("holdout") != 39:
@@ -326,6 +331,8 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
         revision = result.stdout.strip().lower()
         if result.returncode != 0 or revision != expected:
             missing.append(tag)
+        else:
+            tag_revisions[tag] = revision
     if missing:
         raise AuditError("required immutable package tags are missing")
     reports = {
@@ -344,7 +351,6 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
     c_text = (root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in d_text or "a95fa31079acdb2de3a26c767923accaf084a274" not in c_text:
         raise AuditError("parent package reports are not revision-bound")
-        tag_revisions[tag] = revision
     return {"immutable_ship_tags": tag_revisions, "missing": [], "report_sha256": report_evidence}
 
 

@@ -30,6 +30,19 @@ def test_audit_is_revision_bound_and_content_free():
     assert "memory_content" not in serialized
 
 
+def test_audit_reports_parent_tag_revisions_and_adjudicated_holdout_count():
+    report = audit_repository(ROOT)
+    parent = report["checks"]["parent_packages"]
+    corpus = report["checks"]["public_corpus"]
+    assert parent["status"] == "PASS"
+    assert parent["evidence"]["immutable_ship_tags"] == {
+        "ig01a-ship": "ae67d456616bad6782765a1ba8e10ef638124ac7",
+        "ig01b-ship": "77811dfdf3da783bbfcee565b0881233bff8fc10",
+    }
+    assert corpus["status"] == "PASS"
+    assert corpus["evidence"]["holdout_adjudicated"] == 39
+
+
 def test_audit_report_write_is_content_free(tmp_path):
     report = audit_repository(ROOT)
     path = tmp_path / "ig01e-audit.json"
