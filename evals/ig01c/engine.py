@@ -53,12 +53,17 @@ _SOURCE_KEYS = frozenset({"git_sha", "seed", "retrieval_k", "source_fingerprint"
 _HEX_RE = re.compile(r"^[0-9a-fA-F]{6,128}$")
 _REPORT_TOP_LEVEL_KEYS = frozenset({
     "schema_version", "report_type", "evaluator_version", "corpus", "source",
-    "metrics", "safety_gates", "cases", "controls", "benchmark",
+    "metrics", "safety_gates", "cases", "controls",
 })
 _CASE_ROW_KEYS = frozenset({
     "case_id", "family", "metrics", "violations", "passed", "selected_ids",
-    "candidate_targets",
+    "candidate_ids", "candidate_targets",
 })
+_CORPUS_KEYS = frozenset({
+    "corpus_version", "split", "case_count", "scored_case_count",
+    "excluded_case_count", "case_ids",
+})
+_METRIC_KEYS = frozenset({"value", "numerator", "denominator", "not_applicable", "empty_selection"})
 
 
 def _safe_scalar(value: Any, field: str) -> Any:
@@ -198,6 +203,26 @@ def _metric_from_dict(value: Mapping[str, Any]) -> MetricValue:
         not_applicable=bool(value.get("not_applicable", False)),
         empty_selection=bool(value.get("empty_selection", False)),
     )
+
+
+def _validate_metric_map(metrics: Any, field: str) -> None:
+    if not isinstance(metrics, Mapping):
+        raise EvaluatorError(f"{field} must be an object")
+    for name, value in metrics.items():
+        if not isinstance(name, str) or not name.strip():
+            raise EvaluatorError(f"{field} metric names must be non-empty strings")
+        if not isinstance(value, Mapping) or set(value) != _METRIC_KEYS:
+            raise EvaluatorError(f"{field}.{name} has an invalid metric shape")
+        _metric_from_dict(value)
+
+
+def _validate_family_metric_map(metrics: Any, field: str) -> None:
+    if not isinstance(metrics, Mapping):
+        raise EvaluatorError(f"{field} must be an object")
+    for family, family_metrics in metrics.items():
+        if not isinstance(family, str) or not family.strip():
+            raise EvaluatorError(f"{field} family names must be non-empty strings")
+        _validate_metric_map(family_metrics, f"{field}.{family}")
 
 
 _POOLED_METRICS = frozenset({
@@ -407,7 +432,7 @@ def evaluate_corpus(
                 "violations": result.get("violations", []),
                 "passed": bool(result.get("passed", False)),
                 **(
-                    {"selected_ids": result["retrieved_ids"]}
+                    {"candidate_ids": result.get("candidate_ids", []), "selected_ids": result["retrieved_ids"]}
                     if "retrieved_ids" in result
                     else {"candidate_targets": result["candidate_targets"]}
                     if "candidate_targets" in result
@@ -460,6 +485,11 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     corpus = report.get("corpus")
     if not isinstance(corpus, Mapping):
         raise EvaluatorError("report.corpus must be an object")
+    unknown_corpus_keys = set(corpus) - _CORPUS_KEYS
+    if unknown_corpus_keys:
+        raise EvaluatorError(
+            "report.corpus contains unknown fields: " + ", ".join(sorted(map(str, unknown_corpus_keys)))
+        )
     ids = corpus.get("case_ids")
     if not isinstance(ids, list) or ids != sorted(ids) or len(ids) != len(set(ids)) or not ids:
         raise EvaluatorError("report.corpus.case_ids must be sorted and unique")
@@ -467,6 +497,7 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise EvaluatorError("report.corpus.case_count mismatch")
     if corpus.get("scored_case_count", -1) + corpus.get("excluded_case_count", -1) != len(ids):
         raise EvaluatorError("report corpus counts do not add up")
+    _validate_family_metric_map(report.get("metrics"), "report.metrics")
     gates = report.get("safety_gates")
     if not isinstance(gates, Mapping) or set(gates) != set(ALL_GATES):
         raise EvaluatorError("report.safety_gates must contain exactly the IG01-C gates")
@@ -497,9 +528,17 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
             raise EvaluatorError(
                 "report case contains unknown fields: " + ", ".join(sorted(map(str, unknown_case_keys)))
             )
+        _validate_metric_map(item.get("metrics"), f"report.cases[{item['case_id']}].metrics")
         family = str(item.get("family", "")).strip().lower()
         if family in {"retrieval", "context_compilation"}:
             retrieval_case_ids.append(str(item["case_id"]))
+            candidates = item.get("candidate_ids")
+            if (
+                not isinstance(candidates, list)
+                or not all(isinstance(value, str) and value.strip() for value in candidates)
+                or len(candidates) != len(set(candidates))
+            ):
+                raise EvaluatorError("retrieval report rows must include unique candidate_ids")
             selected = item.get("selected_ids")
             if (
                 not isinstance(selected, list)
@@ -531,6 +570,15 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 or not all(isinstance(value, str) and value.strip() for value in selected)
             ):
                 raise EvaluatorError(f"report.controls[{case_id}].{name} is malformed")
+            if row["case_id"] != case_id:
+                raise EvaluatorError(f"report.controls[{case_id}].{name} has a mismatched case_id")
+            if name == "select_none" and selected:
+                raise EvaluatorError(f"report.controls[{case_id}].select_none must be empty")
+            if name == "select_all":
+                parent = next(item for item in cases if item.get("case_id") == case_id)
+                if selected != parent.get("candidate_ids"):
+                    raise EvaluatorError(f"report.controls[{case_id}].select_all must cover candidate_ids")
+            _validate_metric_map(row["metrics"], f"report.controls[{case_id}].{name}.metrics")
     return dict(report)
 
 

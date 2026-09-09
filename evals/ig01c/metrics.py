@@ -291,6 +291,7 @@ def evaluate_retrieval_case(
     return {
         "case_id": case_id,
         "family": "retrieval",
+        "candidate_ids": list(declared_candidates),
         "retrieved_ids": list(retrieved),
         "metrics": metrics,
         "safety_events": [item.as_dict() for item in events],

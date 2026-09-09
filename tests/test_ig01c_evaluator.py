@@ -334,6 +334,21 @@ def test_report_rejects_raw_content_and_near_zero_events_without_review():
     with pytest.raises(EvaluatorError, match="unknown top-level"):
         validate_report(broken)
 
+    broken = copy.deepcopy(report)
+    broken["controls"]["retrieval-1"]["select_all"]["selected_ids"] = []
+    with pytest.raises(EvaluatorError, match="select_all must cover"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["controls"]["retrieval-1"]["select_none"]["case_id"] = "other"
+    with pytest.raises(EvaluatorError, match="mismatched case_id"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["metrics"]["raw_metric"] = "raw transcript"
+    with pytest.raises(EvaluatorError, match="invalid metric shape"):
+        validate_report(broken)
+
 
 def test_context_metrics_exclude_forbidden_ids_and_report_selected_ids():
     case = retrieval_case(
