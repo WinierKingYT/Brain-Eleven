@@ -2,8 +2,13 @@
   "abstention_count": 6,
   "change_log": [
     {
-      "change": "Initial IG01-B public synthetic corpus.",
-      "version": "ig-eval-v2"
+      "change": "Historical draft retained under public/ig-eval-v1 for provenance.",
+      "version": "ig-eval-v1"
+    },
+    {
+      "change": "Current corpus: multilingual extraction conversations, explicit ground-truth fields, independent holdout annotation metadata, privacy/PII checks and immutable holdout pin.",
+      "version": "ig-eval-v2",
+      "predecessor": "ig-eval-v1"
     }
   ],
   "corpus_version": "ig-eval-v2",

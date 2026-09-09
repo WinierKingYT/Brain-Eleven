@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .schema import LANGUAGES, PHENOMENA, validate_case
-from .annotator_b import label_case_from_evidence
+from .annotator_b import label_case_from_case
 
 CORPUS_VERSION = "ig-eval-v2"
 GENERATOR_ID = "ig01b-model-a-deterministic-template-v1"
@@ -145,10 +145,10 @@ def _annotate_a(primary: dict[str, Any]) -> dict[str, Any]:
     return {"annotator_id": "ig01b-annotator-a", "method": "blind-pass-a", "label": dict(primary), "confidence": 1.0}
 
 
-def _annotate_b(category: str) -> dict[str, Any]:
-    """Second blind pass derived from category/evidence, never primary labels."""
+def _annotate_b(case: dict[str, Any]) -> dict[str, Any]:
+    """Second blind pass derived from case evidence, never primary labels."""
 
-    label = label_case_from_evidence(category)
+    label = label_case_from_case(case)
     return {"annotator_id": "ig01b-annotator-b", "method": "blind-pass-b", "label": label, "confidence": 1.0}
 
 
@@ -241,6 +241,13 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
             "false_commitment": category in {"suggestion", "hypothetical", "question", "negation", "quoted_material", "assistant_proposal"},
         }
 
+    annotation_evidence = {
+        "family": _FAMILY[category],
+        "query": query,
+        "conversation": ([{"role": "assistant" if category == "assistant_proposal" else "user", "text": query}] if _FAMILY[category] == "extraction" else []),
+        "candidate_ids": candidate_ids,
+    }
+
     case: dict[str, Any] = {
         "case_id": case_id,
         "dataset_class": "PUBLIC_SYNTHETIC",
@@ -283,7 +290,7 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
             "confidence": {"annotator_a": 1.0, "annotator_b": 1.0, "adjudicated": 1.0},
             "double_annotation": ({
                 "annotator_a": _annotate_a(primary),
-                "annotator_b": _annotate_b(category),
+                "annotator_b": _annotate_b(annotation_evidence),
                 "adjudicated": dict(primary),
                 "disagreement": False,
                 "protocol": "blind-independent-case-only-labeling",
