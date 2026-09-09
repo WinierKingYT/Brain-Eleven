@@ -16,6 +16,7 @@ import subprocess
 from typing import Any, Callable, Iterable
 
 from ..ig01b.integrity import check_private_boundary, check_public_corpus
+from ..ig01b.schema import LANGUAGES, PHENOMENA, load_cases
 from ..ig01d.contracts import validate_pair_report, BaselineContractError
 
 
@@ -34,6 +35,12 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return "sha256:" + digest.hexdigest()
+
+
+def _canonical_sha256(path: Path) -> str:
+    """Hash text fixtures with platform-independent LF normalization."""
+
+    return "sha256:" + hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _git_sha(root: Path) -> str:
@@ -104,6 +111,29 @@ def _audit_public_corpus(root: Path) -> dict[str, Any]:
     # counts, hashes and privacy counters; it never returns case content.
     corpus = root / "evals" / "ig01b" / "public" / "ig-eval-v2"
     result = check_public_corpus(corpus)
+    loaded = {
+        split: load_cases(corpus / f"{split}.jsonl", expected_class="PUBLIC_SYNTHETIC")
+        for split in ("dev", "validation", "holdout", "abstention")
+    }
+    manifest = json.loads((corpus / "manifest.json").read_text(encoding="utf-8"))
+    split_hashes = {
+        split: _canonical_sha256(corpus / f"{split}.jsonl")
+        for split in ("dev", "validation", "holdout", "abstention")
+    }
+    expected_hashes = {split: "sha256:" + value for split, value in manifest["file_sha256"].items()}
+    if split_hashes != expected_hashes:
+        raise AuditError("public corpus split hash differs from manifest")
+    all_cases = [case for cases in loaded.values() for case in cases]
+    if len({case["case_id"] for case in all_cases}) != len(all_cases):
+        raise AuditError("public corpus case IDs overlap across splits")
+    if any(not case.get("provenance") or not case.get("data_lineage") or not case.get("generator_identity") or not case.get("sut_identity") for case in all_cases):
+        raise AuditError("public corpus provenance/lineage fields are incomplete")
+    answerable = loaded["dev"] + loaded["validation"] + loaded["holdout"]
+    cells = {(case["category"], case["language"]) for case in answerable}
+    if cells != {(phenomenon, language) for phenomenon in PHENOMENA for language in LANGUAGES}:
+        raise AuditError("public corpus phenomenon/language coverage is incomplete")
+    holdout_double = sum(1 for case in loaded["holdout"] if case["labels"].get("double_annotation"))
+    holdout_adjudicated = sum(1 for case in loaded["holdout"] if case["labels"].get("double_annotation", {}).get("adjudicated") is True)
     if result["corpus_version"] != "ig-eval-v2" or result["total_answerable"] != 153:
         raise AuditError("public corpus population is not the frozen IG01-B v2 population")
     if result["splits"].get("dev") != 76 or result["splits"].get("validation") != 38 or result["splits"].get("holdout") != 39:
@@ -117,10 +147,12 @@ def _audit_public_corpus(root: Path) -> dict[str, Any]:
         "matrix_cells": result["matrix_cells"],
         "matrix_minimum": result["matrix_minimum"],
         "holdout_sha256": result["holdout_sha256"],
-        "split_sha256": {
-            split: _sha256(corpus / f"{split}.jsonl")
-            for split in ("dev", "validation", "holdout", "abstention")
-        },
+        "split_sha256": split_hashes,
+        "manifest_hashes_match": True,
+        "holdout_double_labeled": holdout_double,
+        "holdout_adjudicated": holdout_adjudicated,
+        "inter_annotator_disagreement_rate": manifest["inter_annotator_disagreement_rate"],
+        "answerability": {"answerable": len(answerable), "abstention": len(loaded["abstention"])},
         "privacy": {"secret_hits": 0, "pii_hits": 0},
     }
 
@@ -134,7 +166,24 @@ def _audit_private_boundary(root: Path) -> dict[str, Any]:
     )
     if leaked or result.get("leakage") != 0:
         raise AuditError("private realistic corpus is tracked or exposed")
-    return {"guard_root": "evals/private", "tracked_private_candidates": 0, "leakage": 0}
+    gitignore = (root / ".gitignore").read_text(encoding="utf-8")
+    private_source = (root / "evals" / "ig01b" / "private.py").read_text(encoding="utf-8")
+    failure_source = (root / "evals" / "ig01b" / "failures.py").read_text(encoding="utf-8")
+    failure_manifest_path = root / "evals" / "ig01b" / "failures" / "manifest.json"
+    failure_manifest = json.loads(failure_manifest_path.read_text(encoding="utf-8"))
+    if "evals/private/" not in gitignore or "assert_private_path" not in private_source or "_reject_raw_fields" not in failure_source:
+        raise AuditError("private/failure write guards are not documented in source")
+    if failure_manifest.get("status") != "EMPTY_RESERVED_FOR_IG-08" or failure_manifest.get("cases") != 0:
+        raise AuditError("sanitized failure reservation is not empty or is not IG-08 scoped")
+    return {
+        "guard_root": "evals/private",
+        "tracked_private_candidates": 0,
+        "leakage": 0,
+        "gitignore_guard": True,
+        "private_writer_guard": True,
+        "failure_ingest_guard": True,
+        "sanitized_failure_cases": 0,
+    }
 
 
 def _imports_and_calls(path: Path) -> tuple[set[str], set[str]]:
@@ -171,7 +220,13 @@ def _audit_evaluator_independence(root: Path) -> dict[str, Any]:
         if any(marker in source for marker in (".write_text(", ".write_bytes(", "MemoryStore", "StateStore", "ProjectRegistry")):
             raise AuditError(f"IG01-C evaluator contains a production/side-effect marker: {path.name}")
         files.append({"path": path.relative_to(root).as_posix(), "sha256": _sha256(path)})
-    return {"offline": True, "production_mutation": False, "files": files}
+    return {
+        "offline": True,
+        "production_mutation": False,
+        "files": files,
+        "source_fingerprint_scope": "ig01c_source_files_not_runtime_adapters",
+        "adapter_fingerprint_limitation": True,
+    }
 
 
 def _audit_anti_gaming(root: Path) -> dict[str, Any]:
@@ -209,8 +264,9 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
         raise AuditError("IG01-D historical report binding is missing")
     artifact_evidence: dict[str, Any] = {"artifact": "NOT_AVAILABLE"}
     if pair_report is None:
-        if require_pair_report:
-            raise AuditError("IG01-D pair artifact is required for this audit")
+        # A structural/local audit may still enumerate the other checks, but
+        # it can never emit SHIP without the exact CI-produced pair artifact.
+        raise AuditError("IG01-D pair artifact is required for an accepted audit")
     else:
         try:
             payload = json.loads(pair_report.read_text(encoding="utf-8"))
@@ -220,6 +276,23 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
         current_sha = _git_sha(root)
         if validated["source"]["git_sha"] != current_sha:
             raise AuditError("IG01-D pair artifact SHA differs from audit revision")
+        v1_metrics = validated["providers"]["v1"]["metrics"]
+        v2_metrics = validated["providers"]["v2"]["metrics"]
+        deltas = validated["comparison"]["metric_deltas"]
+        for metric in ("context_precision", "context_recall"):
+            expected_delta = float(v2_metrics[metric]) - float(v1_metrics[metric])
+            if abs(float(deltas[metric]["baseline"]) - float(v1_metrics[metric])) > 1e-9 or abs(float(deltas[metric]["candidate"]) - float(v2_metrics[metric])) > 1e-9 or abs(float(deltas[metric]["delta"]) - expected_delta) > 1e-9:
+                raise AuditError("IG01-D comparison delta is not recomputed from provider metrics")
+        delta_values = [float(deltas[name]["delta"]) for name in ("context_precision", "context_recall")]
+        expected_outcome = "unchanged" if all(value == 0 for value in delta_values) else "improved" if all(value >= 0 for value in delta_values) else "degraded" if any(value < 0 for value in delta_values) else "inconclusive"
+        if validated["comparison"]["outcome"] != expected_outcome:
+            raise AuditError("IG01-D comparison outcome is not derived from metric deltas")
+        invariant_states = validated["providers"]["v2"]["invariants"]
+        expected_failed = {name: value["failed_case_ids"] for name, value in invariant_states.items() if value["state"] == "fail"}
+        expected_unsupported = {name: value["unsupported_case_ids"] for name, value in invariant_states.items() if value["state"] == "unsupported"}
+        gate = validated["comparison"]["candidate_gate"]
+        if gate["failed_invariants"] != expected_failed or gate["unsupported_invariants"] != expected_unsupported or gate["passed"] != (not (expected_failed or expected_unsupported)):
+            raise AuditError("IG01-D candidate gate is not bound to provider invariant rows")
         artifact_evidence = {
             "artifact": pair_report.name,
             "artifact_sha256": _sha256(pair_report),
@@ -229,6 +302,8 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
             "holdout_included": validated["feasibility"]["holdout_included"],
             "feasibility_status": validated["feasibility"]["status"],
             "outcome": validated["comparison"]["outcome"],
+            "metric_deltas_recomputed": True,
+            "candidate_gate_recomputed": True,
         }
     return {
         "same_input_pair": True,
@@ -240,11 +315,16 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
 
 
 def _audit_parent_packages(root: Path) -> dict[str, Any]:
-    required_tags = ("ig01a-ship", "ig01b-ship")
+    required_tags = {
+        "ig01a-ship": "ae67d456616bad6782765a1ba8e10ef638124ac7",
+        "ig01b-ship": "77811dfdf3da783bbfcee565b0881233bff8fc10",
+    }
     missing: list[str] = []
-    for tag in required_tags:
-        result = subprocess.run(["git", "-C", str(root), "show-ref", "--verify", f"refs/tags/{tag}"], capture_output=True, text=True)
-        if result.returncode != 0:
+    tag_revisions: dict[str, str] = {}
+    for tag, expected in required_tags.items():
+        result = subprocess.run(["git", "-C", str(root), "rev-parse", f"refs/tags/{tag}^{{}}"], capture_output=True, text=True)
+        revision = result.stdout.strip().lower()
+        if result.returncode != 0 or revision != expected:
             missing.append(tag)
     if missing:
         raise AuditError("required immutable package tags are missing")
@@ -264,7 +344,8 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
     c_text = (root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in d_text or "a95fa31079acdb2de3a26c767923accaf084a274" not in c_text:
         raise AuditError("parent package reports are not revision-bound")
-    return {"immutable_ship_tags": list(required_tags), "missing": [], "report_sha256": report_evidence}
+        tag_revisions[tag] = revision
+    return {"immutable_ship_tags": tag_revisions, "missing": [], "report_sha256": report_evidence}
 
 
 def _audit_benchmark_eligibility(root: Path) -> dict[str, Any]:
@@ -329,16 +410,20 @@ def write_audit_report(path: Path | str, report: dict[str, Any]) -> None:
     """Write validated content-free audit evidence atomically as JSON."""
 
     required = {"schema_version", "audit_version", "audit_type", "source", "checks", "phase20", "v2_runtime", "holdout_tuning", "verdict"}
-    if set(report) != required or report.get("schema_version") != 1 or report.get("audit_version") != AUDIT_VERSION or report.get("verdict") not in {VERDICT_SHIP, VERDICT_FIX_FIRST}:
+    if set(report) != required or report.get("schema_version") != 1 or report.get("audit_version") != AUDIT_VERSION or report.get("audit_type") != "brain_eleven_ig01e_independent_evaluation_audit" or report.get("verdict") not in {VERDICT_SHIP, VERDICT_FIX_FIRST}:
         raise AuditError("invalid IG01-E audit report")
     source = report.get("source")
-    if not isinstance(source, dict) or not isinstance(source.get("git_sha"), str) or len(source["git_sha"]) != 40:
+    if not isinstance(source, dict) or set(source) != {"git_sha"} or not isinstance(source.get("git_sha"), str) or len(source["git_sha"]) != 40 or source["git_sha"] != source["git_sha"].lower() or any(char not in "0123456789abcdef" for char in source["git_sha"]):
         raise AuditError("audit report source is not revision-bound")
     checks = report.get("checks")
-    if not isinstance(checks, dict) or not checks or any(row.get("status") not in {"PASS", "FAIL"} for row in checks.values() if isinstance(row, dict)):
+    if not isinstance(checks, dict) or not checks or any(not isinstance(row, dict) or set(row) - {"status", "evidence", "error_code"} or row.get("status") not in {"PASS", "FAIL"} for row in checks.values()):
         raise AuditError("audit report checks are malformed")
     if report.get("verdict") == VERDICT_SHIP and any(row.get("status") != "PASS" for row in checks.values()):
         raise AuditError("SHIP audit contains a failed check")
+    if report.get("verdict") == VERDICT_FIX_FIRST and all(row.get("status") == "PASS" for row in checks.values()):
+        raise AuditError("FIX-FIRST audit must identify a failed check")
+    if report.get("phase20") != "FROZEN_LOCKED" or report.get("v2_runtime") != "SHADOW" or report.get("holdout_tuning") != "PROHIBITED":
+        raise AuditError("audit boundary metadata is invalid")
     def _scan(value: Any) -> None:
         if isinstance(value, dict):
             for key, child in value.items():

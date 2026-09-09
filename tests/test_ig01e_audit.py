@@ -20,7 +20,7 @@ def test_audit_is_revision_bound_and_content_free():
     ).stdout.strip()
     # The repository is expected to be clean in CI.  During local development
     # this candidate is deliberately FIX-FIRST until it is committed.
-    assert report["verdict"] in {"SHIP", "FIX-FIRST"}
+    assert report["verdict"] == "FIX-FIRST"  # no CI pair artifact was supplied
     assert report["phase20"] == "FROZEN_LOCKED"
     assert report["v2_runtime"] == "SHADOW"
     assert report["checks"]["benchmark_eligibility"]["evidence"]["eligibility"] == "EXPLORATORY_ONLY" if report["checks"]["benchmark_eligibility"]["status"] == "PASS" else True
@@ -59,4 +59,12 @@ def test_audit_report_writer_rejects_failed_ship(tmp_path):
     report["verdict"] = "SHIP"
     report["checks"]["revision_clean"] = {"status": "FAIL", "error_code": "DIRTY"}
     with pytest.raises(AuditError, match="failed check"):
+        write_audit_report(tmp_path / "bad.json", report)
+
+
+def test_audit_report_writer_rejects_malformed_check(tmp_path):
+    report = audit_repository(ROOT)
+    report = copy.deepcopy(report)
+    report["checks"]["revision_clean"] = None
+    with pytest.raises(AuditError, match="checks are malformed"):
         write_audit_report(tmp_path / "bad.json", report)
