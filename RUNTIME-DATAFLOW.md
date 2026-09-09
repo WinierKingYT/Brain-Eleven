@@ -4,11 +4,11 @@ Authority: **CURRENT**. Audit date: 2026-09-09. This map distinguishes repositor
 implementation, installed configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
 See IG00-FREEZE-BASELINE for exact revision and review limitations. The latest
-revision-bound workflows are Validation run 34381739251 and PRE-13 runtime run
-34381739315 for exact head
-`3404a9b2e3e5681fe3aca38cb6597e28bf95d20d`. Runtime infrastructure jobs pass
-on Ubuntu and Windows; the workflow remains failed only for its historical
-quality job. Validation security jobs are still completing at this audit.
+revision-bound workflows are Validation run 34387725841 and PRE-13 runtime run
+34387725837 for exact head
+`72a8475a8d01d50a632f25c23f1fc8a507053c42`. Validation completed successfully.
+PRE-13 runtime infrastructure and coverage passed on Ubuntu and Windows; its
+historical quality job remains a visible failure for later intelligence work.
 
 ## Observed checkpoint behavior and delivery ownership
 

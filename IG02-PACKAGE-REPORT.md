@@ -1,8 +1,8 @@
 # IG-02 Package Report — Autonomous Capture Closure
 
 **PACKAGE:** IG-02  
-**REVISION:** `3404a9b2e3e5681fe3aca38cb6597e28bf95d20d` (exact implementation/test head; documentation closure is recorded separately)
-**STATUS:** IMPLEMENTATION COMPLETE / ACCEPTANCE PENDING
+**REVISION:** `72a8475a8d01d50a632f25c23f1fc8a507053c42` (exact implementation/test head; documentation closure is recorded separately)
+**STATUS:** SHIPPED / ACCEPTED
 
 ## OBJECTIVE
 
@@ -39,17 +39,20 @@ matching content-free `EFFECT_VERIFIED` receipt has been durably written.
   did not validate job/event idempotency correspondence.
 * IG01-E documentation auditing assumed IG-01 would remain the latest closed
   package after later IG packages shipped.
+* Replay receipt references were not fully bound to project-scoped memory,
+  state-record provenance, review identity, or effect-ID correspondence.
 
 ## TESTS ADDED
 
 Focused IG-02 coverage proves receipt-gated acknowledgement, multi-chunk
 receipt-write crash recovery, surviving-effect tamper rejection, replay after a
 crash before queue acknowledgement, corrupt/foreign receipt retry, crash before
-canonical write, Claude and Codex worker golden paths, lock timeout,
-deleted/corrupt transcript dead-lettering, invalid project handling, conflict
-retry and queue identity path/semantic containment. Existing runtime tests
-cover duplicate delivery, lease recovery, rewrites, service draining and review
-recovery.
+canonical write, Claude and Codex worker golden paths, StateStore golden and
+lifecycle replay, lock timeout, deleted/corrupt transcript dead-lettering,
+invalid project handling, conflict retry, cross-project memory rejection,
+state/review provenance binding, effect-list tamper rejection and queue
+identity path/semantic containment. Existing runtime tests cover duplicate
+delivery, lease recovery, rewrites, service draining and review recovery.
 
 ## TESTS EXECUTED
 
@@ -57,13 +60,9 @@ All local results below were run against the exact implementation revision
 shown above (temporary test directories were outside the repository or removed
 afterward):
 
-* IG-02 + queue + event/evidence + PRE-13 focused suite: **102 passed**;
-* non-integration regression excluding the two IG01-B/E files whose local
-  private-fixture lifecycle requires separate cleanup: **747 passed, 3 skipped,
-  42 deselected**;
-* IG01-B corpus suite: **6 passed**;
-* IG01-E audit suite: **7 passed**;
-* integration/graduation regression: **42 passed, 763 deselected**;
+* IG-02 + queue focused suite at the exact head: **39 passed**;
+* non-integration regression: **774 passed, 3 skipped, 42 deselected**;
+* integration/graduation regression: **42 passed, 777 deselected**;
 * `compileall` for `brain_eleven`, `evals` and `tests`: **PASS**;
 * `git diff --check`: **PASS**;
 * bundled local runtime has no `flake8` or `bandit` modules; those gates ran in
@@ -71,8 +70,8 @@ afterward):
 
 ## REMOTE CI
 
-* Validation run [34381739251](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34381739251), head `3404a9b2e3e5681fe3aca38cb6597e28bf95d20d`: **SUCCESS**. Ubuntu/Windows unit, integration, coverage, context privacy, evaluation smoke, IG01-B/C/D/E, router/authority/compiler smoke, Bandit, secret detection, dependency security, Docker image security and Phase 14 evidence passed; master-only public/evidence suites were skipped by their declared branch policy.
-* PRE-13 runtime run [34381739315](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34381739315), same head: overall **FAILURE** only because the historical `quality` job failed; Ubuntu and Windows runtime jobs **PASS**.
+* Validation run [34387725841](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34387725841), head `72a8475a8d01d50a632f25c23f1fc8a507053c42`: **SUCCESS**. Unit Linux/Windows, integration, privacy, evaluation, coverage, Bandit, secrets, dependency, Docker and smoke checks passed.
+* PRE-13 runtime run [34387725837](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34387725837), same head: runtime Ubuntu/Windows and coverage **PASS**; the historical holdout quality job is **FAILURE** and remains visible for later intelligence work.
 * Previous implementation run [34378278695](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34378278695) is retained as historical evidence; it passed Validation before the crash-window fixes.
 
 ## QUALITY METRICS BEFORE / AFTER
@@ -108,33 +107,32 @@ Real-client authenticated autonomous capture is not verified in this local
 environment. The optional semantic provider remains unavailable and the
 historical PRE-13 quality failure remains an intelligence-quality item for
 later packages. Receipt verification persists no memory content; it proves the
-exact operation receipt, request identity, decision correspondence and
-surviving effect IDs.
+exact operation receipt, request identity, project/evidence binding, decision
+correspondence and surviving effect IDs.
 
 ## OPEN FAILURES
 
-No new IG-02 P0 or unexplained local runtime failure is open. The PRE-13
-historical quality failure is intentionally retained. Exact-head remote CI and
-independent read-only re-review are pending; until both return accepted results,
-IG-02 is not accepted and IG-04 cannot start.
+No new IG-02 P0/P1 or unexplained local runtime failure is open. The PRE-13
+historical quality failure is intentionally retained for later intelligence
+work. IG-02 acceptance is closed; IG-04 remains unopened by the program order.
 
 ## INDEPENDENT REVIEW
 
-The prior read-only review returned `FIX-FIRST` at 5/10 for the crash window
-and receipt/identity gaps. A fresh read-only re-review is required for exact
-head `3404a9b2e3e5681fe3aca38cb6597e28bf95d20d` after remote CI completes.
-Self-review is not counted as independent.
+The prior read-only reviews returned `FIX-FIRST` while identifying and closing
+crash-window, canonical-effect, memory/state/review identity and privacy-format
+gaps. The final independent read-only re-review is bound to exact head
+`72a8475a8d01d50a632f25c23f1fc8a507053c42` and returned **SHIP / 9/10**;
+self-review is not counted as independent.
 
 ## SCORE BEFORE / AFTER
 
-* Capture runtime infrastructure: **7.5/10 → pending reviewer score**;
+* Capture runtime infrastructure: **7.5/10 → 9/10**;
 * Persistence/concurrency and scope safety are unchanged by this package;
 * Extraction, correction, retrieval, context and daily-use scores are not
   increased by IG-02.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED** pending independent read-only review. If the
-reviewer returns `SHIP`, the documentation closure will change this verdict to
-`SHIP`; if it returns `FIX-FIRST` or `RETHINK`, IG-02 remains open and no IG-04
-implementation begins.
+**SHIP** — exact-head local and remote evidence passed, and the independent
+read-only reviewer returned `SHIP / 9/10`. Phase 20 remains FROZEN / LOCKED and
+IG-04 is not opened in this execution.
