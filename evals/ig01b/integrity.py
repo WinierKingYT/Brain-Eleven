@@ -15,7 +15,7 @@ from .schema import LANGUAGES, PHENOMENA, load_cases
 # Immutable review baseline for ig-eval-v1.  A changed holdout must create a
 # new corpus version and a new pinned constant; editing the manifest alone
 # cannot make a changed holdout pass CI.
-PINNED_HOLDOUT_SHA256 = "dd2519cdab6c25d4e3bb607f0a4dce214175ad608c91b2ce0cb9db82ed6e0cee"
+PINNED_HOLDOUT_SHA256 = "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b"
 
 PRIVATE_MARKERS = ("evals/ig01b/private", ".test-tmp", "PRIVATE_REALISTIC")
 SECRET_PATTERNS = (

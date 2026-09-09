@@ -196,7 +196,9 @@ def all_cases() -> list[dict[str, Any]]:
 def _write_jsonl(path: Path, cases: list[dict[str, Any]]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(case, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n" for case in cases)
-    path.write_text(text, encoding="utf-8")
+    # Use explicit LF bytes so the pinned digest is portable across Windows
+    # and Linux checkouts.
+    path.write_bytes(text.encode("utf-8"))
     # Hash the bytes actually persisted (Windows may translate newlines).
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -216,7 +218,7 @@ def generate(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
         "phenomena": list(PHENOMENA), "languages": sorted(LANGUAGES),
         "change_log": [{"version": CORPUS_VERSION, "change": "Initial IG01-B public synthetic corpus."}],
     }
-    (root / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    (root / "manifest.json").write_bytes((json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     return manifest
 
 

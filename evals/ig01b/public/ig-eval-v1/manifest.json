@@ -9,14 +9,14 @@
   "corpus_version": "ig-eval-v1",
   "dataset_class": "PUBLIC_SYNTHETIC",
   "file_sha256": {
-    "abstention": "47a27465e3de237932a73a8257307d0d7e6e6653a4b0c3e3349dbe7bed8edf9a",
-    "dev": "e8da67152c4cd2ae952656a18d17287d8299cb740fea50d8c5aa8d27acfc8f91",
-    "holdout": "dd2519cdab6c25d4e3bb607f0a4dce214175ad608c91b2ce0cb9db82ed6e0cee",
-    "validation": "e5099d4dabd34dea5f56481030b22b8f89b9aae015afd476071330e6144b83ac"
+    "abstention": "5fa3ad6845866a1f2ffab70a5d0ee89fb7712faaa154ca90327a6a6a466b3ea9",
+    "dev": "920f73690d56257151cd5d123d4c0afd95ae3fc4fcbfc189b94645d095731074",
+    "holdout": "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b",
+    "validation": "3dd27ceb6d113c493aaedbbff78cb35406c929c56e61f353321bf6d4cceb2184"
   },
   "generator": "ig01b-model-a-deterministic-template-v1",
   "holdout_double_labeled": 39,
-  "holdout_sha256": "dd2519cdab6c25d4e3bb607f0a4dce214175ad608c91b2ce0cb9db82ed6e0cee",
+  "holdout_sha256": "e1231392b827dce31ce3b7872868f983240db64876c815840772c22814c6f61b",
   "inter_annotator_disagreement_rate": 0.0,
   "label_owner": "ig01b-double-label-review",
   "languages": [
