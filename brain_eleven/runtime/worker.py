@@ -175,6 +175,9 @@ class Worker:
             items = value.get(field, [])
             if not isinstance(items, list) or len(items) > 10000 or not all(isinstance(item, str) and item for item in items):
                 raise WorkerProcessingError('CAPTURE_RECEIPT_CORRUPT')
+        if (len(value['canonical_operation_ids']) != value['canonical_effect_count']
+                or len(value['review_effect_ids']) != value['review_effect_count']):
+            raise WorkerProcessingError('CAPTURE_RECEIPT_CORRUPT')
         checkpoint_key = value.get('checkpoint_key')
         expected_checkpoint = self._checkpoint_for(job).name
         if checkpoint_key != expected_checkpoint:
@@ -210,6 +213,9 @@ class Worker:
             'at': now(),
         }
         if any(isinstance(receipt[field], bool) or receipt[field] < 0 for field in ('evidence_count', 'canonical_effect_count', 'review_effect_count')):
+            raise WorkerProcessingError('CAPTURE_RECEIPT_INVALID')
+        if (len(receipt['canonical_operation_ids']) != receipt['canonical_effect_count']
+                or len(receipt['review_effect_ids']) != receipt['review_effect_count']):
             raise WorkerProcessingError('CAPTURE_RECEIPT_INVALID')
         write_json(self._receipt_path(job['job_id']), receipt)
         return receipt
