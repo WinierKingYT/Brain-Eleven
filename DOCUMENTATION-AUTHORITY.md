@@ -1,6 +1,6 @@
 # Documentation authority
 
-Authority: **CURRENT**. Updated: 2026-09-08. This registry classifies documentation;
+Authority: **CURRENT**. Updated: 2026-09-09. This registry classifies documentation;
 it does not make personal notes canonical MemoryStore or StateStore records.
 
 ## Reading and precedence
@@ -35,7 +35,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-A-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-A; its `SHIP` verdict and `ig01a-ship` tag close IG01-A. |
 | `IG01-B-CORPUS-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG01-B corpus, ground-truth, provenance and privacy boundary; it does not authorize evaluator or production changes. |
 | `IG01-B-PRIOR-ART.md` | GENERATED EVIDENCE / targeted read-only prior-art input for corpus design; it does not authorize production changes. |
-| `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; remains `FIX-FIRST / NOT ACCEPTED` until exact-revision CI and independent review return `SHIP`. |
+| `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; exact revision `6cb4e2b584addf7ac66aa5330266c80db096c5c2` has independent `SHIP`. |
+| `IG01-B-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG01-B; bound to reviewed head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
 | `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
 | `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |

@@ -1,7 +1,7 @@
 # IG01-B Package Report — Corpus & Ground Truth
 
 **PACKAGE:** IG01-B  
-**REVISION:** pending implementation commit (exact SHA will be recorded before review)  
+**REVISION:** `6cb4e2b584addf7ac66aa5330266c80db096c5c2` (reviewed exact head)
 **OBJECTIVE:** Build a versioned, answerability-aware, privacy-safe corpus and ground truth for IG01-C without changing production intelligence.
 
 ## Scope decision
@@ -25,7 +25,8 @@ promote V2, or change Phase 20.
 - `evals/ig01b/failures/manifest.json`
 - `tests/test_ig01b_corpus.py`
 - `.github/workflows/test.yml`
-- `PROJECT-STATUS.md`, `DOCUMENTATION-AUTHORITY.md`
+- `README.md`, `PROJECT-STATUS.md`, `DOCUMENTATION-AUTHORITY.md`,
+  `IG01-B-INDEPENDENT-REVIEW.md`
 
 ## Root causes addressed
 
@@ -58,6 +59,26 @@ standalone public-corpus integrity check. The local host does not expose the
 pytest executable; the complete `tests/test_ig01b_corpus.py` gate is therefore
 delegated to the revision-bound GitHub Validation workflow. No local pytest
 result is claimed here.
+
+## Revision-bound remote evidence
+
+- **Validation:** [run 34318819192](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34318819192), exact head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`; Ubuntu/Windows unit, IG01-B corpus integrity, integration, context privacy, evaluation/task/router/authority/compiler smoke, coverage, Phase-14 evidence, Bandit, secret, dependency and Docker gates all passed.
+- **Runtime:** [run 34318819175](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34318819175), exact same head; Ubuntu and Windows runtime jobs passed. The historical PRE-13 quality job remains failed against its frozen holdout and is retained as a visible next-package intelligence limitation.
+- **Reproducibility:** generator output was written to a temporary directory and matched the tracked v2 manifest and holdout SHA `8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1`.
+
+## Acceptance fields
+
+- **LOCAL TESTS:** PASS — exact-head compile/import, public integrity, private
+  boundary, sanitized-failure boundary and deterministic regeneration checks.
+- **REMOTE CI:** PASS — Validation `34318819192` at exact head.
+- **RUNTIME CI:** PASS — runtime Ubuntu/Windows jobs in `34318819175`; the
+  historical PRE-13 quality failure is retained separately.
+- **SECURITY:** PASS — Bandit, secret, dependency and Docker gates.
+- **CLIENT TRUST:** NOT APPLICABLE to IG01-B corpus work; no client or runtime
+  configuration was changed.
+- **QUALITY FAILURE RETAINED:** PRE-13 frozen holdout quality job remains
+  visible as a later evaluator/intelligence limitation.
+- **OPEN P0:** none. **OPEN P1:** none for IG01-B.
 
 ## Quality metrics before / after
 
@@ -95,23 +116,27 @@ runtime paths are unchanged; Phase 20 remains `FROZEN / LOCKED` and V2 remains
 
 ## Open failures
 
-Until the final exact commit has green remote corpus CI and an independent
-read-only review, IG01-B remains **FIX-FIRST / NOT ACCEPTED**. Historical PRE-13
-holdout quality failures remain visible and are not reclassified by this data
-package.
+No open IG01-B P0/P1 failure remains. The historical PRE-13 holdout quality
+failure remains visible and is not reclassified by this data package; it is a
+later evaluator/intelligence concern.
 
 ## Independent review
 
-Pending. Reviewer must inspect this contract, all generated files, hash pin,
-privacy boundary, CI job, prior-art report and package scope from the exact
-commit, and return only `SHIP`, `FIX-FIRST` or `RETHINK`.
+Independent read-only review: [IG01-B independent review](IG01-B-INDEPENDENT-REVIEW.md)
+checked exact head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`, corpus/schema,
+evidence-derived annotator B, holdout pin/tag, privacy boundaries, prior-art,
+CI and package scope. Verdict: **SHIP**. The synthetic double-label agreement
+is process-level independent code-path evidence, not human annotator agreement;
+that limitation remains recorded above.
 
 ## Score before / after
 
-Evaluation quality: **4/10 → pending review**. Other intelligence scores are
-unchanged by this package.
+Evaluation quality: **4/10 → 9/10** for the contract/corpus foundation. This
+does not increase task understanding, extraction, correction, retrieval,
+context or daily-use intelligence scores; those remain unchanged until their
+own packages produce evidence.
 
 ## Verdict
 
-**FIX-FIRST / NOT ACCEPTED** until exact-revision CI and independent review are
-complete. IG01-C and all production intelligence work remain closed.
+**SHIP**. IG01-C evaluator implementation, production intelligence work,
+V2 promotion and Phase 20 remain closed.
