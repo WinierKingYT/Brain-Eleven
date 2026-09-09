@@ -19,7 +19,7 @@ require matching content, provider, model and dimension provenance. This is
 reliability work completed inside IG-00; it does not alter the IG-01
 measurement-only boundary or the Phase 20 lock.
 
-IG01-B currently owns the versioned `ig-eval-v1` public corpus under
+IG01-B currently owns the versioned `ig-eval-v2` public corpus under
 `evals/ig01b/`: 153 answerable cases across 17 phenomena and three language
 strata, a separate six-case abstention set, a 39-case double-labeled holdout,
 an immutable holdout hash, a guarded local-only private mechanism, and an empty

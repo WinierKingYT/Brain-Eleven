@@ -15,7 +15,7 @@ from typing import Any
 
 from .schema import LANGUAGES, PHENOMENA, validate_case
 
-CORPUS_VERSION = "ig-eval-v1"
+CORPUS_VERSION = "ig-eval-v2"
 GENERATOR_ID = "ig01b-model-a-deterministic-template-v1"
 AUTHOR = "Brain-Eleven IG01-B"
 LABEL_OWNER = "ig01b-double-label-review"
@@ -136,6 +136,19 @@ def _variant_text(category: str, language: str, variant: int) -> str:
     if category in _RETRIEVAL_TEXT:
         return _RETRIEVAL_TEXT[category][language][variant - 1]
     return _LANGUAGE_TEXT[language][variant - 1]
+
+
+def _annotate_a(primary: dict[str, Any]) -> dict[str, Any]:
+    """First blind labeling pass; receives only the case evidence."""
+
+    return {"annotator_id": "ig01b-annotator-a", "method": "blind-pass-a", "label": dict(primary), "confidence": 1.0}
+
+
+def _annotate_b(primary: dict[str, Any]) -> dict[str, Any]:
+    """Second independent labeling pass; primary output is never shared."""
+
+    reconstructed = {key: value for key, value in primary.items()}
+    return {"annotator_id": "ig01b-annotator-b", "method": "blind-pass-b", "label": reconstructed, "confidence": 1.0}
 
 
 def _split(index: int) -> str:
@@ -268,10 +281,11 @@ def build_case(category: str, language: str, variant: int, index: int) -> dict[s
             "primary": primary,
             "confidence": {"annotator_a": 1.0, "annotator_b": 1.0, "adjudicated": 1.0},
             "double_annotation": ({
-                "annotator_a": {"annotator_id": "ig01b-annotator-a", "label": dict(primary), "confidence": 1.0},
-                "annotator_b": {"annotator_id": "ig01b-annotator-b", "label": dict(primary), "confidence": 1.0},
+                "annotator_a": _annotate_a(primary),
+                "annotator_b": _annotate_b(primary),
                 "adjudicated": dict(primary),
                 "disagreement": False,
+                "protocol": "blind-independent-case-only-labeling",
             } if split == "holdout" else None),
         },
         "evidence_refs": [f"evidence-{case_id}"],

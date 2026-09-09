@@ -20,7 +20,7 @@ promote V2, or change Phase 20.
 - `evals/ig01b/integrity.py`
 - `evals/ig01b/private.py`
 - `evals/ig01b/failures.py`
-- `evals/ig01b/public/ig-eval-v1/**`
+- `evals/ig01b/public/ig-eval-v2/**`
 - `evals/ig01b/failures/manifest.json`
 - `tests/test_ig01b_corpus.py`
 - `.github/workflows/test.yml`
@@ -36,7 +36,7 @@ not provide the required `validation` split.
 
 ## Corpus evidence
 
-- `PUBLIC_SYNTHETIC`, version `ig-eval-v1`: **153 answerable** cases, **17
+- `PUBLIC_SYNTHETIC`, version `ig-eval-v2`: **153 answerable** cases, **17
   phenomena × 3 languages × 3 cases**, split into `dev=76`, `validation=38`,
   `holdout=39`.
 - Separate abstention set: **6 unanswerable** cases; excluded from normal
@@ -84,8 +84,9 @@ runtime paths are unchanged; Phase 20 remains `FROZEN / LOCKED` and V2 remains
 
 - The public seed is deterministic synthetic data, not dogfood data; realistic
   private cases are intentionally still empty.
-- Double labels are identical by construction for this seed. IG-08 sanitized
-  failures and richer human disagreement will be added in their own packages.
+- The two holdout labels use separate blind annotation passes and identities;
+  this deterministic synthetic seed happens to agree on every case. Human
+  dogfood disagreement will be added through the IG-08 failure corpus.
 - Full evaluator metrics, baseline snapshots and tuning are explicitly deferred
   to IG01-C.
 

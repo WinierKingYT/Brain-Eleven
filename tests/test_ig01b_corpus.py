@@ -75,6 +75,8 @@ def test_sanitized_failure_ingestion_is_strict_and_reserved_for_ig08(tmp_path: P
     assert path.exists()
     with pytest.raises(ValueError, match="raw prompt"):
         validate_failure_case({**case, "prompt": "private"})
+    with pytest.raises(ValueError, match="raw prompt"):
+        validate_failure_case({**case, "expected": {"conversation": [{"role": "user", "text": "private"}]}})
 
 
 def test_private_realistic_writer_requires_same_ground_truth_schema(tmp_path: Path):

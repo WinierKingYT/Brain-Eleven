@@ -16,7 +16,7 @@ from .schema import LANGUAGES, PHENOMENA, load_cases
 # Immutable review baseline for ig-eval-v1.  A changed holdout must create a
 # new corpus version and a new pinned constant; editing the manifest alone
 # cannot make a changed holdout pass CI.
-PINNED_HOLDOUT_SHA256 = "27bd0157074233736ebd20fad918dde14b7e3f4999f1b58931c9987a23ccc5d2"
+PINNED_HOLDOUT_SHA256 = "8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1"
 
 PRIVATE_MARKERS = ("evals/ig01b/private", ".test-tmp", "PRIVATE_REALISTIC")
 SECRET_PATTERNS = (
@@ -28,7 +28,7 @@ PII_PATTERNS = (
     re.compile(r"(?<![\d-])(?:\+\d[\d ()-]{8,}\d|\(\d{3}\)[\d -]{5,}\d)(?![\d-])"),
     re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
 )
-PINNED_HOLDOUT_TAG = "ig01b-corpus-v1"
+PINNED_HOLDOUT_TAG = "ig01b-corpus-v2"
 
 
 def canonical_jsonl_sha256(path: Path) -> str:
@@ -50,7 +50,7 @@ def verify_holdout_tag(root: Path = PUBLIC_ROOT) -> bool:
     """Compare current holdout bytes with the immutable corpus tag tree."""
 
     repository_root = root.resolve().parents[3]
-    relative = "evals/ig01b/public/ig-eval-v1/holdout.jsonl"
+    relative = f"evals/ig01b/public/{root.name}/holdout.jsonl"
     result = subprocess.run(
         ["git", "show", f"refs/tags/{PINNED_HOLDOUT_TAG}:{relative}"],
         cwd=repository_root,

@@ -37,6 +37,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-B-PRIOR-ART.md` | GENERATED EVIDENCE / targeted read-only prior-art input for corpus design; it does not authorize production changes. |
 | `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; remains `FIX-FIRST / NOT ACCEPTED` until exact-revision CI and independent review return `SHIP`. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
+| `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
+| `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |
 | `evals/ig01b/failures/manifest.json` | CURRENT reservation manifest; sanitized real failures remain empty until IG-08. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `docs/history/**` | Archived phase plans, PRE-package records, Foundation records, phase contracts, phase independent reviews and historical operational guides. Retained for provenance only; never infer current behavior, CI, deployment or runtime connection from them. See per-file notes below. |

@@ -17,7 +17,7 @@ FAILURE_TAXONOMY = frozenset({
     "FALSE_SUPERSESSION", "RETRIEVAL_MISS", "RETRIEVAL_NOISE", "AUTHORITY_ERROR",
     "STALE_CONTEXT", "TOKEN_WASTE",
 })
-RAW_FIELDS = frozenset({"prompt", "transcript", "memory_content", "token", "secret", "raw_text", "query"})
+RAW_FIELDS = frozenset({"prompt", "transcript", "memory_content", "token", "secret", "raw_text", "query", "conversation", "text", "content"})
 REQUIRED_FIELDS = frozenset({
     "failure_id", "taxonomy", "corpus_version", "sanitized", "project_hash",
     "task_hash", "expected", "actual", "root_cause", "provenance", "sanitization",

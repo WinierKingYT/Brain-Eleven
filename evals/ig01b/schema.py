@@ -151,6 +151,8 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
             raise ValueError(f"{case['case_id']} holdout case is not double-labeled")
         if double["annotator_a"].get("annotator_id") == double["annotator_b"].get("annotator_id"):
             raise ValueError(f"{case['case_id']} holdout annotators must be distinct")
+        if double["annotator_a"].get("method") == double["annotator_b"].get("method") or double.get("protocol") != "blind-independent-case-only-labeling":
+            raise ValueError(f"{case['case_id']} holdout independence protocol is incomplete")
         if not double.get("adjudicated") or "disagreement" not in double:
             raise ValueError(f"{case['case_id']} holdout adjudication is incomplete")
 

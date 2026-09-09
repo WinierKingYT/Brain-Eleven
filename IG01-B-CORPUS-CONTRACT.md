@@ -2,7 +2,7 @@
 
 **Status:** CURRENT / BOUNDED CONTRACT  
 **Package:** IG-01-B  
-**Corpus version:** `ig-eval-v1`  
+**Corpus version:** `ig-eval-v2`
 **Scope:** corpus, labels, provenance, privacy and integrity only
 
 IG01-B supplies measurement data for the already shipped IG01-A contract. It
@@ -14,7 +14,7 @@ accepted.
 
 | Class | Location | Status |
 | --- | --- | --- |
-| `PUBLIC_SYNTHETIC` | `evals/ig01b/public/ig-eval-v1/` | versioned and committed |
+| `PUBLIC_SYNTHETIC` | `evals/ig01b/public/ig-eval-v2/` | versioned and committed |
 | `PRIVATE_REALISTIC` | ignored `evals/private/` | local-only mechanism; no committed cases |
 | `SANITIZED_REAL_FAILURE` | `evals/ig01b/failures/` | empty reservation for IG-08 |
 
@@ -26,7 +26,7 @@ or tokens.
 
 ## Public corpus shape
 
-`ig-eval-v1` contains 153 answerable cases: every one of the 17 phenomena and
+`ig-eval-v2` contains 153 answerable cases: every one of the 17 phenomena and
 each of `en`, `tr`, and `tr-en` occurs at least three times. The splits are
 `dev`, `validation`, and `holdout`; the holdout has 39 cases and each holdout
 case has two independent labels plus an adjudicated label. The recorded
@@ -50,16 +50,17 @@ truth labels. Required and forbidden sets are disjoint by schema.
 
 ## Immutability and privacy gates
 
-`holdout.jsonl` is checked against all of:
+The current `ig-eval-v2/holdout.jsonl` is checked against all of:
 
 1. the committed sidecar `holdout.sha256`,
 2. the manifest hash, and
-3. the pinned `PINNED_HOLDOUT_SHA256` constant in `evals/ig01b/integrity.py`.
+3. the pinned `PINNED_HOLDOUT_SHA256` constant in `evals/ig01b/integrity.py`,
+4. the immutable `ig01b-corpus-v2` tag tree.
 
 A holdout edit therefore fails CI; a deliberate change requires a new corpus
 version and a new review/tag. Case IDs and normalized case fingerprints must be
 unique across splits. The integrity checker also scans public bytes for common
-credential/private-key patterns.
+credential/private-key patterns and common email/phone/IP PII forms.
 
 `evals/private/` is ignored by Git and guarded by path checks. The private
 writer validates the same case schema and recursively rejects raw-content
@@ -99,7 +100,7 @@ Run:
 
 ```text
 python -m pytest tests/test_ig01b_corpus.py -q
-python -m evals.ig01b.generator --root evals/ig01b/public/ig-eval-v1
+python -m evals.ig01b.generator --root evals/ig01b/public/ig-eval-v2
 ```
 
 The first command is the CI gate. The second is a deterministic regeneration
