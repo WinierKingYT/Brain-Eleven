@@ -144,6 +144,13 @@ and content-free provider/model/schema identifiers. It has no `MemoryStore`,
 `StateStore` or lifecycle writer capability. Network use is opt-in and never
 implicit in tests.
 
+Its bounded result fields are `status`, `provider_id`, `model`,
+`propositions`, `review_records`, `metadata`, `error_code`, `elapsed_ms` and
+`schema_version`. `metadata` may contain only scalar capability/provenance
+keys (`requested_schema_version`, `project_bound`, provider revision and
+availability codes); it cannot contain prompts, transcripts, credentials or
+writer handles.
+
 The benchmark must run the same extraction cases and labels through:
 
 * the current deterministic extractor control;

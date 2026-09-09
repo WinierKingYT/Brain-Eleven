@@ -83,6 +83,10 @@ _RESERVED_NESTED_KEYS = frozenset(
         "api_key",
     }
 )
+_METADATA_FIELDS = frozenset(
+    {"requested_schema_version", "project_bound", "provider_revision", "availability_code"}
+)
+_REVIEW_FIELDS = frozenset({"case_hash", "reason_code"})
 _QUESTION = re.compile(r"\?|\b(?:should we|could we|shall we|what if|kullansak|yapalım mı|geçelim mi)\b", re.I)
 _HYPOTHETICAL = re.compile(r"\b(?:maybe|perhaps|might|could|we could|we might|consider|belki|olabilir|kullanabiliriz)\b", re.I)
 _QUOTE = re.compile(r"(?:^|\s)[\"'“‘].*[\"'”’](?:$|\s)|\b(?:quoted|quote|alıntı|dokümanda)\b", re.I | re.S)
@@ -108,6 +112,12 @@ class PrefilterResult:
     content_hash: str = ""
     content_length: int = 0
     evidence_flags: tuple[str, ...] = ()
+
+    @property
+    def allowed_to_model(self) -> bool:
+        """Compatibility spelling used by provider callers."""
+
+        return self.allowed
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -146,6 +156,10 @@ class SemanticProposition:
         payload["confidence_components"] = dict(self.confidence_components)
         return payload
 
+    @classmethod
+    def from_mapping(cls, payload: Mapping[str, Any]) -> "SemanticProposition":
+        return build_proposition(payload)
+
 
 @dataclass(frozen=True)
 class ValidationResult:
@@ -169,6 +183,7 @@ class ProviderResult:
     model: str
     propositions: tuple[SemanticProposition, ...] = ()
     review_records: tuple[Mapping[str, Any], ...] = ()
+    metadata: Mapping[str, Any] = field(default_factory=dict)
     error_code: Optional[str] = None
     elapsed_ms: Optional[float] = None
     schema_version: str = SEMANTIC_SCHEMA_VERSION
@@ -178,12 +193,31 @@ class ProviderResult:
             raise ValueError("unknown semantic provider status")
         if not self.provider_id or not self.model:
             raise ValueError("provider_id and model are required")
+        if self.schema_version != SEMANTIC_SCHEMA_VERSION:
+            raise ValueError("unsupported provider schema_version")
         if self.elapsed_ms is not None and (not math.isfinite(float(self.elapsed_ms)) or self.elapsed_ms < 0):
             raise ValueError("elapsed_ms must be finite and non-negative")
         for record in self.review_records:
             if not isinstance(record, Mapping):
                 raise ValueError("review records must be mappings")
+            if set(record) - _REVIEW_FIELDS:
+                raise ValueError("review records contain unknown fields")
             _check_nested(record, field_name="review_record")
+        if not isinstance(self.metadata, Mapping):
+            raise ValueError("provider metadata must be a mapping")
+        if set(self.metadata) - _METADATA_FIELDS:
+            raise ValueError("provider metadata contains unknown fields")
+        _check_nested(self.metadata, field_name="metadata")
+        if any(not isinstance(item, SemanticProposition) for item in self.propositions):
+            raise ValueError("provider propositions must be SemanticProposition objects")
+        identities = [item.candidate_id for item in self.propositions]
+        if len(identities) != len(set(identities)):
+            raise ValueError("provider propositions must not contain duplicate candidate IDs")
+        for item in self.propositions:
+            try:
+                build_proposition(item.to_dict())
+            except PropositionValidationError as error:
+                raise ValueError("provider result contains an invalid proposition") from error
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -192,6 +226,7 @@ class ProviderResult:
             "model": self.model,
             "propositions": [item.to_dict() for item in self.propositions],
             "review_records": [dict(item) for item in self.review_records],
+            "metadata": dict(self.metadata),
             "error_code": self.error_code,
             "elapsed_ms": self.elapsed_ms,
             "schema_version": self.schema_version,
@@ -239,6 +274,8 @@ def _check_nested(value: Any, *, depth: int = 0, field_name: str = "value") -> N
     elif isinstance(value, (list, tuple)):
         for index, child in enumerate(value):
             _check_nested(child, depth=depth + 1, field_name=f"{field_name}[{index}]")
+    elif isinstance(value, float) and not math.isfinite(value):
+        raise PropositionValidationError(f"{field_name} contains a non-finite number")
     elif value is not None and not isinstance(value, (str, int, float, bool)):
         raise PropositionValidationError(f"{field_name} contains an unsupported value")
 
@@ -314,7 +351,13 @@ def build_proposition(payload: Mapping[str, Any]) -> SemanticProposition:
     refs = payload.get("evidence_refs")
     if isinstance(refs, (str, bytes)) or not isinstance(refs, Sequence) or not refs:
         raise PropositionValidationError("evidence_refs must be a non-empty list")
-    evidence_refs = tuple(_string_or_none(item, "evidence_refs item") or "" for item in refs)
+    evidence_refs_list: list[str] = []
+    for item in refs:
+        reference = _string_or_none(item, "evidence_refs item")
+        if reference is None:
+            raise PropositionValidationError("evidence_refs items must be non-empty strings")
+        evidence_refs_list.append(reference)
+    evidence_refs = tuple(evidence_refs_list)
     if len(evidence_refs) != len(set(evidence_refs)):
         raise PropositionValidationError("evidence_refs must not contain duplicates")
     components = payload.get("confidence_components")
@@ -353,11 +396,19 @@ def build_proposition(payload: Mapping[str, Any]) -> SemanticProposition:
         unknown_correction = set(correction) - {"explicit", "old_value", "new_value", "claim_key", "reason"}
         if unknown_correction:
             raise PropositionValidationError("unknown correction fields: " + ",".join(sorted(map(str, unknown_correction))))
+        if "explicit" in correction and not isinstance(correction["explicit"], bool):
+            raise PropositionValidationError("correction.explicit must be boolean")
+        for key in {"old_value", "new_value", "claim_key", "reason"} & set(correction):
+            if not isinstance(correction[key], str) or not correction[key].strip():
+                raise PropositionValidationError(f"correction.{key} must be a non-empty string")
     target = _mapping_or_none(payload.get("target_clues"), "target_clues")
     if target is not None:
         unknown_target = set(target) - {"named_id", "claim_key", "lineage_id", "reference_kind"}
         if unknown_target:
             raise PropositionValidationError("unknown target fields: " + ",".join(sorted(map(str, unknown_target))))
+        for key in {"named_id", "claim_key", "lineage_id", "reference_kind"} & set(target):
+            if not isinstance(target[key], str) or not target[key].strip():
+                raise PropositionValidationError(f"target.{key} must be a non-empty string")
     _check_nested(payload.get("value"), field_name="value")
     _check_nested(temporal, field_name="temporal_scope")
     _check_nested(correction, field_name="correction_clues")
@@ -388,7 +439,9 @@ def validate_proposition(
     """Apply deterministic role, commitment and scope gates."""
 
     try:
-        item = proposition if isinstance(proposition, SemanticProposition) else build_proposition(proposition)
+        # Re-serialize dataclass instances through the strict builder as well;
+        # callers can otherwise construct an unsafe object without validation.
+        item = build_proposition(proposition.to_dict() if isinstance(proposition, SemanticProposition) else proposition)
     except PropositionValidationError:
         return ValidationResult(False, False, True, "INVALID_PROPOSITION")
     commitment = item.commitment.lower()
@@ -425,7 +478,7 @@ def require_valid_proposition(
 ) -> SemanticProposition:
     """Return a parsed proposition or raise on any unsafe provider output."""
 
-    item = proposition if isinstance(proposition, SemanticProposition) else build_proposition(proposition)
+    item = build_proposition(proposition.to_dict() if isinstance(proposition, SemanticProposition) else proposition)
     result = validate_proposition(item, evidence_flags=evidence_flags)
     if not result.valid:
         raise PropositionValidationError(result.reason_code)
@@ -436,7 +489,13 @@ class SemanticProvider(Protocol):
     provider_id: str
     model: str
 
-    def extract(self, message: Any) -> ProviderResult:
+    def extract(
+        self,
+        message: Any,
+        *,
+        project_id: Optional[str] = None,
+        schema_version: str = SEMANTIC_SCHEMA_VERSION,
+    ) -> ProviderResult:
         ...
 
 
@@ -452,13 +511,20 @@ class UnavailableProvider:
         self.model = model
         self.reason = reason
 
-    def extract(self, message: Any) -> ProviderResult:
+    def extract(
+        self,
+        message: Any,
+        *,
+        project_id: Optional[str] = None,
+        schema_version: str = SEMANTIC_SCHEMA_VERSION,
+    ) -> ProviderResult:
         content, _, _, _, _ = _message_fields(message)
         return ProviderResult(
             status=SemanticStatus.SEMANTIC_UNAVAILABLE.value,
             provider_id=self.provider_id,
             model=self.model,
             review_records=(_record_review(content, self.reason),),
+            metadata={"requested_schema_version": schema_version, "project_bound": project_id is not None},
             error_code=self.reason,
         )
 
@@ -472,8 +538,15 @@ class CallableSemanticProvider:
         self._call = call
         self.prefilter = DeterministicSafetyPrefilter()
 
-    def extract(self, message: Any) -> ProviderResult:
-        content, role, project_id, evidence_id, occurred_at = _message_fields(message)
+    def extract(
+        self,
+        message: Any,
+        *,
+        project_id: Optional[str] = None,
+        schema_version: str = SEMANTIC_SCHEMA_VERSION,
+    ) -> ProviderResult:
+        content, role, message_project_id, evidence_id, occurred_at = _message_fields(message)
+        trusted_project_id = project_id if project_id is not None else message_project_id
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
             return ProviderResult(
@@ -494,13 +567,14 @@ class CallableSemanticProvider:
                 if not isinstance(row, Mapping):
                     raise PropositionValidationError("provider proposition must be an object")
                 enriched = dict(row)
-                enriched.setdefault("project_id", project_id)
-                enriched.setdefault("source_role", role)
-                enriched.setdefault("evidence_refs", [evidence_id or prefilter.content_hash])
+                # These fields are evidence authority, never model authority.
+                enriched["project_id"] = trusted_project_id
+                enriched["source_role"] = role
+                enriched["evidence_refs"] = [evidence_id or prefilter.content_hash]
                 enriched.setdefault("temporal_scope", None)
                 enriched.setdefault("correction_clues", None)
                 enriched.setdefault("target_clues", None)
-                enriched.setdefault("schema_version", SEMANTIC_SCHEMA_VERSION)
+                enriched["schema_version"] = schema_version
                 proposition = build_proposition(enriched)
                 validation = validate_proposition(proposition, evidence_flags=prefilter.evidence_flags)
                 if validation.valid:
@@ -513,6 +587,7 @@ class CallableSemanticProvider:
                 model=self.model,
                 propositions=tuple(propositions),
                 review_records=tuple(reviews),
+                metadata={"requested_schema_version": schema_version, "project_bound": trusted_project_id is not None},
             )
         except (PropositionValidationError, TypeError, ValueError, KeyError) as error:
             return ProviderResult(
@@ -534,8 +609,15 @@ class DeterministicRegexProvider:
         self.prefilter = DeterministicSafetyPrefilter()
         self._extraction = load_legacy_module("extraction", "extraction.py")
 
-    def extract(self, message: Any) -> ProviderResult:
-        content, role, project_id, evidence_id, occurred_at = _message_fields(message)
+    def extract(
+        self,
+        message: Any,
+        *,
+        project_id: Optional[str] = None,
+        schema_version: str = SEMANTIC_SCHEMA_VERSION,
+    ) -> ProviderResult:
+        content, role, message_project_id, evidence_id, occurred_at = _message_fields(message)
+        trusted_project_id = project_id if project_id is not None else message_project_id
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
             return ProviderResult(
@@ -554,7 +636,7 @@ class DeterministicRegexProvider:
             claim_type = "observation"
         candidate = SemanticProposition(
             candidate_id="cand_" + hashlib.sha256((evidence_id + content).encode("utf-8")).hexdigest()[:32],
-            project_id=project_id,
+            project_id=trusted_project_id,
             claim_type=claim_type,
             subject=claim_type,
             predicate="asserts",
@@ -564,6 +646,9 @@ class DeterministicRegexProvider:
             source_role=role,
             evidence_refs=(evidence_id or prefilter.content_hash,),
             confidence_components={"deterministic_classification": 1.0},
+            correction_clues=None,
+            target_clues=None,
+            schema_version=schema_version,
         )
         result = validate_proposition(candidate, evidence_flags=prefilter.evidence_flags)
         if not result.valid:
@@ -582,10 +667,10 @@ class DeterministicRegexProvider:
         )
 
 
-def extract_with_provider(provider: SemanticProvider, message: Any) -> ProviderResult:
+def extract_with_provider(provider: SemanticProvider, message: Any, **kwargs: Any) -> ProviderResult:
     """Common entry point used by tests and future benchmark adapters."""
 
-    return provider.extract(message)
+    return provider.extract(message, **kwargs)
 
 
 __all__ = [

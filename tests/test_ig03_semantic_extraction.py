@@ -11,6 +11,8 @@ from brain_eleven.extraction.semantic import (
     PropositionValidationError,
     build_proposition,
     validate_proposition,
+    SemanticProposition,
+    ProviderResult,
 )
 
 
@@ -78,6 +80,13 @@ def test_builder_rejects_unknown_and_nested_authority_fields():
     else:
         raise AssertionError("nested raw content field must be rejected")
 
+    try:
+        build_proposition(_payload(evidence_refs=[None]))
+    except PropositionValidationError:
+        pass
+    else:
+        raise AssertionError("null evidence references must be rejected")
+
 
 def test_validator_is_fail_closed_for_unknown_role_and_prefilter_flags():
     unknown = build_proposition(_payload(source_role="unknown"))
@@ -89,6 +98,42 @@ def test_validator_is_fail_closed_for_unknown_role_and_prefilter_flags():
     flagged_result = validate_proposition(flagged, evidence_flags=("question",))
     assert flagged_result.valid is False
     assert flagged_result.reason_code == "QUESTION_COMMITMENT"
+
+
+def test_direct_proposition_and_provider_result_are_revalidated():
+    unsafe = SemanticProposition(
+        candidate_id="cand-unsafe",
+        project_id="brain-eleven",
+        claim_type="decision",
+        subject="auth",
+        predicate="uses",
+        value={"canonical_commit": True},
+        commitment="explicit",
+        temporal_scope=None,
+        source_role="user",
+        evidence_refs=("evidence-unsafe",),
+        confidence_components={"classification": 1.0},
+    )
+    result = validate_proposition(unsafe)
+    assert result.valid is False
+    try:
+        ProviderResult(status=SemanticStatus.MEASURED.value, provider_id="x", model="y", propositions=(unsafe,))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("ProviderResult must revalidate proposition objects")
+
+
+def test_provider_forces_evidence_authority_fields_over_model_output():
+    def model(_: str):
+        row = _payload(project_id="foreign", source_role="user", evidence_refs=["foreign"])
+        return {"propositions": [row]}
+
+    result = CallableSemanticProvider("model", "test", model).extract(
+        _message("SQLite kullanacağız.", role="assistant", project_id="brain-eleven")
+    )
+    assert result.propositions == ()
+    assert result.review_records
 
 
 def test_callable_provider_never_invoked_for_filtered_content():
