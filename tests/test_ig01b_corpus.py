@@ -83,7 +83,10 @@ def test_private_realistic_writer_requires_same_ground_truth_schema(tmp_path: Pa
     public_case["provenance"]["privacy_status"] = "local-only-sanitized"
     public_case["query_hash"] = "sha256:query"
     public_case.pop("query")
+    public_case.pop("conversation", None)
     path = write_private_case(tmp_path, public_case)
     assert path.parent == (tmp_path / "evals" / "private").resolve()
     with pytest.raises(ValueError, match="PRIVATE_REALISTIC"):
         write_private_case(tmp_path, {**public_case, "dataset_class": "PUBLIC_SYNTHETIC"})
+    with pytest.raises(ValueError, match="raw field"):
+        write_private_case(tmp_path, {**public_case, "conversation": [{"role": "user", "text": "raw"}]})

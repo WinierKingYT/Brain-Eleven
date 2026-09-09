@@ -119,10 +119,11 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
         raise ValueError(f"{case['case_id']} data_lineage.lineage_id is required")
     if case["family"] == "extraction":
         conversation = case.get("conversation")
-        if not isinstance(conversation, list) or not conversation:
-            raise ValueError(f"{case['case_id']} extraction case needs conversation turns")
-        if any(not isinstance(turn, dict) or turn.get("role") not in {"user", "assistant", "system"} or not isinstance(turn.get("text"), str) or not turn["text"].strip() for turn in conversation):
-            raise ValueError(f"{case['case_id']} has invalid conversation turn")
+        if case["dataset_class"] != "PRIVATE_REALISTIC":
+            if not isinstance(conversation, list) or not conversation:
+                raise ValueError(f"{case['case_id']} extraction case needs conversation turns")
+            if any(not isinstance(turn, dict) or turn.get("role") not in {"user", "assistant", "system"} or not isinstance(turn.get("text"), str) or not turn["text"].strip() for turn in conversation):
+                raise ValueError(f"{case['case_id']} has invalid conversation turn")
         expected = case.get("expected")
         forbidden = case.get("forbidden")
         if not isinstance(expected, dict) or not isinstance(forbidden, dict):
@@ -133,9 +134,9 @@ def validate_case(case: dict[str, Any], *, expected_class: str | None = None) ->
         for field in ("canonical_commit", "wrong_type", "false_commitment"):
             if field not in forbidden:
                 raise ValueError(f"{case['case_id']} forbidden.{field} is required")
-        if case["category"] == "assistant_proposal" and conversation[0]["role"] != "assistant":
+        if case["dataset_class"] != "PRIVATE_REALISTIC" and case["category"] == "assistant_proposal" and conversation[0]["role"] != "assistant":
             raise ValueError(f"{case['case_id']} assistant proposal must have assistant source role")
-        if case["category"] == "quoted_material" and expected["source_role"] != "quoted_external":
+        if case["dataset_class"] != "PRIVATE_REALISTIC" and case["category"] == "quoted_material" and expected["source_role"] != "quoted_external":
             raise ValueError(f"{case['case_id']} quoted material needs quoted_external source role")
     labels = case["labels"]
     if not isinstance(labels, dict) or not labels.get("primary"):
