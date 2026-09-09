@@ -38,13 +38,18 @@ _STATE_OPERATION_RECEIPTS = {
 }
 _STATE_RECEIPT_RECORDS = {
     'blocker_added': ('blk_', frozenset({'ACTIVE', 'RESOLVED'})),
-    'blocker_resolved': ('blk_', frozenset({'ACTIVE', 'RESOLVED'})),
+    'blocker_resolved': ('blk_', frozenset({'RESOLVED'})),
     'milestone_set': ('mil_', frozenset({'PLANNED', 'ACTIVE', 'BLOCKED', 'COMPLETED', 'CANCELLED'})),
     'work_item_added': ('wrk_', frozenset({'TODO', 'ACTIVE', 'BLOCKED', 'DONE', 'DROPPED'})),
     'objective_set': ('obj_', frozenset({'ACTIVE'})),
     'requirement_added': ('req_', frozenset({'ACTIVE', 'RESOLVED', 'CANCELLED'})),
-    'requirement_resolved': ('req_', frozenset({'ACTIVE', 'RESOLVED', 'CANCELLED'})),
+    'requirement_resolved': ('req_', frozenset({'RESOLVED'})),
 }
+_REVIEW_REASONS = frozenset({
+    'LIFECYCLE_TARGET_UNKNOWN', 'REVIEW_REQUIRED', 'MODEL_PROPOSAL',
+    'LOW_EVIDENCE_COMMITMENT', 'SCOPE_ERROR', 'DEGRADED',
+})
+_REVIEW_SOURCE_FIELDS = frozenset({'client', 'session_hash', 'evidence_id', 'role'})
 
 
 class WorkerProcessingError(RuntimeError):
@@ -260,6 +265,10 @@ class Worker:
             str(item.get('memory_id') or item.get('id')): item
             for item in memories if isinstance(item, dict) and (item.get('memory_id') or item.get('id'))
         }
+        expected_effect_ids = []
+        if (len(operation_ids) != len(set(operation_ids))
+                or len(review_ids) != len(set(review_ids))):
+            return False
         for operation_id in operation_ids:
             memory_receipt = memory_receipts.get(operation_id) if isinstance(memory_receipts, dict) else None
             if isinstance(memory_receipt, dict):
@@ -290,6 +299,15 @@ class Worker:
                         return False
                     if action == 'SUPERSEDE_EXISTING' and (target is None or str(target.get('status')).lower() != 'superseded'):
                         return False
+                    if action in {'NEW', 'SUPERSEDE_EXISTING'}:
+                        effect_id = decision.get('successor_memory_id')
+                    elif action in {'DUPLICATE', 'CONFIRM_EXISTING', 'RESOLVE_EXISTING'}:
+                        effect_id = decision.get('target_memory_id')
+                    else:
+                        return False
+                    if not isinstance(effect_id, str) or not effect_id:
+                        return False
+                    expected_effect_ids.append(effect_id)
                 continue
             state_receipt = state_receipts.get(operation_id) if isinstance(state_receipts, dict) else None
             if not isinstance(state_receipt, dict):
@@ -309,6 +327,7 @@ class Worker:
                     return False
                 if not self._state_record_exists(project, record_id):
                     return False
+            expected_effect_ids.extend(record_ids)
         for review_id in review_ids:
             try:
                 item = read_json(self.review.path(review_id))
@@ -325,11 +344,21 @@ class Worker:
                 return False
             if not isinstance(source, dict) or not isinstance(source.get('evidence_id'), str) or not source['evidence_id']:
                 return False
+            if item.get('reason') not in _REVIEW_REASONS or set(source) - _REVIEW_SOURCE_FIELDS:
+                return False
+            if source.get('client') not in {'claude', 'codex'} or source.get('role') not in {'user', 'assistant', 'tool', 'system'}:
+                return False
             references = candidate.get('evidence_refs')
             if not isinstance(references, list) or source['evidence_id'] not in references:
                 return False
             if any(field in item or field in candidate for field in ('raw_prompt', 'prompt_content', 'transcript_content', 'token')):
                 return False
+            expected_effect_ids.append(review_id)
+        actual_effect_ids = receipt.get('effect_ids')
+        if (not isinstance(actual_effect_ids, list)
+                or len(actual_effect_ids) != len(expected_effect_ids)
+                or sorted(actual_effect_ids) != sorted(expected_effect_ids)):
+            return False
         return True
 
     @staticmethod

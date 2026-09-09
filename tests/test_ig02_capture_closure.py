@@ -289,6 +289,26 @@ def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, mo
     assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 
 
+def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    enqueue(vault, "claude", {"session_id": "tampered-review-source", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    review_path = next((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"))
+    review = read_json(review_path)
+    review["source"]["raw_prompt"] = "must never be persisted"
+    write_json(review_path, review)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
 def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
     path = _transcript(tmp_path, "The build is currently failing.")
@@ -562,6 +582,26 @@ def test_replay_rejects_tampered_memory_operation_receipt(runtime, tmp_path, mon
     operation_id = next(iter(document["operation_receipts"]))
     document["operation_receipts"][operation_id]["decisions"] = []
     write_json(MemoryStore(vault).path, document)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
+def test_replay_rejects_tampered_memory_effect_ids(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "tampered-memory-effects", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    receipt_path = next((vault / ".brain-eleven" / "runtime" / "capture-receipts").glob("*.json"))
+    receipt = read_json(receipt_path)
+    receipt["effect_ids"] = ["mem_forged_effect"]
+    write_json(receipt_path, receipt)
     monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
 
     result = worker.once()
