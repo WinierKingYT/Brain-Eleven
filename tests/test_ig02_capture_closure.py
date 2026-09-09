@@ -11,7 +11,7 @@ from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity
 from brain_eleven.runtime.worker import Worker, enqueue
-from brain_eleven.state import StateService, StateStoreConflict
+from brain_eleven.state import StateService, StateStore, StateStoreConflict
 from evidence import EvidenceBatch
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
 from capture_queue import CaptureQueue
@@ -229,6 +229,91 @@ def test_codex_worker_golden_path_records_verified_effect(runtime, tmp_path):
     assert result["effect_verified"] is True
     assert result["canonical_effect_count"] == 1
     assert len(MemoryStore(vault).load()["validated_memory"]) == 1
+
+
+def test_state_mutation_worker_golden_path_records_verified_effect(runtime, tmp_path):
+    vault, project_id = runtime
+    path = _transcript(tmp_path, "The build is currently failing.")
+
+    enqueue(vault, "claude", {"session_id": "state-golden", "cwd": str(vault), "transcript_path": str(path)})
+    result = Worker(vault).once()
+
+    assert result["status"] == "PROCESSED"
+    assert result["effect_verified"] is True
+    assert result["canonical_effect_count"] == 1
+    state = StateStore(vault).load()
+    project = state["projects"][project_id]
+    assert len(project["blockers"]) == 1
+    blocker_id = project["blockers"][0]["id"]
+    assert result["effect_ids"] == [blocker_id]
+    operation_id = result["canonical_operation_ids"][0]
+    assert state["operation_receipts"][operation_id]["operation"] == "blocker_added"
+
+
+def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    enqueue(vault, "claude", {"session_id": "missing-review", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    review_path = next((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"), None)
+    assert review_path is not None
+    review_path.unlink()
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
+def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
+    vault, project_id = runtime
+    path = _transcript(tmp_path, "The build is currently failing.")
+    enqueue(vault, "claude", {"session_id": "missing-state", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    state_path = StateStore(vault).path
+    state = StateStore(vault).load()
+    state["projects"][project_id]["blockers"] = []
+    write_json(state_path, state)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
+@pytest.mark.parametrize(
+    ("text", "receipt_field"),
+    [
+        ("We decided to use SQLite for persistent storage.", "canonical_operation_ids"),
+        ("Maybe we should use SQLite for storage.", "review_effect_ids"),
+    ],
+)
+def test_replay_rejects_receipt_count_list_tampering(runtime, tmp_path, monkeypatch, text, receipt_field):
+    vault, _ = runtime
+    path = _transcript(tmp_path, text)
+    enqueue(vault, "claude", {"session_id": "count-tamper-" + receipt_field, "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    receipt_path = next((vault / ".brain-eleven" / "runtime" / "capture-receipts").glob("*.json"))
+    receipt = read_json(receipt_path)
+    receipt[receipt_field] = []
+    write_json(receipt_path, receipt)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CAPTURE_RECEIPT_CORRUPT"
 
 
 def test_worker_lock_timeout_is_bounded(runtime, tmp_path, monkeypatch):

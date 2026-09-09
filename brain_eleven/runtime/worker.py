@@ -24,6 +24,19 @@ from .model import propose
 
 CAPTURE_RECEIPT_SCHEMA_VERSION = 2
 
+# StateBoundary proposals use extraction operation names while StateStore
+# receipts intentionally use semantic mutation names.  Keep the translation
+# explicit so receipt verification binds to the actual canonical contract.
+_STATE_OPERATION_RECEIPTS = {
+    'ADD_BLOCKER': 'blocker_added',
+    'RESOLVE_BLOCKER': 'blocker_resolved',
+    'SET_CURRENT_PHASE': 'milestone_set',
+    'ADD_WORK_ITEM': 'work_item_added',
+    'SET_OBJECTIVE': 'objective_set',
+    'ADD_REQUIREMENT': 'requirement_added',
+    'RESOLVE_REQUIREMENT': 'requirement_resolved',
+}
+
 
 class WorkerProcessingError(RuntimeError):
     """A content-free processing failure that must keep the queue retryable."""
@@ -225,6 +238,10 @@ class Worker:
         operation_ids = receipt.get('canonical_operation_ids', [])
         if not isinstance(operation_ids, list):
             return False
+        review_ids = receipt.get('review_effect_ids', [])
+        if not isinstance(review_ids, list):
+            return False
+        project_id = job['event']['project']['project_id']
         memory_doc = MemoryStore(self.vault).load()
         memory_receipts = memory_doc.get('operation_receipts', {})
         state_doc = StateStore(self.vault).load()
@@ -258,11 +275,57 @@ class Worker:
             state_receipt = state_receipts.get(operation_id) if isinstance(state_receipts, dict) else None
             if not isinstance(state_receipt, dict):
                 return False
-            if state_receipt.get('project_id') != job['event']['project']['project_id']:
+            if state_receipt.get('project_id') != project_id:
                 return False
-            if not isinstance(state_receipt.get('record_ids'), list):
+            record_ids = state_receipt.get('record_ids')
+            if not isinstance(record_ids, list) or not record_ids:
+                return False
+            project = state_doc.get('projects', {}).get(project_id)
+            if not isinstance(project, dict):
+                return False
+            for record_id in record_ids:
+                if record_id not in receipt.get('effect_ids', []):
+                    return False
+                if not self._state_record_exists(project, record_id):
+                    return False
+        for review_id in review_ids:
+            try:
+                item = read_json(self.review.path(review_id))
+            except (OSError, ValueError, TypeError):
+                return False
+            if not isinstance(item, dict) or item.get('id') != review_id or item.get('status') != 'PENDING':
+                return False
+            candidate = item.get('candidate')
+            source = item.get('source')
+            if not isinstance(candidate, dict) or candidate.get('project_id') != project_id:
+                return False
+            if not isinstance(source, dict) or not isinstance(source.get('evidence_id'), str) or not source['evidence_id']:
+                return False
+            references = candidate.get('evidence_refs')
+            if not isinstance(references, list) or source['evidence_id'] not in references:
+                return False
+            if any(field in item or field in candidate for field in ('raw_prompt', 'prompt_content', 'transcript_content', 'token')):
                 return False
         return True
+
+    @staticmethod
+    def _state_record_exists(project, record_id):
+        """Return whether a state receipt's record still exists in its project."""
+        if not isinstance(record_id, str) or not record_id:
+            return False
+        current = project.get('current') if isinstance(project, dict) else None
+        if isinstance(current, dict):
+            for record in current.values():
+                if isinstance(record, dict) and record.get('id') == record_id:
+                    return True
+        if isinstance(project, dict):
+            for collection in ('requirements', 'work_items', 'blockers', 'constraints', 'risks'):
+                records = project.get(collection)
+                if isinstance(records, list) and any(
+                    isinstance(record, dict) and record.get('id') == record_id for record in records
+                ):
+                    return True
+        return False
 
     def _checkpoint_for(self, job):
         event = job['event']
@@ -284,19 +347,23 @@ class Worker:
         if not isinstance(outcome, dict) or outcome.get('status') != 'SUCCESS':
             return False
         if candidate.get('candidate_type') == 'STATE_MUTATION':
-            receipts = StateStore(self.vault).load().get('operation_receipts', {})
+            state_doc = StateStore(self.vault).load()
+            receipts = state_doc.get('operation_receipts', {})
             receipt = receipts.get(operation_id) if isinstance(receipts, dict) else None
             record_id = outcome.get('record_id')
             expected_hash = identity('request_', candidate, None)
             record_ids = receipt.get('record_ids') if isinstance(receipt, dict) else None
+            expected_operation = _STATE_OPERATION_RECEIPTS.get(candidate.get('operation'))
+            project = state_doc.get('projects', {}).get(candidate.get('project_id'))
             return (
                 isinstance(receipt, dict)
                 and receipt.get('project_id') == candidate.get('project_id')
-                and receipt.get('operation') == candidate.get('operation')
+                and receipt.get('operation') == expected_operation
                 and receipt.get('request_hash') == expected_hash
                 and isinstance(record_id, str)
                 and isinstance(record_ids, list)
                 and record_id in record_ids
+                and self._state_record_exists(project, record_id)
             )
         receipts = MemoryStore(self.vault).load().get('operation_receipts', {})
         receipt = receipts.get(operation_id) if isinstance(receipts, dict) else None
@@ -480,15 +547,21 @@ class Worker:
                 op_id = identity('op_', candidate['candidate_id'], candidate['project_id'])
                 outcome = apply_candidate(self.vault, candidate, op_id=op_id)
                 if outcome['status'] == 'SUCCESS':
-                    decisions = outcome.get('decisions', [])
-                    if not isinstance(decisions, list):
-                        raise WorkerProcessingError('CANONICAL_RECEIPT_INVALID')
                     if not self._verify_canonical_effect(candidate, outcome, op_id):
                         raise WorkerProcessingError('CANONICAL_EFFECT_UNVERIFIED')
-                    effect_ids.extend(
-                        str(item.get('successor_memory_id') or item.get('target_memory_id') or item.get('candidate_id'))
-                        for item in decisions if isinstance(item, dict)
-                    )
+                    if candidate.get('candidate_type') == 'STATE_MUTATION':
+                        record_id = outcome.get('record_id')
+                        if not isinstance(record_id, str) or not record_id:
+                            raise WorkerProcessingError('CANONICAL_RECEIPT_INVALID')
+                        effect_ids.append(record_id)
+                    else:
+                        decisions = outcome.get('decisions', [])
+                        if not isinstance(decisions, list):
+                            raise WorkerProcessingError('CANONICAL_RECEIPT_INVALID')
+                        effect_ids.extend(
+                            str(item.get('successor_memory_id') or item.get('target_memory_id') or item.get('candidate_id'))
+                            for item in decisions if isinstance(item, dict)
+                        )
                     canonical_effect_count += 1
                     canonical_operation_ids.append(op_id)
                     write_json(self.config.root / 'capture-observations' / (op_id + '.json'), {'operation_id':op_id, 'project_id':project['project_id'],
