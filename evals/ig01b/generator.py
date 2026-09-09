@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .schema import LANGUAGES, PHENOMENA, validate_case
+from .annotator_b import label_case_from_evidence
 
 CORPUS_VERSION = "ig-eval-v2"
 GENERATOR_ID = "ig01b-model-a-deterministic-template-v1"
@@ -147,32 +148,7 @@ def _annotate_a(primary: dict[str, Any]) -> dict[str, Any]:
 def _annotate_b(category: str) -> dict[str, Any]:
     """Second blind pass derived from category/evidence, never primary labels."""
 
-    # This mapping is deliberately separate from the extraction branch above:
-    # it reconstructs the expected label from the case category as an
-    # independent annotator would, then records its own method and identity.
-    label: dict[str, Any] = {"category": category}
-    if category in {"explicit_decision"}:
-        label.update(expected_memory_type="decision", commitment="explicit")
-    elif category in {"preference", "lesson", "requirement"}:
-        label.update(expected_memory_type=category)
-    elif category == "old_critical_decision":
-        label.update(expected_memory_type="decision", temporal="historical-critical")
-    elif category == "wrong_project_candidate":
-        label.update(expected_memory_type="decision", scope="project-local")
-    elif category == "superseded_memory":
-        label.update(expected_memory_type="decision", lifecycle="active-only")
-    elif category == "resolved_blocker":
-        label.update(expected_memory_type="state", lifecycle="resolved-excluded")
-    elif category == "ambiguous_reference":
-        label.update(expected_memory_type="review", abstain=True)
-    elif category == "correction":
-        label.update(expected_memory_type="correction", correction_target="jwt")
-    elif category in {"suggestion", "hypothetical", "question", "negation", "quoted_material", "assistant_proposal"}:
-        label.update(expected_memory_type="no_commitment")
-    elif category == "irrelevant_recent_memory":
-        label.update(expected_memory_type="decision")
-    else:
-        raise ValueError(category)
+    label = label_case_from_evidence(category)
     return {"annotator_id": "ig01b-annotator-b", "method": "blind-pass-b", "label": label, "confidence": 1.0}
 
 
