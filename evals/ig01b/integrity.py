@@ -13,7 +13,7 @@ from typing import Any
 from .generator import CORPUS_VERSION, PUBLIC_ROOT
 from .schema import LANGUAGES, PHENOMENA, load_cases
 
-# Immutable review baseline for ig-eval-v1.  A changed holdout must create a
+# Immutable review baseline for ig-eval-v2.  A changed holdout must create a
 # new corpus version and a new pinned constant; editing the manifest alone
 # cannot make a changed holdout pass CI.
 PINNED_HOLDOUT_SHA256 = "8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1"
