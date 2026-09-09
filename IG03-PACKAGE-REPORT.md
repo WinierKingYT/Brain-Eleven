@@ -2,7 +2,7 @@
 
 **PACKAGE:** IG-03  
 **REVISION:** `092bec9741d2d123adfb18c2ebb2b225e7fb17b8` (exact implementation/test head producing the evidence below; documentation closure is recorded separately)
-**STATUS:** Acceptance evidence complete; independent final review pending
+**STATUS:** ACCEPTED / SHIPPED
 
 ## OBJECTIVE
 
@@ -107,11 +107,12 @@ lowered and the failure was not hidden.
 
 ## INDEPENDENT REVIEW
 
-The prior independent read-only review of the unchanged implementation
-returned **SHIP, 9/10**. A fresh independent read-only review has been
-requested for final exact head `092bec9741d2d123adfb18c2ebb2b225e7fb17b8`,
-including the Windows fingerprint correction and the exact CI evidence. The
-final verdict is recorded only after that reviewer responds.
+Fresh independent read-only review of the final documentation closure
+returned **SHIP, 9/10** at exact documentation head
+`00947a2e6b2664d8b2e6f1af3f394ca6460f6793`. The reviewer verified the exact
+implementation/test head `092bec9741d2d123adfb18c2ebb2b225e7fb17b8`, Windows
+fingerprint correction, Validation/runtime evidence, package boundary and
+Phase 20/V2 locks. P0/P1/P2 findings: none.
 
 ## SCORE BEFORE / AFTER
 
@@ -122,7 +123,7 @@ final verdict is recorded only after that reviewer responds.
 
 ## VERDICT
 
-**PENDING INDEPENDENT REVIEW** — exact-head local and remote validation evidence
-passes, with the historical PRE-13 quality failure retained as a visible
-limitation. IG-02 and Phase 20 remain closed until the fresh reviewer returns
-`SHIP`.
+**SHIP** — exact implementation/test evidence, exact-head Validation CI and
+independent read-only review all pass. The historical PRE-13 quality failure
+remains visible as a later intelligence-quality item. IG-02 may begin its own
+bounded audit/contract sequence; Phase 20 remains `FROZEN / LOCKED`.
