@@ -1,6 +1,6 @@
 # IG-01 Product Evaluation Foundation
 
-**Status:** ACTIVE / IG01-C SHIPPED; IG01-D IN PROGRESS
+**Status:** ACTIVE / IG01-C SHIPPED; IG01-D TECHNICAL SHIP / HUMAN CHECKPOINT PENDING
 **Authority:** CONTRACT
 **Opened from:** `18e88876495db77a2e99ea927f01a2d28c5d9ed6`
 **Branch:** `ig/01-evaluation-foundation`
@@ -61,7 +61,7 @@ under the immutable `ig01b-ship` closure. IG01-C is shipped under its exact
 revision-bound package report and independent `SHIP`; implementation remains
 limited to its approved contract and evidence. IG01-D baseline measurement is
 the next bounded package and is active only for its paired baseline evidence;
-IG01-E remains unopened until IG01-D ships.
+IG01-E remains unopened until IG01-D is fully accepted after its human checkpoint.
 The full program keeps the following order
 after IG-01: IG-03 semantic extraction, IG-02 capture closure, IG-04
 correction/reference, IG-05 task-aware retrieval, IG-06 V2 runtime promotion,

@@ -44,12 +44,24 @@ The pair validator refuses:
 - differing fixture, task IDs, seed, noise count, corpus fingerprint or source
   fingerprint between V1 and V2;
 - a non-full revision SHA;
+- provider identity/role mismatches, non-read-only provider capabilities, or
+  undeclared fields in any evidence object;
+- provider corpus/source identity drift, task-count tampering, or comparison
+  metadata that is not bound to the same fixture and task set;
+- missing safety metric/invariant rows, incomplete comparison deltas, or a
+  target value that does not recompute from the frozen derivation formula;
 - raw-content fields in nested evidence.
 
 The normalized provider contract does not expose token counts. This remains
 explicit as `budget_measurement` and is not replaced with an invented value.
 Elapsed total and mean per-case timings are recorded; p50/p95 are explicit
 `null` until a provider-level timing contract exists.
+
+All free-text-like evidence fields use bounded enumerations. Case violations,
+budget measurements and feasibility reason/measurement values cannot carry
+prompts, transcripts, secrets or arbitrary prose. A `MEASURED` feasibility
+result must include both a bounded precision and empirical-ceiling score;
+`SEMANTIC_UNAVAILABLE` must include neither.
 
 ## Feasibility probe
 
@@ -79,4 +91,3 @@ the same-input and no-HOLDOUT checks pass, the feasibility result is recorded,
 quality failures remain visible, and an independent reviewer returns `SHIP`.
 If the real-provider probe cannot be executed, that limitation remains an open
 quality item; it does not authorize tuning, V2 promotion or Phase 20 work.
-
