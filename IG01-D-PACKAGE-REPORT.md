@@ -1,7 +1,7 @@
 # IG01-D Package Report — Paired Baseline Measurement
 
-**Status:** INDEPENDENT REVIEW SHIPPED / HUMAN CHECKPOINT PENDING
-**Verdict:** SHIP (independent review) / NOT ACCEPTED until the IG01-D human checkpoint
+**Status:** ACCEPTED / HUMAN CHECKPOINT PASS
+**Verdict:** SHIP
 
 This package records the first revision-bound V1/V2 comparison. It measures
 the existing providers on one frozen public corpus; it does not tune ranking,
@@ -23,11 +23,12 @@ change extraction, add an embedding provider, promote V2, or open Phase 20.
 | **TARGET DERIVATION** | Frozen formula `max(program_floor + margin, baseline + realistic_gain)`; margin `0.05`, gain `0.10`, floors precision `0.60`, mandatory recall `0.80`, MRR `0.85`; provisional targets precision `0.65`, mandatory recall `0.85` from the actual `required_selected_items / required_items` baseline `0.714286`, MRR `0.85` (MRR unavailable in normalized provider contract). |
 | **FEASIBILITY** | `SEMANTIC_UNAVAILABLE`, provider `openai_only`; 50 DEV cases, no HOLDOUT; no empirical ceiling is claimed because no real embedding + cross-encoder pair is installed. Hash vectors are never used as semantic evidence. |
 | **KNOWN LIMITATIONS** | V2 is weaker than V1 on this baseline; token counts and MRR are unavailable in the normalized provider contract; the throwaway semantic probe is bounded to an explicit unavailable result until a real local/cloud embedding plus cross-encoder pair is provisioned. Historical PRE-13 runtime quality remains a visible failure. |
-| **OPEN FAILURES** | No technical IG01-D contract failure or open P0/P1. The only acceptance gate left is the IG01-D human checkpoint. V2 degradation and semantic-provider unavailability remain recorded inputs for later intelligence packages; they do not authorize tuning in IG01-D. |
+| **OPEN FAILURES** | No IG01-D P0/P1. V2 degradation and semantic-provider unavailability remain recorded inputs for later intelligence packages; they do not authorize tuning in IG01-D. |
 | **INDEPENDENT REVIEW** | `SHIP`, score `9/10`, returned by the separate read-only reviewer for exact SHA `61c89e9`. Self-review was not used as acceptance. |
 | **SCORE BEFORE** | Evaluation quality `4/10` (program estimate). |
 | **SCORE AFTER** | `9/10` for measurement instrumentation per independent review; no extraction/retrieval/product-quality score is raised by this package. |
-| **VERDICT** | `SHIP` on the technical independent-review gate; package remains `NOT ACCEPTED` until the human checkpoint. |
+| **HUMAN CHECKPOINT** | `IG01-D human checkpoint PASS` received from the user on 2026-09-09; the package is fully accepted. |
+| **VERDICT** | `SHIP` |
 
 Remote evidence:
 
@@ -38,6 +39,6 @@ Client trust evidence is explicitly bounded: the repository's isolated native-ho
 
 The paired JSON artifact is content-free: it contains identifiers, hashes,
 metrics and invariant results, never prompts, transcripts, memory text,
-secrets or token values. The package remains bounded to measurement. IG01-E,
-IG-03 and Phase 20 remain unopened; Phase 20 is still `FROZEN / LOCKED` and
-V2 is still `SHADOW`.
+secrets or token values. The package remains bounded to measurement. IG01-E is
+now the next bounded package; IG-03 and Phase 20 remain unopened. Phase 20 is
+still `FROZEN / LOCKED` and V2 is still `SHADOW`.
