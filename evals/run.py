@@ -13,7 +13,7 @@ from .authority_provider import AUTHORITY_PROVIDER_ID, AuthorityContextProvider
 from .compiler_v2_provider import COMPILER_PROVIDER_ID, CompilerV2ContextProvider
 from .router_provider import ROUTER_PROVIDER_ID, RouterContextProvider
 from .corpus_builder import DEFAULT_CORPUS_ROOT, DEFAULT_FIXTURE_PATH, check_public_corpus
-from .corpus_v2_builder import DEFAULT_CORPUS_ROOT as DEFAULT_CORPUS_V2_ROOT, check_corpus_v2
+from .corpus_v2_builder import DEFAULT_CORPUS_ROOT as DEFAULT_CORPUS_V2_ROOT, check_corpus_v2, check_corpus_v2_public
 from .fixture_generator import build_vault
 from .reporting import build_evaluation_report, write_evaluation_report
 from .schema import load_fixture, load_tasks
@@ -32,12 +32,12 @@ class EvaluationRunError(ValueError):
     """Raised when an evaluation suite cannot be constructed safely."""
 
 
-def check_corpus(corpus_root: Path | str, fixture) -> None:
+def check_corpus(corpus_root: Path | str, fixture, *, include_holdout: bool = True) -> None:
     """Validate the matching versioned corpus before it becomes evaluation input."""
 
     root = Path(corpus_root).resolve()
     if root == DEFAULT_CORPUS_V2_ROOT.resolve():
-        check_corpus_v2(root, fixture)
+        (check_corpus_v2 if include_holdout else check_corpus_v2_public)(root, fixture)
     else:
         check_public_corpus(root, fixture)
 
@@ -66,13 +66,14 @@ def run_evaluation(
     seed: int = 0,
     noise_count: int = DEFAULT_NOISE_COUNT,
     source: Mapping[str, Any] | None = None,
+    public_only: bool = False,
 ) -> dict[str, Any]:
     """Run an offline synthetic vault through one supported provider and suite."""
 
     if provider not in {"baseline", "router", "authority", "compiler-v2"}:
         raise EvaluationRunError(f"unsupported evaluation provider: {provider}")
     fixture = load_fixture(fixture_path)
-    check_corpus(corpus_root, fixture)
+    check_corpus(corpus_root, fixture, include_holdout=not public_only)
     tasks = load_tasks(suite_task_paths(corpus_root, suite), fixture)
 
     with TemporaryDirectory(prefix="brain-eleven-eval-") as directory:

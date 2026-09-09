@@ -11,6 +11,8 @@ import pytest
 from evals.ig01d.contracts import BaselineContractError, validate_baseline_report, validate_pair_report
 from evals.ig01d.fingerprint import corpus_split_fingerprint
 from evals.ig01d.spike import run_feasibility_probe
+from evals.corpus_v2_builder import check_corpus_v2_public
+from evals.schema import load_fixture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -328,3 +330,18 @@ def test_spike_is_dev_only_and_content_free():
     assert result["holdout_included"] is False
     assert result["status"] in {"SEMANTIC_UNAVAILABLE", "MEASURED"}
     assert "content" not in json.dumps(result).lower()
+
+
+def test_public_baseline_validation_never_reads_holdout_documents(monkeypatch):
+    """The IG01-D public boundary must be observable, not a source comment."""
+
+    original = Path.read_text
+
+    def guarded_read_text(path, *args, **kwargs):
+        if "evals\\corpus-v2\\holdout" in str(path).lower() or "evals/corpus-v2/holdout" in str(path).lower():
+            raise AssertionError("IG01-D public validation opened a HOLDOUT document")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", guarded_read_text)
+    fixture = load_fixture(ROOT / "evals/fixtures/phase15-contract.json")
+    check_corpus_v2_public(ROOT / "evals/corpus-v2", fixture)

@@ -231,6 +231,7 @@ def build_pair_report(
             seed=SEED,
             noise_count=NOISE_COUNT,
             source={"ig01d_role": key},
+            public_only=True,
         )
         elapsed[key] = (time.perf_counter() - started) * 1000
     v1 = _wrap_report(legacy_reports["v1"], provider="v1", git_sha=revision, root=source_root, corpus_root=corpus, elapsed_ms=elapsed["v1"])

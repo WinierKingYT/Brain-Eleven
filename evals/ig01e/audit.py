@@ -187,7 +187,15 @@ def _audit_baseline_boundary(root: Path) -> dict[str, Any]:
     contracts = root / "evals" / "ig01d" / "contracts.py"
     baseline_text = baseline.read_text(encoding="utf-8")
     spike_text = spike.read_text(encoding="utf-8")
-    if '"split": ["dev", "test"]' not in baseline_text or '"holdout_included": False' not in spike_text:
+    run_text = (root / "evals" / "run.py").read_text(encoding="utf-8")
+    corpus_builder_text = (root / "evals" / "corpus_v2_builder.py").read_text(encoding="utf-8")
+    if (
+        '"split": ["dev", "test"]' not in baseline_text
+        or '"holdout_included": False' not in spike_text
+        or "public_only=True" not in baseline_text
+        or "check_corpus_v2_public" not in run_text
+        or "def check_corpus_v2_public" not in corpus_builder_text
+    ):
         raise AuditError("IG01-D baseline does not prove public DEV+TEST-only execution")
     if "validate_pair_report" not in contracts.read_text(encoding="utf-8"):
         raise AuditError("IG01-D strict pair contract is missing")
@@ -196,7 +204,12 @@ def _audit_baseline_boundary(root: Path) -> dict[str, Any]:
     report_text = report.read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in report_text:
         raise AuditError("IG01-D report is not bound to the reviewed implementation SHA")
-    return {"same_input_pair": True, "holdout_included": False, "feasibility_unavailable_explicit": True}
+    return {
+        "same_input_pair": True,
+        "holdout_included": False,
+        "feasibility_unavailable_explicit": True,
+        "legacy_holdout_workflows_out_of_scope": True,
+    }
 
 
 def _audit_parent_packages(root: Path) -> dict[str, Any]:

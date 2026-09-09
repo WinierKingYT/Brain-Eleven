@@ -159,6 +159,28 @@ def check_corpus_v2(corpus_root: Path | str, fixture: VaultFixture) -> None:
         raise CorpusBuildError("V2 corpus manifest differs from the deterministic source")
 
 
+def check_corpus_v2_public(corpus_root: Path | str, fixture: VaultFixture) -> None:
+    """Validate DEV+TEST only without opening any HOLDOUT document."""
+
+    root = Path(corpus_root)
+    documents = validate_corpus_v2_documents(fixture)
+    expected = {root / path for path in documents if path.parts[0] in {"dev", "test"}}
+    actual = {
+        path
+        for split in ("dev", "test")
+        for path in (root / split).glob(f"{TASK_PREFIX}*.json")
+    }
+    if actual != expected:
+        raise CorpusBuildError("public V2 corpus paths differ from deterministic source")
+    for path in sorted(expected):
+        relative = path.relative_to(root)
+        if path.read_text(encoding="utf-8") != _render(documents[relative]):
+            raise CorpusBuildError(f"public V2 corpus content differs: {relative}")
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    if manifest != corpus_v2_manifest():
+        raise CorpusBuildError("V2 corpus manifest differs from deterministic source")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build or verify the synthetic Phase 15 corpus-v2.")
     mode = parser.add_mutually_exclusive_group(required=True)
