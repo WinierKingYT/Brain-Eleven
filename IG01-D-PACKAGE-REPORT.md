@@ -42,3 +42,10 @@ metrics and invariant results, never prompts, transcripts, memory text,
 secrets or token values. The package remains bounded to measurement. IG01-E is
 now the next bounded package; IG-03 and Phase 20 remain unopened. Phase 20 is
 still `FROZEN / LOCKED` and V2 is still `SHADOW`.
+
+**Post-checkpoint hardening note:** independent audit found that the original
+runner validated the complete V2 corpus before selecting DEV+TEST. The bounded
+fix in commit `a3537ca2e679e7263980aa150a2e87bcef7da571` adds a public-only
+validator and a read guard test. The measurements above remain bound to
+`61c89e9`; a fresh exact-head pair artifact and CI evidence are required before
+this hardening is considered a final D revalidation.

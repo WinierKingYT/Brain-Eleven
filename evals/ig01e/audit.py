@@ -16,6 +16,7 @@ import subprocess
 from typing import Any, Callable, Iterable
 
 from ..ig01b.integrity import check_private_boundary, check_public_corpus
+from ..ig01d.contracts import validate_pair_report, BaselineContractError
 
 
 AUDIT_VERSION = "1.0.0"
@@ -50,7 +51,9 @@ def _git_sha(root: Path) -> str:
 
 def _audit_worktree(root: Path) -> dict[str, Any]:
     result = subprocess.run(["git", "-C", str(root), "status", "--porcelain"], capture_output=True, text=True, check=True)
-    if result.stdout.strip():
+    transient = ("?? .ig01d-evidence/", "?? ig01e-audit.json")
+    dirty = [line for line in result.stdout.splitlines() if line.strip() and not any(line.startswith(prefix) for prefix in transient)]
+    if dirty:
         raise AuditError("working tree is dirty; audit evidence must bind to a committed revision")
     return {"clean": True}
 
@@ -181,7 +184,7 @@ def _audit_anti_gaming(root: Path) -> dict[str, Any]:
     return {"select_all_control": True, "select_none_control": True, "hard_gate_controls": True}
 
 
-def _audit_baseline_boundary(root: Path) -> dict[str, Any]:
+def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, require_pair_report: bool = False) -> dict[str, Any]:
     baseline = root / "evals" / "ig01d" / "baseline.py"
     spike = root / "evals" / "ig01d" / "spike.py"
     contracts = root / "evals" / "ig01d" / "contracts.py"
@@ -203,12 +206,36 @@ def _audit_baseline_boundary(root: Path) -> dict[str, Any]:
     _check_file(root, report.name, required_markers=("SEMANTIC_UNAVAILABLE", "holdout_included=false", "V2 precision"))
     report_text = report.read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in report_text:
-        raise AuditError("IG01-D report is not bound to the reviewed implementation SHA")
+        raise AuditError("IG01-D historical report binding is missing")
+    artifact_evidence: dict[str, Any] = {"artifact": "NOT_AVAILABLE"}
+    if pair_report is None:
+        if require_pair_report:
+            raise AuditError("IG01-D pair artifact is required for this audit")
+    else:
+        try:
+            payload = json.loads(pair_report.read_text(encoding="utf-8"))
+            validated = validate_pair_report(payload)
+        except (OSError, json.JSONDecodeError, BaselineContractError) as error:
+            raise AuditError("IG01-D pair artifact failed strict validation") from error
+        current_sha = _git_sha(root)
+        if validated["source"]["git_sha"] != current_sha:
+            raise AuditError("IG01-D pair artifact SHA differs from audit revision")
+        artifact_evidence = {
+            "artifact": pair_report.name,
+            "artifact_sha256": _sha256(pair_report),
+            "git_sha": current_sha,
+            "task_count": validated["corpus"]["task_count"],
+            "split": validated["corpus"]["split"],
+            "holdout_included": validated["feasibility"]["holdout_included"],
+            "feasibility_status": validated["feasibility"]["status"],
+            "outcome": validated["comparison"]["outcome"],
+        }
     return {
         "same_input_pair": True,
         "holdout_included": False,
         "feasibility_unavailable_explicit": True,
         "legacy_holdout_workflows_out_of_scope": True,
+        **artifact_evidence,
     }
 
 
@@ -262,7 +289,7 @@ def _run_check(name: str, check: Callable[[], Any]) -> dict[str, Any]:
         return {"status": "FAIL", "error_code": f"{name.upper()}_INVARIANT_FAILED"}
 
 
-def audit_repository(root: Path | str = ".") -> dict[str, Any]:
+def audit_repository(root: Path | str = ".", *, pair_report: Path | str | None = None, require_pair_report: bool = False) -> dict[str, Any]:
     """Run all IG01-E checks and return content-free, revision-bound evidence."""
 
     repository = Path(root).resolve()
@@ -273,7 +300,14 @@ def audit_repository(root: Path | str = ".") -> dict[str, Any]:
         "private_boundary": _run_check("private_boundary", lambda: _audit_private_boundary(repository)),
         "evaluator_independence": _run_check("evaluator_independence", lambda: _audit_evaluator_independence(repository)),
         "anti_gaming": _run_check("anti_gaming", lambda: _audit_anti_gaming(repository)),
-        "baseline_boundary": _run_check("baseline_boundary", lambda: _audit_baseline_boundary(repository)),
+        "baseline_boundary": _run_check(
+            "baseline_boundary",
+            lambda: _audit_baseline_boundary(
+                repository,
+                Path(pair_report).resolve() if pair_report is not None else None,
+                require_pair_report=require_pair_report,
+            ),
+        ),
         "parent_packages": _run_check("parent_packages", lambda: _audit_parent_packages(repository)),
         "benchmark_eligibility": _run_check("benchmark_eligibility", lambda: _audit_benchmark_eligibility(repository)),
     }
@@ -326,8 +360,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the content-free IG01-E audit")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--pair-report", type=Path)
+    parser.add_argument("--require-pair-report", action="store_true")
     args = parser.parse_args()
-    report = audit_repository(args.root)
+    report = audit_repository(args.root, pair_report=args.pair_report, require_pair_report=args.require_pair_report)
     if args.report:
         write_audit_report(args.report, report)
     print(json.dumps(report, sort_keys=True))

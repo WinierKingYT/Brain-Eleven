@@ -29,6 +29,9 @@ The audit must prove all of the following on one exact repository revision:
 7. IG01-D V1/V2 evidence binds both providers to identical corpus/source
    identities, uses public DEV+TEST only, and records semantic unavailability
    explicitly without fabricating a score.
+8. The remote IG01-D pair artifact is downloaded from the same workflow run and
+   strict-validated against the current `github.sha`; the historical report is
+   never used as a substitute for that artifact.
 
 ## Evidence contract
 
@@ -42,6 +45,11 @@ The audit report is immutable evidence for the exact `git rev-parse HEAD` that
 produced it. A later source, corpus, evaluator or label change requires a new
 audit report and a new IG01-E revision/tag; reports are never silently
 re-baselined.
+
+The repository has older Phase-15 workflows that intentionally evaluate their
+own historical holdout suites. Those jobs are outside IG01-D’s public baseline
+scope. IG01-E records this scope explicitly; it does not treat those historical
+quality runs as evidence that the IG01-B holdout was used for tuning.
 
 ## Scope and stop point
 
