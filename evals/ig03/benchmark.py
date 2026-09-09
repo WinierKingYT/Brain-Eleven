@@ -21,7 +21,6 @@ from ..ig01c.metrics import evaluate_extraction_case
 from brain_eleven.extraction.semantic import (
     DeterministicRegexProvider,
     SemanticProvider,
-    SemanticStatus,
     UnavailableProvider,
 )
 
