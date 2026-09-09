@@ -8,6 +8,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import tempfile
 from typing import Any
 
@@ -48,6 +49,16 @@ _BANNED_REPORT_KEYS = frozenset({
     "token", "tokens", "secret", "secrets", "api_key", "api_secret", "password",
     "credential", "credentials", "raw", "token_count",
 })
+_SOURCE_KEYS = frozenset({"git_sha", "seed", "retrieval_k", "source_fingerprint"})
+_HEX_RE = re.compile(r"^[0-9a-fA-F]{6,128}$")
+_REPORT_TOP_LEVEL_KEYS = frozenset({
+    "schema_version", "report_type", "evaluator_version", "corpus", "source",
+    "metrics", "safety_gates", "cases", "controls", "benchmark",
+})
+_CASE_ROW_KEYS = frozenset({
+    "case_id", "family", "metrics", "violations", "passed", "selected_ids",
+    "candidate_targets",
+})
 
 
 def _safe_scalar(value: Any, field: str) -> Any:
@@ -69,12 +80,20 @@ def _safe_source(source: Mapping[str, Any] | None) -> dict[str, Any]:
     for key, value in source.items():
         if not isinstance(key, str) or not key.strip():
             raise EvaluatorError("source keys must be non-empty strings")
+        key = key.strip()
         lowered = key.lower()
+        if lowered not in _SOURCE_KEYS:
+            raise EvaluatorError(f"source.{key} is not an allowed content-free field")
         if lowered in _BANNED_REPORT_KEYS or any(
             marker in lowered for marker in ("secret", "password", "credential", "api_key")
         ):
             raise EvaluatorError(f"source.{key} cannot contain raw content")
-        normalized[key.strip()] = _safe_scalar(value, f"source.{key}")
+        if lowered in {"git_sha", "source_fingerprint"} and value is not None:
+            if not isinstance(value, str) or not _HEX_RE.fullmatch(value):
+                raise EvaluatorError(f"source.{key} must be a hexadecimal hash")
+        if lowered in {"seed", "retrieval_k"} and value is not None:
+            _nonnegative_int(value, f"source.{key}")
+        normalized[lowered] = _safe_scalar(value, f"source.{key}")
     return dict(sorted(normalized.items()))
 
 
@@ -229,11 +248,13 @@ def _control_case(case: Mapping[str, Any], *, k: int, token_counts: Mapping[str,
     return {
         "select_all": {
             "case_id": all_result["case_id"],
+            "selected_ids": all_result["retrieved_ids"],
             "metrics": all_result["metrics"],
             "violations": all_result["violations"],
         },
         "select_none": {
             "case_id": none_result["case_id"],
+            "selected_ids": none_result["retrieved_ids"],
             "metrics": none_result["metrics"],
             "violations": none_result["violations"],
         },
@@ -339,7 +360,7 @@ def evaluate_corpus(
         results.append(result)
         if is_unanswerable or case.get("case_kind") == "abstention":
             excluded += 1
-        if include_controls and str(case.get("family", "")).lower() == "retrieval" and not is_unanswerable:
+        if include_controls and str(case.get("family", "")).lower() in {"retrieval", "context_compilation"} and not is_unanswerable:
             controls[_case_id(case)] = _control_case(case, k=retrieval_k, token_counts=None)
     if enforce_benchmark:
         _validate_benchmark_population(cases, results)
@@ -385,6 +406,13 @@ def evaluate_corpus(
                 "metrics": result.get("metrics", {}),
                 "violations": result.get("violations", []),
                 "passed": bool(result.get("passed", False)),
+                **(
+                    {"selected_ids": result["retrieved_ids"]}
+                    if "retrieved_ids" in result
+                    else {"candidate_targets": result["candidate_targets"]}
+                    if "candidate_targets" in result
+                    else {}
+                ),
             }
             for result in sorted(results, key=lambda item: item["case_id"])
         ],
@@ -416,10 +444,19 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(report, Mapping):
         raise EvaluatorError("report must be an object")
     _walk_report(report)
+    unknown_top_level = set(report) - _REPORT_TOP_LEVEL_KEYS
+    if unknown_top_level:
+        raise EvaluatorError(
+            "report contains unknown top-level fields: " + ", ".join(sorted(map(str, unknown_top_level)))
+        )
     if report.get("schema_version") != REPORT_SCHEMA_VERSION:
         raise EvaluatorError("unsupported report schema version")
     if report.get("report_type") != "brain_eleven_ig01c_evaluation":
         raise EvaluatorError("invalid IG01-C report type")
+    source = report.get("source")
+    if not isinstance(source, Mapping):
+        raise EvaluatorError("report.source must be a content-free object")
+    _safe_source(source)
     corpus = report.get("corpus")
     if not isinstance(corpus, Mapping):
         raise EvaluatorError("report.corpus must be an object")
@@ -451,6 +488,49 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     cases = report.get("cases")
     if not isinstance(cases, list) or [item.get("case_id") for item in cases] != ids:
         raise EvaluatorError("report.cases must match sorted case IDs")
+    retrieval_case_ids: list[str] = []
+    for item in cases:
+        if not isinstance(item, Mapping):
+            raise EvaluatorError("report case rows must be objects")
+        unknown_case_keys = set(item) - _CASE_ROW_KEYS
+        if unknown_case_keys:
+            raise EvaluatorError(
+                "report case contains unknown fields: " + ", ".join(sorted(map(str, unknown_case_keys)))
+            )
+        family = str(item.get("family", "")).strip().lower()
+        if family in {"retrieval", "context_compilation"}:
+            retrieval_case_ids.append(str(item["case_id"]))
+            selected = item.get("selected_ids")
+            if (
+                not isinstance(selected, list)
+                or not all(isinstance(value, str) and value.strip() for value in selected)
+                or len(selected) != len(set(selected))
+            ):
+                raise EvaluatorError("retrieval report rows must include unique selected_ids")
+        elif family == "reference_resolution":
+            targets = item.get("candidate_targets")
+            if not isinstance(targets, list) or not all(isinstance(value, str) for value in targets):
+                raise EvaluatorError("reference report rows must include candidate_targets")
+    controls = report.get("controls")
+    if not isinstance(controls, Mapping):
+        raise EvaluatorError("report.controls must contain mandatory anti-gaming controls")
+    if set(controls) != set(retrieval_case_ids):
+        raise EvaluatorError("report.controls must cover every retrieval/context case")
+    for case_id in retrieval_case_ids:
+        control = controls[case_id]
+        if not isinstance(control, Mapping) or set(control) != {"select_all", "select_none"}:
+            raise EvaluatorError(f"report.controls[{case_id}] must contain select_all and select_none")
+        for name in ("select_all", "select_none"):
+            row = control[name]
+            selected = row.get("selected_ids") if isinstance(row, Mapping) else None
+            if (
+                not isinstance(row, Mapping)
+                or set(row) != {"case_id", "selected_ids", "metrics", "violations"}
+                or not isinstance(row.get("metrics"), Mapping)
+                or not isinstance(selected, list)
+                or not all(isinstance(value, str) and value.strip() for value in selected)
+            ):
+                raise EvaluatorError(f"report.controls[{case_id}].{name} is malformed")
     return dict(report)
 
 

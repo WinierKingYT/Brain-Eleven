@@ -611,10 +611,13 @@ def evaluate_context_case(case: Mapping[str, Any], selected_ids: Sequence[str], 
     selected = _ids(selected_ids, "selected_ids")
     required = _case_ids(case, "required_ids")
     acceptable = _case_ids(case, "acceptable_ids")
-    relevant = frozenset(required) | frozenset(acceptable)
+    forbidden = frozenset(_case_ids(case, "forbidden_ids"))
+    relevant = (frozenset(required) | frozenset(acceptable)) - forbidden
+    result["metrics"]["mandatory_context_coverage"] = mandatory_recall(
+        selected, tuple(item_id for item_id in required if item_id not in forbidden)
+    ).as_dict()
     duplicates = len(selected) - len(set(selected))
     result["metrics"]["redundancy_rate"] = _ratio(duplicates, len(selected), empty_selection=not selected).as_dict()
-    result["metrics"]["mandatory_context_coverage"] = mandatory_recall(selected, required).as_dict()
     if relevant:
         result["metrics"]["irrelevant_context_rate"] = noise_ratio(selected, relevant).as_dict()
     return result

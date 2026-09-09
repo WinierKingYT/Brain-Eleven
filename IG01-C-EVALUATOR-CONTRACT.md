@@ -46,7 +46,8 @@ translate its output into one of these projections before evaluation:
 - capture: bounded event/job counters;
 - safety: an explicit list of gate names.
 
-Reports contain case IDs, memory IDs, metric counts, hashes and gate evidence.
+Reports contain case IDs, selected memory/target IDs, metric counts, hashes and
+gate evidence.
 The report validator recursively rejects prompt, query, transcript, text,
 content, token, secret and diagnostic fields. Raw evidence is never copied to
 CI artifacts or long-lived telemetry.
@@ -107,7 +108,10 @@ token waste; recall alone cannot produce a green result.
 
 The evaluator validates IDs and rejects duplicates, missing outputs,
 unexpected outputs, non-finite numbers, unknown gate names and malformed
-reports. It never trusts provider-supplied project/status metadata for
+reports. The report validator requires the `select_all` and `select_none`
+control rows for every retrieval/context case, and accepts only the closed,
+content-free source schema (`git_sha`, `seed`, `retrieval_k`,
+`source_fingerprint`). It never trusts provider-supplied project/status metadata for
 fixture-owned labels when immutable candidate metadata is available.
 
 ## Version and reproducibility

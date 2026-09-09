@@ -284,6 +284,18 @@ def test_capture_counter_invariants_fail_closed():
         evaluate_capture_case({"case_id": "capture-1"}, {"emitted_events": 1, "lost_events": 2})
 
 
+def test_release_benchmark_rejects_small_or_unmeasurable_runs():
+    case = extraction_case()
+    with pytest.raises(EvaluatorError, match="INVALID_BENCHMARK_RUN"):
+        evaluate_corpus(
+            [case], {case["case_id"]: case["expected"]}, corpus_version="v", split="validation"
+        )
+    cases = [extraction_case(case_id=f"e-{index}", expected={**case["expected"], "commitment": "none"}) for index in range(5)]
+    outputs = {item["case_id"]: item["expected"] for item in cases}
+    with pytest.raises(EvaluatorError, match="positive denominator"):
+        evaluate_corpus(cases, outputs, corpus_version="v", split="validation")
+
+
 def test_report_rejects_raw_content_and_near_zero_events_without_review():
     case = retrieval_case()
     report = evaluate_corpus(
@@ -306,6 +318,35 @@ def test_report_rejects_raw_content_and_near_zero_events_without_review():
         broken["cases"][0][field] = "raw"
         with pytest.raises(EvaluatorError, match="prohibited raw content"):
             validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken.pop("controls")
+    with pytest.raises(EvaluatorError, match="mandatory anti-gaming"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["source"]["source_fingerprint"] = "raw transcript"
+    with pytest.raises(EvaluatorError, match="hexadecimal hash"):
+        validate_report(broken)
+
+    broken = copy.deepcopy(report)
+    broken["arbitrary_raw"] = "raw transcript"
+    with pytest.raises(EvaluatorError, match="unknown top-level"):
+        validate_report(broken)
+
+
+def test_context_metrics_exclude_forbidden_ids_and_report_selected_ids():
+    case = retrieval_case(
+        case_id="context-1",
+        family="context_compilation",
+    )
+    result = evaluate_case(case, {"selected_ids": ["required", "old"]})
+    assert result["metrics"]["irrelevant_context_rate"]["value"] == 0.5
+    report = evaluate_corpus(
+        [case], {"context-1": {"selected_ids": ["required"]}}, corpus_version="v", split="dev",
+        enforce_benchmark=False,
+    )
+    assert report["cases"][0]["selected_ids"] == ["required"]
 
 
 def test_current_ig01b_public_corpus_can_be_scored_without_raw_content_output():
