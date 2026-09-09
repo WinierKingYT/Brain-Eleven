@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from evals.ig03.benchmark import benchmark_providers, load_extraction_cases, _run_provider
+from evals.ig03.benchmark import benchmark_providers, load_extraction_cases, _fingerprint, _run_provider
 from brain_eleven.extraction.semantic import (
     ProviderResult,
     SEMANTIC_SCHEMA_VERSION,
@@ -49,6 +49,14 @@ def test_benchmark_requires_revision_bound_sha():
 def test_benchmark_rejects_historical_corpus_instead_of_mislabeling_it():
     with pytest.raises(ValueError, match="current frozen corpus"):
         load_extraction_cases(split="dev", corpus_root=Path("evals/ig01b/public/ig-eval-v1"))
+
+
+def test_public_split_fingerprint_is_checkout_line_ending_invariant(tmp_path):
+    lf = tmp_path / "split.jsonl"
+    crlf = tmp_path / "split-crlf.jsonl"
+    lf.write_bytes(b'{"case_id":"one"}\n{"case_id":"two"}\n')
+    crlf.write_bytes(lf.read_bytes().replace(b"\n", b"\r\n"))
+    assert _fingerprint(lf) == _fingerprint(crlf)
 
 
 def test_unavailable_provider_metrics_are_not_applicable():

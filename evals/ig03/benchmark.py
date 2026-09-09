@@ -43,7 +43,16 @@ def _git_sha(root: Path = ROOT) -> str:
 
 
 def _fingerprint(path: Path) -> str:
-    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    """Hash logical JSONL content independent of checkout line endings.
+
+    The public corpus manifest is generated from LF-delimited JSONL.  Git may
+    materialize tracked text files with CRLF on Windows, so hashing raw bytes
+    would make an unchanged split appear tampered with on that runner.  The
+    canonical fingerprint is therefore computed from normalized LF bytes.
+    """
+
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return "sha256:" + hashlib.sha256(content).hexdigest()
 
 
 def _load_public_corpus(*, split: str, corpus_root: Path | str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
