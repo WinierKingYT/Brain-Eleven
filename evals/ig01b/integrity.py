@@ -25,7 +25,7 @@ SECRET_PATTERNS = (
 )
 PII_PATTERNS = (
     re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"),
-    re.compile(r"(?<!\d)(?:\+?\d[\d ()-]{8,}\d)(?!\d)"),
+    re.compile(r"(?<![\d-])(?:\+\d[\d ()-]{8,}\d|\(\d{3}\)[\d -]{5,}\d)(?![\d-])"),
     re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
 )
 PINNED_HOLDOUT_TAG = "ig01b-corpus-v1"
