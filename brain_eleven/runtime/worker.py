@@ -36,6 +36,15 @@ _STATE_OPERATION_RECEIPTS = {
     'ADD_REQUIREMENT': 'requirement_added',
     'RESOLVE_REQUIREMENT': 'requirement_resolved',
 }
+_STATE_RECEIPT_RECORDS = {
+    'blocker_added': ('blk_', frozenset({'ACTIVE'})),
+    'blocker_resolved': ('blk_', frozenset({'RESOLVED'})),
+    'milestone_set': ('mil_', frozenset({'ACTIVE'})),
+    'work_item_added': ('wrk_', frozenset({'TODO'})),
+    'objective_set': ('obj_', frozenset({'ACTIVE'})),
+    'requirement_added': ('req_', frozenset({'ACTIVE'})),
+    'requirement_resolved': ('req_', frozenset({'RESOLVED'})),
+}
 
 
 class WorkerProcessingError(RuntimeError):
@@ -260,9 +269,19 @@ class Worker:
                 for decision in decisions:
                     if not isinstance(decision, dict):
                         return False
+                    candidate_id = decision.get('candidate_id')
+                    if (not isinstance(candidate_id, str)
+                            or identity('op_', candidate_id, project_id) != operation_id):
+                        return False
                     action = decision.get('action')
                     target = memory_by_id.get(decision.get('target_memory_id'))
                     successor = memory_by_id.get(decision.get('successor_memory_id'))
+                    if any(
+                        referenced is not None
+                        and not self._memory_scope_allowed(referenced, project_id)
+                        for referenced in (target, successor)
+                    ):
+                        return False
                     if action in {'NEW', 'SUPERSEDE_EXISTING'} and successor is None:
                         return False
                     if action in {'DUPLICATE', 'CONFIRM_EXISTING'} and target is None:
@@ -283,6 +302,8 @@ class Worker:
             project = state_doc.get('projects', {}).get(project_id)
             if not isinstance(project, dict):
                 return False
+            if not self._state_receipt_records_valid(state_receipt, project):
+                return False
             for record_id in record_ids:
                 if record_id not in receipt.get('effect_ids', []):
                     return False
@@ -297,7 +318,10 @@ class Worker:
                 return False
             candidate = item.get('candidate')
             source = item.get('source')
-            if not isinstance(candidate, dict) or candidate.get('project_id') != project_id:
+            candidate_id = candidate.get('candidate_id') if isinstance(candidate, dict) else None
+            if (not isinstance(candidate, dict) or candidate.get('project_id') != project_id
+                    or not isinstance(candidate_id, str)
+                    or identity('rev_', candidate_id, project_id) != review_id):
                 return False
             if not isinstance(source, dict) or not isinstance(source.get('evidence_id'), str) or not source['evidence_id']:
                 return False
@@ -311,21 +335,52 @@ class Worker:
     @staticmethod
     def _state_record_exists(project, record_id):
         """Return whether a state receipt's record still exists in its project."""
+        return Worker._state_record(project, record_id) is not None
+
+    @staticmethod
+    def _state_record(project, record_id):
+        """Find one state record by ID, including the current objective/milestone."""
         if not isinstance(record_id, str) or not record_id:
-            return False
+            return None
         current = project.get('current') if isinstance(project, dict) else None
         if isinstance(current, dict):
             for record in current.values():
                 if isinstance(record, dict) and record.get('id') == record_id:
-                    return True
+                    return record
         if isinstance(project, dict):
             for collection in ('requirements', 'work_items', 'blockers', 'constraints', 'risks'):
                 records = project.get(collection)
-                if isinstance(records, list) and any(
-                    isinstance(record, dict) and record.get('id') == record_id for record in records
-                ):
-                    return True
-        return False
+                if isinstance(records, list):
+                    for record in records:
+                        if isinstance(record, dict) and record.get('id') == record_id:
+                            return record
+        return None
+
+    @staticmethod
+    def _state_receipt_records_valid(receipt, project):
+        """Bind a semantic state operation to the surviving record kind/status."""
+        operation = receipt.get('operation') if isinstance(receipt, dict) else None
+        shape = _STATE_RECEIPT_RECORDS.get(operation)
+        record_ids = receipt.get('record_ids') if isinstance(receipt, dict) else None
+        if shape is None or not isinstance(record_ids, list) or not record_ids:
+            return False
+        prefix, statuses = shape
+        for record_id in record_ids:
+            record = Worker._state_record(project, record_id)
+            if (record is None or not isinstance(record_id, str) or not record_id.startswith(prefix)
+                    or record.get('status') not in statuses):
+                return False
+        return True
+
+    @staticmethod
+    def _memory_scope_allowed(memory, project_id):
+        """Allow global memory or memory explicitly scoped to this project."""
+        if not isinstance(memory, dict):
+            return False
+        scope = memory.get('scope')
+        if scope == 'global':
+            return True
+        return scope == 'project' and memory.get('project_id') == project_id
 
     def _checkpoint_for(self, job):
         event = job['event']
@@ -363,6 +418,7 @@ class Worker:
                 and isinstance(record_id, str)
                 and isinstance(record_ids, list)
                 and record_id in record_ids
+                and self._state_receipt_records_valid(receipt, project)
                 and self._state_record_exists(project, record_id)
             )
         receipts = MemoryStore(self.vault).load().get('operation_receipts', {})
@@ -376,7 +432,7 @@ class Worker:
         stored_decisions = receipt.get('decisions') if isinstance(receipt, dict) else None
         if not (isinstance(receipt, dict) and receipt.get('request_hash') == expected_hash
                 and isinstance(stored_decisions, list) and isinstance(decisions, list)
-                and stored_decisions == decisions):
+                and stored_decisions == decisions and decisions):
             return False
         memories = MemoryStore(self.vault).load().get('validated_memory', [])
         memory_by_id = {
@@ -387,9 +443,17 @@ class Worker:
             if not (isinstance(item, dict) and item.get('candidate_id') == candidate.get('candidate_id')
                     and isinstance(item.get('action'), str)):
                 return False
+            if identity('op_', item['candidate_id'], candidate.get('project_id')) != operation_id:
+                return False
             action = item['action']
             target = memory_by_id.get(item.get('target_memory_id'))
             successor = memory_by_id.get(item.get('successor_memory_id'))
+            if any(
+                referenced is not None
+                and not self._memory_scope_allowed(referenced, candidate.get('project_id'))
+                for referenced in (target, successor)
+            ):
+                return False
             if action in {'NEW', 'SUPERSEDE_EXISTING'} and successor is None:
                 return False
             if action == 'DUPLICATE' and target is None:

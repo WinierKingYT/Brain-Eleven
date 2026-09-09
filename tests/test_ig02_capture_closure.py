@@ -10,7 +10,7 @@ from brain_eleven.memory import MemoryStore, MemoryStoreConflict
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity
-from brain_eleven.runtime.worker import Worker, enqueue
+from brain_eleven.runtime.worker import Worker, apply_candidate, enqueue
 from brain_eleven.state import StateService, StateStore, StateStoreConflict
 from evidence import EvidenceBatch
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
@@ -269,6 +269,26 @@ def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
     assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 
 
+def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    enqueue(vault, "claude", {"session_id": "tampered-review", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    review_path = next((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"))
+    review = read_json(review_path)
+    review["candidate"]["candidate_id"] = "cand_tampered"
+    write_json(review_path, review)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
 def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
     path = _transcript(tmp_path, "The build is currently failing.")
@@ -281,6 +301,71 @@ def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
     state = StateStore(vault).load()
     state["projects"][project_id]["blockers"] = []
     write_json(state_path, state)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
+def test_replay_rejects_tampered_state_operation(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path, "The build is currently failing.")
+    enqueue(vault, "claude", {"session_id": "tampered-state-operation", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    state_store = StateStore(vault)
+    state = state_store.load()
+    operation_id = next(iter(state["operation_receipts"]))
+    state["operation_receipts"][operation_id]["operation"] = "bogus"
+    write_json(state_store.path, state)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
+def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypatch):
+    vault, project_id = runtime
+    other_root = tmp_path / "other-project"
+    other_root.mkdir()
+    other = ProjectRegistry(vault).register(other_root, proactive_capture=True)
+    StateService(vault).init_project(other["project_id"], source={"type": "user", "reference": "ig02-foreign"})
+    config = RuntimeConfig(vault).load()
+    config["project_ids"].append(other["project_id"])
+    write_json(RuntimeConfig(vault).path, config)
+    foreign_candidate = {
+        "candidate_id": "cand_foreign",
+        "candidate_type": "NEW_MEMORY",
+        "project_id": other["project_id"],
+        "scope": "project",
+        "content": "We decided to use PostgreSQL for foreign storage.",
+        "memory_type": "decision",
+        "commitment": "COMMITTED",
+        "confidence": 0.97,
+        "evidence_refs": ["evd_foreign"],
+    }
+    foreign_operation = identity("op_", foreign_candidate["candidate_id"], foreign_candidate["project_id"])
+    foreign_result = apply_candidate(vault, foreign_candidate, op_id=foreign_operation)
+    assert foreign_result["status"] == "SUCCESS"
+    foreign_effect = foreign_result["decisions"][0]["successor_memory_id"]
+
+    path = _transcript(tmp_path, "We decided to use SQLite for local storage.")
+    enqueue(vault, "claude", {"session_id": "cross-project-replay", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    receipt_path = next((vault / ".brain-eleven" / "runtime" / "capture-receipts").glob("*.json"))
+    receipt = read_json(receipt_path)
+    receipt["canonical_operation_ids"] = [foreign_operation]
+    receipt["effect_ids"] = [foreign_effect]
+    write_json(receipt_path, receipt)
     monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
 
     result = worker.once()
