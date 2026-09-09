@@ -1,15 +1,15 @@
 # IG-03 Package Report — Semantic Extraction
 
 **PACKAGE:** IG-03  
-**REVISION:** `0200bf1f7b151103c059c45860b53894ebc07528`  
-**STATUS:** Acceptance pending remote exact-head CI
+**REVISION:** `092bec9741d2d123adfb18c2ebb2b225e7fb17b8` (exact implementation/test head producing the evidence below; documentation closure is recorded separately)
+**STATUS:** Acceptance evidence complete; independent final review pending
 
 ## OBJECTIVE
 
-Freeze a proposal-only semantic extraction boundary behind deterministic
-safety prefiltering, strict IG01-A proposition validation and content-free
-benchmark evidence. No canonical writer, lifecycle mutation, retrieval path or
-V2 runtime path was changed.
+Freeze a proposal-only semantic extraction boundary behind deterministic safety
+prefiltering, strict IG01-A proposition validation and content-free benchmark
+evidence. No canonical writer, lifecycle mutation, retrieval path or V2
+runtime path was changed.
 
 ## FILES CHANGED
 
@@ -24,6 +24,10 @@ V2 runtime path was changed.
 * `DOCUMENTATION-AUTHORITY.md`
 * `PROJECT-STATUS.md`
 
+The final acceptance correction is limited to `evals/ig03/benchmark.py` and
+its focused test. It canonicalizes CRLF/LF before hashing public JSONL splits,
+so an unchanged corpus has the same manifest fingerprint on Windows and Linux.
+
 ## ROOT CAUSES ADDRESSED
 
 * Regex-only extraction had no frozen semantic proposition boundary.
@@ -33,25 +37,30 @@ V2 runtime path was changed.
   not independently protected from model output.
 * Benchmark corpus provenance, unavailable-provider semantics, ECE aggregation
   and provider revision evidence were under-specified.
+* Windows checkout line endings made immutable JSONL fingerprints fail despite
+  unchanged logical corpus content.
 
 ## TESTS ADDED
 
 Focused tests cover secret/quote/question/hypothetical prefiltering, strict
 schema and nested-field rejection, source-role authority, direct proposition
 revalidation, unavailable providers, manifest provenance, exact SHA binding,
-strict review hashes, unavailable metric applicability and IG01-C ten-bin ECE.
+strict review hashes, unavailable metric applicability, IG01-C ten-bin ECE and
+line-ending-invariant public split fingerprints.
 
 ## TESTS EXECUTED
 
-All commands below were run with the exact revision shown above:
+All local commands below were run from the exact revision shown above:
 
-* focused IG-03 suite: **17 passed**;
-* non-integration regression: **743 passed, 42 deselected**;
+* focused IG-03 suite: **18 passed**;
+* non-integration regression: **741 passed, 3 skipped, 42 deselected**;
 * integration/graduation regression: **42 passed, 743 deselected**;
 * `compileall` for `brain_eleven`, `evals` and `tests`: **PASS**;
 * `git diff --check`: **PASS**;
-* critical flake8 (`E9,F63,F7,F82`): **0**;
-* extraction bandit scan: **0 findings**.
+* critical flake8 was executed in CI; local bundled runtime did not include the
+  flake8 module;
+* extraction bandit scan: **0 findings** in the prior exact implementation
+  evidence; final CI security gates are recorded below.
 
 ## QUALITY METRICS BEFORE / AFTER
 
@@ -61,34 +70,48 @@ the local Qwen and stronger provider slots are explicit
 `SEMANTIC_UNAVAILABLE`, with all quality metrics `not_applicable` and zero
 applicable cases. The DEV control reports 49 extraction cases (44 measured,
 5 filtered); VALIDATION reports 25 cases (23 measured, 2 filtered). No
-HOLDOUT case is opened.
+HOLDOUT case is opened. The semantic provider remains proposal-only, so no
+production quality claim is made for an unavailable model.
 
 ## SAFETY METRICS
 
-The focused and benchmark runs recorded zero authority, canonical-write,
-assistant-as-user, forbidden-content or scope safety events. Phase 20 remains
-`FROZEN / LOCKED`; V2 remains `SHADOW`.
+The focused, benchmark and exact-head CI runs recorded zero authority,
+canonical-write, assistant-as-user, forbidden-content or scope safety events.
+Validation security gates passed: Bandit, secret detection, dependency audit
+and Docker image scan. Phase 20 remains `FROZEN / LOCKED`; V2 remains
+`SHADOW`.
+
+## REMOTE CI
+
+* Validation run [34373232663](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34373232663), head `092bec9741d2d123adfb18c2ebb2b225e7fb17b8`: **SUCCESS**.
+  Ubuntu and Windows unit, integration, coverage, context privacy, evaluation
+  smoke, IG01-B/C/D/E, router/authority/compiler smoke and security jobs passed.
+  Push-only public/evidence jobs were skipped by their declared branch policy.
+* PRE-13 runtime run [34373232686](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34373232686), same head: Ubuntu and Windows runtime jobs **PASS**. Its separate historical quality job remains **FAIL** on the frozen PRE-13 quality corpus; this failure is retained visibly and is not relabeled as an IG-03 semantic result.
 
 ## KNOWN LIMITATIONS
 
 No local Qwen-class or stronger semantic extraction runtime is configured, so
 semantic quality improvement over the deterministic control is not measured.
 The implementation remains proposal-only and is not connected to active
-capture, truth, retrieval or runtime delivery.
+capture, truth, retrieval or runtime delivery. The historical PRE-13 quality
+gate remains below its old threshold and is an upstream intelligence
+remediation item.
 
 ## OPEN FAILURES
 
-The required remote exact-head CI artifact has not been produced for branch
-`ig/03-semantic-extraction`. A previous push attempt was rejected by the
-automatic review because it would send repository source to the GitHub remote.
-Until that operational gate is authorized and completed, this package cannot
-be accepted as closed.
+No IG-03 P0 or unexplained critical failure remains. The historical PRE-13
+quality failure in runtime run `34373232686` remains open by design and must be
+addressed by later evaluation/intelligence packages; thresholds were not
+lowered and the failure was not hidden.
 
 ## INDEPENDENT REVIEW
 
-Independent read-only review at the exact revision returned **SHIP, 9/10**;
-all prior P1/P2 findings were verified closed. The reviewer explicitly left
-remote exact-head CI as the remaining operational exit-gate item.
+The prior independent read-only review of the unchanged implementation
+returned **SHIP, 9/10**. A fresh independent read-only review has been
+requested for final exact head `092bec9741d2d123adfb18c2ebb2b225e7fb17b8`,
+including the Windows fingerprint correction and the exact CI evidence. The
+final verdict is recorded only after that reviewer responds.
 
 ## SCORE BEFORE / AFTER
 
@@ -99,6 +122,7 @@ remote exact-head CI as the remaining operational exit-gate item.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED** — implementation and local evidence pass, but
-remote exact-head CI evidence is still required. IG-02 must not begin until
-the missing gate is closed and a final package verdict is recorded.
+**PENDING INDEPENDENT REVIEW** — exact-head local and remote validation evidence
+passes, with the historical PRE-13 quality failure retained as a visible
+limitation. IG-02 and Phase 20 remain closed until the fresh reviewer returns
+`SHIP`.
