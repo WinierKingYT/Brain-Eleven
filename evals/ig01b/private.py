@@ -41,10 +41,10 @@ _SAFE_NESTED_KEYS = frozenset({
 def _assert_content_free(value: Any, path: str = "case", key: str | None = None) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
-            if path == "case" and str(key) not in PRIVATE_ALLOWED_ROOT_KEYS:
-                raise ValueError(f"private realistic data contains unapproved root field: {path}.{key}")
             if str(key).lower() in _RAW_KEYS:
                 raise ValueError(f"private realistic data contains forbidden raw field: {path}.{key}")
+            if path == "case" and str(key) not in PRIVATE_ALLOWED_ROOT_KEYS:
+                raise ValueError(f"private realistic data contains unapproved root field: {path}.{key}")
             if path != "case" and str(key) not in _SAFE_NESTED_KEYS:
                 raise ValueError(f"private realistic data contains unapproved free-text field: {path}.{key}")
             _assert_content_free(child, f"{path}.{key}", str(key))

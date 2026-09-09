@@ -75,9 +75,6 @@ def _validate_safe_metadata(value: Any, path: str) -> None:
 
 
 def validate_failure_case(case: dict[str, Any]) -> None:
-    unknown = set(case) - REQUIRED_FIELDS
-    if unknown:
-        raise ValueError(f"failure case contains unapproved fields: {sorted(unknown)}")
     missing = REQUIRED_FIELDS - set(case)
     if missing:
         raise ValueError(f"failure case missing fields: {sorted(missing)}")
@@ -86,6 +83,9 @@ def validate_failure_case(case: dict[str, Any]) -> None:
     if case["sanitized"] is not True:
         raise ValueError("real failures must be explicitly sanitized")
     _reject_raw_fields(case)
+    unknown = set(case) - REQUIRED_FIELDS
+    if unknown:
+        raise ValueError(f"failure case contains unapproved fields: {sorted(unknown)}")
     for section in ("expected", "actual"):
         value = case[section]
         if not isinstance(value, dict):
