@@ -1,12 +1,13 @@
 # Runtime dataflow and authority
 
-Authority: **CURRENT**. Audit date: 2026-09-08. This map distinguishes repository
+Authority: **CURRENT**. Audit date: 2026-09-09. This map distinguishes repository
 implementation, installed configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
 See IG00-FREEZE-BASELINE for exact revision and review limitations. The latest
-revision-bound Validation evidence is run 34267204480 at
-`762b5332f578c08d79fabf4d972b0371ae6de3a2`; the PRE-13 runtime quality failure
-is retained as historical intelligence evidence.
+revision-bound Validation evidence is run 34378278695 at
+`29d4e28a50625625406b1795fd4296238a892520`; the PRE-13 runtime run
+34378278696 passes its Ubuntu/Windows infrastructure jobs while its historical
+quality job remains a visible failure.
 
 ## Observed checkpoint behavior and delivery ownership
 
@@ -38,6 +39,14 @@ states and verified canonical effects. These results prove the bounded hook
 and queue paths, not trust of the user's live installation or successful model
 authentication.
 
+The IG-02 exact-head smoke on 2026-09-09 repeated the executable checks in an
+isolated vault. Claude and Codex both invoked native hook entry points without a
+visible window, but the local Claude API authentication and Codex network
+failure prevented a client-owned transcript from reaching the queue. This is
+recorded as a bounded unverified trust result in
+`IG02-NATIVE-SMOKE-EVIDENCE.md`; the launcher golden path separately verifies
+queue completion, effect receipt and canonical verification.
+
 ## Paths and node states
 
 | Node / entry | State | Actual behavior and boundary |
@@ -49,8 +58,8 @@ authentication.
 | Installed global Claude V1 hook | LEGACY, observed configured active before reinstall | Updated installer reversibly suspends exact owned legacy commands; actual reinstall reconciliation and native execution proof pending. |
 | `/remember` → remember CLI | MANUAL | Explicit user capture uses canonical memory validation/write boundary; not a native worker job or proof of autonomous capture. |
 | API capture / updates | ACTIVE when API service runs | API safety/scope validation → canonical MemoryStore transaction/CAS. Separate from native service queue and not model-authorized truth. Deployment is optional. |
-| Durable Queue | ACTIVE | Persistent queued/processing/completed/dead-letter state, leases, retries and recovery. A terminal processed/no-evidence/review outcome does not assert a new memory. |
-| Local worker | ACTIVE when local service runs | Automatically drains allowed jobs; legacy standalone worker invocation remains MANUAL. Incremental evidence cursor precedes extraction; operation receipts protect canonical replay. |
+| Durable Queue | ACTIVE | Persistent queued/processing/completed/dead-letter state, leases, retries and recovery. `COMMITTED` is acknowledged only after a matching content-free `EFFECT_VERIFIED` receipt; a terminal no-evidence/review outcome does not assert a new memory. |
+| Local worker | ACTIVE when local service runs | Automatically drains allowed jobs; legacy standalone worker invocation remains MANUAL. Incremental evidence cursor precedes extraction; canonical/review effects are recorded in a durable receipt before queue acknowledgement, and replay skips an already verified effect. |
 | Evidence reader/store | ACTIVE | Claude/Codex transcript increments validated; store retains metadata, not transcript copies. Missing/corrupt evidence fails visibly through retry/dead-letter. |
 | Deterministic extraction | ACTIVE | Structured candidates from bounded evidence; remains the current primary extractor. Semantic IG-03 replacement is not implemented by this map. |
 | Optional loopback model | SHADOW / disabled by default | Proposes bounded review candidates only, never canonical truth. |
