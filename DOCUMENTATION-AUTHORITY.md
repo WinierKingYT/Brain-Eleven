@@ -37,6 +37,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-B-PRIOR-ART.md` | GENERATED EVIDENCE / targeted read-only prior-art input for corpus design; it does not authorize production changes. |
 | `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; exact revision `6cb4e2b584addf7ac66aa5330266c80db096c5c2` has independent `SHIP`. |
 | `IG01-B-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG01-B; bound to reviewed head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`. |
+| `IG01-C-EVALUATOR-CONTRACT.md` | CURRENT **CONTRACT** for the production-independent deterministic evaluator; it does not authorize production intelligence tuning, V2 promotion or Phase 20. |
+| `IG01-C-PACKAGE-REPORT.md` | REVIEW/evidence record for the bounded IG01-C evaluator; it remains `FIX-FIRST / NOT ACCEPTED` until exact-head CI and independent review return `SHIP`. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
 | `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
 | `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |

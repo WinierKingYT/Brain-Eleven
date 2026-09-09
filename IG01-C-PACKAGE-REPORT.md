@@ -1,0 +1,73 @@
+# IG01-C Package Report — Evaluation Engine
+
+**PACKAGE:** IG01-C  
+**REVISION:** pending implementation commit  
+**OBJECTIVE:** Implement a deterministic, production-independent evaluator
+for the frozen IG01-B corpus and normalized outputs.
+
+## Files changed
+
+- `IG01-C-EVALUATOR-CONTRACT.md`
+- `evals/ig01c/contracts.py`
+- `evals/ig01c/metrics.py`
+- `evals/ig01c/engine.py`
+- `evals/ig01c/__init__.py`
+- `tests/test_ig01c_evaluator.py`
+- `.github/workflows/test.yml`
+- `README.md`, `PROJECT-STATUS.md`, `IG01-EVALUATION-FOUNDATION.md`,
+  `DOCUMENTATION-AUTHORITY.md`
+
+## Objective and root causes addressed
+
+The existing Phase-15 evaluator measured only a narrow retrieval projection.
+IG01-C adds a separate pure evaluator surface for retrieval/context, extraction,
+reference resolution, lifecycle and capture metrics, with explicit
+denominators, `not_applicable` handling and content-free safety events. The
+engine rejects missing/duplicate outputs, unknown gates and raw-content report
+fields. It does not import production intelligence or write canonical state.
+
+## Tests added
+
+`tests/test_ig01c_evaluator.py` covers:
+
+- Precision@K, Recall@K, F1, MRR, mandatory recall, noise and token waste;
+- select-all/select-none anti-gaming controls;
+- fixture-owned project/lifecycle leakage checks;
+- assistant-as-user, false-commitment and canonical-write rejection;
+- reference ambiguity, cross-project target and false supersession;
+- lifecycle cycle detection;
+- capture counters and content-free report validation;
+- strict missing/unexpected output handling and current IG01-B corpus smoke.
+
+## Tests executed
+
+- Exact-head `compileall` and import sanity: **PASS** using the bundled Python
+  runtime.
+- Local pytest: **NOT AVAILABLE** in the desktop runtime (`pytest` is not
+  installed); the dedicated revision-bound GitHub Validation job is required
+  evidence and is not replaced by this local check.
+- Remote Validation and independent review: **PENDING**.
+
+## Quality and safety metrics
+
+Evaluation quality before: **4/10**.  After implementation: **pending review**.
+The package does not claim improved retrieval, extraction, correction or daily
+use behavior. The nine IG01-A safety gates remain independently reported;
+positive near-zero events require review records.
+
+## Known limitations
+
+The evaluator tests use deterministic primitive controls and do not constitute
+V1/V2 baseline measurement. Human label review and baseline measurement belong
+to the later bounded packages. Synthetic control outputs cannot establish
+production quality.
+
+## Open failures
+
+Exact implementation-head CI, independent read-only review and the final
+package acceptance fields remain open. IG01-D is not started.
+
+## Verdict
+
+**FIX-FIRST / NOT ACCEPTED** until exact-head CI and independent review return
+`SHIP`. Phase 20 remains `FROZEN / LOCKED` and V2 remains `SHADOW`.
