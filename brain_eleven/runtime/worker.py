@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from contextlib import contextmanager
 import hashlib
 from pathlib import Path
+import re
 import threading
 from brain_eleven.memory import MemoryStore, MemoryStoreConflict
 from brain_eleven.projects.registry import ProjectRegistry
@@ -342,14 +343,24 @@ class Worker:
                     or not isinstance(candidate_id, str)
                     or identity('rev_', candidate_id, project_id) != review_id):
                 return False
-            if not isinstance(source, dict) or not isinstance(source.get('evidence_id'), str) or not source['evidence_id']:
+            evidence_id = source.get('evidence_id') if isinstance(source, dict) else None
+            session_hash = source.get('session_hash') if isinstance(source, dict) else None
+            if (not isinstance(source, dict)
+                    or not isinstance(evidence_id, str)
+                    or not re.fullmatch(r'evd_[a-f0-9]{32}', evidence_id)
+                    or not isinstance(session_hash, str)
+                    or not re.fullmatch(r'session_[a-f0-9]{64}', session_hash)):
                 return False
             if item.get('reason') not in _REVIEW_REASONS or set(source) - _REVIEW_SOURCE_FIELDS:
                 return False
             if source.get('client') not in {'claude', 'codex'} or source.get('role') not in {'user', 'assistant', 'tool', 'system'}:
                 return False
             references = candidate.get('evidence_refs')
-            if not isinstance(references, list) or source['evidence_id'] not in references:
+            if (not isinstance(references, list) or not references or len(references) > 64
+                    or len(references) != len(set(references))
+                    or not all(isinstance(reference, str) and re.fullmatch(r'evd_[a-f0-9]{32}', reference)
+                               for reference in references)
+                    or evidence_id not in references):
                 return False
             if any(field in item or field in candidate for field in ('raw_prompt', 'prompt_content', 'transcript_content', 'token')):
                 return False

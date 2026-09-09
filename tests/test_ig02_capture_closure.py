@@ -309,6 +309,29 @@ def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
     assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 
 
+@pytest.mark.parametrize("tampered_field", ["session_hash", "evidence_id"])
+def test_replay_rejects_unbounded_review_source_ids(runtime, tmp_path, monkeypatch, tampered_field):
+    vault, _ = runtime
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    enqueue(vault, "claude", {"session_id": "tampered-review-ids-" + tampered_field, "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    review_path = next((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"))
+    review = read_json(review_path)
+    review["source"][tampered_field] = "raw transcript content"
+    if tampered_field == "evidence_id":
+        review["candidate"]["evidence_refs"] = [review["source"][tampered_field]]
+    write_json(review_path, review)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
 def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
     path = _transcript(tmp_path, "The build is currently failing.")
