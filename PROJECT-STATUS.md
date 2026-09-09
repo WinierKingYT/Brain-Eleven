@@ -3,14 +3,14 @@
 **Last updated:** 2026-09-08
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
-**LAST CLOSED PACKAGE: IG-00 Freeze & Baseline — CLOSED / SHIPPED**.
-**ACTIVE PACKAGE: IG01-A Evaluation Contract — ACTIVE / IN PROGRESS**.
+**LAST CLOSED PACKAGE: IG01-A Evaluation Contract — CLOSED / SHIPPED**.
+**ACTIVE PACKAGE: IG01-B Corpus & Ground Truth — ACTIVE / BOUNDED CONTRACT**.
 
 The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. IG-01 is now open under its separate [evaluation foundation contract](IG01-EVALUATION-FOUNDATION.md); implementation remains bounded to measurement work and does not authorize intelligence tuning.
 
 The immutable `intelligence-graduation-baseline` tag binds PRE-12 commit `211bf2eb74cdb457b7b07430848bf6c6665e7f12`. Matching [Validation](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027088697) and [Docker](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34027393699) completed successfully on that exact SHA. This is infrastructure baseline evidence, not current-head validation or intelligence graduation.
 
-Read [IG-01 contract](IG01-EVALUATION-FOUNDATION.md), then [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [IG-00 independent review](IG-00-INDEPENDENT-REVIEW.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. IG-00 remains closed at `18e88876495db77a2e99ea927f01a2d28c5d9ed6`; the IG-01 opening branch is derived from that exact closure revision. Existing validation/runtime evidence and the historical PRE-13 holdout quality failure remain visible. Independent review is SHIP; live native-client trust remains bounded and unverified.
+Read [IG-01 contract](IG01-EVALUATION-FOUNDATION.md), then [IG-00 status and gates](IG00-FREEZE-BASELINE.md), [IG-00 independent review](IG-00-INDEPENDENT-REVIEW.md), [actual runtime paths](RUNTIME-DATAFLOW.md), and [documentation authority](DOCUMENTATION-AUTHORITY.md) before older plans. Native V2 remains SHADOW; V1 delivery ownership correction is implemented and installed. IG-00 remains closed at `18e88876495db77a2e99ea927f01a2d28c5d9ed6`; IG01-A is shipped at immutable tag `ig01a-ship`, and IG01-B is now open only for bounded corpus/ground-truth contract work. Existing validation/runtime evidence and the historical PRE-13 holdout quality failure remain visible. Independent review is SHIP; live native-client trust remains bounded and unverified.
 
 The closed IG-00 review included a bounded semantic safety correction: when
 the real embedding provider is unavailable, semantic search emits no synthetic

@@ -7,7 +7,9 @@ all test/review claims below are bound to `REVISION UNDER REVIEW`.
 **BASE REVISION:** `0f68e75cf71ba32065a90c7b2c8fd03fc476fde6`
 **DATE:** 2026-09-09
 **CONTRACT:** `IG01-A-EVALUATION-CONTRACT.md`
-**STATUS:** FIX-FIRST / NOT ACCEPTED
+**STATUS:** SHIP
+**SHIP TAG:** `ig01a-ship`
+**HUMAN CHECKPOINT:** PASS — user confirmed `IG01-A human checkpoint PASS`
 
 ## OBJECTIVE
 
@@ -65,10 +67,10 @@ candidate or canonical mutation was executed by this document-only package.
 
 ## KNOWN LIMITATIONS / OPEN FAILURES
 
-1. The required human checkpoint is pending: the user must inspect the 20
-   contract spot-check cases. This is distinct from the later 20 random frozen
-   corpus-label check required before IG-01 closes.
-2. IG01-B corpus work and all evaluator implementation remain closed.
+1. The later 20 random frozen-corpus-label check and IG01-C evaluator diff
+   inspection remain required before IG-01 closes.
+2. IG01-B is now the next bounded package; its implementation remains gated by
+   a fresh contract/audit and independent review.
 3. The current branch contains the prior user-side documentation archive
    commit; it is preserved and not rewritten.
 
@@ -85,9 +87,8 @@ candidate or canonical mutation was executed by this document-only package.
   revision binding were the remaining document blockers; the gate set is
   normalized in `84ed60d…` and this report binds its evidence to that revision.
 - Fresh independent read-only review of `84ed60d…` (`ig01a_reviewer6`):
-  **SHIP**, with P0/P1/P2 findings absent. The reviewer confirms the contract
-  is sound; the human 20-case checkpoint remains the only acceptance gate
-  intentionally pending.
+  **SHIP**, with P0/P1/P2 findings absent. The user checkpoint is now
+  explicitly accepted by the user message recorded above.
 
 ## SCORE BEFORE / AFTER
 
@@ -98,8 +99,8 @@ candidate or canonical mutation was executed by this document-only package.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED**
+**SHIP**
 
-IG01-A cannot receive SHIP until the user completes the 20-case contract
-checkpoint and a fresh independent reviewer returns SHIP. Phase 20 remains
-**FROZEN / LOCKED**, V2 remains **SHADOW**, and IG01-B must not start.
+IG01-A is closed at the reviewed contract revision with its immutable
+`ig01a-ship` tag. Phase 20 remains **FROZEN / LOCKED**, V2 remains **SHADOW**,
+and IG01-B may now begin its bounded corpus/ground-truth contract work.

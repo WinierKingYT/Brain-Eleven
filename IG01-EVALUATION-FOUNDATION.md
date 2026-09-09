@@ -56,8 +56,9 @@ previous package has an independent **SHIP** verdict.
 | **IG01-D — Baseline Measurement** | Measure V1 and V2 on the same frozen corpus without tuning production. | Revision-bound baseline report reviewed and SHIP. |
 | **IG01-E — Independent Evaluation Audit** | Read-only audit of benchmark integrity, privacy, holdout discipline and interpretability. | Independent SHIP closes IG-01. |
 
-IG01-A is now the active bounded package. It must ship before corpus or
-evaluator implementation begins. The full program keeps the following order
+IG01-A is shipped under the immutable `ig01a-ship` gate. IG01-B is now the
+active bounded package; corpus or evaluator implementation remains limited to
+its approved contract and evidence. The full program keeps the following order
 after IG-01: IG-03 semantic extraction, IG-02 capture closure, IG-04
 correction/reference, IG-05 task-aware retrieval, IG-06 V2 runtime promotion,
 IG-07 architecture consolidation, IG-08 dogfood and IG-09 final audit. IG-03
