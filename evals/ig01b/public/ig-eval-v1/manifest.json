@@ -1,0 +1,53 @@
+{
+  "abstention_count": 6,
+  "change_log": [
+    {
+      "change": "Initial IG01-B public synthetic corpus.",
+      "version": "ig-eval-v1"
+    }
+  ],
+  "corpus_version": "ig-eval-v1",
+  "dataset_class": "PUBLIC_SYNTHETIC",
+  "file_sha256": {
+    "abstention": "47a27465e3de237932a73a8257307d0d7e6e6653a4b0c3e3349dbe7bed8edf9a",
+    "dev": "e8da67152c4cd2ae952656a18d17287d8299cb740fea50d8c5aa8d27acfc8f91",
+    "holdout": "dd2519cdab6c25d4e3bb607f0a4dce214175ad608c91b2ce0cb9db82ed6e0cee",
+    "validation": "e5099d4dabd34dea5f56481030b22b8f89b9aae015afd476071330e6144b83ac"
+  },
+  "generator": "ig01b-model-a-deterministic-template-v1",
+  "holdout_double_labeled": 39,
+  "holdout_sha256": "dd2519cdab6c25d4e3bb607f0a4dce214175ad608c91b2ce0cb9db82ed6e0cee",
+  "inter_annotator_disagreement_rate": 0.0,
+  "label_owner": "ig01b-double-label-review",
+  "languages": [
+    "en",
+    "tr",
+    "tr-en"
+  ],
+  "phenomena": [
+    "explicit_decision",
+    "preference",
+    "lesson",
+    "requirement",
+    "suggestion",
+    "hypothetical",
+    "question",
+    "negation",
+    "correction",
+    "quoted_material",
+    "assistant_proposal",
+    "old_critical_decision",
+    "irrelevant_recent_memory",
+    "wrong_project_candidate",
+    "superseded_memory",
+    "resolved_blocker",
+    "ambiguous_reference"
+  ],
+  "privacy_status": "public-synthetic-secret-free",
+  "splits": {
+    "dev": 76,
+    "holdout": 39,
+    "validation": 38
+  },
+  "total_answerable": 153
+}

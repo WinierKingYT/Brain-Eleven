@@ -33,6 +33,11 @@ authorize opening Phase 20 or promoting V2.
 | `IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
 | `IG01-A-EVALUATION-CONTRACT.md` | CURRENT **CONTRACT** for the shipped IG01-A measurement-contract package; it freezes evaluation semantics and remains the governing input to later corpus/evaluator work. |
 | `IG01-A-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-A; its `SHIP` verdict and `ig01a-ship` tag close IG01-A. |
+| `IG01-B-CORPUS-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG01-B corpus, ground-truth, provenance and privacy boundary; it does not authorize evaluator or production changes. |
+| `IG01-B-PRIOR-ART.md` | GENERATED EVIDENCE / targeted read-only prior-art input for corpus design; it does not authorize production changes. |
+| `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; remains `FIX-FIRST / NOT ACCEPTED` until exact-revision CI and independent review return `SHIP`. |
+| `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
+| `evals/ig01b/failures/manifest.json` | CURRENT reservation manifest; sanitized real failures remain empty until IG-08. |
 | `CLAUDE.md` | CURRENT agent guidance; dated legacy setup notes are not current architecture authority. |
 | `docs/history/**` | Archived phase plans, PRE-package records, Foundation records, phase contracts, phase independent reviews and historical operational guides. Retained for provenance only; never infer current behavior, CI, deployment or runtime connection from them. See per-file notes below. |
 | `docs/history/PRE13-TECHNICAL-CLOSURE.md` | HISTORICAL development checkpoint evidence; operational commands require current runtime map/code verification. Unfinished gates are not graduation. |

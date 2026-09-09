@@ -1,6 +1,6 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-08
+**Last updated:** 2026-09-09
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: IG01-A Evaluation Contract — CLOSED / SHIPPED**.
@@ -18,6 +18,14 @@ vectors and hybrid retrieval uses lexical-only scoring. Cached vectors now
 require matching content, provider, model and dimension provenance. This is
 reliability work completed inside IG-00; it does not alter the IG-01
 measurement-only boundary or the Phase 20 lock.
+
+IG01-B currently owns the versioned `ig-eval-v1` public corpus under
+`evals/ig01b/`: 153 answerable cases across 17 phenomena and three language
+strata, a separate six-case abstention set, a 39-case double-labeled holdout,
+an immutable holdout hash, a guarded local-only private mechanism, and an empty
+sanitized-failure reservation for IG-08. The corpus is measurement data only;
+IG01-C evaluator implementation and all production intelligence tuning remain
+closed until an independent IG01-B `SHIP` review.
 
 The current head also closes bounded review findings without promoting any
 shadow runtime: task confidence records ambiguity instead of claiming 0.95

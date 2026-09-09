@@ -938,3 +938,19 @@ jobs:
         with:
           name: phase14-graduation-evidence
           path: .phase-evidence/phase14-graduation.json
+
+  ig01b-corpus:
+    name: IG01-B corpus integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Verify public corpus, holdout pin and privacy boundaries
+        run: python -m pytest tests/test_ig01b_corpus.py -q
