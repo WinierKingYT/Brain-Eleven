@@ -130,7 +130,7 @@ def _pair_report() -> dict:
             "realistic_gain": 0.10,
             "program_floor": {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85},
             "targets": {
-                "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.5},
+                "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 1.0},
                 "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 1.0},
                 "mrr": {"value": 0.85, "status": "METRIC_UNAVAILABLE_IN_NORMALIZED_PROVIDER_CONTRACT", "baseline": None},
             },
