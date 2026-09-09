@@ -32,7 +32,11 @@ PINNED_HOLDOUT_TAG = "ig01b-corpus-v2"
 
 
 def canonical_jsonl_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    # Git may materialize committed LF JSONL as CRLF on Windows. Hash the
+    # canonical UTF-8/LF representation so both CI platforms verify the same
+    # corpus bytes.
+    canonical = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def public_case_paths(root: Path = PUBLIC_ROOT) -> dict[str, Path]:
@@ -59,7 +63,7 @@ def verify_holdout_tag(root: Path = PUBLIC_ROOT) -> bool:
     )
     if result.returncode != 0:
         return False
-    return hashlib.sha256(result.stdout).hexdigest() == canonical_jsonl_sha256(root / "holdout.jsonl")
+    return hashlib.sha256(result.stdout.replace(b"\r\n", b"\n")).hexdigest() == canonical_jsonl_sha256(root / "holdout.jsonl")
 
 
 def check_public_corpus(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
