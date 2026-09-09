@@ -100,15 +100,30 @@ def _pair_report() -> dict:
         "source": v1["source"],
         "providers": {"v1": v1, "v2": v2},
         "comparison": {
+            "schema_version": 1,
+            "comparison_type": "brain_eleven_evaluation_regression",
             "baseline": {"provider_id": v1["provider"]["id"]},
             "candidate": {"provider_id": v2["provider"]["id"]},
+            "corpus": {"fixture_id": "phase15_contract", "suite": "public", "task_count": 1},
             "metric_deltas": {},
             "invariant_changes": {},
             "candidate_gate": {"passed": True, "failed_invariants": {}, "unsupported_invariants": {}},
             "outcome": "unchanged",
         },
         "measurement": {"v1_elapsed_ms": 1.0, "v2_elapsed_ms": 1.0, "budget_measurement": "unavailable"},
-        "feasibility": {"status": "SEMANTIC_UNAVAILABLE", "holdout_included": False},
+        "feasibility": {
+            "status": "SEMANTIC_UNAVAILABLE",
+            "provider_id": "none",
+            "reason": "no real provider",
+            "case_count": 50,
+            "split": "dev",
+            "holdout_included": False,
+            "corpus_split_fingerprint": "sha256:" + "a" * 64,
+            "precision": None,
+            "empirical_ceiling": None,
+            "elapsed_ms": 1.0,
+            "measurement": "no score",
+        },
         "target_derivation": {
             "formula": "max(program_floor + margin, baseline + realistic_gain)",
             "margin": 0.05,
@@ -116,7 +131,7 @@ def _pair_report() -> dict:
             "program_floor": {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85},
             "targets": {
                 "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.5},
-                "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.75},
+                "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 1.0},
                 "mrr": {"value": 0.85, "status": "METRIC_UNAVAILABLE_IN_NORMALIZED_PROVIDER_CONTRACT", "baseline": None},
             },
             "quality_visibility": {"v2_must_exceed_v1": True, "promotion_allowed": False, "spike_status": "SEMANTIC_UNAVAILABLE"},
@@ -132,6 +147,54 @@ def test_pair_report_rejects_provider_task_mismatch():
     report = _pair_report()
     report["providers"]["v2"]["corpus"]["task_ids"] = ["p15_v2_basic_relevance_002"]
     with pytest.raises(BaselineContractError):
+        validate_pair_report(report)
+
+
+def test_pair_report_rejects_provider_source_fingerprint_mismatch():
+    report = _pair_report()
+    report["providers"]["v2"]["source"]["evaluation_source_fingerprint"] = "sha256:" + "c" * 64
+    with pytest.raises(BaselineContractError, match="source.evaluation_source_fingerprint"):
+        validate_pair_report(report)
+
+
+def test_report_rejects_unknown_fields_even_without_sensitive_key_name():
+    report = _provider_report()
+    report["notes"] = "raw transcript"
+    with pytest.raises(BaselineContractError, match="unknown fields"):
+        validate_baseline_report(report)
+    nested = _provider_report()
+    nested["cases"][0]["expected"]["notes"] = "raw transcript"
+    with pytest.raises(BaselineContractError, match="unknown fields"):
+        validate_baseline_report(nested)
+
+
+def test_report_rejects_mutating_capability():
+    report = _provider_report()
+    report["provider"]["capabilities"]["production_mutation"] = True
+    with pytest.raises(BaselineContractError, match="read-only"):
+        validate_baseline_report(report)
+
+
+def test_pair_report_rejects_invalid_feasibility_count():
+    report = _pair_report()
+    report["feasibility"]["case_count"] = 1
+    with pytest.raises(BaselineContractError, match="50 DEV"):
+        validate_pair_report(report)
+
+
+def test_pair_report_rejects_task_count_tampering():
+    report = _pair_report()
+    report["corpus"]["task_count"] = 999
+    with pytest.raises(BaselineContractError, match="task_count"):
+        validate_pair_report(report)
+
+
+def test_target_baseline_uses_mandatory_recall_not_context_recall():
+    report = _pair_report()
+    report["providers"]["v1"]["metrics"]["context_recall"] = 0.25
+    assert validate_pair_report(report)["report_type"] == "brain_eleven_ig01d_pair"
+    report["target_derivation"]["targets"]["mandatory_recall"]["baseline"] = 0.25
+    with pytest.raises(BaselineContractError, match="mandatory_recall"):
         validate_pair_report(report)
 
 
@@ -161,8 +224,11 @@ def test_public_fingerprint_does_not_read_holdout(tmp_path):
         else:
             destination.write_text(relative.as_posix(), encoding="utf-8")
     before = corpus_split_fingerprint(target)
+    (target / "dev/extra.json").write_text("extra", encoding="utf-8")
+    after_extra = corpus_split_fingerprint(target)
+    assert after_extra != before
     (target / "holdout/p15_case.json").write_text("changed holdout", encoding="utf-8")
-    assert corpus_split_fingerprint(target) == before
+    assert corpus_split_fingerprint(target) == after_extra
     assert source.exists()
 
 

@@ -45,7 +45,10 @@ def _framed_digest(root: Path, paths: Iterable[Path]) -> str:
 def _public_paths(root: Path) -> tuple[Path, ...]:
     paths = [root / "manifest.json"]
     for split in ("dev", "test"):
-        paths.extend(sorted((root / split).glob("p15_*.json")))
+        # Match the public loader's complete JSON surface; an extra file must
+        # either be rejected by the deterministic source check or be visible
+        # in the fingerprint rather than silently omitted.
+        paths.extend(sorted((root / split).glob("*.json")))
     if not all(path.is_file() for path in paths):
         missing = [path.relative_to(root).as_posix() for path in paths if not path.is_file()]
         raise ValueError(f"IG01-D public corpus is incomplete: {missing[:5]}")
@@ -82,4 +85,3 @@ def evaluation_source_fingerprint(root: Path | str, corpus_root: Path | str) -> 
         digest.update(len(content).to_bytes(8, "big"))
         digest.update(content)
     return f"sha256:{digest.hexdigest()}"
-

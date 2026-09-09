@@ -50,7 +50,9 @@ def _check_public_corpus_only(corpus_root: Path, fixture) -> None:
     }
     actual = set()
     for split in ("dev", "test"):
-        actual.update((corpus_root / split).glob("p15_*.json"))
+        # The loader consumes every JSON document.  Enumerate the same set so
+        # an unexpected public file cannot bypass the source check/fingerprint.
+        actual.update((corpus_root / split).glob("*.json"))
     if actual != expected:
         raise BaselineContractError("IG01-D public corpus paths differ from the deterministic source")
     for relative, document in documents.items():
@@ -152,7 +154,13 @@ def _derive_targets(v1: Mapping[str, Any], feasibility: Mapping[str, Any]) -> di
     """Derive visible, conservative targets without tuning either provider."""
 
     precision = float(v1["metrics"]["context_precision"])
-    recall = float(v1["metrics"]["context_recall"])
+    required_items = v1["metrics"].get("required_items")
+    required_selected_items = v1["metrics"].get("required_selected_items")
+    mandatory_recall = (
+        float(required_selected_items) / float(required_items)
+        if required_items not in (None, 0) and required_selected_items is not None
+        else None
+    )
     margin = 0.05
     realistic_gain = 0.10
     floors = {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85}
@@ -163,9 +171,9 @@ def _derive_targets(v1: Mapping[str, Any], feasibility: Mapping[str, Any]) -> di
             "baseline": round(precision, 6),
         },
         "mandatory_recall": {
-            "value": round(max(floors["mandatory_recall"] + margin, recall + realistic_gain), 6),
-            "status": "PROVISIONAL_SPIKE_UNAVAILABLE" if feasibility["status"] != "MEASURED" else "DERIVED",
-            "baseline": round(recall, 6),
+            "value": round(max(floors["mandatory_recall"] + margin, mandatory_recall + realistic_gain), 6) if mandatory_recall is not None else round(floors["mandatory_recall"] + margin, 6),
+            "status": "PROVISIONAL_SPIKE_UNAVAILABLE" if feasibility["status"] != "MEASURED" else ("DERIVED" if mandatory_recall is not None else "METRIC_UNAVAILABLE"),
+            "baseline": round(mandatory_recall, 6) if mandatory_recall is not None else None,
         },
         "mrr": {
             "value": floors["mrr"],
