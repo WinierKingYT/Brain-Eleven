@@ -222,6 +222,8 @@ def _validate_family_metric_map(metrics: Any, field: str) -> None:
     for family, family_metrics in metrics.items():
         if not isinstance(family, str) or not family.strip():
             raise EvaluatorError(f"{field} family names must be non-empty strings")
+        if not isinstance(family_metrics, Mapping):
+            raise EvaluatorError(f"{field}.{family} has an invalid metric shape")
         _validate_metric_map(family_metrics, f"{field}.{family}")
 
 
