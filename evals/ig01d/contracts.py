@@ -54,6 +54,20 @@ _FEASIBILITY_KEYS = frozenset({"status", "provider_id", "reason", "case_count", 
 _TARGET_KEYS = frozenset({"formula", "margin", "realistic_gain", "program_floor", "targets", "quality_visibility"})
 _TARGET_METRIC_KEYS = frozenset({"value", "status", "baseline"})
 _QUALITY_VISIBILITY_KEYS = frozenset({"v2_must_exceed_v1", "promotion_allowed", "spike_status"})
+_BUDGET_MEASUREMENT = "token counts unavailable in normalized provider contract"
+_PAIR_BUDGET_MEASUREMENT = _BUDGET_MEASUREMENT
+_UNAVAILABLE_FEASIBILITY_REASONS = frozenset(
+    {
+        "no real embedding or cross-encoder provider is installed",
+        "embedding client detected but no cross-encoder provider is installed",
+        "provider detected; throwaway cross-encoder wiring is not part of production IG01-D",
+    }
+)
+_UNAVAILABLE_FEASIBILITY_MEASUREMENTS = frozenset(
+    {"no score without a real embedding plus cross-encoder pair"}
+)
+_MEASURED_FEASIBILITY_REASONS = frozenset({"real embedding plus cross-encoder pair measured"})
+_MEASURED_FEASIBILITY_MEASUREMENTS = frozenset({"precision measured on 50 DEV cases"})
 
 # Reports may retain identifiers and numeric metrics, but never benchmark
 # prompts, memory text, transcripts, or credentials.
@@ -154,6 +168,8 @@ def _task_ids(value: Any, field: str) -> list[str]:
 
 def _validate_metrics(metrics: Any, field: str, *, case_count: int | None = None) -> Mapping[str, Any]:
     metrics = _closed_mapping(metrics, field, _METRIC_KEYS)
+    if set(metrics) != _METRIC_KEYS:
+        raise BaselineContractError(f"{field} must contain the complete frozen metric set")
     if not isinstance(metrics.get("case_count"), int) or isinstance(metrics.get("case_count"), bool) or metrics.get("case_count", 0) <= 0:
         raise BaselineContractError(f"{field}.case_count must be positive")
     if case_count is not None and metrics["case_count"] != case_count:
@@ -171,8 +187,12 @@ def _validate_metrics(metrics: Any, field: str, *, case_count: int | None = None
 
 def _validate_invariants(invariants: Any, field: str) -> None:
     invariants = _closed_mapping(invariants, field, _INVARIANT_NAMES)
+    if set(invariants) != _INVARIANT_NAMES:
+        raise BaselineContractError(f"{field} must contain every safety invariant")
     for name, value in invariants.items():
         item = _closed_mapping(value, f"{field}.{name}", _INVARIANT_KEYS)
+        if set(item) != _INVARIANT_KEYS:
+            raise BaselineContractError(f"{field}.{name} must contain complete invariant evidence")
         if item.get("state") not in {"pass", "fail", "unsupported", "not_applicable"}:
             raise BaselineContractError(f"{field}.{name}.state is invalid")
         for key in ("failed_case_ids", "unsupported_case_ids", "not_applicable_case_ids"):
@@ -185,6 +205,8 @@ def _validate_case_invariants(invariants: Any, field: str) -> None:
     """Case rows retain compact invariant states rather than full evidence."""
 
     invariants = _closed_mapping(invariants, field, _INVARIANT_NAMES)
+    if set(invariants) != _INVARIANT_NAMES:
+        raise BaselineContractError(f"{field} must contain every safety invariant")
     for name, state in invariants.items():
         if state not in {"pass", "fail", "unsupported", "not_applicable"}:
             raise BaselineContractError(f"{field}.{name} is an invalid invariant state")
@@ -209,6 +231,8 @@ def _validate_case(case: Any, field: str, *, expected_task_id: str) -> None:
     for key in ("selected_ids", "missing_required_ids", "unexpected_selected_ids", "forbidden_selected_ids"):
         _validate_string_id_list(case.get(key), f"{field}.{key}")
     metrics = _closed_mapping(case.get("metrics"), f"{field}.metrics", _CASE_METRIC_KEYS)
+    if set(metrics) != _CASE_METRIC_KEYS:
+        raise BaselineContractError(f"{field}.metrics must contain the complete metric set")
     for key, value in metrics.items():
         if key == "task_id":
             if value != expected_task_id:
@@ -217,10 +241,21 @@ def _validate_case(case: Any, field: str, *, expected_task_id: str) -> None:
             raise BaselineContractError(f"{field}.metrics.{key} must be numeric")
     _validate_case_invariants(case.get("invariants"), f"{field}.invariants")
     violations = case.get("violations")
-    if not isinstance(violations, list) or any(not isinstance(item, str) for item in violations):
-        raise BaselineContractError(f"{field}.violations must be an array")
+    if not isinstance(violations, list) or any(item not in _INVARIANT_NAMES for item in violations):
+        raise BaselineContractError(f"{field}.violations must contain only invariant codes")
+    if violations != sorted(set(violations)):
+        raise BaselineContractError(f"{field}.violations must be unique and sorted")
     if not isinstance(case.get("passed"), bool):
         raise BaselineContractError(f"{field}.passed must be boolean")
+
+
+def _validate_code_map(value: Any, field: str) -> Mapping[str, Any]:
+    """Validate a content-free invariant map whose values are case IDs."""
+
+    mapping = _closed_mapping(value, field, _INVARIANT_NAMES)
+    for name, case_ids in mapping.items():
+        _validate_string_id_list(case_ids, f"{field}.{name}")
+    return mapping
 
 
 def validate_baseline_report(report: Mapping[str, Any]) -> dict[str, Any]:
@@ -270,7 +305,14 @@ def validate_baseline_report(report: Mapping[str, Any]) -> dict[str, Any]:
     _validate_metrics(report.get("metrics"), "report.metrics", case_count=len(task_ids))
     _validate_invariants(report.get("invariants"), "report.invariants")
     measurement = _closed_mapping(report.get("measurement"), "report.measurement", _MEASUREMENT_KEYS)
+    if set(measurement) != _MEASUREMENT_KEYS:
+        raise BaselineContractError("report.measurement must contain the complete measurement set")
     _number(measurement.get("elapsed_ms"), "report.measurement.elapsed_ms")
+    _number(measurement.get("per_case_mean_ms"), "report.measurement.per_case_mean_ms")
+    _number(measurement.get("p50_ms"), "report.measurement.p50_ms", nullable=True)
+    _number(measurement.get("p95_ms"), "report.measurement.p95_ms", nullable=True)
+    if measurement.get("budget_measurement") != _BUDGET_MEASUREMENT:
+        raise BaselineContractError("report.measurement.budget_measurement is not a bounded code")
     if measurement.get("case_count") != len(task_ids):
         raise BaselineContractError("measurement.case_count does not match task_ids")
     cases = report.get("cases")
@@ -346,32 +388,44 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
     if comparison_corpus != {"fixture_id": fixture_id, "suite": "public", "task_count": len(task_ids)}:
         raise BaselineContractError("comparison corpus identity differs from pair corpus")
     metric_deltas = _closed_mapping(comparison.get("metric_deltas"), "pair report.comparison.metric_deltas", frozenset({"context_precision", "context_recall"}))
+    if set(metric_deltas) != {"context_precision", "context_recall"}:
+        raise BaselineContractError("comparison.metric_deltas must contain the complete quality metric set")
     for name, delta in metric_deltas.items():
         delta = _closed_mapping(delta, f"pair report.comparison.metric_deltas.{name}", _METRIC_DELTA_KEYS)
         for key in _METRIC_DELTA_KEYS:
             _number(delta.get(key), f"pair report.comparison.metric_deltas.{name}.{key}")
     invariant_changes = _closed_mapping(comparison.get("invariant_changes"), "pair report.comparison.invariant_changes", _INVARIANT_NAMES)
+    if set(invariant_changes) != _INVARIANT_NAMES:
+        raise BaselineContractError("comparison.invariant_changes must contain every safety invariant")
     for name, change in invariant_changes.items():
         change = _closed_mapping(change, f"pair report.comparison.invariant_changes.{name}", frozenset({"new_failed_case_ids", "resolved_failed_case_ids", "new_unsupported_case_ids", "resolved_unsupported_case_ids"}))
+        if set(change) != {"new_failed_case_ids", "resolved_failed_case_ids", "new_unsupported_case_ids", "resolved_unsupported_case_ids"}:
+            raise BaselineContractError(f"comparison.invariant_changes.{name} is incomplete")
         for key in change:
             _validate_string_id_list(change[key], f"pair report.comparison.invariant_changes.{name}.{key}")
     gate = _closed_mapping(comparison.get("candidate_gate"), "pair report.comparison.candidate_gate", _GATE_KEYS)
     if not isinstance(gate.get("passed"), bool):
         raise BaselineContractError("comparison candidate_gate.passed must be boolean")
-    _closed_mapping(gate.get("failed_invariants"), "pair report.comparison.candidate_gate.failed_invariants", _INVARIANT_NAMES)
-    _closed_mapping(gate.get("unsupported_invariants"), "pair report.comparison.candidate_gate.unsupported_invariants", _INVARIANT_NAMES)
+    failed_invariants = _validate_code_map(gate.get("failed_invariants"), "pair report.comparison.candidate_gate.failed_invariants")
+    unsupported_invariants = _validate_code_map(gate.get("unsupported_invariants"), "pair report.comparison.candidate_gate.unsupported_invariants")
+    if gate.get("passed") and (failed_invariants or unsupported_invariants):
+        raise BaselineContractError("candidate_gate.passed cannot hide failed or unsupported invariants")
     if comparison.get("outcome") not in {"improved", "degraded", "unchanged", "inconclusive"}:
         raise BaselineContractError("comparison outcome is invalid")
     measurement = _closed_mapping(report.get("measurement"), "pair report.measurement", frozenset({"v1_elapsed_ms", "v2_elapsed_ms", "budget_measurement"}))
+    if set(measurement) != {"v1_elapsed_ms", "v2_elapsed_ms", "budget_measurement"}:
+        raise BaselineContractError("pair report.measurement must contain the complete measurement set")
     for name in ("v1_elapsed_ms", "v2_elapsed_ms"):
         _number(measurement.get(name), f"pair report.measurement.{name}")
+    if measurement.get("budget_measurement") != _PAIR_BUDGET_MEASUREMENT:
+        raise BaselineContractError("pair report.measurement.budget_measurement is not a bounded code")
     feasibility = _closed_mapping(report.get("feasibility"), "pair report.feasibility", _FEASIBILITY_KEYS)
     status = _nonempty(feasibility.get("status"), "pair report.feasibility.status")
     if status not in {"SEMANTIC_UNAVAILABLE", "MEASURED"}:
         raise BaselineContractError("pair report.feasibility.status is invalid")
     if feasibility.get("provider_id") not in {"none", "openai_only", "sentence_transformers"}:
         raise BaselineContractError("pair report.feasibility.provider_id is invalid")
-    _nonempty(feasibility.get("reason"), "pair report.feasibility.reason")
+    reason = _nonempty(feasibility.get("reason"), "pair report.feasibility.reason")
     if feasibility.get("case_count") != 50 or feasibility.get("split") != "dev":
         raise BaselineContractError("feasibility probe must cover exactly 50 DEV cases")
     _fingerprint(feasibility.get("corpus_split_fingerprint"), "pair report.feasibility.corpus_split_fingerprint")
@@ -379,12 +433,22 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise BaselineContractError("feasibility corpus fingerprint differs from pair corpus")
     if feasibility.get("holdout_included") is not False:
         raise BaselineContractError("feasibility probe must explicitly exclude HOLDOUT")
-    _number(feasibility.get("precision"), "pair report.feasibility.precision", nullable=True)
-    _number(feasibility.get("empirical_ceiling"), "pair report.feasibility.empirical_ceiling", nullable=True)
+    precision = _number(feasibility.get("precision"), "pair report.feasibility.precision", nullable=True)
+    empirical_ceiling = _number(feasibility.get("empirical_ceiling"), "pair report.feasibility.empirical_ceiling", nullable=True)
     _number(feasibility.get("elapsed_ms"), "pair report.feasibility.elapsed_ms")
-    _nonempty(feasibility.get("measurement"), "pair report.feasibility.measurement")
-    if status == "SEMANTIC_UNAVAILABLE" and (feasibility.get("precision") is not None or feasibility.get("empirical_ceiling") is not None):
-        raise BaselineContractError("unavailable feasibility result cannot claim a score")
+    measurement_text = _nonempty(feasibility.get("measurement"), "pair report.feasibility.measurement")
+    if status == "SEMANTIC_UNAVAILABLE":
+        if reason not in _UNAVAILABLE_FEASIBILITY_REASONS or measurement_text not in _UNAVAILABLE_FEASIBILITY_MEASUREMENTS:
+            raise BaselineContractError("unavailable feasibility metadata is not a bounded code")
+        if precision is not None or empirical_ceiling is not None:
+            raise BaselineContractError("unavailable feasibility result cannot claim a score")
+    elif status == "MEASURED":
+        if reason not in _MEASURED_FEASIBILITY_REASONS or measurement_text not in _MEASURED_FEASIBILITY_MEASUREMENTS:
+            raise BaselineContractError("measured feasibility metadata is not a bounded code")
+        if precision is None or empirical_ceiling is None:
+            raise BaselineContractError("measured feasibility result must include precision and empirical ceiling")
+        if not 0.0 <= precision <= 1.0 or not 0.0 <= empirical_ceiling <= 1.0:
+            raise BaselineContractError("measured feasibility scores must be between zero and one")
     targets = _closed_mapping(report.get("target_derivation"), "pair report.target_derivation", _TARGET_KEYS)
     if targets.get("formula") != "max(program_floor + margin, baseline + realistic_gain)":
         raise BaselineContractError("target derivation formula is not frozen")
@@ -423,4 +487,19 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 raise BaselineContractError(f"targets.{name}.baseline claims an unavailable metric")
         elif recorded is None or abs(float(recorded) - float(expected)) > 1e-6:
             raise BaselineContractError(f"targets.{name}.baseline does not match V1 metrics")
+    expected_target_values = {
+        "context_precision": max(
+            float(floor_values["context_precision"]) + float(targets["margin"]),
+            float(expected_baselines["context_precision"]) + float(targets["realistic_gain"]),
+        ),
+        "mandatory_recall": max(
+            float(floor_values["mandatory_recall"]) + float(targets["margin"]),
+            float(expected_baselines["mandatory_recall"]) + float(targets["realistic_gain"]),
+        ) if expected_baselines["mandatory_recall"] is not None else float(floor_values["mandatory_recall"]) + float(targets["margin"]),
+        "mrr": float(floor_values["mrr"]) + float(targets["margin"]) if expected_baselines["mrr"] is not None else float(floor_values["mrr"]),
+    }
+    for name, expected in expected_target_values.items():
+        recorded = float(target_values[name]["value"])
+        if abs(recorded - expected) > 1e-6:
+            raise BaselineContractError(f"targets.{name}.value does not match the frozen derivation formula")
     return dict(report)

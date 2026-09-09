@@ -15,6 +15,12 @@ from evals.ig01d.spike import run_feasibility_probe
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "evals" / "corpus-v2"
+_INVARIANT_NAMES = ("forbidden_context", "resolved_lifecycle_leakage", "superseded_lifecycle_leakage", "wrong_project_leakage")
+_INVARIANT_EVIDENCE = {
+    name: {"state": "pass", "failed_case_ids": [], "unsupported_case_ids": [], "not_applicable_case_ids": []}
+    for name in _INVARIANT_NAMES
+}
+_CASE_INVARIANTS = {name: "pass" for name in _INVARIANT_NAMES}
 
 
 def _provider_report(provider_id: str = "context_compiler_baseline_v1") -> dict:
@@ -55,7 +61,7 @@ def _provider_report(provider_id: str = "context_compiler_baseline_v1") -> dict:
             "resolved_leakage_rate": 0.0,
             "unlabeled_context_rate": 0.0,
         },
-        "invariants": {},
+        "invariants": deepcopy(_INVARIANT_EVIDENCE),
         "measurement": {
             "elapsed_ms": 1.0,
             "case_count": 1,
@@ -72,8 +78,25 @@ def _provider_report(provider_id: str = "context_compiler_baseline_v1") -> dict:
             "missing_required_ids": [],
             "unexpected_selected_ids": [],
             "forbidden_selected_ids": [],
-            "metrics": {},
-            "invariants": {},
+            "metrics": {
+                "task_id": task_id,
+                "selected_count": 1,
+                "relevant_selected_count": 1,
+                "required_count": 1,
+                "required_selected_count": 1,
+                "useful_selected_count": 0,
+                "context_precision": 1.0,
+                "context_recall": 1.0,
+                "wrong_project_selected_count": 0,
+                "wrong_project_leakage_count": 0,
+                "forbidden_context_count": 0,
+                "superseded_selected_count": 0,
+                "superseded_leakage_count": 0,
+                "resolved_selected_count": 0,
+                "resolved_leakage_count": 0,
+                "unlabeled_selection_count": 0,
+            },
+            "invariants": dict(_CASE_INVARIANTS),
             "violations": [],
             "passed": True,
         }],
@@ -105,8 +128,14 @@ def _pair_report() -> dict:
             "baseline": {"provider_id": v1["provider"]["id"]},
             "candidate": {"provider_id": v2["provider"]["id"]},
             "corpus": {"fixture_id": "phase15_contract", "suite": "public", "task_count": 1},
-            "metric_deltas": {},
-            "invariant_changes": {},
+            "metric_deltas": {
+                "context_precision": {"baseline": 1.0, "candidate": 1.0, "delta": 0.0},
+                "context_recall": {"baseline": 1.0, "candidate": 1.0, "delta": 0.0},
+            },
+            "invariant_changes": {
+                name: {"new_failed_case_ids": [], "resolved_failed_case_ids": [], "new_unsupported_case_ids": [], "resolved_unsupported_case_ids": []}
+                for name in _INVARIANT_NAMES
+            },
             "candidate_gate": {"passed": True, "failed_invariants": {}, "unsupported_invariants": {}},
             "outcome": "unchanged",
         },
@@ -179,6 +208,61 @@ def test_pair_report_rejects_invalid_feasibility_count():
     report = _pair_report()
     report["feasibility"]["case_count"] = 1
     with pytest.raises(BaselineContractError, match="50 DEV"):
+        validate_pair_report(report)
+
+
+def test_pair_report_rejects_measured_feasibility_without_scores():
+    report = _pair_report()
+    report["feasibility"].update(
+        {
+            "status": "MEASURED",
+            "provider_id": "sentence_transformers",
+            "reason": "real embedding plus cross-encoder pair measured",
+            "measurement": "precision measured on 50 DEV cases",
+        }
+    )
+    with pytest.raises(BaselineContractError, match="must include precision and empirical ceiling"):
+        validate_pair_report(report)
+
+
+def test_pair_report_rejects_free_text_in_content_free_fields():
+    report = _pair_report()
+    report["measurement"]["budget_measurement"] = "prompt: private transcript"
+    with pytest.raises(BaselineContractError, match="bounded code"):
+        validate_pair_report(report)
+    report = _pair_report()
+    report["feasibility"]["reason"] = "secret=private prompt"
+    with pytest.raises(BaselineContractError, match="bounded code"):
+        validate_pair_report(report)
+    report = _pair_report()
+    report["providers"]["v1"]["cases"][0]["violations"] = ["raw transcript text"]
+    with pytest.raises(BaselineContractError, match="invariant codes"):
+        validate_pair_report(report)
+
+
+def test_pair_report_requires_complete_safety_and_comparison_evidence():
+    report = _pair_report()
+    del report["providers"]["v1"]["metrics"]["wrong_project_leakage_rate"]
+    with pytest.raises(BaselineContractError, match="complete frozen metric set"):
+        validate_pair_report(report)
+    report = _pair_report()
+    del report["providers"]["v1"]["invariants"]["wrong_project_leakage"]
+    with pytest.raises(BaselineContractError, match="every safety invariant"):
+        validate_pair_report(report)
+    report = _pair_report()
+    del report["comparison"]["metric_deltas"]["context_recall"]
+    with pytest.raises(BaselineContractError, match="complete quality metric set"):
+        validate_pair_report(report)
+    report = _pair_report()
+    del report["comparison"]["invariant_changes"]["wrong_project_leakage"]
+    with pytest.raises(BaselineContractError, match="every safety invariant"):
+        validate_pair_report(report)
+
+
+def test_pair_report_rejects_tampered_target_value():
+    report = _pair_report()
+    report["target_derivation"]["targets"]["context_precision"]["value"] = 0.99
+    with pytest.raises(BaselineContractError, match="target"):
         validate_pair_report(report)
 
 
