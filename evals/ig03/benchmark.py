@@ -24,6 +24,7 @@ from brain_eleven.extraction.semantic import (
     SemanticProvider,
     UnavailableProvider,
 )
+from brain_eleven.extraction.providers import create_semantic_provider
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -242,11 +243,19 @@ def benchmark_providers(
     actual_revision = _git_sha(ROOT)
     if revision != actual_revision:
         raise ValueError("git_sha must match the exact repository HEAD")
-    provider_map = dict(providers or {
-        "regex": DeterministicRegexProvider(),
-        "local_qwen": UnavailableProvider("local-qwen", "unconfigured"),
-        "strong": UnavailableProvider("strong-model", "unconfigured"),
-    })
+    if providers is not None:
+        provider_map = dict(providers)
+    else:
+        provider_map = {
+            "regex": DeterministicRegexProvider(),
+            "local_qwen": UnavailableProvider("local-qwen", "unconfigured"),
+            "strong": UnavailableProvider("strong-model", "unconfigured"),
+        }
+        # The existing slots remain unavailable by default. An explicitly
+        # configured provider is an opt-in benchmark input for R1 only.
+        configured = create_semantic_provider()
+        if configured.provider_id != "unavailable":
+            provider_map["configured"] = configured
     result = {
         "schema_version": 1,
         "report_type": "ig03_semantic_extraction_benchmark",

@@ -668,6 +668,23 @@ class CallableSemanticProvider:
                     "availability_code": "invalid_output",
                 },
             )
+        except Exception:
+            # Provider transport/runtime failures are unavailable, never
+            # evidence of an invalid proposition.  Do not expose exception
+            # text: SDK and subprocess errors can contain request content.
+            return ProviderResult(
+                status=SemanticStatus.SEMANTIC_UNAVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                review_records=(_record_review(content, "PROVIDER_CALL_FAILED"),),
+                error_code="PROVIDER_CALL_FAILED",
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": self.provider_revision,
+                    "availability_code": "provider_call_failed",
+                },
+            )
 
 
 class DeterministicRegexProvider:

@@ -13,6 +13,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from brain_eleven.retrieval.embedding_provider import EmbeddingProvider, create_embedding_provider
+
 from .fingerprint import corpus_split_fingerprint
 
 
@@ -24,6 +26,12 @@ def _provider_status() -> tuple[str, str]:
     return "none", "no real embedding or cross-encoder provider is installed"
 
 
+def configured_embedding_provider() -> EmbeddingProvider:
+    """Return the config-gated embedding socket without running a probe."""
+
+    return create_embedding_provider()
+
+
 def run_feasibility_probe(
     *,
     root: Path | str,
@@ -31,6 +39,7 @@ def run_feasibility_probe(
     fixture_path: Path | str,
     git_sha: str,
     dev_case_count: int = 50,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> dict[str, Any]:
     """Probe only the first 50 DEV cases and never touch HOLDOUT."""
 
@@ -41,11 +50,15 @@ def run_feasibility_probe(
     files = sorted(dev_root.glob("p15_*.json"))
     if len(files) < dev_case_count:
         raise ValueError("IG01-D DEV corpus has fewer than 50 cases")
+    selected_embedding = embedding_provider or configured_embedding_provider()
     provider_id, reason = _provider_status()
+    if selected_embedding.provider_id != "unavailable":
+        provider_id = selected_embedding.provider_id
+        reason = "embedding provider selected; cross-encoder provider is not configured"
     started = time.perf_counter()
-    # The spike is intentionally conservative until a real provider is wired
-    # into a separate throwaway branch.  Returning unavailable is evidence, not
-    # a fabricated score from hash vectors or the production heuristic.
+    # The spike stays conservative until both a real embedding and a real
+    # cross-encoder are available. Returning unavailable is evidence, not a
+    # fabricated score from hash vectors or the production heuristic.
     status = "SEMANTIC_UNAVAILABLE"
     precision = None
     ceiling = None
