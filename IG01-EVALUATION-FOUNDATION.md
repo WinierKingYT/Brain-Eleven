@@ -1,6 +1,6 @@
 # IG-01 Product Evaluation Foundation
 
-**Status:** ACTIVE / IG01-D SHIPPED; IG01-E SHIPPED — IG-01 HUMAN CLOSURE PENDING
+**Status:** CLOSED / SHIPPED — IG-01 CLOSURE HUMAN CHECKPOINT PASS
 **Authority:** CONTRACT
 **Opened from:** `18e88876495db77a2e99ea927f01a2d28c5d9ed6`
 **Branch:** `ig/01-evaluation-foundation`
@@ -64,9 +64,10 @@ the next bounded package and is active only for its paired baseline evidence;
 IG01-D is accepted after its independent technical review and the user
 checkpoint `IG01-D human checkpoint PASS` on 2026-09-09. IG01-E is shipped at
 exact review head `a38433090da662a35379620b223ddfade21dd5a9` after its
-independent read-only `SHIP`; the IG-01-wide human closure checkpoint remains
-pending. The audit covers benchmark integrity, privacy, holdout discipline and
-interpretability without changing production behavior.
+independent read-only `SHIP`; the user supplied `IG-01 closure human checkpoint
+PASS` on 2026-09-09. IG-01 is closed. The audit covered benchmark integrity,
+privacy, holdout discipline and interpretability without changing production
+behavior.
 The full program keeps the following order
 after IG-01: IG-03 semantic extraction, IG-02 capture closure, IG-04
 correction/reference, IG-05 task-aware retrieval, IG-06 V2 runtime promotion,

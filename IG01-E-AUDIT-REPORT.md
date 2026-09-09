@@ -1,13 +1,12 @@
 # IG01-E Independent Evaluation Audit Report
 
-**Status:** TECHNICAL AUDIT COMPLETE — INDEPENDENT REVIEW SHIP  
-**Verdict:** SHIP (IG01-E package)
+**Status:** CLOSED / SHIPPED — HUMAN CHECKPOINT PASS  
+**Verdict:** SHIP (IG-01)
 
 This report is generated from `evals.ig01e.audit` and is intentionally
 content-free. The technical audit and acceptance guard passed, and a fresh
-independent read-only reviewer returned `SHIP`. The report closes IG01-E but
-cannot close IG-01 by itself; the IG-01 closure human checkpoint is still
-required.
+independent read-only reviewer returned `SHIP`. The user then supplied the
+required `IG-01 closure human checkpoint PASS` on 2026-09-09, closing IG-01.
 
 ## Package report fields
 
@@ -24,11 +23,11 @@ required.
 | SAFETY METRICS | Required zero-leakage and privacy checks are independently reported; no raw content is emitted. The same-run `ig01d-baseline-evidence` artifact is public-only (`dev` + `test`, `holdout_included=false`) and the audit is bound to this SHA. |
 | LATENCY/TOKEN | Not applicable; the audit does not run a provider or compile context. |
 | KNOWN LIMITATIONS | A static/offline audit cannot prove live client trust or production retrieval quality; those remain later runtime/dogfood gates. |
-| OPEN FAILURES | IG-01-wide human closure checkpoint remains required. Historical PRE-13 quality holdout remains visible: runtime [#34353164991](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34353164991) infrastructure/runtime Linux+Windows passed, `quality` failed on the frozen intelligence holdout; this is an IG01- onward quality item, not relabeled as an audit pass. |
+| OPEN FAILURES | No IG-01 P0/P1/P2 closure failures. Historical PRE-13 quality holdout remains visible: runtime [#34353164991](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34353164991) infrastructure/runtime Linux+Windows passed, `quality` failed on the frozen intelligence holdout; this remains a later intelligence-quality item and is not relabeled as an audit pass. |
 | INDEPENDENT REVIEW | Fresh read-only review of `a384330`: **SHIP**, score **9/10**, P0/P1/P2 **none**. |
-| HUMAN CHECKPOINT | IG01-D human checkpoint PASS received; IG-01 closure checkpoint remains pending. |
+| HUMAN CHECKPOINT | IG01-D human checkpoint PASS and IG-01 closure human checkpoint PASS received on 2026-09-09. |
 | SCORE BEFORE/AFTER | Evaluation foundation **9/10 → 9/10**; no production-quality or intelligence uplift is claimed. |
-| VERDICT | **SHIP** |
+| VERDICT | **SHIP — IG-01 CLOSED** |
 
 ## Exact technical evidence
 

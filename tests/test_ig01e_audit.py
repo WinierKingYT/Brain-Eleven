@@ -24,6 +24,7 @@ def test_audit_is_revision_bound_and_content_free():
     assert report["phase20"] == "FROZEN_LOCKED"
     assert report["v2_runtime"] == "SHADOW"
     assert report["checks"]["benchmark_eligibility"]["evidence"]["eligibility"] == "EXPLORATORY_ONLY" if report["checks"]["benchmark_eligibility"]["status"] == "PASS" else True
+    assert report["checks"]["documentation"]["status"] == "PASS"
     serialized = str(report).lower()
     assert "prompt" not in serialized
     assert "transcript" not in serialized

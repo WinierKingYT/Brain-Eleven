@@ -99,8 +99,10 @@ def _audit_documentation(root: Path) -> list[dict[str, Any]]:
     evidence = [_check_file(root, relative, required_markers=markers) for relative, markers in files.items()]
     status = (root / "PROJECT-STATUS.md").read_text(encoding="utf-8").lower()
     d_report = (root / "IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower()
-    if "active package: ig01-e" not in status or "ig01-d human checkpoint pass" not in status:
-        raise AuditError("current status does not record IG01-D acceptance and IG01-E activity")
+    e_active = "active package: ig01-e" in status
+    e_closed = "last closed package: ig-01 evaluation foundation" in status and "closed / shipped" in status
+    if not (e_active or e_closed) or "ig01-d human checkpoint pass" not in status:
+        raise AuditError("current status does not record IG01-D acceptance and IG01-E state")
     if "status:** accepted" not in d_report or "verdict:** ship" not in d_report:
         raise AuditError("IG01-D report is not closed as SHIP")
     return evidence
