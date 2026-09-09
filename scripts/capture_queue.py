@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -137,6 +138,9 @@ def _job_id(idempotency_key: str) -> str:
     return JOB_PREFIX + hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()[:32]
 
 
+_JOB_ID = re.compile(r"^cap_[0-9a-f]{32}$")
+
+
 def _atomic_write_json(path: Path, document: Mapping[str, Any]) -> None:
     """Write a queue document atomically and durably on its local filesystem."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -181,7 +185,7 @@ class CaptureQueue:
         return self.root / QUEUE_DIRECTORIES[status]
 
     def _job_path(self, status: str, job_id: str) -> Path:
-        if not job_id.startswith(JOB_PREFIX):
+        if not isinstance(job_id, str) or not _JOB_ID.fullmatch(job_id):
             raise CaptureQueueStateError("capture queue job id is unsupported")
         return self._directory(status) / f"{job_id}.json"
 
@@ -291,7 +295,7 @@ class CaptureQueue:
             raise CaptureQueueCorruptError("capture queue job is incomplete")
         if document["schema_version"] != CAPTURE_QUEUE_SCHEMA_VERSION:
             raise CaptureQueueCorruptError("capture queue schema is unsupported")
-        if not isinstance(document["job_id"], str) or not document["job_id"].startswith(JOB_PREFIX):
+        if not isinstance(document["job_id"], str) or not _JOB_ID.fullmatch(document["job_id"]):
             raise CaptureQueueCorruptError("capture queue job identity is invalid")
         if document["status"] not in JOB_STATUSES:
             raise CaptureQueueCorruptError("capture queue job state is unsupported")

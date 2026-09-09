@@ -156,6 +156,37 @@ def test_corrupt_job_is_never_treated_as_an_empty_queue(tmp_path):
     assert corrupt.exists()
 
 
+def test_malformed_job_identity_cannot_escape_queue_directory(tmp_path):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(vault)
+    queue._ensure_layout()
+    corrupt = vault / ".brain-eleven" / "capture" / "queued" / "cap_corrupt.json"
+    corrupt.write_text(json.dumps({
+        "schema_version": 1,
+        "job_id": "cap_../outside",
+        "idempotency_key": "key",
+        "status": QUEUED,
+        "attempt": 0,
+        "created_at": "2026-09-05T10:00:00Z",
+        "event": {
+            "schema_version": 1,
+            "event_id": "evt_test",
+            "idempotency_key": "key",
+            "event_type": "SESSION_END",
+            "session_id": "session_test",
+            "project_root": str(tmp_path),
+            "project": {"project_id": "project", "status": "resolved"},
+            "event_at": "2026-09-05T10:00:00Z",
+        },
+    }), encoding="utf-8")
+
+    with pytest.raises(CaptureQueueCorruptError) as exc:
+        queue.claim_next()
+
+    assert exc.value.code == "CAPTURE_QUEUE_CORRUPT"
+    assert not (vault / ".brain-eleven" / "capture" / "outside.json").exists()
+
+
 def test_bounded_1000_event_fast_path_drops_no_distinct_jobs(tmp_path):
     vault = tmp_path / "vault"
     queue = CaptureQueue(vault)

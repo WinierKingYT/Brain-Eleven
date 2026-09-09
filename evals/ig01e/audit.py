@@ -100,7 +100,10 @@ def _audit_documentation(root: Path) -> list[dict[str, Any]]:
     status = (root / "PROJECT-STATUS.md").read_text(encoding="utf-8").lower()
     d_report = (root / "IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower()
     e_active = "active package: ig01-e" in status
-    e_closed = "last closed package: ig-01 evaluation foundation" in status and "closed / shipped" in status
+    # Later IG packages may be active after IG-01 has shipped.  Keep this
+    # audit valid by checking the durable IG-01 acceptance markers instead of
+    # assuming IG-01 remains the top-level last-closed package forever.
+    e_closed = "ig-01 is closed" in status and "ig-01 closure human checkpoint pass" in status
     if not (e_active or e_closed) or "ig01-d human checkpoint pass" not in status:
         raise AuditError("current status does not record IG01-D acceptance and IG01-E state")
     if "status:** accepted" not in d_report or "verdict:** ship" not in d_report:
