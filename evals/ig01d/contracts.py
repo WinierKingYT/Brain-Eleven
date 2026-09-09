@@ -214,4 +214,16 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
     _nonempty(feasibility.get("status"), "pair report.feasibility.status")
     if feasibility.get("holdout_included") is not False:
         raise BaselineContractError("feasibility probe must explicitly exclude HOLDOUT")
+    targets = _mapping(report.get("target_derivation"), "pair report.target_derivation")
+    if targets.get("formula") != "max(program_floor + margin, baseline + realistic_gain)":
+        raise BaselineContractError("target derivation formula is not frozen")
+    for name in ("margin", "realistic_gain"):
+        _number(targets.get(name), f"pair report.target_derivation.{name}")
+    floor_values = _mapping(targets.get("program_floor"), "pair report.target_derivation.program_floor")
+    target_values = _mapping(targets.get("targets"), "pair report.target_derivation.targets")
+    for name in ("context_precision", "mandatory_recall", "mrr"):
+        _number(floor_values.get(name), f"program_floor.{name}")
+        target = _mapping(target_values.get(name), f"targets.{name}")
+        _number(target.get("value"), f"targets.{name}.value")
+        _nonempty(target.get("status"), f"targets.{name}.status")
     return dict(report)

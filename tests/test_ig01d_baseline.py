@@ -109,6 +109,18 @@ def _pair_report() -> dict:
         },
         "measurement": {"v1_elapsed_ms": 1.0, "v2_elapsed_ms": 1.0, "budget_measurement": "unavailable"},
         "feasibility": {"status": "SEMANTIC_UNAVAILABLE", "holdout_included": False},
+        "target_derivation": {
+            "formula": "max(program_floor + margin, baseline + realistic_gain)",
+            "margin": 0.05,
+            "realistic_gain": 0.10,
+            "program_floor": {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85},
+            "targets": {
+                "context_precision": {"value": 0.65, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.5},
+                "mandatory_recall": {"value": 0.85, "status": "PROVISIONAL_SPIKE_UNAVAILABLE", "baseline": 0.75},
+                "mrr": {"value": 0.85, "status": "METRIC_UNAVAILABLE_IN_NORMALIZED_PROVIDER_CONTRACT", "baseline": None},
+            },
+            "quality_visibility": {"v2_must_exceed_v1": True, "promotion_allowed": False, "spike_status": "SEMANTIC_UNAVAILABLE"},
+        },
     }
 
 

@@ -148,6 +148,45 @@ def _wrap_report(
     return validate_baseline_report(report)
 
 
+def _derive_targets(v1: Mapping[str, Any], feasibility: Mapping[str, Any]) -> dict[str, Any]:
+    """Derive visible, conservative targets without tuning either provider."""
+
+    precision = float(v1["metrics"]["context_precision"])
+    recall = float(v1["metrics"]["context_recall"])
+    margin = 0.05
+    realistic_gain = 0.10
+    floors = {"context_precision": 0.60, "mandatory_recall": 0.80, "mrr": 0.85}
+    targets = {
+        "context_precision": {
+            "value": round(max(floors["context_precision"] + margin, precision + realistic_gain), 6),
+            "status": "PROVISIONAL_SPIKE_UNAVAILABLE" if feasibility["status"] != "MEASURED" else "DERIVED",
+            "baseline": round(precision, 6),
+        },
+        "mandatory_recall": {
+            "value": round(max(floors["mandatory_recall"] + margin, recall + realistic_gain), 6),
+            "status": "PROVISIONAL_SPIKE_UNAVAILABLE" if feasibility["status"] != "MEASURED" else "DERIVED",
+            "baseline": round(recall, 6),
+        },
+        "mrr": {
+            "value": floors["mrr"],
+            "status": "METRIC_UNAVAILABLE_IN_NORMALIZED_PROVIDER_CONTRACT",
+            "baseline": None,
+        },
+    }
+    return {
+        "formula": "max(program_floor + margin, baseline + realistic_gain)",
+        "margin": margin,
+        "realistic_gain": realistic_gain,
+        "program_floor": floors,
+        "targets": targets,
+        "quality_visibility": {
+            "v2_must_exceed_v1": True,
+            "promotion_allowed": False,
+            "spike_status": feasibility["status"],
+        },
+    }
+
+
 def build_pair_report(
     *,
     root: Path | str = DEFAULT_ROOT,
@@ -221,6 +260,7 @@ def build_pair_report(
             "budget_measurement": "token counts unavailable in normalized provider contract",
         },
         "feasibility": feasibility,
+        "target_derivation": _derive_targets(v1, feasibility),
     }
     return validate_pair_report(report)
 
