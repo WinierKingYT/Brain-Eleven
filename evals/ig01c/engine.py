@@ -480,6 +480,8 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise EvaluatorError("unsupported report schema version")
     if report.get("report_type") != "brain_eleven_ig01c_evaluation":
         raise EvaluatorError("invalid IG01-C report type")
+    if report.get("evaluator_version") != EVALUATOR_VERSION:
+        raise EvaluatorError("unsupported evaluator version")
     source = report.get("source")
     if not isinstance(source, Mapping):
         raise EvaluatorError("report.source must be a content-free object")
@@ -493,8 +495,17 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
             "report.corpus contains unknown fields: " + ", ".join(sorted(map(str, unknown_corpus_keys)))
         )
     ids = corpus.get("case_ids")
-    if not isinstance(ids, list) or ids != sorted(ids) or len(ids) != len(set(ids)) or not ids:
+    if (
+        not isinstance(ids, list)
+        or not all(isinstance(value, str) and value.strip() for value in ids)
+        or ids != sorted(ids)
+        or len(ids) != len(set(ids))
+        or not ids
+    ):
         raise EvaluatorError("report.corpus.case_ids must be sorted and unique")
+    for count_name in ("case_count", "scored_case_count", "excluded_case_count"):
+        if not isinstance(corpus.get(count_name), int) or corpus[count_name] < 0:
+            raise EvaluatorError(f"report.corpus.{count_name} must be a non-negative integer")
     if corpus.get("case_count") != len(ids):
         raise EvaluatorError("report.corpus.case_count mismatch")
     if corpus.get("scored_case_count", -1) + corpus.get("excluded_case_count", -1) != len(ids):
@@ -505,19 +516,43 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise EvaluatorError("report.safety_gates must contain exactly the IG01-C gates")
     for gate in HARD_ZERO_GATES:
         row = gates[gate]
-        if not isinstance(row, Mapping) or not isinstance(row.get("count"), int) or not isinstance(row.get("passed"), bool):
+        if (
+            not isinstance(row, Mapping)
+            or set(row) != {"count", "denominator", "passed", "event_case_ids", "review_records"}
+            or not isinstance(row.get("count"), int)
+            or not isinstance(row.get("denominator"), int)
+            or not isinstance(row.get("passed"), bool)
+            or not isinstance(row.get("event_case_ids"), list)
+            or not isinstance(row.get("review_records"), list)
+        ):
             raise EvaluatorError(f"invalid hard gate row: {gate}")
         if row["passed"] != (row["count"] == 0):
             raise EvaluatorError(f"hard gate pass state inconsistent: {gate}")
+        if row["count"] < 0 or row["denominator"] < 0:
+            raise EvaluatorError(f"invalid hard gate counts: {gate}")
+        if any(not isinstance(value, str) for value in row["event_case_ids"]):
+            raise EvaluatorError(f"invalid hard gate event IDs: {gate}")
     for gate in ("false_supersession", "false_commitment"):
         row = gates[gate]
-        if not isinstance(row, Mapping) or not isinstance(row.get("rate"), (int, float)):
+        if (
+            not isinstance(row, Mapping)
+            or set(row) != {"count", "denominator", "rate", "threshold", "passed", "event_case_ids", "review_records"}
+            or not isinstance(row.get("count"), int)
+            or not isinstance(row.get("denominator"), int)
+            or not isinstance(row.get("rate"), (int, float))
+            or not isinstance(row.get("threshold"), (int, float))
+            or not isinstance(row.get("event_case_ids"), list)
+        ):
             raise EvaluatorError(f"invalid near-zero gate row: {gate}")
         if not math.isfinite(float(row["rate"])) or not isinstance(row.get("passed"), bool):
             raise EvaluatorError(f"invalid near-zero gate value: {gate}")
         reviews = row.get("review_records", [])
         if not isinstance(reviews, list) or len(reviews) != row.get("count"):
             raise EvaluatorError(f"near-zero gate review records incomplete: {gate}")
+        if row["count"] < 0 or row["denominator"] < 0 or row["rate"] < 0 or row["threshold"] < 0:
+            raise EvaluatorError(f"invalid near-zero gate counts: {gate}")
+        if any(not isinstance(value, str) for value in row["event_case_ids"]):
+            raise EvaluatorError(f"invalid near-zero gate event IDs: {gate}")
     cases = report.get("cases")
     if not isinstance(cases, list) or [item.get("case_id") for item in cases] != ids:
         raise EvaluatorError("report.cases must match sorted case IDs")
@@ -531,6 +566,12 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 "report case contains unknown fields: " + ", ".join(sorted(map(str, unknown_case_keys)))
             )
         _validate_metric_map(item.get("metrics"), f"report.cases[{item['case_id']}].metrics")
+        if (
+            not isinstance(item.get("violations"), list)
+            or any(not isinstance(value, str) for value in item["violations"])
+            or not isinstance(item.get("passed"), bool)
+        ):
+            raise EvaluatorError("report case violations/passed fields are malformed")
         family = str(item.get("family", "")).strip().lower()
         if family in {"retrieval", "context_compilation"}:
             retrieval_case_ids.append(str(item["case_id"]))
@@ -568,6 +609,8 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 not isinstance(row, Mapping)
                 or set(row) != {"case_id", "selected_ids", "metrics", "violations"}
                 or not isinstance(row.get("metrics"), Mapping)
+                or not isinstance(row.get("violations"), list)
+                or any(not isinstance(value, str) for value in row.get("violations", []))
                 or not isinstance(selected, list)
                 or not all(isinstance(value, str) and value.strip() for value in selected)
             ):
