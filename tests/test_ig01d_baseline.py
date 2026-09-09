@@ -10,7 +10,7 @@ import pytest
 
 from evals.ig01d.contracts import BaselineContractError, validate_baseline_report, validate_pair_report
 from evals.ig01d.fingerprint import corpus_split_fingerprint
-from evals.ig01d.spike import run_feasibility_probe
+from evals.ig01d.spike import run_feasibility_probe, run_real_feasibility_probe
 from evals.corpus_v2_builder import check_corpus_v2_public
 from evals.schema import load_fixture
 
@@ -330,6 +330,58 @@ def test_spike_is_dev_only_and_content_free():
     assert result["holdout_included"] is False
     assert result["status"] in {"SEMANTIC_UNAVAILABLE", "MEASURED"}
     assert "content" not in json.dumps(result).lower()
+
+
+def test_real_spike_detailed_report_is_bounded_and_compares_same_dev_cases():
+    class FakeEmbedding:
+        provider_id = "sentence-transformers"
+        model = "fake/multilingual"
+
+        def embed(self, texts):
+            return type("Result", (), {
+                "status": "EMBEDDING_AVAILABLE",
+                "provider_id": self.provider_id,
+                "model": self.model,
+                "vectors": tuple((float(index + 1), 1.0) for index, _ in enumerate(texts)),
+                "error_code": None,
+            })()
+
+    class FakeReranker:
+        provider_id = "cross-encoder"
+        model = "fake/reranker"
+
+        def rerank(self, query, candidates):
+            del query
+            return type("Result", (), {
+                "status": "EMBEDDING_AVAILABLE",
+                "provider_id": self.provider_id,
+                "model": self.model,
+                "scores": tuple(float(index) for index, _ in enumerate(candidates)),
+                "error_code": None,
+            })()
+
+    result = run_real_feasibility_probe(
+        root=ROOT,
+        corpus_root=CORPUS,
+        fixture_path=ROOT / "evals/fixtures/phase15-contract.json",
+        git_sha="a" * 40,
+        embedding_provider=FakeEmbedding(),
+        reranker=FakeReranker(),
+    )
+    assert result["status"] == "MEASURED"
+    assert result["case_count"] == 50
+    detail = result["detail"]
+    assert detail["holdout_included"] is False
+    assert len(detail["case_ids_hashed"]) == 50
+    assert set(detail["per_language"]) == {"tr", "en", "tr-en"}
+    assert result["seed"] == 17
+    assert result["noise_count"] == 24
+    assert result["case_ids_hashed"] == detail["case_ids_hashed"]
+    assert set(result["metrics"]) == {"context_precision", "recall_at_k", "mandatory_recall", "mrr", "noise_ratio"}
+    assert result["safety"]["wrong_project_leakage"] == 0
+    rendered = json.dumps(result).lower()
+    assert "prompt" not in rendered
+    assert "content" not in rendered
 
 
 def test_public_baseline_validation_never_reads_holdout_documents(monkeypatch):

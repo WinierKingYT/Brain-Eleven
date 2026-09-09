@@ -68,6 +68,17 @@ class RerankerResult:
     provider_id: str
     scores: tuple[float, ...] = ()
     error_code: str | None = None
+    model: str = "unavailable"
+
+    def __post_init__(self) -> None:
+        if self.status not in {item.value for item in EmbeddingStatus}:
+            raise ValueError("unknown reranker status")
+        if not self.provider_id or not self.model:
+            raise ValueError("reranker provider identity is required")
+        if self.error_code is not None and (not self.error_code or len(self.error_code) > 64):
+            raise ValueError("reranker error code is invalid")
+        if any(not math.isfinite(float(value)) for value in self.scores):
+            raise ValueError("reranker scores must be finite")
 
 
 class UnavailableEmbeddingProvider:
@@ -203,7 +214,7 @@ class LocalSentenceTransformerProvider:
 
     provider_id = "sentence-transformers"
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, *, local_files_only: bool = False) -> None:
         if not model_name.strip():
             raise ProviderConfigurationError("local_model_not_configured")
         try:
@@ -212,7 +223,7 @@ class LocalSentenceTransformerProvider:
             raise ProviderConfigurationError("local_embedding_not_installed") from error
         try:
             self.model = model_name
-            self._model = SentenceTransformer(model_name)
+            self._model = SentenceTransformer(model_name, local_files_only=local_files_only)
         except Exception as error:
             raise ProviderConfigurationError("local_embedding_init_failed") from error
 
@@ -245,14 +256,81 @@ class UnavailableReranker:
     """Cross-encoder socket reserved until a real local model is installed."""
 
     provider_id = "unavailable-reranker"
+    model = "unavailable"
+
+    def __init__(self, reason: str = "cross_encoder_not_configured", *, model: str = "unavailable") -> None:
+        self.reason = reason[:64] or "cross_encoder_not_configured"
+        self.model = model[:256] or "unavailable"
 
     def rerank(self, query: str, candidates: Sequence[str]) -> RerankerResult:
         del query, candidates
         return RerankerResult(
             status=EmbeddingStatus.EMBEDDING_UNAVAILABLE.value,
             provider_id=self.provider_id,
-            error_code="cross_encoder_not_configured",
+            model=self.model,
+            error_code=self.reason,
         )
+
+
+class LocalCrossEncoderReranker:
+    """Optional local real cross-encoder adapter for evaluation probes."""
+
+    provider_id = "cross-encoder"
+
+    def __init__(self, model_name: str, *, local_files_only: bool = False) -> None:
+        if not model_name.strip():
+            raise ProviderConfigurationError("local_reranker_not_configured")
+        try:
+            from sentence_transformers import CrossEncoder
+        except ImportError as error:
+            raise ProviderConfigurationError("local_reranker_not_installed") from error
+        try:
+            self.model = model_name
+            self._model = CrossEncoder(model_name, local_files_only=local_files_only)
+        except Exception as error:
+            raise ProviderConfigurationError("local_reranker_init_failed") from error
+
+    def rerank(self, query: str, candidates: Sequence[str]) -> RerankerResult:
+        if not isinstance(query, str) or isinstance(candidates, (str, bytes)):
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_UNAVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                error_code="invalid_input",
+            )
+        values = list(candidates)
+        if any(not isinstance(candidate, str) for candidate in values):
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_UNAVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                error_code="invalid_input",
+            )
+        if not values:
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_AVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                scores=(),
+            )
+        try:
+            scores = self._model.predict([(query, candidate) for candidate in values])
+            normalized = tuple(float(score) for score in scores)
+            if len(normalized) != len(values):
+                raise ValueError("reranker response length mismatch")
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_AVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                scores=normalized,
+            )
+        except Exception:
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_UNAVAILABLE.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                error_code="provider_call_failed",
+            )
 
 
 def _selected_embedding_provider(
@@ -292,7 +370,13 @@ def create_embedding_provider(
         if selected == "openai_api":
             return OpenAIEmbeddingProvider.from_environment(environ=values, client=openai_client)
         if selected == "local":
-            return LocalSentenceTransformerProvider(values.get("IG_LOCAL_EMBEDDING_MODEL", ""))
+            return LocalSentenceTransformerProvider(
+                values.get(
+                    "IG_LOCAL_EMBEDDING_MODEL",
+                    "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+                ),
+                local_files_only=_env_flag(values, "IG_LOCAL_MODELS_LOCAL_FILES_ONLY"),
+            )
         if selected == "unavailable":
             return UnavailableEmbeddingProvider()
         return UnavailableEmbeddingProvider(reason="unknown_provider")
@@ -300,7 +384,73 @@ def create_embedding_provider(
         reason = getattr(error, "reason_code", "provider_construction_failed")
         if not isinstance(reason, str) or not reason:
             reason = "provider_construction_failed"
-        return UnavailableEmbeddingProvider(reason=reason[:64])
+        selected = values.get("IG_EMBEDDING_PROVIDER", "").strip().lower()
+        model = values.get(
+            "IG_LOCAL_EMBEDDING_MODEL",
+            "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        ) if selected == "local" else "unavailable"
+        return UnavailableEmbeddingProvider(model=model or "unavailable", reason=reason[:64])
+
+
+def _env_flag(values: Mapping[str, str], name: str) -> bool:
+    value = values.get(name, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _selected_reranker_provider(
+    *,
+    config_path: Path | str | None,
+    environ: Mapping[str, str],
+) -> str:
+    explicit = environ.get("IG_RERANKER_PROVIDER")
+    if explicit is not None:
+        return explicit.strip().lower()
+    path = Path(config_path) if config_path is not None else Path(environ.get("IG_PROVIDER_CONFIG", ".claude/ig-provider-config.json"))
+    if not path.is_file():
+        return "local" if environ.get("IG_EMBEDDING_PROVIDER", "").strip().lower() == "local" else "unavailable"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError("reranker config is unreadable") from error
+    if not isinstance(payload, Mapping):
+        raise ValueError("reranker config must be an object")
+    selected = payload.get("reranker_provider", payload.get("reranker", "unavailable"))
+    if not isinstance(selected, str):
+        raise ValueError("reranker selection must be a string")
+    return selected.strip().lower()
+
+
+def create_reranker(
+    *,
+    config_path: Path | str | None = None,
+    environ: Mapping[str, str] | None = None,
+) -> Reranker:
+    """Create an explicitly selected reranker, failing closed otherwise."""
+
+    values = os.environ if environ is None else environ
+    try:
+        selected = _selected_reranker_provider(config_path=config_path, environ=values)
+        if selected == "local":
+            return LocalCrossEncoderReranker(
+                values.get(
+                    "IG_LOCAL_RERANKER_MODEL",
+                    "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+                ),
+                local_files_only=_env_flag(values, "IG_LOCAL_MODELS_LOCAL_FILES_ONLY"),
+            )
+        if selected == "unavailable":
+            return UnavailableReranker()
+        return UnavailableReranker()
+    except Exception as error:
+        reason = getattr(error, "reason_code", "reranker_construction_failed")
+        if not isinstance(reason, str) or not reason:
+            reason = "reranker_construction_failed"
+        selected = values.get("IG_RERANKER_PROVIDER", "").strip().lower()
+        model = values.get(
+            "IG_LOCAL_RERANKER_MODEL",
+            "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+        ) if selected == "local" else "unavailable"
+        return UnavailableReranker(reason[:64], model=model)
 
 
 __all__ = [
@@ -308,10 +458,12 @@ __all__ = [
     "EmbeddingResult",
     "EmbeddingStatus",
     "LocalSentenceTransformerProvider",
+    "LocalCrossEncoderReranker",
     "OpenAIEmbeddingProvider",
     "Reranker",
     "RerankerResult",
     "UnavailableEmbeddingProvider",
     "UnavailableReranker",
     "create_embedding_provider",
+    "create_reranker",
 ]

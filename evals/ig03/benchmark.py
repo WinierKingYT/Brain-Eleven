@@ -8,7 +8,7 @@ state.  Providers return proposal objects; IG01-C remains the metric authority.
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
+from collections import Counter, defaultdict
 import hashlib
 import json
 from pathlib import Path
@@ -161,6 +161,40 @@ def _not_applicable_metric() -> dict[str, Any]:
     return {"value": None, "numerator": 0, "denominator": 0, "not_applicable": True, "empty_selection": False}
 
 
+def _binary_metric(attempted: bool, *, applicable: bool) -> dict[str, Any]:
+    if not applicable:
+        return _not_applicable_metric()
+    return {
+        "value": 1.0 if attempted else 0.0,
+        "numerator": 1 if attempted else 0,
+        "denominator": 1,
+        "not_applicable": False,
+        "empty_selection": False,
+    }
+
+
+def _metrics_for_rows(case_rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    metric_names = (
+        "decision_precision",
+        "decision_recall",
+        "false_commitment_rate",
+        "assistant_as_user_rate",
+        "question_hypothetical_commitment_rate",
+        "wrong_type_rate",
+        "wrong_scope_rate",
+    )
+    metrics = {
+        name: _aggregate(case_rows, name)
+        for name in metric_names
+    }
+    ece_samples = [
+        (float(row["ece_sample"]["confidence"]), bool(row["ece_sample"]["correct"]))
+        for row in case_rows if row.get("ece_sample") is not None
+    ]
+    metrics["ece"] = expected_calibration_error(ece_samples).as_dict() if ece_samples else _not_applicable_metric()
+    return metrics
+
+
 def _run_provider(provider: SemanticProvider, cases: list[Mapping[str, Any]]) -> dict[str, Any]:
     started = time.perf_counter()
     case_rows: list[dict[str, Any]] = []
@@ -179,24 +213,36 @@ def _run_provider(provider: SemanticProvider, cases: list[Mapping[str, Any]]) ->
         ))
         if result.status == "SEMANTIC_UNAVAILABLE":
             continue
-        row = evaluate_extraction_case(case, _prediction(result))
+        prediction = _prediction(result)
+        row = evaluate_extraction_case(case, prediction)
+        row["language"] = case.get("language")
+        category = str(case.get("category", ""))
+        row["category"] = category
+        predicted_commit = prediction.get("commitment") not in {None, "none", "no_commitment"}
+        row["metrics"]["question_hypothetical_commitment_rate"] = _binary_metric(
+            predicted_commit,
+            applicable=category in {"question", "hypothetical"},
+        )
         case_rows.append(row)
-    metric_names = (
-        "decision_precision",
-        "decision_recall",
-        "false_commitment_rate",
-        "assistant_as_user_rate",
-        "wrong_type_rate",
-        "wrong_scope_rate",
-        "ece",
-    )
     safety_events = [event for row in case_rows for event in row.get("safety_events", [])]
-    ece_samples = [
-        (float(row["ece_sample"]["confidence"]), bool(row["ece_sample"]["correct"]))
-        for row in case_rows if row.get("ece_sample") is not None
-    ]
-    metrics = {name: _aggregate(case_rows, name) for name in metric_names if name != "ece"}
-    metrics["ece"] = expected_calibration_error(ece_samples).as_dict() if ece_samples else _not_applicable_metric()
+    metrics = _metrics_for_rows(case_rows)
+    total_language_counts = Counter(str(case.get("language", "unknown")) for case in cases)
+    applicable_language_counts = Counter(str(row.get("language", "unknown")) for row in case_rows)
+    per_language: dict[str, Any] = {}
+    for language in ("tr", "en", "tr-en"):
+        language_rows = [row for row in case_rows if row.get("language") == language]
+        per_language[language] = {
+            "case_count": total_language_counts.get(language, 0),
+            "applicable_case_count": applicable_language_counts.get(language, 0),
+            "metrics": _metrics_for_rows(language_rows),
+        }
+    safety_counts = Counter(event["gate"] for event in safety_events)
+    question_hypothetical_attempts = sum(
+        1
+        for row in case_rows
+        if row.get("category") in {"question", "hypothetical"}
+        and row["metrics"]["question_hypothetical_commitment_rate"]["numerator"]
+    )
     return {
         "provider": {
             "id": provider.provider_id,
@@ -218,13 +264,75 @@ def _run_provider(provider: SemanticProvider, cases: list[Mapping[str, Any]]) ->
         "safety": {
             "event_count": len(safety_events),
             "gates": sorted({event["gate"] for event in safety_events}),
+            "gate_counts": dict(sorted(safety_counts.items())),
+            "question_hypothetical_commitment_attempts": question_hypothetical_attempts,
         },
+        "per_language": per_language,
         "measurement": {
             "case_count": len(cases),
             "applicable_case_count": len(case_rows),
             "elapsed_ms": round((time.perf_counter() - started) * 1000, 3),
         },
     }
+
+
+def benchmark_real_providers(
+    *,
+    providers: Mapping[str, SemanticProvider] | None = None,
+    corpus_root: Path | str = CORPUS_ROOT,
+    git_sha: str | None = None,
+) -> dict[str, Any]:
+    """Run the real R1-b provider and regex control on DEV and VALIDATION."""
+
+    revision = (git_sha or _git_sha(ROOT)).lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError("git_sha must be a full lowercase 40-character SHA")
+    actual_revision = _git_sha(ROOT)
+    if revision != actual_revision:
+        raise ValueError("git_sha must match the exact repository HEAD")
+    if providers is None:
+        configured = create_semantic_provider()
+        provider_map: dict[str, SemanticProvider] = {
+            "regex": DeterministicRegexProvider(),
+            "codex_cli": configured,
+        }
+    else:
+        provider_map = dict(providers)
+    splits: dict[str, dict[str, Any]] = {}
+    split_metadata: dict[str, dict[str, Any]] = {}
+    for split in ("dev", "validation"):
+        split_report = benchmark_providers(
+            split=split,
+            providers=provider_map,
+            corpus_root=corpus_root,
+            git_sha=revision,
+        )
+        splits[split] = dict(split_report["providers"])
+        split_metadata[split] = {
+            "case_count": split_report["case_count"],
+            "split_fingerprint": split_report["source"]["split_fingerprint"],
+            "holdout_included": split_report["source"]["holdout_included"],
+        }
+    result = {
+        "schema_version": 1,
+        "report_type": "ig03_semantic_extraction_benchmark_real",
+        "source": {
+            "git_sha": revision,
+            "corpus_version": EXPECTED_CORPUS_VERSION,
+            "dataset_class": EXPECTED_DATASET_CLASS,
+            "splits": ["dev", "validation"],
+            "holdout_included": False,
+            "split_metadata": split_metadata,
+        },
+        "providers": {
+            name: {
+                "splits": {split: splits[split][name] for split in ("dev", "validation")},
+                "production_mutation": False,
+            }
+            for name in sorted(provider_map)
+        },
+    }
+    return result
 
 
 def benchmark_providers(
@@ -277,11 +385,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the content-free IG-03 extraction benchmark")
     parser.add_argument("--split", choices=sorted(ALLOWED_SPLITS), default="dev")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--real-output", type=Path, help="Run R1-b on DEV and VALIDATION with configured provider and regex control")
     args = parser.parse_args(argv)
-    report = benchmark_providers(split=args.split)
+    report = benchmark_real_providers() if args.real_output else benchmark_providers(split=args.split)
     rendered = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    if args.output:
-        args.output.write_text(rendered, encoding="utf-8")
+    destination = args.real_output or args.output
+    if destination:
+        destination.write_text(rendered, encoding="utf-8")
     else:
         print(rendered, end="")
     return 0

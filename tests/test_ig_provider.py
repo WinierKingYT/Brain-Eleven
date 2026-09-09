@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -17,7 +18,9 @@ from brain_eleven.retrieval.embedding_provider import (
     EmbeddingStatus,
     OpenAIEmbeddingProvider,
     UnavailableEmbeddingProvider,
+    UnavailableReranker,
     create_embedding_provider,
+    create_reranker,
 )
 
 
@@ -184,3 +187,66 @@ def test_embedding_provider_is_real_or_explicitly_unavailable():
 
     configured = create_embedding_provider(environ={})
     assert configured.provider_id == "unavailable"
+
+
+def test_local_embedding_and_reranker_are_real_model_adapters(monkeypatch):
+    class FakeSentenceTransformer:
+        def __init__(self, model_name, **kwargs):
+            assert model_name == "fake/multilingual"
+            assert kwargs["local_files_only"] is True
+
+        def encode(self, texts, convert_to_numpy=True):
+            assert convert_to_numpy is True
+            return [[float(index + 1), 1.0] for index, _ in enumerate(texts)]
+
+    class FakeCrossEncoder:
+        def __init__(self, model_name, **kwargs):
+            assert model_name == "fake/reranker"
+            assert kwargs["local_files_only"] is True
+
+        def predict(self, pairs):
+            return [float(index) for index, _ in enumerate(pairs)]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "sentence_transformers",
+        SimpleNamespace(SentenceTransformer=FakeSentenceTransformer, CrossEncoder=FakeCrossEncoder),
+    )
+    environ = {
+        "IG_EMBEDDING_PROVIDER": "local",
+        "IG_LOCAL_EMBEDDING_MODEL": "fake/multilingual",
+        "IG_RERANKER_PROVIDER": "local",
+        "IG_LOCAL_RERANKER_MODEL": "fake/reranker",
+        "IG_LOCAL_MODELS_LOCAL_FILES_ONLY": "1",
+    }
+    embedding = create_embedding_provider(environ=environ)
+    vectors = embedding.embed(["one", "two"])
+    assert vectors.status == EmbeddingStatus.EMBEDDING_AVAILABLE.value
+    assert vectors.provider_id == "sentence-transformers"
+    assert vectors.vectors == ((1.0, 1.0), (2.0, 1.0))
+
+    reranker = create_reranker(environ=environ)
+    scores = reranker.rerank("query", ["one", "two"])
+    assert scores.status == EmbeddingStatus.EMBEDDING_AVAILABLE.value
+    assert scores.provider_id == "cross-encoder"
+    assert scores.model == "fake/reranker"
+    assert scores.scores == (0.0, 1.0)
+
+
+def test_local_model_construction_failure_and_unselected_reranker_fail_closed(monkeypatch):
+    class MissingModel:
+        def __init__(self, *args, **kwargs):
+            del args, kwargs
+            raise OSError("model missing")
+
+    monkeypatch.setitem(sys.modules, "sentence_transformers", SimpleNamespace(SentenceTransformer=MissingModel, CrossEncoder=MissingModel))
+    embedding = create_embedding_provider(
+        environ={"IG_EMBEDDING_PROVIDER": "local", "IG_LOCAL_MODELS_LOCAL_FILES_ONLY": "1"}
+    )
+    assert embedding.provider_id == "unavailable"
+    assert embedding.embed(["text"]).status == EmbeddingStatus.EMBEDDING_UNAVAILABLE.value
+    reranker = create_reranker(environ={})
+    assert isinstance(reranker, UnavailableReranker)
+    result = reranker.rerank("query", ["candidate"])
+    assert result.status == EmbeddingStatus.EMBEDDING_UNAVAILABLE.value
+    assert result.scores == ()

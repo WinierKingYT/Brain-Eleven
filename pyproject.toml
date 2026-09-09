@@ -8,6 +8,11 @@ version = "3.0.0"
 description = "Local privacy-first second-brain memory and context system"
 requires-python = ">=3.10"
 
+[project.optional-dependencies]
+probe = [
+    "sentence-transformers>=6.0,<7.0",
+]
+
 [tool.setuptools.packages.find]
 include = [
     "brain_eleven*",

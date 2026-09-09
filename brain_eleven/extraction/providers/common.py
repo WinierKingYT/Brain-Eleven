@@ -23,10 +23,22 @@ class ProviderConfigurationError(RuntimeError):
         super().__init__(reason_code)
 
 
-MODEL_INSTRUCTION = """Return only a JSON object with a propositions array.
-Each proposition must be a proposal in the frozen IG01-A schema. Never add
-writer, persistence, prompt, transcript, secret, or other fields. Do not
-repeat evidence text in metadata. If no safe proposition is present, return
+MODEL_INSTRUCTION = """Return only one JSON object with this exact shape:
+{\"propositions\": [{\"candidate_id\": \"...\", \"project_id\": null,
+\"claim_type\": \"...\", \"subject\": null, \"predicate\": null,
+\"value\": null, \"commitment\": \"...\", \"temporal_scope\": null,
+\"source_role\": \"...\", \"evidence_refs\": [],
+\"confidence_components\": {\"classification\": 0.0}, \"correction_clues\": null,
+\"target_clues\": null, \"schema_version\": \"ig01-a-proposition-v1\"}]}
+Each array item must contain those fields directly. Use only these frozen
+claim_type values: decision, preference, lesson, requirement, blocker,
+observation, open_loop, or no_commitment. Use only these commitment values:
+committed, proposed, hypothetical, question, negated, quoted, observed, or
+uncertain. source_role must be user, assistant, tool, or system. Include at
+least one numeric confidence_components value between 0 and 1. Never wrap an
+item in a \"proposition\" key, return a proposition as a string, add
+writer/persistence fields, or include prompt, transcript, secret, or other
+fields. Do not repeat evidence text in metadata. If no safe proposition is present, return exactly
 {\"propositions\": []}."""
 
 

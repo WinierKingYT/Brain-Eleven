@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from evals.ig03.benchmark import benchmark_providers, load_extraction_cases, _fingerprint, _run_provider
+from evals.ig03.benchmark import benchmark_providers, benchmark_real_providers, load_extraction_cases, _fingerprint, _run_provider
 from brain_eleven.extraction.semantic import (
+    DeterministicRegexProvider,
     ProviderResult,
     SEMANTIC_SCHEMA_VERSION,
     SemanticProposition,
@@ -35,6 +36,36 @@ def test_benchmark_report_is_content_free_and_marks_unavailable_provider():
     assert report["source"]["holdout_included"] is False
     assert report["providers"]["local"]["status_counts"]["SEMANTIC_UNAVAILABLE"]
     assert "sqlite kullanacağız" not in rendered
+    assert "prompt" not in rendered
+    assert "transcript" not in rendered
+
+
+def test_benchmark_reports_language_breakdown_and_question_safety_metric():
+    report = benchmark_providers(
+        split="validation",
+        providers={"regex": DeterministicRegexProvider()},
+        git_sha=None,
+    )
+    result = report["providers"]["regex"]
+    assert set(result["per_language"]) == {"tr", "en", "tr-en"}
+    assert "question_hypothetical_commitment_rate" in result["metrics"]
+    assert "ece" in result["metrics"]
+    assert result["measurement"]["case_count"] == 25
+
+
+def test_real_benchmark_keeps_same_public_splits_and_never_holdout():
+    report = benchmark_real_providers(
+        providers={
+            "regex": DeterministicRegexProvider(),
+            "codex_cli": UnavailableProvider("codex-cli", "test", "not_configured"),
+        },
+        git_sha=None,
+    )
+    assert report["source"]["holdout_included"] is False
+    assert set(report["source"]["splits"]) == {"dev", "validation"}
+    assert report["providers"]["regex"]["splits"]["dev"]["measurement"]["case_count"] == 49
+    assert report["providers"]["regex"]["splits"]["validation"]["measurement"]["case_count"] == 25
+    rendered = json.dumps(report, ensure_ascii=False).lower()
     assert "prompt" not in rendered
     assert "transcript" not in rendered
 
