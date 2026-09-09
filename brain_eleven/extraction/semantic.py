@@ -191,22 +191,34 @@ class ProviderResult:
     def __post_init__(self) -> None:
         if self.status not in {item.value for item in SemanticStatus}:
             raise ValueError("unknown semantic provider status")
-        if not self.provider_id or not self.model:
+        if not isinstance(self.provider_id, str) or not self.provider_id.strip() or not isinstance(self.model, str) or not self.model.strip():
             raise ValueError("provider_id and model are required")
         if self.schema_version != SEMANTIC_SCHEMA_VERSION:
             raise ValueError("unsupported provider schema_version")
-        if self.elapsed_ms is not None and (not math.isfinite(float(self.elapsed_ms)) or self.elapsed_ms < 0):
+        if self.error_code is not None and (not isinstance(self.error_code, str) or not self.error_code.strip()):
+            raise ValueError("error_code must be a non-empty string or null")
+        if self.elapsed_ms is not None and (isinstance(self.elapsed_ms, bool) or not isinstance(self.elapsed_ms, (int, float)) or not math.isfinite(float(self.elapsed_ms)) or self.elapsed_ms < 0):
             raise ValueError("elapsed_ms must be finite and non-negative")
         for record in self.review_records:
             if not isinstance(record, Mapping):
                 raise ValueError("review records must be mappings")
             if set(record) - _REVIEW_FIELDS:
                 raise ValueError("review records contain unknown fields")
+            if not isinstance(record.get("case_hash"), str) or not record["case_hash"].startswith("sha256:"):
+                raise ValueError("review records require a content hash")
+            if not isinstance(record.get("reason_code"), str) or not record["reason_code"].strip():
+                raise ValueError("review records require a reason code")
             _check_nested(record, field_name="review_record")
         if not isinstance(self.metadata, Mapping):
             raise ValueError("provider metadata must be a mapping")
         if set(self.metadata) - _METADATA_FIELDS:
             raise ValueError("provider metadata contains unknown fields")
+        for key, value in self.metadata.items():
+            if key in {"project_bound"}:
+                if not isinstance(value, bool):
+                    raise ValueError("metadata.project_bound must be boolean")
+            elif not isinstance(value, str) or not value.strip():
+                raise ValueError(f"metadata.{key} must be a non-empty string")
         _check_nested(self.metadata, field_name="metadata")
         if any(not isinstance(item, SemanticProposition) for item in self.propositions):
             raise ValueError("provider propositions must be SemanticProposition objects")
@@ -257,6 +269,19 @@ def _message_fields(message: Any) -> tuple[str, str, Optional[str], str, Any]:
 
 def _hash_content(content: str) -> str:
     return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def _temporal_scope(occurred_at: Any) -> Optional[dict[str, Any]]:
+    if occurred_at is None:
+        return None
+    if hasattr(occurred_at, "value") and hasattr(occurred_at, "precision"):
+        return {"start": str(occurred_at.value), "precision": str(occurred_at.precision)}
+    if isinstance(occurred_at, Mapping):
+        if "start" in occurred_at or "end" in occurred_at:
+            return dict(occurred_at)
+        if "value" in occurred_at:
+            return {"start": occurred_at["value"], "precision": occurred_at.get("precision", "unknown")}
+    raise PropositionValidationError("occurred_at has an unsupported shape")
 
 
 def _check_nested(value: Any, *, depth: int = 0, field_name: str = "value") -> None:
@@ -547,6 +572,14 @@ class CallableSemanticProvider:
     ) -> ProviderResult:
         content, role, message_project_id, evidence_id, occurred_at = _message_fields(message)
         trusted_project_id = project_id if project_id is not None else message_project_id
+        if schema_version != SEMANTIC_SCHEMA_VERSION:
+            return ProviderResult(
+                status=SemanticStatus.INVALID_OUTPUT.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                error_code="UNSUPPORTED_SCHEMA_VERSION",
+                review_records=(_record_review(content, "UNSUPPORTED_SCHEMA_VERSION"),),
+            )
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
             return ProviderResult(
@@ -618,6 +651,14 @@ class DeterministicRegexProvider:
     ) -> ProviderResult:
         content, role, message_project_id, evidence_id, occurred_at = _message_fields(message)
         trusted_project_id = project_id if project_id is not None else message_project_id
+        if schema_version != SEMANTIC_SCHEMA_VERSION:
+            return ProviderResult(
+                status=SemanticStatus.INVALID_OUTPUT.value,
+                provider_id=self.provider_id,
+                model=self.model,
+                error_code="UNSUPPORTED_SCHEMA_VERSION",
+                review_records=(_record_review(content, "UNSUPPORTED_SCHEMA_VERSION"),),
+            )
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
             return ProviderResult(
@@ -642,7 +683,7 @@ class DeterministicRegexProvider:
             predicate="asserts",
             value=content,
             commitment=commitment,
-            temporal_scope=(occurred_at.to_dict() if hasattr(occurred_at, "to_dict") else occurred_at),
+            temporal_scope=_temporal_scope(occurred_at),
             source_role=role,
             evidence_refs=(evidence_id or prefilter.content_hash,),
             confidence_components={"deterministic_classification": 1.0},

@@ -115,7 +115,9 @@ Validation runs after parsing and before any evaluator or downstream caller.
 4. A missing or invalid `project_id` is `unresolved`; it cannot become a
    canonical project memory or state effect.
 5. Temporal fields must be structurally valid and cannot claim an end before a
-   start. Missing time remains explicit uncertainty, not invented certainty.
+   start. An evidence timestamp is mapped to the frozen `start` plus
+   `precision` shape. Missing time remains explicit uncertainty, not invented
+   certainty.
 6. Confidence components must be finite, bounded and named. The scalar
    confidence is derived deterministically from components or remains null;
    provider prose cannot override the formula.

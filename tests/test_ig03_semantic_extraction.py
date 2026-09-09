@@ -113,6 +113,8 @@ def test_direct_proposition_and_provider_result_are_revalidated():
         source_role="user",
         evidence_refs=("evidence-unsafe",),
         confidence_components={"classification": 1.0},
+        correction_clues=None,
+        target_clues=None,
     )
     result = validate_proposition(unsafe)
     assert result.valid is False
@@ -122,6 +124,18 @@ def test_direct_proposition_and_provider_result_are_revalidated():
         pass
     else:
         raise AssertionError("ProviderResult must revalidate proposition objects")
+
+    try:
+        ProviderResult(
+            status=SemanticStatus.MEASURED.value,
+            provider_id="x",
+            model="y",
+            metadata={"provider_revision": {"note": "raw"}},
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("provider metadata must remain scalar and content-free")
 
 
 def test_provider_forces_evidence_authority_fields_over_model_output():

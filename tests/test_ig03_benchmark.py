@@ -31,3 +31,8 @@ def test_benchmark_report_is_content_free_and_marks_unavailable_provider():
     assert "sqlite kullanacağız" not in rendered
     assert "prompt" not in rendered
     assert "transcript" not in rendered
+
+
+def test_benchmark_requires_revision_bound_sha():
+    with pytest.raises(ValueError):
+        benchmark_providers(split="dev", providers={}, git_sha="bogus")

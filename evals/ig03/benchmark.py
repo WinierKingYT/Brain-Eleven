@@ -12,6 +12,7 @@ from collections import defaultdict
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import time
 from typing import Any, Iterable, Mapping
@@ -89,6 +90,7 @@ def _prediction(result: Any) -> dict[str, Any]:
     proposition["correction"] = bool(proposition.get("correction_clues"))
     proposition["target_behavior"] = "none"
     proposition["canonical_commit"] = False
+    proposition["confidence"] = getattr(result.propositions[0], "confidence", None)
     if proposition.get("commitment") == "committed":
         proposition["commitment"] = "explicit"
     elif proposition.get("commitment") in {"proposed", "hypothetical", "question", "negated", "quoted", "uncertain"}:
@@ -156,6 +158,9 @@ def benchmark_providers(
     """Benchmark all configured provider slots on one public extraction split."""
 
     cases = load_extraction_cases(split=split, corpus_root=corpus_root)
+    revision = (git_sha or _git_sha(ROOT)).lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError("git_sha must be a full lowercase 40-character SHA")
     provider_map = dict(providers or {
         "regex": DeterministicRegexProvider(),
         "local_qwen": UnavailableProvider("local-qwen", "unconfigured"),
@@ -165,7 +170,7 @@ def benchmark_providers(
         "schema_version": 1,
         "report_type": "ig03_semantic_extraction_benchmark",
         "source": {
-            "git_sha": (git_sha or _git_sha(ROOT)).lower(),
+            "git_sha": revision,
             "corpus_version": "ig-eval-v2",
             "split": split,
             "split_fingerprint": _fingerprint(Path(corpus_root).resolve() / f"{split}.jsonl"),
