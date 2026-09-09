@@ -6,12 +6,15 @@ import json
 
 import pytest
 
-from brain_eleven.memory import MemoryStore
+from brain_eleven.memory import MemoryStore, MemoryStoreConflict
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity
 from brain_eleven.runtime.worker import Worker, enqueue
-from brain_eleven.state import StateService
+from brain_eleven.state import StateService, StateStoreConflict
+from evidence import EvidenceBatch
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
+from capture_queue import CaptureQueue
 
 
 @pytest.fixture
@@ -145,4 +148,209 @@ def test_missing_transcript_is_bounded_and_does_not_enqueue(runtime):
     })
 
     assert result == {"status": "DEGRADED", "error": "TRANSCRIPT_NOT_FOUND"}
+
+
+def test_receipt_failure_does_not_advance_checkpoint_or_ack_tampered_effect(runtime, tmp_path, monkeypatch):
+    """A crash after canonical effects must replay from the old cursor safely."""
+    import brain_eleven.runtime.worker as worker_module
+
+    vault, project_id = runtime
+    path = tmp_path / "multi.jsonl"
+    path.write_text(
+        "\n".join(
+            json.dumps({"type": "user", "message": {"role": "user", "content": text}})
+            for text in (
+                "We decided to use SQLite for persistent storage.",
+                "We decided to use session cookies for authentication.",
+            )
+        ) + "\n",
+        encoding="utf-8",
+    )
+    enqueue(vault, "claude", {"session_id": "receipt-window", "cwd": str(vault), "transcript_path": str(path)})
+    original_read = worker_module.read_increment
+    session = "claude:" + __import__("hashlib").sha256("receipt-window".encode()).hexdigest()
+    full_batch, _ = original_read(vault, path, "claude", session, project_id, "2026-01-01T00:00:00+00:00")
+    calls = {"index": 0}
+
+    def chunked_read(_vault, _path, _client, _session, _project, _captured_at, cursor=None):
+        if cursor is None:
+            calls["index"] = 0
+        index = calls["index"]
+        calls["index"] += 1
+        message = full_batch.messages[index]
+        return EvidenceBatch((message.record,), (message,)), {
+            "offset": index + 1,
+            "prefix_hash": ("a" if index == 0 else "b") * 64,
+            "has_more": index == 0,
+        }
+
+    monkeypatch.setattr(worker_module, "read_increment", chunked_read)
+    worker = Worker(vault)
+    original_write = worker._write_receipt
+    failed = {"value": False}
+
+    def fail_once(job, result):
+        if not failed["value"]:
+            failed["value"] = True
+            raise OSError("simulated crash before receipt")
+        return original_write(job, result)
+
+    monkeypatch.setattr(worker, "_write_receipt", fail_once)
+    first = worker.once()
+
+    assert first["status"] == "QUEUED"
+    assert not list((vault / ".brain-eleven" / "runtime" / "capture-receipts").glob("*.json"))
+    assert not list((vault / ".brain-eleven" / "runtime" / "cursors").glob("*.json"))
+    assert len(MemoryStore(vault).load()["validated_memory"]) == 2
+
+    # Leave the operation receipt behind but remove its canonical records. A
+    # retry must remain visible as a failure, never become a false completion.
+    document = MemoryStore(vault).load()
+    document["validated_memory"] = []
+    write_json(MemoryStore(vault).path, document)
+    second = worker.once()
+
+    assert second["status"] == "QUEUED"
+    assert not list((vault / ".brain-eleven" / "capture" / "completed").glob("*.json"))
+
+
+def test_codex_worker_golden_path_records_verified_effect(runtime, tmp_path):
+    path = tmp_path / "codex.jsonl"
+    path.write_text(json.dumps({
+        "type": "response_item",
+        "payload": {"type": "message", "role": "user", "content": "We decided to use SQLite for Codex capture."},
+    }) + "\n", encoding="utf-8")
+    vault, _ = runtime
+
+    enqueue(vault, "codex", {"session_id": "codex-golden", "cwd": str(vault), "transcript_path": str(path)})
+    result = Worker(vault).once()
+
+    assert result["status"] == "PROCESSED"
+    assert result["effect_verified"] is True
+    assert result["canonical_effect_count"] == 1
+    assert len(MemoryStore(vault).load()["validated_memory"]) == 1
+
+
+def test_worker_lock_timeout_is_bounded(runtime, tmp_path, monkeypatch):
+    import brain_eleven.runtime.worker as worker_module
+
+    class Locked:
+        def __enter__(self):
+            raise MemoryStoreLockTimeout("busy")
+
+        def __exit__(self, *_args):
+            return None
+
+    vault, _ = runtime
+    monkeypatch.setattr(worker_module, "file_lock", lambda *_args, **_kwargs: Locked())
+
+    result = Worker(vault).once()
+
+    assert result == {"status": "DEGRADED", "error": "WORKER_LOCK_TIMEOUT"}
+
+
+def test_deleted_transcript_reaches_visible_dead_letter(runtime, tmp_path):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "deleted", "cwd": str(vault), "transcript_path": str(path)})
+    path.unlink()
+
+    results = [Worker(vault).once() for _ in range(3)]
+
+    assert [item["status"] for item in results] == ["QUEUED", "QUEUED", "DEAD_LETTER"]
+    assert results[-1]["error"] == "TRANSCRIPT_NOT_FOUND"
+    assert list((vault / ".brain-eleven" / "capture" / "dead-letter").glob("*.json"))
+
+
+def test_corrupt_transcript_reaches_visible_dead_letter(runtime, tmp_path):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "corrupt", "cwd": str(vault), "transcript_path": str(path)})
+    path.write_text("{not-json\n", encoding="utf-8")
+
+    results = [Worker(vault).once() for _ in range(3)]
+
+    assert [item["status"] for item in results] == ["QUEUED", "QUEUED", "DEAD_LETTER"]
+    assert results[-1]["error"] == "EVIDENCE_INVALID"
+
+
+def test_worker_memory_cas_conflict_is_retryable(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "memory-conflict", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker, "process", lambda _job: (_ for _ in ()).throw(MemoryStoreConflict(1, 2)))
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_CONFLICT"
+
+
+def test_worker_state_conflict_is_retryable(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "state-conflict", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker, "process", lambda _job: (_ for _ in ()).throw(StateStoreConflict("project", 1, 2)))
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_CONFLICT"
+
+
+def test_invalid_project_job_is_retryable_and_never_completed(runtime, tmp_path):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    receipt = enqueue(vault, "claude", {"session_id": "invalid-project", "cwd": str(vault), "transcript_path": str(path)})
+    queue = CaptureQueue(vault)
+    job_path = queue.job_path(receipt["job_id"])
+    document = read_json(job_path)
+    document["event"]["project"]["project_id"] = "proj_foreign"
+    write_json(job_path, document)
+
+    result = Worker(vault).once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "SCOPE_DISABLED"
+    assert not list((vault / ".brain-eleven" / "capture" / "completed").glob("*.json"))
+
+
+def test_replay_rejects_receipt_with_foreign_project(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "foreign-receipt", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    worker.once()
+    receipt_path = next((vault / ".brain-eleven" / "runtime" / "capture-receipts").glob("*.json"))
+    receipt = read_json(receipt_path)
+    receipt["project_id"] = "proj_foreign"
+    write_json(receipt_path, receipt)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CAPTURE_RECEIPT_IDENTITY_MISMATCH"
+
+
+def test_replay_rejects_tampered_memory_operation_receipt(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _transcript(tmp_path)
+    enqueue(vault, "claude", {"session_id": "tampered-operation", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    worker.once()
+    document = MemoryStore(vault).load()
+    operation_id = next(iter(document["operation_receipts"]))
+    document["operation_receipts"][operation_id]["decisions"] = []
+    write_json(MemoryStore(vault).path, document)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 

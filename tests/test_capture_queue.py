@@ -187,6 +187,34 @@ def test_malformed_job_identity_cannot_escape_queue_directory(tmp_path):
     assert not (vault / ".brain-eleven" / "capture" / "outside.json").exists()
 
 
+def test_job_semantic_identity_must_match_idempotency_key(tmp_path):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(vault)
+    event = _session_event(vault, tmp_path / "project")
+    job = queue._job_from_event(event)
+    job["job_id"] = "cap_" + "0" * 32
+    queue._ensure_layout()
+    path = queue._job_path(QUEUED, job["job_id"])
+    path.write_text(json.dumps(job), encoding="utf-8")
+
+    with pytest.raises(CaptureQueueCorruptError, match="identity mismatch"):
+        queue.claim_next()
+
+
+def test_event_idempotency_must_match_job_identity(tmp_path):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(vault)
+    event = _session_event(vault, tmp_path / "project")
+    job = queue._job_from_event(event)
+    job["event"]["idempotency_key"] = "different-event-key"
+    queue._ensure_layout()
+    path = queue._job_path(QUEUED, job["job_id"])
+    path.write_text(json.dumps(job), encoding="utf-8")
+
+    with pytest.raises(CaptureQueueCorruptError, match="idempotency identity mismatch"):
+        queue.claim_next()
+
+
 def test_bounded_1000_event_fast_path_drops_no_distinct_jobs(tmp_path):
     vault = tmp_path / "vault"
     queue = CaptureQueue(vault)

@@ -297,12 +297,20 @@ class CaptureQueue:
             raise CaptureQueueCorruptError("capture queue schema is unsupported")
         if not isinstance(document["job_id"], str) or not _JOB_ID.fullmatch(document["job_id"]):
             raise CaptureQueueCorruptError("capture queue job identity is invalid")
+        if not isinstance(document["idempotency_key"], str) or not document["idempotency_key"]:
+            raise CaptureQueueCorruptError("capture queue idempotency identity is invalid")
+        if document["job_id"] != _job_id(document["idempotency_key"]):
+            raise CaptureQueueCorruptError("capture queue job/idempotency identity mismatch")
         if document["status"] not in JOB_STATUSES:
             raise CaptureQueueCorruptError("capture queue job state is unsupported")
         if not isinstance(document["attempt"], int) or isinstance(document["attempt"], bool) or document["attempt"] < 0:
             raise CaptureQueueCorruptError("capture queue attempt is invalid")
         _parse_utc(document["created_at"], field="created_at")
         self._validate_event(document["event"])
+        if document["event"].get("idempotency_key") != document["idempotency_key"]:
+            raise CaptureQueueCorruptError("capture event/job idempotency identity mismatch")
+        if not isinstance(document["event"].get("event_id"), str) or not document["event"]["event_id"]:
+            raise CaptureQueueCorruptError("capture event identity is invalid")
         return document
 
     def _move(self, source: Path, destination: Path) -> None:
