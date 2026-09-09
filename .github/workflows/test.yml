@@ -1037,6 +1037,7 @@ jobs:
       - name: Run revision-bound audit and probes
         run: |
           python -m evals.ig01e.audit --root . --pair-report .ig01d-evidence/ig01d-baseline-pair.json --require-pair-report --report ig01e-audit.json
+          python -c "import json, pathlib, sys; report=json.loads(pathlib.Path('ig01e-audit.json').read_text(encoding='utf-8')); verdict=report.get('verdict'); print(f'IG01-E verdict: {verdict}'); sys.exit(0 if verdict == 'SHIP' else 1)"
           python -m pytest tests/test_ig01e_audit.py -q
       - name: Upload content-free IG01-E audit evidence
         uses: actions/upload-artifact@v4

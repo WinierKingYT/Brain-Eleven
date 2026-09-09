@@ -349,7 +349,7 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
 
 
 def _audit_benchmark_eligibility(root: Path) -> dict[str, Any]:
-    report = (root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower()
+    report = " ".join((root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower().split())
     if "release-mode benchmark validation will reject" not in report or "exploratory smoke" not in report:
         raise AuditError("IG01-C benchmark eligibility limitation is not visible")
     return {
