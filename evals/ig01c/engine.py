@@ -576,7 +576,8 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 raise EvaluatorError(f"report.controls[{case_id}].select_none must be empty")
             if name == "select_all":
                 parent = next(item for item in cases if item.get("case_id") == case_id)
-                if selected != parent.get("candidate_ids"):
+                parent_candidates = parent.get("candidate_ids")
+                if set(selected) != set(parent_candidates) or len(selected) != len(parent_candidates):
                     raise EvaluatorError(f"report.controls[{case_id}].select_all must cover candidate_ids")
             _validate_metric_map(row["metrics"], f"report.controls[{case_id}].{name}.metrics")
     return dict(report)
