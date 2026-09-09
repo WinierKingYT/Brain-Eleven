@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from brain_eleven.extraction.semantic import (
     CallableSemanticProvider,
     DeterministicSafetyPrefilter,
@@ -136,6 +138,23 @@ def test_direct_proposition_and_provider_result_are_revalidated():
         pass
     else:
         raise AssertionError("provider metadata must remain scalar and content-free")
+
+
+def test_provider_review_records_require_full_hash_and_bounded_reason_code():
+    with pytest.raises(ValueError):
+        ProviderResult(
+            status=SemanticStatus.SEMANTIC_UNAVAILABLE.value,
+            provider_id="x",
+            model="y",
+            review_records=({"case_hash": "sha256:short", "reason_code": "x"},),
+        )
+    with pytest.raises(ValueError):
+        ProviderResult(
+            status=SemanticStatus.SEMANTIC_UNAVAILABLE.value,
+            provider_id="x",
+            model="y",
+            review_records=({"case_hash": "sha256:" + "a" * 64, "reason_code": "contains space"},),
+        )
 
 
 def test_provider_forces_evidence_authority_fields_over_model_output():

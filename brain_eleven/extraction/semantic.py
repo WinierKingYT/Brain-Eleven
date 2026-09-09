@@ -87,6 +87,8 @@ _METADATA_FIELDS = frozenset(
     {"requested_schema_version", "project_bound", "provider_revision", "availability_code"}
 )
 _REVIEW_FIELDS = frozenset({"case_hash", "reason_code"})
+_CASE_HASH = re.compile(r"sha256:[0-9a-f]{64}")
+_REASON_CODE = re.compile(r"[A-Za-z0-9_.-]{1,64}")
 _QUESTION = re.compile(r"\?|\b(?:should we|could we|shall we|what if|kullansak|yapalım mı|geçelim mi)\b", re.I)
 _HYPOTHETICAL = re.compile(r"\b(?:maybe|perhaps|might|could|we could|we might|consider|belki|olabilir|kullanabiliriz)\b", re.I)
 _QUOTE = re.compile(r"(?:^|\s)[\"'“‘].*[\"'”’](?:$|\s)|\b(?:quoted|quote|alıntı|dokümanda)\b", re.I | re.S)
@@ -204,10 +206,10 @@ class ProviderResult:
                 raise ValueError("review records must be mappings")
             if set(record) - _REVIEW_FIELDS:
                 raise ValueError("review records contain unknown fields")
-            if not isinstance(record.get("case_hash"), str) or not record["case_hash"].startswith("sha256:"):
+            if not isinstance(record.get("case_hash"), str) or not _CASE_HASH.fullmatch(record["case_hash"]):
                 raise ValueError("review records require a content hash")
-            if not isinstance(record.get("reason_code"), str) or not record["reason_code"].strip():
-                raise ValueError("review records require a reason code")
+            if not isinstance(record.get("reason_code"), str) or not _REASON_CODE.fullmatch(record["reason_code"]):
+                raise ValueError("review records require a bounded reason code")
             _check_nested(record, field_name="review_record")
         if not isinstance(self.metadata, Mapping):
             raise ValueError("provider metadata must be a mapping")
@@ -535,6 +537,7 @@ class UnavailableProvider:
         self.provider_id = provider_id
         self.model = model
         self.reason = reason
+        self.provider_revision = "unavailable-provider-v1"
 
     def extract(
         self,
@@ -549,7 +552,12 @@ class UnavailableProvider:
             provider_id=self.provider_id,
             model=self.model,
             review_records=(_record_review(content, self.reason),),
-            metadata={"requested_schema_version": schema_version, "project_bound": project_id is not None},
+            metadata={
+                "requested_schema_version": schema_version,
+                "project_bound": project_id is not None,
+                "provider_revision": self.provider_revision,
+                "availability_code": self.reason,
+            },
             error_code=self.reason,
         )
 
@@ -557,10 +565,17 @@ class UnavailableProvider:
 class CallableSemanticProvider:
     """Adapter for a configured model callable; output remains proposal-only."""
 
-    def __init__(self, provider_id: str, model: str, call: Callable[[str], Any]) -> None:
+    def __init__(
+        self,
+        provider_id: str,
+        model: str,
+        call: Callable[[str], Any],
+        provider_revision: str = "callable-adapter-v1",
+    ) -> None:
         self.provider_id = provider_id
         self.model = model
         self._call = call
+        self.provider_revision = provider_revision
         self.prefilter = DeterministicSafetyPrefilter()
 
     def extract(
@@ -579,6 +594,12 @@ class CallableSemanticProvider:
                 model=self.model,
                 error_code="UNSUPPORTED_SCHEMA_VERSION",
                 review_records=(_record_review(content, "UNSUPPORTED_SCHEMA_VERSION"),),
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": self.provider_revision,
+                    "availability_code": "invalid_schema",
+                },
             )
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
@@ -588,6 +609,12 @@ class CallableSemanticProvider:
                 model=self.model,
                 review_records=(_record_review(content, prefilter.reason_code),),
                 error_code=prefilter.reason_code,
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": self.provider_revision,
+                    "availability_code": "filtered",
+                },
             )
         try:
             raw = self._call(content)
@@ -620,7 +647,12 @@ class CallableSemanticProvider:
                 model=self.model,
                 propositions=tuple(propositions),
                 review_records=tuple(reviews),
-                metadata={"requested_schema_version": schema_version, "project_bound": trusted_project_id is not None},
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": self.provider_revision,
+                    "availability_code": "available",
+                },
             )
         except (PropositionValidationError, TypeError, ValueError, KeyError) as error:
             return ProviderResult(
@@ -629,6 +661,12 @@ class CallableSemanticProvider:
                 model=self.model,
                 review_records=(_record_review(content, "INVALID_OUTPUT"),),
                 error_code=type(error).__name__,
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": self.provider_revision,
+                    "availability_code": "invalid_output",
+                },
             )
 
 
@@ -658,6 +696,12 @@ class DeterministicRegexProvider:
                 model=self.model,
                 error_code="UNSUPPORTED_SCHEMA_VERSION",
                 review_records=(_record_review(content, "UNSUPPORTED_SCHEMA_VERSION"),),
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": SEMANTIC_EXTRACTOR_VERSION,
+                    "availability_code": "invalid_schema",
+                },
             )
         prefilter = self.prefilter.evaluate(content)
         if not prefilter.allowed:
@@ -667,6 +711,12 @@ class DeterministicRegexProvider:
                 model=self.model,
                 review_records=(_record_review(content, prefilter.reason_code),),
                 error_code=prefilter.reason_code,
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": SEMANTIC_EXTRACTOR_VERSION,
+                    "availability_code": "filtered",
+                },
             )
         commitment = self._extraction._classify_commitment(content, role).value.lower()
         if commitment == "committed":
@@ -698,6 +748,12 @@ class DeterministicRegexProvider:
                 provider_id=self.provider_id,
                 model=self.model,
                 review_records=(_record_review(content, result.reason_code),),
+                metadata={
+                    "requested_schema_version": schema_version,
+                    "project_bound": trusted_project_id is not None,
+                    "provider_revision": SEMANTIC_EXTRACTOR_VERSION,
+                    "availability_code": "available",
+                },
             )
         return ProviderResult(
             status=SemanticStatus.MEASURED.value,
@@ -705,6 +761,12 @@ class DeterministicRegexProvider:
             model=self.model,
             propositions=(candidate,),
             review_records=(() if result.canonical_eligible else (_record_review(content, result.reason_code),)),
+            metadata={
+                "requested_schema_version": schema_version,
+                "project_bound": trusted_project_id is not None,
+                "provider_revision": SEMANTIC_EXTRACTOR_VERSION,
+                "availability_code": "available",
+            },
         )
 
 

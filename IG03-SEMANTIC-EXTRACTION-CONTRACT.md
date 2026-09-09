@@ -165,6 +165,15 @@ HOLDOUT is sealed and excluded from every IG-03 tuning, debug and benchmark
 run. The benchmark records provider/model/schema revisions, split fingerprints,
 case counts, latency and content-free metric output.
 
+The runner verifies the public corpus manifest, dataset class, per-case corpus
+version and split fingerprint before loading any case. Historical or ad-hoc
+roots are rejected rather than relabeled as `ig-eval-v2`. An unavailable
+provider remains an explicit `SEMANTIC_UNAVAILABLE` outcome with all quality
+metrics marked `not_applicable`; it is never converted into zero-valued
+predictions. Each provider report preserves the result schema version,
+requested schema, provider revision, availability code and project-binding
+metadata in a content-free provenance envelope.
+
 ## Metrics and acceptance targets
 
 IG01-C remains the metric authority. At minimum report decision precision,
