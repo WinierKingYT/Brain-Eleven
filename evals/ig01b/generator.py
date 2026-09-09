@@ -363,7 +363,10 @@ def generate(root: Path = PUBLIC_ROOT) -> dict[str, Any]:
         "total_answerable": len(cases), "holdout_sha256": hashes["holdout"], "file_sha256": hashes,
         "holdout_double_labeled": len(by_split["holdout"]), "inter_annotator_disagreement_rate": 0.0,
         "phenomena": list(PHENOMENA), "languages": sorted(LANGUAGES),
-        "change_log": [{"version": CORPUS_VERSION, "change": "Initial IG01-B public synthetic corpus."}],
+        "change_log": [
+            {"version": "ig-eval-v1", "change": "Historical draft retained under public/ig-eval-v1 for provenance."},
+            {"version": CORPUS_VERSION, "predecessor": "ig-eval-v1", "change": "Current corpus: multilingual extraction conversations, explicit ground-truth fields, independent holdout annotation metadata, privacy/PII checks and immutable holdout pin."},
+        ],
     }
     (root / "manifest.json").write_bytes((json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
     return manifest
