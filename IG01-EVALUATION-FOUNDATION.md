@@ -1,6 +1,6 @@
 # IG-01 Product Evaluation Foundation
 
-**Status:** ACTIVE / IN PROGRESS
+**Status:** ACTIVE / IG01-C SHIPPED; IG01-D NOT STARTED
 **Authority:** CONTRACT
 **Opened from:** `18e88876495db77a2e99ea927f01a2d28c5d9ed6`
 **Branch:** `ig/01-evaluation-foundation`
@@ -57,8 +57,10 @@ previous package has an independent **SHIP** verdict.
 | **IG01-E — Independent Evaluation Audit** | Read-only audit of benchmark integrity, privacy, holdout discipline and interpretability. | Independent SHIP closes IG-01. |
 
 IG01-A is shipped under the immutable `ig01a-ship` gate and IG01-B is shipped
-under the immutable `ig01b-ship` closure. IG01-C is now the active bounded
-package; implementation remains limited to its approved contract and evidence.
+under the immutable `ig01b-ship` closure. IG01-C is shipped under its exact
+revision-bound package report and independent `SHIP`; implementation remains
+limited to its approved contract and evidence. IG01-D baseline measurement is
+the next bounded package and remains unopened in this turn.
 The full program keeps the following order
 after IG-01: IG-03 semantic extraction, IG-02 capture closure, IG-04
 correction/reference, IG-05 task-aware retrieval, IG-06 V2 runtime promotion,

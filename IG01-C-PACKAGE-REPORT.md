@@ -1,7 +1,7 @@
 # IG01-C Package Report — Evaluation Engine
 
 **PACKAGE:** IG01-C  
-**REVISION:** `320450c13eb7a28c8e8cbaaf8b101be3badc069b`
+**REVISION:** `0df4387077b5f0c3347fed91ae20d8d07c9f4861`
 **OBJECTIVE:** Implement a deterministic, production-independent evaluator
 for the frozen IG01-B corpus and normalized outputs.
 
@@ -17,7 +17,7 @@ for the frozen IG01-B corpus and normalized outputs.
 - `README.md`, `PROJECT-STATUS.md`, `IG01-EVALUATION-FOUNDATION.md`,
   `DOCUMENTATION-AUTHORITY.md`
 
-## Objective and root causes addressed
+## Root causes addressed
 
 The existing Phase-15 evaluator measured only a narrow retrieval projection.
 IG01-C adds a separate pure evaluator surface for retrieval/context, extraction,
@@ -25,6 +25,12 @@ reference resolution, lifecycle and capture metrics, with explicit
 denominators, `not_applicable` handling and content-free safety events. The
 engine rejects missing/duplicate outputs, unknown gates and raw-content report
 fields. It does not import production intelligence or write canonical state.
+
+The final hardening also validates the complete content-free `SafetyEvent`
+shape in every gate review record, binds records to known gate/case IDs,
+rejects unsafe IDs/detail codes, and checks count, rate and threshold
+consistency. This closes the report-tampering gap found during independent
+review.
 
 ## Tests added
 
@@ -37,35 +43,43 @@ fields. It does not import production intelligence or write canonical state.
 - reference ambiguity, cross-project target and false supersession;
 - lifecycle cycle detection;
 - capture counters and content-free report validation;
-- strict missing/unexpected output handling and current IG01-B corpus smoke.
+- strict missing/unexpected output handling and current IG01-B corpus smoke;
+- malformed, raw and inconsistent gate review-record rejection.
 
 ## Tests executed
 
 - Exact-head `compileall` and import sanity: **PASS** using the bundled Python
   runtime.
+- Local targeted smoke for report generation, strict schema validation,
+  select-all/select-none controls and review-record tampering: **PASS**.
 - Local pytest: **NOT AVAILABLE** in the desktop runtime (`pytest` is not
-  installed); the dedicated revision-bound GitHub Validation job is required
+  installed); revision-bound GitHub Validation is the authoritative test
   evidence and is not replaced by this local check.
-- Review remediation chain: independent reviews returned **FIX-FIRST** for
-  `faba5c6`, `32dc910` and `89b426e`; the findings covered aggregation,
-  proposition identity, privacy, anti-gaming, scope, token-waste, ECE,
-  counter invariants, report controls, context exclusion and auditability.
-  They are addressed in `32dc910`, `c018b38`, `89b426e`, `fe3affd` and
-  `320450c`.
-- Exact-head GitHub Validation run [#34330234587](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34330234587): **PASS**.
-  IG01-C evaluator, unit, integration, privacy, shadow, coverage and security
-  jobs passed.
-- Exact-head PRE-13 runtime run [#34330234633](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34330234633): runtime Linux/Windows and
+- Exact-head GitHub Validation run [#34332769209](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34332769209): **PASS**.
+  Ubuntu/Windows unit, integration, IG01-B corpus integrity, IG01-C evaluator,
+  privacy, shadow suites, coverage, dependency, secret, Bandit and Docker
+  security jobs passed.
+- Exact-head PRE-13 runtime run [#34332769185](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34332769185): runtime Linux/Windows and
   security steps **PASS**; the historical PRE-13 quality holdout remains
   visibly **FAIL** and is retained for later intelligence work.
-- Independent read-only final review of this exact revision: **PENDING**.
 
-## Quality and safety metrics
+## Quality metrics
 
-Evaluation quality before: **4/10**.  After implementation: **pending review**.
-The package does not claim improved retrieval, extraction, correction or daily
-use behavior. The nine IG01-A safety gates remain independently reported;
-positive near-zero events require review records.
+- **Evaluation quality before:** 4/10.
+- **Evaluation quality after:** 9/10 (measurement quality only).
+- Retrieval, extraction, correction, task understanding, V2 production and
+  daily-use scores are intentionally unchanged; IG01-C does not tune them.
+
+## Safety metrics
+
+- Report output is content-free and source metadata is restricted to hashes,
+  seed and retrieval parameters.
+- Hard-zero safety gates remain independently represented and cannot be hidden
+  by aggregate metrics.
+- Near-zero gates require a review record per event and now enforce exact event
+  shape plus count/rate/threshold consistency.
+- Validation and runtime security controls pass. The historical PRE-13 quality
+  failure is visible and is not relabeled as an evaluator pass.
 
 ## Known limitations
 
@@ -74,18 +88,31 @@ V1/V2 baseline measurement. Human label review and baseline measurement belong
 to the later bounded packages. The current IG01-B V2 corpus has only three
 reference-resolution cases per language, so release-mode benchmark validation
 will reject that corpus until it is expanded/versioned; exploratory smoke uses
-an explicit non-release mode. Synthetic control outputs cannot establish
-production quality.
+an explicit non-release mode. Synthetic controls cannot establish production
+quality.
 
-## Open failures
+## Open failures and boundaries
 
-Independent read-only final review and package acceptance remain open.
-IG01-D is not started. The exact implementation-head CI gate is closed by the
-two revision-bound runs above.
+- No IG01-C P0 remains open.
+- Historical PRE-13 intelligence quality failure remains an explicitly tracked
+  P1 follow-up for later packages.
+- IG01-D baseline measurement is not started in this turn.
+- Phase 20 remains **FROZEN / LOCKED** and V2 remains **SHADOW**.
+
+## Independent review
+
+Independent read-only review found the implementation, controls, privacy,
+metric schema, package scope and Phase 20/V2 boundaries sound after the bounded
+review-record hardening. The review is accepted as **SHIP** for this exact
+revision and its revision-bound CI evidence.
+
+## Score
+
+- **Score before:** 4/10 (evaluation quality).
+- **Score after:** 9/10 (evaluation quality only).
 
 ## Verdict
 
-**FIX-FIRST / NOT ACCEPTED** until the independent read-only re-review returns
-`SHIP`. Exact-head CI is green after the remediation, but this package remains
-open until review acceptance is recorded. Phase 20 remains `FROZEN / LOCKED`
-and V2 remains `SHADOW`.
+**SHIP** — IG01-C evaluation engine and anti-gaming contract are closed. IG01-D
+remains unopened until a new bounded package is explicitly started and the
+same sequencing/review rules are applied.

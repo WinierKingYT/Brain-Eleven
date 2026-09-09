@@ -4,12 +4,14 @@ Brain-Eleven is a local, privacy-first second-brain system with revisioned
 canonical memory, project-scoped state, safe retrieval, and a non-injecting
 context compiler.
 
-The repository is currently in **Intelligence Graduation IG01-C**. Phase 20 is
+The repository has closed **Intelligence Graduation IG01-C**. Phase 20 is
 **FROZEN and LOCKED**; the existing V2 path remains shadow-only until the
-evaluation and real-use gates in `INTELLIGENCE-GRADUATION.md` pass. IG01-B is
-closed with independent `SHIP`; IG01-C is the active bounded evaluator
-package. Production intelligence tuning, V2 promotion and Phase 20 work
-remain closed until the later packages pass their independent gates.
+evaluation and real-use gates in `INTELLIGENCE-GRADUATION.md` pass. IG01-C's
+production-independent evaluator, anti-gaming controls and safety report are
+closed with independent `SHIP`. IG01-D baseline measurement is the next
+bounded package but is not started in this turn. Production intelligence
+tuning, V2 promotion and Phase 20 work remain closed until the later packages
+pass their independent gates.
 
 ## Local checks
 
