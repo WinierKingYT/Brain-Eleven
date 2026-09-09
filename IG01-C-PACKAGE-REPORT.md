@@ -1,7 +1,7 @@
 # IG01-C Package Report — Evaluation Engine
 
 **PACKAGE:** IG01-C  
-**REVISION:** `0df4387077b5f0c3347fed91ae20d8d07c9f4861`
+**REVISION:** `a95fa31079acdb2de3a26c767923accaf084a274`
 **OBJECTIVE:** Implement a deterministic, production-independent evaluator
 for the frozen IG01-B corpus and normalized outputs.
 
