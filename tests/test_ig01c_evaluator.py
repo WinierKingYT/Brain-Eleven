@@ -10,12 +10,17 @@ import pytest
 
 from evals.ig01c import (
     EvaluationContractError,
+    EvaluatorError,
+    MetricValue,
+    aggregate_metric_values,
     evaluate_case,
+    evaluate_capture_case,
     evaluate_corpus,
     evaluate_extraction_case,
     evaluate_lifecycle_case,
     evaluate_reference_case,
     evaluate_retrieval_case,
+    expected_calibration_error,
     f1_score,
     mandatory_recall,
     mean_reciprocal_rank,
@@ -78,13 +83,29 @@ def test_primitive_retrieval_metrics_are_explicit_and_anti_gaming():
     assert mean_reciprocal_rank(["noise", "b"], {"a", "b"}).value == pytest.approx(0.5)
     assert mandatory_recall(["a"], ["a", "b"]).value == 0.5
     assert noise_ratio(["a", "noise"], ["a"]).value == 0.5
-    assert token_waste(["a", "noise"], ["a"], {"a": 10, "noise": 20}).value == pytest.approx(2 / 3)
+    assert token_waste(["a", "noise"], ["a"], {"a": 10, "noise": 20}).value == pytest.approx(20)
 
     select_none = precision_at_k([], {"a"}, 0)
     select_all = precision_at_k(["a", "noise"], {"a"}, 2)
     assert select_none.value == 0.0 and select_none.empty_selection is True
     assert select_all.value == 0.5
     assert recall_at_k([], [], 5).not_applicable is True
+
+
+def test_aggregation_preserves_macro_and_pooled_formulas():
+    macro = aggregate_metric_values([MetricValue(1.0, 1, 1), MetricValue(0.0, 0, 1)])
+    assert macro.value == pytest.approx(0.5)
+    assert macro.numerator == pytest.approx(1.0)
+    assert macro.denominator == pytest.approx(2.0)
+    pooled = aggregate_metric_values(
+        [MetricValue(1.0, 1, 1), MetricValue(0.5, 1, 2)], pooled=True
+    )
+    assert pooled.value == pytest.approx(2 / 3)
+
+
+def test_ece_uses_frozen_ten_bin_batch_formula():
+    ece = expected_calibration_error([(0.9, True), (0.9, False)])
+    assert ece.value == pytest.approx(0.4)
 
 
 def test_retrieval_case_uses_fixture_metadata_for_all_scope_lifecycle_gates():
@@ -123,6 +144,20 @@ def test_extraction_accepts_exact_user_decision_and_rejects_false_commitment():
     )
     assert "false_commitment" in false["violations"]
     assert any(event["review_required"] for event in false["safety_events"])
+
+
+def test_extraction_requires_semantic_claim_identity_not_only_type():
+    case = extraction_case(
+        expected={
+            **extraction_case()["expected"],
+            "claim_key": "auth_strategy",
+            "subject": "PromtGen",
+            "predicate": "uses",
+            "value": "postgresql",
+        }
+    )
+    wrong = evaluate_extraction_case(case, {**case["expected"], "value": "redis"})
+    assert wrong["proposition_correct"] is False
 
 
 def test_extraction_assistant_proposal_and_direct_canonical_write_are_gates():
@@ -204,6 +239,7 @@ def test_corpus_runner_is_strict_and_reports_select_all_controls_without_content
         split="dev",
         retrieval_k=2,
         git_sha="abc123",
+        enforce_benchmark=False,
     )
     assert report["corpus"]["scored_case_count"] == 2
     assert "a" in report["controls"]
@@ -219,11 +255,40 @@ def test_corpus_runner_is_strict_and_reports_select_all_controls_without_content
     with pytest.raises(EvaluationContractError, match="outputs do not match"):
         evaluate_corpus(cases, {"a": outputs["a"]}, corpus_version="v", split="dev")
 
+    with pytest.raises(EvaluatorError, match="controls are mandatory"):
+        evaluate_corpus(
+            cases,
+            outputs,
+            corpus_version="v",
+            split="dev",
+            include_controls=False,
+            enforce_benchmark=False,
+        )
+
+
+def test_retrieval_unknown_ids_and_duplicate_metadata_fail_closed():
+    unknown = evaluate_retrieval_case(retrieval_case(), ["required", "unscoped"], k=2)
+    assert "forbidden_leakage" in unknown["violations"]
+    with pytest.raises(EvaluationContractError, match="duplicate ID"):
+        evaluate_retrieval_case(
+            retrieval_case(candidate_metadata=[
+                {"id": "required", "project_id": "project-a"},
+                {"id": "required", "project_id": "project-a"},
+            ]),
+            ["required"],
+        )
+
+
+def test_capture_counter_invariants_fail_closed():
+    with pytest.raises(EvaluationContractError, match="lost_events"):
+        evaluate_capture_case({"case_id": "capture-1"}, {"emitted_events": 1, "lost_events": 2})
+
 
 def test_report_rejects_raw_content_and_near_zero_events_without_review():
     case = retrieval_case()
     report = evaluate_corpus(
-        [case], {case["case_id"]: {"retrieved_ids": ["required"]}}, corpus_version="v", split="dev"
+        [case], {case["case_id"]: {"retrieved_ids": ["required"]}}, corpus_version="v", split="dev",
+        enforce_benchmark=False,
     )
     tampered = copy.deepcopy(report)
     tampered["cases"][0]["prompt"] = "secret raw prompt"
@@ -235,6 +300,12 @@ def test_report_rejects_raw_content_and_near_zero_events_without_review():
     broken["safety_gates"]["false_commitment"]["review_records"] = []
     with pytest.raises(EvaluationContractError, match="review records incomplete"):
         validate_report(broken)
+
+    for field in ("token", "secret"):
+        broken = copy.deepcopy(report)
+        broken["cases"][0][field] = "raw"
+        with pytest.raises(EvaluatorError, match="prohibited raw content"):
+            validate_report(broken)
 
 
 def test_current_ig01b_public_corpus_can_be_scored_without_raw_content_output():
@@ -261,6 +332,7 @@ def test_current_ig01b_public_corpus_can_be_scored_without_raw_content_output():
         corpus_version="ig-eval-v2",
         split="dev-validation",
         retrieval_k=5,
+        enforce_benchmark=False,
     )
     assert report["corpus"]["case_count"] == 114
     assert report["corpus"]["excluded_case_count"] == 0

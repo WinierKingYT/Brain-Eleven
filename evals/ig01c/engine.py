@@ -33,6 +33,7 @@ from .metrics import (
     evaluate_lifecycle_case,
     evaluate_reference_case,
     evaluate_retrieval_case,
+    expected_calibration_error,
     gate_summary,
 )
 
@@ -44,6 +45,8 @@ class EvaluatorError(EvaluationContractError):
 _BANNED_REPORT_KEYS = frozenset({
     "prompt", "query", "text", "content", "transcript", "raw_prompt", "raw_text",
     "raw_transcript", "memory_content", "message", "free_text", "diagnostic", "details",
+    "token", "tokens", "secret", "secrets", "api_key", "api_secret", "password",
+    "credential", "credentials", "raw", "token_count",
 })
 
 
@@ -66,7 +69,10 @@ def _safe_source(source: Mapping[str, Any] | None) -> dict[str, Any]:
     for key, value in source.items():
         if not isinstance(key, str) or not key.strip():
             raise EvaluatorError("source keys must be non-empty strings")
-        if key.lower() in _BANNED_REPORT_KEYS:
+        lowered = key.lower()
+        if lowered in _BANNED_REPORT_KEYS or any(
+            marker in lowered for marker in ("secret", "password", "credential", "api_key")
+        ):
             raise EvaluatorError(f"source.{key} cannot contain raw content")
         normalized[key.strip()] = _safe_scalar(value, f"source.{key}")
     return dict(sorted(normalized.items()))
@@ -175,6 +181,16 @@ def _metric_from_dict(value: Mapping[str, Any]) -> MetricValue:
     )
 
 
+_POOLED_METRICS = frozenset({
+    "capture_loss_rate",
+    "duplicate_canonical_effect_rate",
+    "replay_correctness",
+    "terminal_effect_agreement",
+    "lifecycle_transition_safety",
+    "false_supersession_rate",
+})
+
+
 def _aggregate_metrics(case_results: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
     by_family: dict[str, dict[str, list[MetricValue]]] = defaultdict(lambda: defaultdict(list))
     for result in case_results:
@@ -186,10 +202,18 @@ def _aggregate_metrics(case_results: Sequence[Mapping[str, Any]]) -> dict[str, d
             by_family[family][name].append(_metric_from_dict(value))
     aggregate: dict[str, dict[str, Any]] = {}
     for family, values in sorted(by_family.items()):
-        aggregate[family] = {
-            name: aggregate_metric_values(metrics).as_dict()
-            for name, metrics in sorted(values.items())
-        }
+        aggregate[family] = {}
+        for name, metrics in sorted(values.items()):
+            if family == "extraction" and name == "ece":
+                samples = [
+                    (float(result["ece_sample"]["confidence"]), bool(result["ece_sample"]["correct"]))
+                    for result in case_results
+                    if result.get("family") == "extraction" and result.get("ece_sample") is not None
+                ]
+                aggregate[family][name] = expected_calibration_error(samples).as_dict()
+            else:
+                pooled = name in _POOLED_METRICS
+                aggregate[family][name] = aggregate_metric_values(metrics, pooled=pooled).as_dict()
     return aggregate
 
 
@@ -216,6 +240,47 @@ def _control_case(case: Mapping[str, Any], *, k: int, token_counts: Mapping[str,
     }
 
 
+def _validate_benchmark_population(
+    cases: Sequence[Mapping[str, Any]],
+    results: Sequence[Mapping[str, Any]],
+) -> None:
+    """Reject release reports that do not contain measurable populations."""
+
+    scored = [
+        case for case in cases
+        if not (
+            isinstance(case.get("answerability"), Mapping)
+            and case["answerability"].get("status") == "unanswerable"
+        )
+        and case.get("case_kind") != "abstention"
+    ]
+    if not scored:
+        raise EvaluatorError("INVALID_BENCHMARK_RUN: no answerable cases")
+    by_family_language: dict[tuple[str, str], int] = defaultdict(int)
+    for case in scored:
+        family = str(case.get("family", "")).strip().lower()
+        language = str(case.get("language", "unknown")).strip().lower() or "unknown"
+        by_family_language[(family, language)] += 1
+    undersized = [key for key, count in by_family_language.items() if count < 5]
+    if undersized:
+        raise EvaluatorError(
+            "INVALID_BENCHMARK_RUN: fewer than five answerable cases per family/language: "
+            + ", ".join(f"{family}/{language}" for family, language in sorted(undersized))
+        )
+    for result in results:
+        metrics = result.get("metrics", {})
+        for name, raw_metric in metrics.items():
+            metric = _metric_from_dict(raw_metric)
+            if metric.not_applicable:
+                continue
+            if metric.empty_selection:
+                continue
+            if metric.denominator <= 0:
+                raise EvaluatorError(
+                    f"INVALID_BENCHMARK_RUN: metric {name} has no positive denominator"
+                )
+
+
 def evaluate_corpus(
     cases: Sequence[Mapping[str, Any]],
     outputs: Mapping[str, Any],
@@ -227,6 +292,7 @@ def evaluate_corpus(
     source_fingerprint: str = "",
     git_sha: str = "",
     include_controls: bool = True,
+    enforce_benchmark: bool = True,
 ) -> dict[str, Any]:
     """Evaluate a fixed collection and return a content-free report.
 
@@ -243,6 +309,8 @@ def evaluate_corpus(
     split = str(split).strip().lower()
     if not corpus_version or not split:
         raise EvaluatorError("corpus_version and split are required")
+    if include_controls is False:
+        raise EvaluatorError("select_all/select_none controls are mandatory")
     retrieval_k = _nonnegative_int(retrieval_k, "retrieval_k")
     seed = _nonnegative_int(seed, "seed")
     case_ids = tuple(_case_id(case) for case in cases)
@@ -264,6 +332,8 @@ def evaluate_corpus(
             excluded += 1
         if include_controls and str(case.get("family", "")).lower() == "retrieval" and not is_unanswerable:
             controls[_case_id(case)] = _control_case(case, k=retrieval_k, token_counts=None)
+    if enforce_benchmark:
+        _validate_benchmark_population(cases, results)
     events: list[SafetyEvent] = []
     gate_denominators: dict[str, int] = defaultdict(int)
     for result in results:
@@ -318,7 +388,10 @@ def evaluate_corpus(
 def _walk_report(value: Any, path: str = "report") -> None:
     if isinstance(value, Mapping):
         for key, child in value.items():
-            if str(key).lower() in _BANNED_REPORT_KEYS:
+            lowered = str(key).lower()
+            if lowered in _BANNED_REPORT_KEYS or any(
+                marker in lowered for marker in ("secret", "password", "credential", "api_key")
+            ):
                 raise EvaluatorError(f"{path}.{key} contains prohibited raw content")
             _walk_report(child, f"{path}.{key}")
     elif isinstance(value, list):
