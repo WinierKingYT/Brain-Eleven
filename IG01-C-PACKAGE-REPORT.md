@@ -1,7 +1,7 @@
 # IG01-C Package Report — Evaluation Engine
 
 **PACKAGE:** IG01-C  
-**REVISION:** `faba5c6b27ad2baca4eaffd473e00e57742b7b67`
+**REVISION:** `32dc91074d4751a901f85effd18596b779505cbe`
 **OBJECTIVE:** Implement a deterministic, production-independent evaluator
 for the frozen IG01-B corpus and normalized outputs.
 
@@ -54,7 +54,17 @@ fields. It does not import production intelligence or write canonical state.
   holdout remains **FAIL** (`precision=0.6667`, `required_recall=0.7059`), as
   expected; this is retained as a future intelligence-remediation failure and
   does not get relabeled as an evaluator failure.
-- Independent read-only review: **PENDING**.
+- Review remediation: the independent review of `faba5c6` returned
+  **FIX-FIRST** for aggregation, proposition identity, privacy, anti-gaming,
+  scope, token-waste, ECE and counter-invariant defects. Those findings are
+  addressed in `32dc910` and the exact-head revalidation below.
+- Exact-head GitHub Validation run [#34326922992](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34326922992): **PASS**.
+  Evaluator, unit, integration, privacy, shadow, coverage and security jobs
+  passed.
+- Exact-head PRE-13 runtime run [#34326923032](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/34326923032): runtime Linux/Windows and
+  security steps **PASS**; the historical PRE-13 quality holdout remains
+  visibly **FAIL**.
+- Independent read-only re-review of `32dc910`: **PENDING**.
 
 ## Quality and safety metrics
 
@@ -72,13 +82,13 @@ production quality.
 
 ## Open failures
 
-Independent read-only review and final package acceptance remain open. IG01-D
-is not started. The exact implementation-head CI gate is closed by the two
-revision-bound runs above.
+Independent read-only re-review and final package acceptance remain open.
+IG01-D is not started. The exact implementation-head CI gate is closed by the
+two revision-bound runs above.
 
 ## Verdict
 
-**FIX-FIRST / NOT ACCEPTED** until the independent read-only review returns
-`SHIP`. Exact-head CI is green, but this package remains open until review
-acceptance is recorded. Phase 20 remains `FROZEN / LOCKED` and V2 remains
-`SHADOW`.
+**FIX-FIRST / NOT ACCEPTED** until the independent read-only re-review returns
+`SHIP`. Exact-head CI is green after the remediation, but this package remains
+open until review acceptance is recorded. Phase 20 remains `FROZEN / LOCKED`
+and V2 remains `SHADOW`.

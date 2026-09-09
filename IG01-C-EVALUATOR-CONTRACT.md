@@ -56,7 +56,10 @@ CI artifacts or long-lived telemetry.
 Every metric is emitted as `{value, numerator, denominator,
 not_applicable, empty_selection}`. A zero denominator is either an explicit
 empty selection with value `0`, or `not_applicable` when the family has no
-valid denominator. The engine publishes macro means and the underlying counts.
+valid denominator. Case metrics are unweighted macro means; event/job/lifecycle
+metrics use pooled numerators and denominators. Token-waste `value` is the raw
+wasted-token sum (its denominator records the available selected-token total).
+The engine publishes the aggregation mode and underlying counts.
 
 Retrieval/context metrics are:
 
@@ -66,6 +69,12 @@ Retrieval/context metrics are:
 - noise ratio and token waste;
 - context precision, mandatory coverage, redundancy and irrelevant-context
   rate where applicable.
+
+Release-mode corpus runs enforce the IG01-A minimum population: at least five
+answerable cases per family/language and a positive denominator for every
+claimed metric. Exploratory unit fixtures must explicitly opt out with
+`enforce_benchmark=False`; that flag cannot disable the mandatory retrieval
+anti-gaming controls.
 
 Extraction metrics are decision precision/recall, false-commitment rate,
 assistant-as-user rate, wrong type/scope rates and ECE. Reference metrics are

@@ -267,18 +267,27 @@ def _validate_benchmark_population(
             "INVALID_BENCHMARK_RUN: fewer than five answerable cases per family/language: "
             + ", ".join(f"{family}/{language}" for family, language in sorted(undersized))
         )
+    metric_seen: dict[str, bool] = defaultdict(bool)
     for result in results:
         metrics = result.get("metrics", {})
         for name, raw_metric in metrics.items():
+            metric_seen.setdefault(name, False)
             metric = _metric_from_dict(raw_metric)
             if metric.not_applicable:
                 continue
             if metric.empty_selection:
                 continue
+            metric_seen[name] = metric_seen[name] or metric.denominator > 0
             if metric.denominator <= 0:
                 raise EvaluatorError(
                     f"INVALID_BENCHMARK_RUN: metric {name} has no positive denominator"
                 )
+    missing = sorted(name for name, has_positive in metric_seen.items() if not has_positive)
+    if missing:
+        raise EvaluatorError(
+            "INVALID_BENCHMARK_RUN: metrics lack a positive denominator: "
+            + ", ".join(missing)
+        )
 
 
 def evaluate_corpus(
