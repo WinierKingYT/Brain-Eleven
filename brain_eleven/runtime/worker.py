@@ -37,13 +37,13 @@ _STATE_OPERATION_RECEIPTS = {
     'RESOLVE_REQUIREMENT': 'requirement_resolved',
 }
 _STATE_RECEIPT_RECORDS = {
-    'blocker_added': ('blk_', frozenset({'ACTIVE'})),
-    'blocker_resolved': ('blk_', frozenset({'RESOLVED'})),
-    'milestone_set': ('mil_', frozenset({'ACTIVE'})),
-    'work_item_added': ('wrk_', frozenset({'TODO'})),
+    'blocker_added': ('blk_', frozenset({'ACTIVE', 'RESOLVED'})),
+    'blocker_resolved': ('blk_', frozenset({'ACTIVE', 'RESOLVED'})),
+    'milestone_set': ('mil_', frozenset({'PLANNED', 'ACTIVE', 'BLOCKED', 'COMPLETED', 'CANCELLED'})),
+    'work_item_added': ('wrk_', frozenset({'TODO', 'ACTIVE', 'BLOCKED', 'DONE', 'DROPPED'})),
     'objective_set': ('obj_', frozenset({'ACTIVE'})),
-    'requirement_added': ('req_', frozenset({'ACTIVE'})),
-    'requirement_resolved': ('req_', frozenset({'RESOLVED'})),
+    'requirement_added': ('req_', frozenset({'ACTIVE', 'RESOLVED', 'CANCELLED'})),
+    'requirement_resolved': ('req_', frozenset({'ACTIVE', 'RESOLVED', 'CANCELLED'})),
 }
 
 
@@ -302,7 +302,7 @@ class Worker:
             project = state_doc.get('projects', {}).get(project_id)
             if not isinstance(project, dict):
                 return False
-            if not self._state_receipt_records_valid(state_receipt, project):
+            if not self._state_receipt_records_valid(state_receipt, project, operation_id):
                 return False
             for record_id in record_ids:
                 if record_id not in receipt.get('effect_ids', []):
@@ -357,7 +357,7 @@ class Worker:
         return None
 
     @staticmethod
-    def _state_receipt_records_valid(receipt, project):
+    def _state_receipt_records_valid(receipt, project, operation_id=None):
         """Bind a semantic state operation to the surviving record kind/status."""
         operation = receipt.get('operation') if isinstance(receipt, dict) else None
         shape = _STATE_RECEIPT_RECORDS.get(operation)
@@ -367,8 +367,11 @@ class Worker:
         prefix, statuses = shape
         for record_id in record_ids:
             record = Worker._state_record(project, record_id)
+            source = record.get('source') if isinstance(record, dict) else None
             if (record is None or not isinstance(record_id, str) or not record_id.startswith(prefix)
-                    or record.get('status') not in statuses):
+                    or record.get('status') not in statuses
+                    or (operation_id is not None
+                        and (not isinstance(source, dict) or source.get('reference') != operation_id))):
                 return False
         return True
 
@@ -418,7 +421,7 @@ class Worker:
                 and isinstance(record_id, str)
                 and isinstance(record_ids, list)
                 and record_id in record_ids
-                and self._state_receipt_records_valid(receipt, project)
+                and self._state_receipt_records_valid(receipt, project, operation_id)
                 and self._state_record_exists(project, record_id)
             )
         receipts = MemoryStore(self.vault).load().get('operation_receipts', {})

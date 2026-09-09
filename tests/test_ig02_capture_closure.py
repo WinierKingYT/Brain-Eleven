@@ -330,6 +330,51 @@ def test_replay_rejects_tampered_state_operation(runtime, tmp_path, monkeypatch)
     assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 
 
+def test_replay_allows_state_lifecycle_after_receipt(runtime, tmp_path, monkeypatch):
+    vault, project_id = runtime
+    path = _transcript(tmp_path, "The build is currently failing.")
+    enqueue(vault, "claude", {"session_id": "state-lifecycle-replay", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    state_store = StateStore(vault)
+    state = state_store.load()
+    blocker_id = state["projects"][project_id]["blockers"][0]["id"]
+    StateService(vault).resolve_blocker(
+        project_id,
+        blocker_id=blocker_id,
+        expected_revision=state["projects"][project_id]["revision"],
+        source={"type": "user", "reference": "lifecycle-replay"},
+    )
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "PROCESSED"
+    assert result["receipt_replayed"] is True
+
+
+def test_replay_rejects_tampered_state_record_provenance(runtime, tmp_path, monkeypatch):
+    vault, project_id = runtime
+    path = _transcript(tmp_path, "The build is currently failing.")
+    enqueue(vault, "claude", {"session_id": "tampered-state-provenance", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    state_store = StateStore(vault)
+    state = state_store.load()
+    state["projects"][project_id]["blockers"][0]["source"]["reference"] = "op_forged"
+    write_json(state_store.path, state)
+    monkeypatch.setattr(worker.queue, "commit", CaptureQueue(vault).commit)
+
+    result = worker.once()
+
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
+
+
 def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
     other_root = tmp_path / "other-project"
