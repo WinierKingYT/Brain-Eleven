@@ -188,7 +188,9 @@ class ReviewStore:
                 item = read_json(path)
                 if (isinstance(item, dict) and item.get('status') == 'PENDING'
                         and datetime.fromisoformat(item['expires_at']) <= datetime.now(timezone.utc)):
-                    self.finish(item, 'EXPIRED')
+                    # Expiry remains a per-candidate B1 lifecycle operation.
+                    # A surviving duplicate may become the next visible item.
+                    self.finish(item, 'EXPIRED', grouped=False)
 
     def primary(self, item):
         """Return the deterministic visible item for an item's B2 group."""
@@ -228,11 +230,15 @@ class ReviewStore:
             value['duplicate_of'] = duplicate_of
         return value
 
-    def finish(self, item, status, result=None):
+    def finish(self, item, status, result=None, *, grouped=True):
         if status not in {'ACCEPTED', 'REJECTED', 'EXPIRED'}:
             raise ValueError('Invalid review terminal status')
         if item.get('status') != 'PENDING':
             return item
+        if not grouped:
+            value = self._terminal_value(item, status, result)
+            write_json(self.path(item['id']), value)
+            return value
         group = [candidate for candidate in self._items()
                  if isinstance(candidate, dict) and candidate.get('status') == 'PENDING'
                  and self._project_id(candidate) == self._project_id(item)

@@ -1,6 +1,7 @@
 """Focused IG-04 B2 review deduplication and ordering tests."""
 
 import json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -119,3 +120,23 @@ def test_b2_content_groups_are_project_scoped(b2_runtime):
     pending = [item for item in store.list() if item["status"] == "PENDING"]
     assert {item["candidate"]["project_id"] for item in pending} == {project, "foreign-project"}
     assert all(item["duplicate_count"] == 0 for item in pending)
+
+
+def test_b2_keeps_b1_expiry_per_candidate(b2_runtime):
+    vault, project = b2_runtime
+    store = ReviewStore(vault)
+    first = store.add(_candidate(project, "cand-expire-a", "Expiry content", evidence="evd-expire-a"),
+                      "HUMAN_APPROVAL_REQUIRED", _source("evd-expire-a"))
+    second = store.add(_candidate(project, "cand-expire-b", "Expiry content", evidence="evd-expire-b"),
+                       "HUMAN_APPROVAL_REQUIRED", _source("evd-expire-b"))
+    expired = datetime.now(timezone.utc) - timedelta(days=1)
+    future = datetime.now(timezone.utc) + timedelta(days=1)
+    for review_id, timestamp in ((first, expired), (second, future)):
+        record = json.loads(store.path(review_id).read_text(encoding="utf-8"))
+        record["expires_at"] = timestamp.isoformat()
+        write_json(store.path(review_id), record)
+
+    store.expire()
+    assert json.loads(store.path(first).read_text(encoding="utf-8"))["status"] == "EXPIRED"
+    assert json.loads(store.path(second).read_text(encoding="utf-8"))["status"] == "PENDING"
+    assert [item["id"] for item in store.list() if item["status"] == "PENDING"] == [second]
