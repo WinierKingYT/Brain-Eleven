@@ -30,7 +30,21 @@ class ReviewStore:
 
     @staticmethod
     def fingerprint(candidate):
-        """Return an event identity for exact replay suppression."""
+        """Return the project-scoped content identity used by B2 dedup."""
+        text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
+        values = {
+            'project_id': candidate.get('project_id'),
+            'candidate_type': candidate.get('candidate_type'),
+            'scope': candidate.get('scope'),
+            'memory_type': candidate.get('memory_type'),
+            'operation': candidate.get('operation'),
+            'content': candidate.get(text_key),
+        }
+        return 'fp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def event_fingerprint(candidate):
+        """Return an exact capture identity, including evidence references."""
         text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
         evidence = candidate.get('evidence_refs', [])
         if not isinstance(evidence, list):
@@ -44,21 +58,12 @@ class ReviewStore:
             'content': candidate.get(text_key),
             'evidence_refs': sorted(str(item) for item in evidence),
         }
-        return 'fp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        return 'efp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
     @staticmethod
     def content_fingerprint(candidate):
-        """Return the B2 grouping identity, independent of evidence identity."""
-        text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
-        values = {
-            'project_id': candidate.get('project_id'),
-            'candidate_type': candidate.get('candidate_type'),
-            'scope': candidate.get('scope'),
-            'memory_type': candidate.get('memory_type'),
-            'operation': candidate.get('operation'),
-            'content': candidate.get(text_key),
-        }
-        return 'cfp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        """Backward-compatible alias for the B2 content fingerprint."""
+        return ReviewStore.fingerprint(candidate)
 
     @staticmethod
     def _candidate(item):
@@ -111,19 +116,27 @@ class ReviewStore:
         return [read_json(path) for path in sorted(self.root.glob('rev_*.json'))]
 
     def find_by_fingerprint(self, project_id, fingerprint):
-        """Find an existing review item for one project/content fingerprint."""
+        """Find an existing item for one project/content fingerprint."""
         if not isinstance(project_id, str) or not isinstance(fingerprint, str):
             return None
-        for path in sorted(self.root.glob('rev_*.json')):
-            item = read_json(path)
-            if not isinstance(item, dict) or item.get('project_id') not in {None, project_id}:
+        for item in self._items():
+            if isinstance(item, dict) and self._project_id(item) == project_id:
+                if self._content_fingerprint(item) == fingerprint:
+                    return item.get('id')
+        return None
+
+    def find_by_event_fingerprint(self, project_id, event_fingerprint):
+        """Find an existing item for one exact capture/evidence identity."""
+        if not isinstance(project_id, str) or not isinstance(event_fingerprint, str):
+            return None
+        for item in self._items():
+            if not isinstance(item, dict) or self._project_id(item) != project_id:
                 continue
-            stored = item.get('candidate_fingerprint')
-            if stored is None and isinstance(item.get('candidate'), dict):
-                candidate = item['candidate']
-                if candidate.get('project_id') == project_id:
-                    stored = self.fingerprint(candidate)
-            if stored == fingerprint:
+            stored = item.get('event_fingerprint')
+            candidate = item.get('candidate')
+            if stored is None and isinstance(candidate, dict):
+                stored = self.event_fingerprint(candidate)
+            if stored == event_fingerprint:
                 return item.get('id')
         return None
 
@@ -137,24 +150,25 @@ class ReviewStore:
         candidate = {key: value for key, value in candidate.items() if key in fields}
         source = {key: value for key, value in source.items() if key in {'client', 'session_hash', 'evidence_id', 'role'}}
         fingerprint = self.fingerprint(candidate)
-        content_fingerprint = self.content_fingerprint(candidate)
+        event_fingerprint = self.event_fingerprint(candidate)
         key = identity('rev_', candidate['candidate_id'], candidate['project_id'])
         path = self.path(key)
         # The index lock serializes different candidate IDs that describe the
         # same capture.  Without it two concurrent deliveries could both pass
         # the fingerprint scan and create duplicate review records.
         with file_lock(self.root / 'index'):
-            existing = self.find_by_fingerprint(candidate.get('project_id'), fingerprint)
+            existing = self.find_by_event_fingerprint(candidate.get('project_id'), event_fingerprint)
             if existing:
                 return existing
             with file_lock(path):
                 if path.exists():
                     existing_item = read_json(path)
                     if isinstance(existing_item, dict):
-                        existing_fingerprint = existing_item.get('candidate_fingerprint')
+                        existing_fingerprint = existing_item.get('event_fingerprint')
                         if existing_fingerprint is None and isinstance(existing_item.get('candidate'), dict):
-                            existing_fingerprint = self.fingerprint(existing_item['candidate'])
-                        if existing_fingerprint == fingerprint:
+                            existing_fingerprint = self.event_fingerprint(existing_item['candidate'])
+                        if existing_fingerprint == event_fingerprint or (
+                                existing_fingerprint is None and 'candidate' not in existing_item):
                             return existing_item.get('id', key)
                         # A stable candidate ID must never be reused for a
                         # materially different proposal.
@@ -163,7 +177,8 @@ class ReviewStore:
                 write_json(path, {'id': key, 'status': 'PENDING', 'created_at': now(),
                                  'expires_at': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
                                  'candidate': candidate, 'candidate_fingerprint': fingerprint,
-                                 'content_fingerprint': content_fingerprint,
+                                 'event_fingerprint': event_fingerprint,
+                                 'content_fingerprint': fingerprint,
                                  'project_id': candidate['project_id'], 'reason': reason, 'source': source})
         return key
 
@@ -198,6 +213,7 @@ class ReviewStore:
             'reason': item.get('reason'),
             'source': {key: source[key] for key in ('client', 'session_hash', 'evidence_id', 'role') if key in source},
             'candidate_fingerprint': item.get('candidate_fingerprint') or self.fingerprint(candidate),
+            'event_fingerprint': item.get('event_fingerprint') or self.event_fingerprint(candidate),
             'content_fingerprint': item.get('content_fingerprint') or self.content_fingerprint(candidate),
             'candidate_id': candidate.get('candidate_id') or item.get('candidate_id'),
             'candidate_type': candidate.get('candidate_type') or item.get('candidate_type'),
