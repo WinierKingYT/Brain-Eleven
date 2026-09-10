@@ -125,6 +125,7 @@ Genel teknik ve harvest notları `🗂️ Proje Notları/Referans/` altında tut
 - [[🗂️ Proje Notları/Referans/hamle7-search-003-bm25-relevance]]
 - [[🗂️ Proje Notları/Referans/hamle7-search-004-faceting-aggregation]]
 - [[🗂️ Proje Notları/Referans/hamle7-summary]]
+- [[🗂️ Proje Notları/Referans/minecraftmcp_bulk_000[4-9]]] — Ahmet kararıyla Referans'a taşınan 0004–0009 kayıt paketi
 
 ## İyi karar notunun testi
 Altı ay sonra okuyan biri (yani sen) şunu sorabilmeli:

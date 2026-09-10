@@ -10,15 +10,16 @@ No file was deleted. Every relocation below used `git mv` and preserves the orig
 
 | Source | Destination | Count | Rule |
 |---|---|---:|---|
-| `🗂️ Proje Notları/Kararlar/` | `🗂️ Proje Notları/Referans/` | 95 | General, date-free technical/reference notes identified by the agreed `agent-skills`, `ai-engineering`, `archify`, `github-harvest`, `gpt-image`, and `hamle*` families. |
+| `🗂️ Proje Notları/Kararlar/` | `🗂️ Proje Notları/Referans/` | 96 | General, date-free technical/reference notes identified by the agreed `agent-skills`, `ai-engineering`, `archify`, `github-harvest`, `gpt-image`, and `hamle*` families. |
 | `🗂️ Proje Notları/Dersler/` | `🗂️ Proje Notları/Referans/` | 8 | General `agent-skills`, `ai-engineering`, and `github-harvest-lesson-*` notes under the same rule. |
-| **Total moved** |  | **103** |  |
+| **Total moved** |  | **104** |  |
 
-`Kararlar/` retains the six date-named decisions, 15 project-specific `minecraftmcp` decisions, five `petsistemi` decisions, the `promackro` project decision, three product/method decisions, four `INDEX-*` hubs, the `Kararlar.md` hub, and the ambiguous manifest listed below. `Dersler/` retains the ten project-derived or experience-derived lessons and its hub.
+`Kararlar/` retains the six date-named decisions, 15 project-specific `minecraftmcp` decisions, five `petsistemi` decisions, the `promackro` project decision, three product/method decisions, four `INDEX-*` hubs, the `Kararlar.md` hub. `Dersler/` retains the ten project-derived or experience-derived lessons and its hub.
 
-### Ambiguous and intentionally untouched
+### Ambiguity resolution
 
-- `🗂️ Proje Notları/Kararlar/minecraftmcp_bulk_000[4-9].md` — this file is a bare slug list without a decision body. It was not moved; Ahmet should decide whether it is an index/manifest or discardable source material.
+- `minecraftmcp_bulk_000[4-9].md` was the only physical file for the six 0004–0009 entries. Ahmet resolved the classification; it was moved as-is to `Referans/` so no content or filename was invented.
+- The six separate filenames `minecraftmcp_bulk_0004.md` through `minecraftmcp_bulk_0009.md` do not exist in this checkout.
 - `INDEX-*.md` files were not edited or moved.
 
 ## Link cleanup
@@ -38,8 +39,8 @@ No file was deleted. Every relocation below used `git mv` and preserves the orig
 ## Validation
 
 - The three requested hub notes now use the real Brain-Eleven hub, and the missing template targets were removed from the operational notes.
-- Move count is 103; destination `Referans/` contains 103 files.
-- No source file was deleted; the ambiguous manifest and all `INDEX-*` files remain in place.
+- Move count is 104; destination `Referans/` contains 104 files.
+- No source file was deleted; all `INDEX-*` files remain in place.
 - Existing user evidence/temp files were not staged, changed, or removed.
 
 ## Open review questions
