@@ -1,0 +1,25 @@
+{
+  "case_count": 120,
+  "corpus_version": "ig-r3-d0-v1",
+  "dataset_class": "PUBLIC_SYNTHETIC",
+  "generator": "evals/ig01d/build_d0_corpus.py",
+  "holdout_included": false,
+  "language_counts": {
+    "en": 40,
+    "tr": 40,
+    "tr-en": 40
+  },
+  "languages": [
+    "en",
+    "tr",
+    "tr-en"
+  ],
+  "schema_version": 1,
+  "source_case_count": 40,
+  "source_case_ids_sha256": "c1e8872f526c7a96d9470d0f49e556fb68bc9a4e4d42f9b8a57c1088a423a1bb",
+  "source_corpus": "corpus-v2",
+  "source_splits": [
+    "dev",
+    "test"
+  ]
+}

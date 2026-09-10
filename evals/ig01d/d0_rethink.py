@@ -26,6 +26,7 @@ from brain_eleven.retrieval.embedding_provider import (
 
 from ..baseline import BaselineContextProvider
 from ..fixture_generator import build_vault
+from ..schema import load_fixture, validate_task_documents
 from .spike import (
     _aggregate,
     _allowed_records,
@@ -40,6 +41,8 @@ from .spike import (
 ROOT = Path(__file__).resolve().parents[2]
 IG01B_DEV = ROOT / "evals" / "ig01b" / "public" / "ig-eval-v2" / "dev.jsonl"
 IG01D_CORPUS = ROOT / "evals" / "corpus-v2"
+D0_RETRIEVAL_CORPUS = ROOT / "evals" / "ig01d" / "public" / "ig-r3-d0-v1" / "retrieval.jsonl"
+D0_RETRIEVAL_METADATA = ROOT / "evals" / "ig01d" / "public" / "ig-r3-d0-v1" / "metadata.json"
 FIXTURE_PATH = ROOT / "evals" / "fixtures" / "phase15-contract.json"
 SEED = 17
 NOISE_COUNT = 24
@@ -119,6 +122,37 @@ def _scope_safe(record: Mapping[str, Any], project_id: str | None) -> bool:
     return record_project in {None, project_id}
 
 
+def _load_versioned_retrieval_cases(
+    path: Path,
+    metadata_path: Path,
+    fixture_path: Path,
+) -> tuple[list[dict[str, Any]], Any]:
+    documents = [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if not isinstance(metadata, dict):
+        raise ValueError("D0 retrieval metadata must be an object")
+    labels_by_task: dict[str, str] = {}
+    for document in documents:
+        task_id = str(document.get("task_id", ""))
+        labels = metadata.get(task_id)
+        if not isinstance(labels, dict) or labels.get("language") not in LANGUAGES:
+            raise ValueError(f"D0 retrieval case has no explicit language metadata: {task_id}")
+        labels_by_task[task_id] = str(labels["language"])
+    fixture = load_fixture(fixture_path)
+    tasks = validate_task_documents(documents, fixture)
+    if any("holdout" in task.task_id.lower() for task in tasks):
+        raise ValueError("D0 retrieval corpus cannot include HOLDOUT")
+    # Keep the public corpus schema strict; join the sidecar only inside this
+    # evaluation process and never send it to production.
+    for document in documents:
+        document["language"] = labels_by_task[str(document["task_id"])]
+    return documents, (fixture, tasks)
+
+
 def _rrf(semantic_ids: Sequence[str], lexical_ids: Sequence[str]) -> list[str]:
     scores: Counter[str] = Counter()
     for rank, memory_id in enumerate(semantic_ids, 1):
@@ -166,6 +200,7 @@ def _run_variant(
     documents: Sequence[Mapping[str, Any]],
     tasks: Sequence[Any],
     fixture: Any,
+    semantic_cache: dict[tuple[str, str, str], tuple[list[str], dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     safety = Counter()
@@ -182,12 +217,22 @@ def _run_variant(
         for document, task in zip(documents, tasks):
             lexical = baseline.select(task, vault.root)
             lexical_ids = [str(item.id) for item in lexical.selected_items]
-            semantic_ids, identity = _rank_semantic(
-                task=task,
-                records=records,
-                embedding_provider=embedding_provider,
-                reranker=reranker,
+            cache_key = (
+                str(embedding_provider.provider_id),
+                str(embedding_provider.model),
+                str(task.task_id),
             )
+            if semantic_cache is not None and cache_key in semantic_cache:
+                semantic_ids, identity = semantic_cache[cache_key]
+            else:
+                semantic_ids, identity = _rank_semantic(
+                    task=task,
+                    records=records,
+                    embedding_provider=embedding_provider,
+                    reranker=reranker,
+                )
+                if semantic_cache is not None:
+                    semantic_cache[cache_key] = (semantic_ids, identity)
             selected_ids = (
                 _rrf(semantic_ids, lexical_ids)
                 if name.endswith("hybrid")
@@ -287,15 +332,31 @@ def run_d0_probe(
     *,
     root: Path = ROOT,
     corpus_root: Path = IG01D_CORPUS,
+    retrieval_path: Path = D0_RETRIEVAL_CORPUS,
+    retrieval_metadata_path: Path = D0_RETRIEVAL_METADATA,
     fixture_path: Path = FIXTURE_PATH,
     ig01b_dev_path: Path = IG01B_DEV,
 ) -> dict[str, Any]:
     revision = _git_sha(root)
-    files = sorted((corpus_root / "dev").glob("p15_*.json"))
-    documents, loaded = _load_first_dev_cases(corpus_root, fixture_path, len(files))
+    if retrieval_path.is_file() and retrieval_metadata_path.is_file():
+        documents, loaded = _load_versioned_retrieval_cases(
+            retrieval_path,
+            retrieval_metadata_path,
+            fixture_path,
+        )
+        corpus_label = "ig-r3-d0-v1"
+        corpus_fingerprint = _hash(retrieval_path.read_text(encoding="utf-8"))
+    else:
+        files = sorted((corpus_root / "dev").glob("p15_*.json"))
+        documents, loaded = _load_first_dev_cases(corpus_root, fixture_path, len(files))
+        corpus_label = "corpus-v2/dev"
+        corpus_fingerprint = _hash(
+            "\n".join(path.read_text(encoding="utf-8") for path in files)
+        )
     fixture, tasks = loaded
     census = _ig01b_census(ig01b_dev_path)
     variants: dict[str, Any] = {}
+    semantic_cache: dict[tuple[str, str, str], tuple[list[str], dict[str, Any]]] = {}
     try:
         mpnet = LocalSentenceTransformerProvider(
             "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
@@ -312,6 +373,7 @@ def run_d0_probe(
             documents,
             tasks,
             fixture,
+            semantic_cache,
         )
         variants["mpnet_hybrid"] = _run_variant(
             "mpnet_hybrid",
@@ -320,6 +382,7 @@ def run_d0_probe(
             documents,
             tasks,
             fixture,
+            semantic_cache,
         )
         mpnet_status: dict[str, Any] = {"status": "AVAILABLE"}
     except Exception as error:
@@ -336,6 +399,7 @@ def run_d0_probe(
             documents,
             tasks,
             fixture,
+            semantic_cache,
         )
         variants["tuned_hybrid"] = _run_variant(
             "tuned_hybrid",
@@ -344,11 +408,22 @@ def run_d0_probe(
             documents,
             tasks,
             fixture,
+            semantic_cache,
         )
+    retrieval_language_counts = Counter(_language_bucket(document) for document in documents)
+    retrieval_language_fractions = {
+        language: round(retrieval_language_counts.get(language, 0) / len(documents), 6)
+        if documents else None
+        for language in LANGUAGES
+    }
+    retrieval_language_min_fraction = min(
+        (retrieval_language_fractions[language] or 0.0 for language in LANGUAGES),
+        default=0.0,
+    )
     language_status = (
         "PASS"
-        if census["case_count"] >= MIN_BALANCED_CASES
-        and census["language_balance_min_fraction"] >= 0.25
+        if len(tasks) >= MIN_BALANCED_CASES
+        and retrieval_language_min_fraction >= 0.25
         else "CASE_COUNT_BELOW_TARGET"
     )
     return {
@@ -356,11 +431,9 @@ def run_d0_probe(
         "report_type": "ig_rethink_d0_probe",
         "source": {
             "git_sha": revision,
-            "ig01d_split": "dev",
+            "ig01d_split": corpus_label,
             "ig01d_case_count": len(tasks),
-            "ig01d_corpus_fingerprint": _hash(
-                "\n".join(path.read_text(encoding="utf-8") for path in files)
-            ),
+            "ig01d_corpus_fingerprint": corpus_fingerprint,
             "holdout_included": False,
             "seed": SEED,
             "noise_count": NOISE_COUNT,
@@ -374,15 +447,17 @@ def run_d0_probe(
             },
         },
         "d0_2_corpus_balance": {
-            "ig01b_dev": census,
+            "ig01b_reference": census,
             "ig01d_retrieval_fixture": {
+                "path": "evals/ig01d/public/ig-r3-d0-v1/retrieval.jsonl",
+                "metadata_path": "evals/ig01d/public/ig-r3-d0-v1/metadata.json",
+                "corpus_version": "ig-r3-d0-v1",
                 "case_count": len(tasks),
-                "language_field_present": False,
-                "language_distribution": {
-                    language: sum(1 for document in documents if _language_bucket(document) == language)
-                    for language in LANGUAGES
-                },
-                "status": "LANGUAGE_METADATA_MISSING",
+                "language_field_present": True,
+                "language_distribution": dict(sorted(retrieval_language_counts.items())),
+                "language_fractions": retrieval_language_fractions,
+                "language_balance_min_fraction": retrieval_language_min_fraction,
+                "status": "PASS" if language_status == "PASS" else "CASE_COUNT_BELOW_TARGET",
             },
             "status": language_status,
         },
