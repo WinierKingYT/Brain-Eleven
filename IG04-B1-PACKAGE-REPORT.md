@@ -72,8 +72,13 @@ independent read-only review have not yet been recorded for this revision.
 
 ## INDEPENDENT REVIEW
 
-**NOT RUN.** Implementer self-review is not independent evidence under the
-B1 contract.
+**SHIP**, recorded 2026-09-10 by a Claude session with no implementation
+participation. Local regression and the B1 focused suite were independently
+re-run (not just re-read) in a different environment than this report's
+Windows evidence. See `IG04-B1-INDEPENDENT-REVIEW.md` for the full
+criterion-by-criterion finding. Two P2 follow-up tests were recommended
+(crash-injection on accept, B1-specific cross-project rejection) but are not
+blockers to this verdict.
 
 ## SCORE BEFORE / AFTER
 
@@ -83,6 +88,8 @@ baseline.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED** — implementation and local evidence are present,
-but B1 remains open until the remote, native and independent-review gates are
-closed. V2 remains `SHADOW`; Phase 20 remains `FROZEN / LOCKED`.
+**ACCEPTED** — independent review returned `SHIP` on 2026-09-10. Remote
+exact-head CI and live native-client trust remain open, bounded operational
+follow-ups (same status this project already accepts for other closed
+packages, e.g. IG-00); they do not reopen this verdict. V2 remains `SHADOW`;
+Phase 20 remains `FROZEN / LOCKED`.

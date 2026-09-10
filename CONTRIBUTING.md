@@ -50,12 +50,25 @@ Concretely:
 ## Roles: Claude vs. Codex
 
 Default split (cost-driven — Claude is the pricier of the two): **Claude
-plans, Codex executes.** Claude is the default for architecture decisions,
-cross-cutting assessment, review, and documentation. Codex is the default for
-implementation — writing the code, tests, and mechanical fixes a plan calls
-for. This is a default, not a hard boundary; either can do either when it
-makes sense. Whoever is doing hands-on work in a given session still follows
-the branch/`NEXT.md` discipline above — the role split doesn't relax it.
+manages, Codex executes.** As of 2026-09-10, Ahmet delegated project
+management to Claude — current status, documentation, quality bar, and
+product vision/direction for Brain-Eleven are Claude's ownership, not just
+"planning." Claude decides what the next bounded package is, writes its
+contract, and gives Codex the instructions to implement it. Codex writes the
+code, tests, and other implementation work, and does not set direction on its
+own initiative — if Codex's own evidence (e.g. a probe result) suggests a
+new direction, that goes back to Claude to turn into a contract, not straight
+into implementation.
+
+Claude has no direct connection to Codex in this environment; Ahmet relays
+messages between the two sessions. Ahmet still makes the call on anything
+this project's own contracts mark as a required human checkpoint (see each
+`IGxx-*-CONTRACT.md`'s own approval clause) — Claude does not self-approve
+those on Ahmet's behalf.
+
+This is a default, not a hard boundary; either can do either when it makes
+sense. Whoever is doing hands-on work in a given session still follows the
+branch/`NEXT.md` discipline above — the role split doesn't relax it.
 
 ## Documentation
 

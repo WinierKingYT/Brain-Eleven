@@ -1,7 +1,7 @@
 # IG-04 B2 Package Report
 
 **PACKAGE:** IG-04 B2 — Review Deduplication and Deterministic Ordering
-**REVISION:** `b3124c3444921373c0abd06e90b609d98d7a3c98`
+**REVISION:** `c08f64e057c8ae53047fc80e0aa3788813be1fd6`
 
 ## OBJECTIVE
 
@@ -68,11 +68,9 @@ effect.
 
 ## KNOWN LIMITATIONS
 
-`IG04-B2-CONTRACT.md` was not present in the checked-out `origin/master` when
-this work started, despite the work order stating it was already on master.
-Implementation scope therefore follows the approved six-point B2 work order in
-the user request. The B2 feature has not been independently reviewed or
-promoted as a graduation package.
+The B2 feature has not been independently reviewed or promoted as a
+graduation package. Remote exact-head CI evidence is also not recorded in this
+package report.
 
 ## OPEN FAILURES
 

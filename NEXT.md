@@ -7,22 +7,34 @@ the end of a work session; keep entries to a few lines.
 ## Where we are
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
-"Phase 20" plan (frozen). Last closed package: **IG-03** (semantic
-extraction). **IG-04 B2 implementation is complete locally; independent
-review is pending.** B1 behavior remains covered and unchanged. The earlier
-D0/R0 feasibility probes remain evaluation-only evidence; see
+"Phase 20" plan (frozen). Last closed package: **IG-04 B1** (human-approved
+retrieval boundary) — independent review `SHIP` on 2026-09-10. **IG-04-B2
+(review queue usability: dedup + deterministic ordering) is implemented at
+`c08f64e` and locally verified; independent review is pending.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
+pivot explicitly — IG-04's slot is the Branch B track, not the original
+reference/correction scope (deferred, not deleted). The earlier D0/R0
+feasibility probes remain evaluation-only evidence; see
 `CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
 
-Canonical branch: **master**. The topic branches were merged and removed
-locally and on GitHub; only `master` remains remotely. The exact baseline
-snapshot check passes on current master. Ahmet approved B1 on 2026-09-10 and
-supplied the B2 work order. Codex implemented the bounded review dedup/order
-boundary. V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
+**Ownership as of 2026-09-10:** Ahmet delegated project management — status,
+documentation, quality bar and direction — to Claude. Codex executes from
+Claude's instructions; Claude has no direct connection to Codex in this
+environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
+
+Canonical branch: **master**. The exact baseline snapshot check passes.
+B1 is implemented and reviewed but the `b1_human_approval` switch is off by
+default — nobody's daily retrieval changes until it's explicitly turned on.
+Remote exact-head CI and live native-client trust for B1 remain open,
+non-blocking follow-ups (see `IG04-B1-INDEPENDENT-REVIEW.md`'s Deferred
+section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Obtain the independent read-only review for IG-04 B2. Keep V2 SHADOW and
-  Phase 20 FROZEN / LOCKED.
+- Verify IG04-B2 independently once committed (per this project's
+  independent-review rule).
+- Decide whether/when to turn `b1_human_approval` on for real use, and close
+  the two remaining B1 follow-ups (remote CI, native-client trust) or accept
+  them as tracked-open.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
