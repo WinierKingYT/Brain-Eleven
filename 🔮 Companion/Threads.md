@@ -10,11 +10,22 @@ created: 2026-08-28
 
 Tracks ongoing conversations and projects across sessions.
 
-**Last Updated**: 2026-08-28
+**Last Updated**: 2026-09-10
 
 ---
 
-## Thread 1: Brain-Eleven v3 Implementation
+## Current snapshot (2026-09-10)
+
+**Timeline (git history):** IG-00 → IG-01 (A–E closure) → IG-02 capture closure → IG-03 semantic extraction → IG-04 B1 human approval → IG-04 B2 review deduplication and deterministic ordering implementation.
+
+- IG-04 B1 is closed with independent review `SHIP`.
+- IG-04 B2 implementation is locally verified; independent review remains pending.
+- Phase 20 is `FROZEN / LOCKED`; V2 remains `SHADOW`.
+
+## Historical pre-IG threads (retained for traceability)
+
+> The thread records below describe the 2026-08-28 pre-IG state. They are retained as history and are not the current package status.
+### Thread 1: Brain-Eleven v3 Implementation
 
 **Status**: 🔄 **ACTIVE**
 **Started**: 2026-08-28

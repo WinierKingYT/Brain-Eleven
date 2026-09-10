@@ -127,3 +127,15 @@ This is ready for production. Semantic search can come later.
 **End of Daily - 2026-08-29**
 
 Last updated: 2026-08-29 by end-to-end test
+
+---
+
+# Daily Notes - 2026-09-10
+
+## TODAY
+
+IG-04 B2 review-queue deduplication and deterministic ordering was implemented on `master`; the local focused suite passed 7 tests and the full regression evidence records 855 passed. Independent review remains pending.
+
+Vault hygiene then corrected the three Brain-Eleven hub links, removed references to nonexistent templates, and classified general decision/lesson notes into `🗂️ Proje Notları/Referans/` using `git mv`. One ambiguous `minecraftmcp_bulk_000[4-9].md` manifest was left in `Kararlar` for Ahmet's decision.
+
+Phase 20 remains `FROZEN / LOCKED` and V2 remains `SHADOW`.

@@ -5,9 +5,24 @@ category: Working Memory
 status: active
 created: 2026-08-28
 ---
+# Last Session: 2026-09-10
 
-# Last Session: 2026-08-28
+## Session Summary
 
+- Branch work is synchronized on canonical `master`; the prior topic-branch merge is recorded in git history.
+- IG-04 B1 is closed with independent `SHIP`; IG-04 B2 implementation is complete at `cd59da4` with local focused/full regression green, and its independent review is still pending.
+- Vault hygiene fixed the three `[[Beyin]]` links, removed nonexistent template links, moved 103 general notes with `git mv` into `🗂️ Proje Notları/Referans/`, and left one ambiguous manifest in place.
+- Phase 20 remains `FROZEN / LOCKED`; V2 remains `SHADOW`.
+
+## Open items
+
+- Ahmet must confirm the deletion state of the six old GitHub branches.
+- Remote CI and native-client trust follow-ups for B1/B2 remain open.
+- The next IG-04 subpackage and B2 independent review are not yet closed.
+
+---
+
+## Previous session: 2026-08-28 (historical)
 ## Session Summary
 
 **Timestamp**: 2026-08-28 21:21:01

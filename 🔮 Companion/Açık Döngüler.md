@@ -8,11 +8,25 @@ created: 2026-08-28
 
 # Open Loops (Unresolved)
 
-**Last Updated**: 2026-08-28
+## Current open work (2026-09-10)
+
+These are the unresolved items supported by the current repository state and this session:
+
+- [ ] **Ahmet confirmation required:** verify whether the six old GitHub branches were deleted; this cannot be established from the local checkout alone.
+- [ ] Remote exact-head CI and live native-client trust remain open follow-ups for IG-04 B1 and B2.
+- [ ] The next IG-04 subpackage has not been selected yet.
+- [ ] IG-04 B2 independent read-only review is still pending; the implementation is not self-declared as accepted.
+
+## Historical / abandoned plans
+
+> The Hamle 7 Phase 1/2/3 and mem0 blocks below are historical and abandoned. They are conceptually archived under `docs/history/`; the original text is retained here for traceability and is not active work.
+
+
+**Last Updated**: 2026-09-10
 
 Tracking unfinished work that spans sessions.
 
-## Hamle 7 Implementation (Brain-Eleven v3)
+### Hamle 7 Implementation (historical, abandoned)
 
 ### Phase 1: Foundation Fixes (Current)
 - [ ] `prompt-counter.sh` — Every 15 prompts, checkpoint memory
@@ -39,13 +53,13 @@ Tracking unfinished work that spans sessions.
 
 **Status**: Blocked on mem0 auth
 
-## mem0 Integration
+### mem0 Integration (historical, abandoned)
 
 - **Issue**: Auth pending
 - **Blocker**: Cannot proceed until `~/.mem0/auth.json` configured
 - **Action**: Follow mem0-setup.md when auth available
 
-## Navigation Hubs (Optional Enhancement)
+### Navigation Hubs (historical, abandoned; optional enhancement)
 
 - [ ] Create INDEX-Data-Engineering.md (Hamle 7)
 - [ ] Create INDEX-Messaging-Events.md (Hamle 7)

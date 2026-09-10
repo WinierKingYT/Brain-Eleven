@@ -29,7 +29,7 @@ PromtGen kararları **yazmıyor** — hasatta 5 karardan 3'ünün gerekçesi ç�
 
 Aynı kişi, iki proje, bir tanesinde disiplin var. Fark yetenek değil **format**: minecraftmcp'de ADR şablonu soruyu sormaya zorluyor, PromtGen'de kararlar commit'e ve doküman metnine dağılmış.
 
-→ Uygulanabilir sonuç: PromtGen'e ADR klasörü aç, ya da en azından karar verirken [[ŞABLON - Karar]]'daki *"bu kararı ne geri aldırır"* alanını doldur.
+→ Uygulanabilir sonuç: PromtGen'e ADR klasörü aç, ya da en azından karar verirken *"bu kararı ne geri aldırır"* alanını doldur.
 
 ## Kanıt
 `docs/adr/0013`, `0015`, `0020` · minecraftmcp · ADR README'de supersede tablosu tutuluyor

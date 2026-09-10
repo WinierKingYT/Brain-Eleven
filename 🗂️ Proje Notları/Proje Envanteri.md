@@ -4,7 +4,7 @@ güncelleme: 2026-08-20
 ---
 # Proje Envanteri
 
-← [[Beyin]]
+← [[🧠 Brain-Eleven]]
 
 Aylar sonra bir projeye döndüğünde ilk bakacağın yer. Modelin asla bilemeyeceği şey: hangisi canlı, hangisi uykuda, hangisi korumasız.
 
