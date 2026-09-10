@@ -13,25 +13,24 @@ probes (D0, R0) were run to de-risk the retrieval approach; see
 `CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`. Neither probe opens IG-04 by
 itself.
 
+Canonical branch: **master**. The topic branches were merged and removed
+locally and on GitHub; only `master` remains remotely. The exact baseline
+snapshot check passes on current master. Branch B/B1 implementation has not
+started; owner and kickoff remain an explicit Ahmet decision.
+
 ## What's next
 
 - Decide the retrieval approach for IG-04 based on the D0/R0 probe results,
   then open IG-04 under its own contract.
-- Delete the 6 stale branches on GitHub that were superseded when `master`
-  was fast-forwarded on 2026-09-10 (`ig/00-freeze-baseline`,
-  `ig/01-evaluation-foundation`, `ig/02-autonomous-capture`,
-  `ig/03-semantic-extraction`, `codex/ig-provider`, `codex/ig-rethink`) —
-  needs manual deletion in the GitHub UI, the git remote here can't do it.
-- Fix `tests/test_evaluation_baseline_snapshot.py::test_baseline_v2_snapshot_matches_current_public_suite_inputs`
-  — fails on current `master`; `evals/reports/baseline-v3.json` no longer
-  matches what the code deterministically produces. Not yet root-caused.
+- Before starting any new work, read this file and confirm the active owner,
+  branch and package. Update it with a few lines when the work session ends.
 
 ## Recent sessions
 
 **2026-09-10** — Found `master` frozen 91 commits behind five sequential,
 unmerged topic branches (each closing an IG package independently).
-Fast-forwarded `master` to the tip. Added `README.md`/`ARCHITECTURE.md`/
-`CONTRIBUTING.md` (none existed before — only status/contract docs did).
-Fixed stale vault paths in `CLAUDE.md` (wrong folder name, files that don't
-exist). Registered two unregistered evidence docs in
-`DOCUMENTATION-AUTHORITY.md`. Added this file.
+Merged the implementation and documentation branches into `master`, refreshed
+the deterministic baseline snapshot, and removed the superseded local and
+remote refs. Added `README.md`/`ARCHITECTURE.md`/`CONTRIBUTING.md`, fixed stale
+vault paths in `CLAUDE.md`, and registered two evidence docs in
+`DOCUMENTATION-AUTHORITY.md`. The full regression is green; B1 has not started.
