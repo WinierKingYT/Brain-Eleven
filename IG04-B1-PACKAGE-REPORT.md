@@ -1,7 +1,7 @@
 # IG-04 B1 Package Report
 
 **PACKAGE:** IG-04 B1 — Human-Approved Retrieval
-**REVISION:** `4edd4df`
+**REVISION:** `4edd4dfdf399f1670479091d261fe1390d338e0e`
 **OBJECTIVE:** Add the bounded human-approval boundary to the existing V1
 capture/review path without promoting V2, changing ranking, or opening Phase
 20.
