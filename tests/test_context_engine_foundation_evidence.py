@@ -11,7 +11,6 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 import context_engine_foundation_evidence as foundation_evidence  # noqa: E402
 from context_engine_foundation_evidence import (  # noqa: E402

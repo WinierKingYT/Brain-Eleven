@@ -1,0 +1,962 @@
+{
+  "ig-r3-d0-en-p15_ambiguity_004": {
+    "language": "en",
+    "source_case_id": "p15_ambiguity_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_authority_future_001": {
+    "language": "en",
+    "source_case_id": "p15_authority_future_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_conflict_001": {
+    "language": "en",
+    "source_case_id": "p15_conflict_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_global_project_001": {
+    "language": "en",
+    "source_case_id": "p15_global_project_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_global_project_005": {
+    "language": "en",
+    "source_case_id": "p15_global_project_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_global_project_008": {
+    "language": "en",
+    "source_case_id": "p15_global_project_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_global_project_009": {
+    "language": "en",
+    "source_case_id": "p15_global_project_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_lifecycle_003": {
+    "language": "en",
+    "source_case_id": "p15_lifecycle_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_lifecycle_006": {
+    "language": "en",
+    "source_case_id": "p15_lifecycle_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_lifecycle_009": {
+    "language": "en",
+    "source_case_id": "p15_lifecycle_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_lifecycle_013": {
+    "language": "en",
+    "source_case_id": "p15_lifecycle_013",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_noise_003": {
+    "language": "en",
+    "source_case_id": "p15_noise_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_noise_008": {
+    "language": "en",
+    "source_case_id": "p15_noise_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_persistence_001": {
+    "language": "en",
+    "source_case_id": "p15_persistence_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_project_isolation_003": {
+    "language": "en",
+    "source_case_id": "p15_project_isolation_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_project_isolation_006": {
+    "language": "en",
+    "source_case_id": "p15_project_isolation_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_project_isolation_009": {
+    "language": "en",
+    "source_case_id": "p15_project_isolation_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_project_isolation_015": {
+    "language": "en",
+    "source_case_id": "p15_project_isolation_015",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_project_isolation_019": {
+    "language": "en",
+    "source_case_id": "p15_project_isolation_019",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_001": {
+    "language": "en",
+    "source_case_id": "p15_relevance_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_004": {
+    "language": "en",
+    "source_case_id": "p15_relevance_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_007": {
+    "language": "en",
+    "source_case_id": "p15_relevance_007",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_011": {
+    "language": "en",
+    "source_case_id": "p15_relevance_011",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_014": {
+    "language": "en",
+    "source_case_id": "p15_relevance_014",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_017": {
+    "language": "en",
+    "source_case_id": "p15_relevance_017",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_021": {
+    "language": "en",
+    "source_case_id": "p15_relevance_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_relevance_024": {
+    "language": "en",
+    "source_case_id": "p15_relevance_024",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_supersession_002": {
+    "language": "en",
+    "source_case_id": "p15_supersession_002",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_supersession_005": {
+    "language": "en",
+    "source_case_id": "p15_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_supersession_008": {
+    "language": "en",
+    "source_case_id": "p15_supersession_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_supersession_012": {
+    "language": "en",
+    "source_case_id": "p15_supersession_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_authority_traps_012": {
+    "language": "en",
+    "source_case_id": "p15_v2_authority_traps_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_authority_traps_028": {
+    "language": "en",
+    "source_case_id": "p15_v2_authority_traps_028",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_duplicate_semantics_010": {
+    "language": "en",
+    "source_case_id": "p15_v2_duplicate_semantics_010",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_duplicate_semantics_026": {
+    "language": "en",
+    "source_case_id": "p15_v2_duplicate_semantics_026",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_malicious_input_016": {
+    "language": "en",
+    "source_case_id": "p15_v2_malicious_input_016",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_resolved_lifecycle_022": {
+    "language": "en",
+    "source_case_id": "p15_v2_resolved_lifecycle_022",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_same_domain_wrong_project_003": {
+    "language": "en",
+    "source_case_id": "p15_v2_same_domain_wrong_project_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_supersession_005": {
+    "language": "en",
+    "source_case_id": "p15_v2_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-en-p15_v2_supersession_021": {
+    "language": "en",
+    "source_case_id": "p15_v2_supersession_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "en"
+  },
+  "ig-r3-d0-tr-en-p15_ambiguity_004": {
+    "language": "tr-en",
+    "source_case_id": "p15_ambiguity_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_authority_future_001": {
+    "language": "tr-en",
+    "source_case_id": "p15_authority_future_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_conflict_001": {
+    "language": "tr-en",
+    "source_case_id": "p15_conflict_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_global_project_001": {
+    "language": "tr-en",
+    "source_case_id": "p15_global_project_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_global_project_005": {
+    "language": "tr-en",
+    "source_case_id": "p15_global_project_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_global_project_008": {
+    "language": "tr-en",
+    "source_case_id": "p15_global_project_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_global_project_009": {
+    "language": "tr-en",
+    "source_case_id": "p15_global_project_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_lifecycle_003": {
+    "language": "tr-en",
+    "source_case_id": "p15_lifecycle_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_lifecycle_006": {
+    "language": "tr-en",
+    "source_case_id": "p15_lifecycle_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_lifecycle_009": {
+    "language": "tr-en",
+    "source_case_id": "p15_lifecycle_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_lifecycle_013": {
+    "language": "tr-en",
+    "source_case_id": "p15_lifecycle_013",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_noise_003": {
+    "language": "tr-en",
+    "source_case_id": "p15_noise_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_noise_008": {
+    "language": "tr-en",
+    "source_case_id": "p15_noise_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_persistence_001": {
+    "language": "tr-en",
+    "source_case_id": "p15_persistence_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_project_isolation_003": {
+    "language": "tr-en",
+    "source_case_id": "p15_project_isolation_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_project_isolation_006": {
+    "language": "tr-en",
+    "source_case_id": "p15_project_isolation_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_project_isolation_009": {
+    "language": "tr-en",
+    "source_case_id": "p15_project_isolation_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_project_isolation_015": {
+    "language": "tr-en",
+    "source_case_id": "p15_project_isolation_015",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_project_isolation_019": {
+    "language": "tr-en",
+    "source_case_id": "p15_project_isolation_019",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_001": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_004": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_007": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_007",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_011": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_011",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_014": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_014",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_017": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_017",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_021": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_relevance_024": {
+    "language": "tr-en",
+    "source_case_id": "p15_relevance_024",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_supersession_002": {
+    "language": "tr-en",
+    "source_case_id": "p15_supersession_002",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_supersession_005": {
+    "language": "tr-en",
+    "source_case_id": "p15_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_supersession_008": {
+    "language": "tr-en",
+    "source_case_id": "p15_supersession_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_supersession_012": {
+    "language": "tr-en",
+    "source_case_id": "p15_supersession_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_authority_traps_012": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_authority_traps_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_authority_traps_028": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_authority_traps_028",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_duplicate_semantics_010": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_duplicate_semantics_010",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_duplicate_semantics_026": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_duplicate_semantics_026",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_malicious_input_016": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_malicious_input_016",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_resolved_lifecycle_022": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_resolved_lifecycle_022",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_same_domain_wrong_project_003": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_same_domain_wrong_project_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_supersession_005": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-en-p15_v2_supersession_021": {
+    "language": "tr-en",
+    "source_case_id": "p15_v2_supersession_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr-en"
+  },
+  "ig-r3-d0-tr-p15_ambiguity_004": {
+    "language": "tr",
+    "source_case_id": "p15_ambiguity_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_authority_future_001": {
+    "language": "tr",
+    "source_case_id": "p15_authority_future_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_conflict_001": {
+    "language": "tr",
+    "source_case_id": "p15_conflict_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_global_project_001": {
+    "language": "tr",
+    "source_case_id": "p15_global_project_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_global_project_005": {
+    "language": "tr",
+    "source_case_id": "p15_global_project_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_global_project_008": {
+    "language": "tr",
+    "source_case_id": "p15_global_project_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_global_project_009": {
+    "language": "tr",
+    "source_case_id": "p15_global_project_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_lifecycle_003": {
+    "language": "tr",
+    "source_case_id": "p15_lifecycle_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_lifecycle_006": {
+    "language": "tr",
+    "source_case_id": "p15_lifecycle_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_lifecycle_009": {
+    "language": "tr",
+    "source_case_id": "p15_lifecycle_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_lifecycle_013": {
+    "language": "tr",
+    "source_case_id": "p15_lifecycle_013",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_noise_003": {
+    "language": "tr",
+    "source_case_id": "p15_noise_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_noise_008": {
+    "language": "tr",
+    "source_case_id": "p15_noise_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_persistence_001": {
+    "language": "tr",
+    "source_case_id": "p15_persistence_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_project_isolation_003": {
+    "language": "tr",
+    "source_case_id": "p15_project_isolation_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_project_isolation_006": {
+    "language": "tr",
+    "source_case_id": "p15_project_isolation_006",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_project_isolation_009": {
+    "language": "tr",
+    "source_case_id": "p15_project_isolation_009",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_project_isolation_015": {
+    "language": "tr",
+    "source_case_id": "p15_project_isolation_015",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_project_isolation_019": {
+    "language": "tr",
+    "source_case_id": "p15_project_isolation_019",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_001": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_001",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_004": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_004",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_007": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_007",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_011": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_011",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_014": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_014",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_017": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_017",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_021": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_relevance_024": {
+    "language": "tr",
+    "source_case_id": "p15_relevance_024",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_supersession_002": {
+    "language": "tr",
+    "source_case_id": "p15_supersession_002",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_supersession_005": {
+    "language": "tr",
+    "source_case_id": "p15_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_supersession_008": {
+    "language": "tr",
+    "source_case_id": "p15_supersession_008",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_supersession_012": {
+    "language": "tr",
+    "source_case_id": "p15_supersession_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_authority_traps_012": {
+    "language": "tr",
+    "source_case_id": "p15_v2_authority_traps_012",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_authority_traps_028": {
+    "language": "tr",
+    "source_case_id": "p15_v2_authority_traps_028",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_duplicate_semantics_010": {
+    "language": "tr",
+    "source_case_id": "p15_v2_duplicate_semantics_010",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_duplicate_semantics_026": {
+    "language": "tr",
+    "source_case_id": "p15_v2_duplicate_semantics_026",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_malicious_input_016": {
+    "language": "tr",
+    "source_case_id": "p15_v2_malicious_input_016",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_resolved_lifecycle_022": {
+    "language": "tr",
+    "source_case_id": "p15_v2_resolved_lifecycle_022",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_same_domain_wrong_project_003": {
+    "language": "tr",
+    "source_case_id": "p15_v2_same_domain_wrong_project_003",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_supersession_005": {
+    "language": "tr",
+    "source_case_id": "p15_v2_supersession_005",
+    "source_corpus": "corpus-v2",
+    "source_split": "dev",
+    "synthetic": true,
+    "variant": "tr"
+  },
+  "ig-r3-d0-tr-p15_v2_supersession_021": {
+    "language": "tr",
+    "source_case_id": "p15_v2_supersession_021",
+    "source_corpus": "corpus-v2",
+    "source_split": "test",
+    "synthetic": true,
+    "variant": "tr"
+  }
+}

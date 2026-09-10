@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from knowledge_graph import KnowledgeGraph  # noqa: E402
 from project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
@@ -170,7 +169,7 @@ def test_legacy_migration_cli_enables_canonical_registry_policy(vault, tmp_path,
         encoding="utf-8",
     )
 
-    registry_cli = _load_script("project_registry_cli", "project-registry.py")
+    registry_cli = _load_script("project_registry_cli", "project_registry.py")
     assert registry_cli.main(
         ["--vault", str(vault), "migrate-legacy-opt-in", "--config", str(config)]
     ) == 0

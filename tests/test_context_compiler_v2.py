@@ -8,7 +8,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from authority import AuthorityOptions, AuthorityResolver  # noqa: E402
 from context_compiler_v2 import BudgetContract, CompilationOptions, CompilationRequest, ContextCompilerV2  # noqa: E402

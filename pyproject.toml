@@ -16,6 +16,7 @@ probe = [
 [tool.setuptools.packages.find]
 include = [
     "brain_eleven*",
+    "scripts*",
     "context_router*",
     "authority*",
     "context_compiler_v2*",

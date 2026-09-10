@@ -8,7 +8,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from project_registry import ProjectRegistry  # noqa: E402
 from state_resolver import (  # noqa: E402

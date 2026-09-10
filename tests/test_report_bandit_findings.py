@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from report_bandit_findings import finding_locations, main  # noqa: E402
 

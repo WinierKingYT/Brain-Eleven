@@ -168,7 +168,7 @@ If tests fail with import errors:
 # Add scripts to path in tests/__init__.py
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+PYTHONPATH="$(pwd)/scripts" python -m pytest
 ```
 
 ### File Not Found Errors

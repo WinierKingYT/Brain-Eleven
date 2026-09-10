@@ -24,8 +24,14 @@ from datetime import datetime
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-from logging_config import setup_logging
-from summarizer import tokenize, jaccard_similarity  # reuse Phase 10A helpers
+try:
+    from scripts.logging_config import setup_logging
+    from scripts.summarizer import tokenize, jaccard_similarity  # reuse Phase 10A helpers
+except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
+    if exc.name != "scripts":
+        raise
+    from logging_config import setup_logging
+    from summarizer import tokenize, jaccard_similarity  # reuse Phase 10A helpers
 
 logger = setup_logging(__name__)
 

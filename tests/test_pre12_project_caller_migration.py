@@ -31,7 +31,6 @@ def test_remaining_production_callers_use_the_package_boundary() -> None:
         "scripts/context-compiler.py",
         "scripts/memory_backup.py",
         "scripts/memory_scope.py",
-        "scripts/project-registry.py",
         "scripts/remember.py",
         "scripts/search-api.py",
         "scripts/state_boundary.py",

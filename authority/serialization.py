@@ -105,16 +105,9 @@ def resolution_result_from_dict(document: Mapping[str, Any]) -> ResolutionResult
 
 def task_state_from_dict(document: Mapping[str, Any]):
     """Decode task/state input, then rely on canonical reads for truth."""
-    import sys
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    scripts = root / "scripts"
-    if str(scripts) not in sys.path:
-        sys.path.insert(0, str(scripts))
     from brain_eleven.state.resolver import CurrentProjectState
-    from task_model import TaskEnvelope
-    from task_state_context import TASK_STATE_CONTEXT_SCHEMA_VERSION, TaskStateContext
+    from scripts.task_model import TaskEnvelope
+    from scripts.task_state_context import TASK_STATE_CONTEXT_SCHEMA_VERSION, TaskStateContext
 
     document = _mapping(document, "task_state")
     if document.get("schema_version") != TASK_STATE_CONTEXT_SCHEMA_VERSION:

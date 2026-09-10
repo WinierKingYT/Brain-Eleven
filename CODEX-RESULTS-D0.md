@@ -1,64 +1,65 @@
 # IG R3 D0 Decision Evidence
 
 PACKAGE: D0
-IMPLEMENTATION_REVISION: 5deebe8574276e335a3502baead6ea6875479d6a
-EVIDENCE_FILE: evals/ig01d/d0-probe-real.json
+IMPLEMENTATION_REVISION: 0fb8d00f3776bf004796c54a52689fb439532c01
+EVIDENCE_FILE: evals/ig01d/d0-probe-real-exact.json
 
 OBJECTIVE:
-De-risk the R1 retrieval ceiling before selecting a RETHINK branch. The probe is evaluation-only: no production retrieval wiring, ranking tuning, V2 promotion, IG-04/IG-05 work, or Phase 20 work was performed.
+Complete the R3 de-risk probe without changing production retrieval, canonical authority, V2 rollout, or Phase 20. The probe uses a versioned public-synthetic multilingual fixture, explicit sidecar language labels, current-project-plus-global scope filtering, and a local retrieval-tuned embedding spike.
 
 D0-1 SCOPE AUDIT:
 - Status: PASS.
-- The semantic probe candidate set uses the same current-project-plus-global scope boundary as the baseline.
-- Global fixture records with an empty project identifier are normalized to global for the audit.
-- wrong_project_leakage=0 for mpnet_scope_filtered and mpnet_hybrid.
-- forbidden_leakage=0, superseded_leakage=0, resolved_leakage=0 for both measured variants.
+- The semantic and hybrid variants apply the current-project-plus-global scope boundary.
+- Empty project identifiers are normalized to global for the audit.
+- wrong_project_leakage=0, forbidden_leakage=0, superseded_leakage=0, and resolved_leakage=0 for every measured variant.
 - The previous R1-a leakage count of 51 was an evidence-audit normalization bug, not observed cross-project retrieval.
 
 D0-2 CORPUS BALANCE:
-- IG01-B public DEV contains 76 answerable PUBLIC_SYNTHETIC cases.
-- Explicit language strata: EN=25, TR=26, TR-EN=25.
-- Minimum language fraction is 0.328947, so the >=25% language-strata requirement passes.
-- The planned >=100-case target is not met because the immutable DEV split contains 76 cases. No cases were invented or borrowed from HOLDOUT.
-- The IG01-D retrieval fixture contains 70 public DEV cases, but no explicit language field. Deterministic prompt bucketing yields EN=58, TR=5, TR-EN=7. This fixture metadata limitation prevents a valid balanced multilingual retrieval claim.
-- D0-2 status: CASE_COUNT_BELOW_TARGET; language balance is healthy in IG01-B, while the retrieval fixture needs explicit language metadata or a larger versioned split.
+- A new immutable public-synthetic fixture `ig-r3-d0-v1` was generated from public DEV and TEST cases only; HOLDOUT was excluded.
+- The fixture contains 120 distinct task identities with explicit sidecar language metadata: EN=40, TR=40, TR-EN=40.
+- Minimum language fraction is 0.333333, and the >=100-case requirement passes.
+- The IG01-B reference DEV remains 76 answerable cases with balanced 25/26/25 strata; it is recorded as a reference limitation and was not silently changed.
+- D0-2 status: PASS for the retrieval probe fixture.
 
 D0-3 RETRIEVAL-TUNED MODEL SPIKE:
-- R1-compatible local MPNet embedding plus mmarco cross-encoder was available and measured on all 70 IG01-D DEV cases with seed=17 and noise_count=24.
-- Retrieval-tuned candidates were attempted offline:
-  - intfloat/multilingual-e5-large + cross-encoder/mmarco-mMiniLMv2-L12-H384-v1: UNAVAILABLE, local_embedding_init_failed.
-  - BAAI/bge-m3 + BAAI/bge-reranker-v2-m3: UNAVAILABLE, local_embedding_init_failed.
-- No network model download was attempted. No synthetic vectors were used.
-- E5 query/passage prefix support is implemented in the throwaway probe but could not be scored without the local model.
+- Current MPNet embedding plus the existing mmarco cross-encoder was measured on all 120 cases.
+- `intfloat/multilingual-e5-large` was available locally and measured with the required `query:` / `passage:` prefixes, using the same mmarco cross-encoder.
+- No production provider or ranking configuration was changed. All variants report production_mutation=false.
 
 | Variant | Cases | Context precision | Mandatory recall | MRR | Noise ratio |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| mpnet_scope_filtered | 70 | 0.220000 | 0.671429 | 0.395238 | 0.780000 |
-| mpnet_hybrid (RRF with V1 lexical selection) | 70 | 0.171429 | 0.728571 | 0.399286 | 0.828571 |
+| mpnet_scope_filtered | 120 | 0.205000 | 0.704167 | 0.484583 | 0.795000 |
+| mpnet_hybrid (RRF) | 120 | 0.185000 | 0.804167 | 0.480833 | 0.815000 |
+| tuned_scope_filtered (E5-large) | 120 | 0.190000 | 0.641667 | 0.460972 | 0.810000 |
+| tuned_hybrid (E5-large + RRF) | 120 | 0.201667 | 0.812500 | 0.473194 | 0.798333 |
 
-Per-language metrics are recorded in the evidence JSON. For the retrieval fixture bucket, mpnet_scope_filtered precision is EN=0.224138, TR=0.240000, TR-EN=0.171429. Hybrid precision is EN=0.175862, TR=0.200000, TR-EN=0.114286. These buckets are directional only because the fixture has no explicit language labels.
+Per-language metrics, provider provenance, hashed case identities, and all safety counters are recorded in the evidence JSON. Each language has exactly 40 cases.
 
 D0 INTERPRETATION:
-- Scope correction makes the comparison valid and removes the previous false leakage signal.
-- On the 70-case fixture, MPNet semantic precision is 0.22, below the R3 0.45 rethink threshold and the 0.60 program floor.
-- Hybrid RRF increases mandatory recall from 0.671429 to 0.728571, but lowers precision from 0.220000 to 0.171429 and does not reduce noise.
-- Retrieval-tuned E5/BGE evidence is unavailable in the offline cache, so no tuned-model ceiling can be claimed.
-- The measured current-model ceiling remains below target; the final D1 branch decision is intentionally not issued because D0-2 sample size and D0-3 tuned-model availability gates are incomplete.
+- The scope correction removes the previous false leakage signal.
+- The balanced fixture and tuned-model gates are now complete.
+- The best measured precision is 0.205000 (MPNet scope-filtered); tuned hybrid reaches 0.201667 and does not approach the R3 0.45 rethink threshold or the program 0.60 floor.
+- Tuned hybrid improves mandatory recall to 0.812500, but precision remains low and noise remains 0.798333.
+- The corrected empirical ceiling is therefore below 0.45. D1 selects Branch B; no Branch A continuation is authorized.
 
 VALIDATION:
-- D0 helper tests: 3 passed.
-- Full repository regression at the exact implementation revision: 835 passed, 2 warnings, 80.83s.
+- Balanced corpus generator: 120 cases, schema validation PASS, language counts 40/40/40.
+- D0 helper and corpus tests: PASS.
+- Full repository regression at the exact implementation revision: 836 passed, 2 warnings, 79.32s.
 - D0 probe compile/import sanity: PASS.
 - Evidence content-free scan: PASS.
 - HOLDOUT_INCLUDED: false.
 - All variants report production_mutation=false.
 
 OPEN FAILURES:
-- IG01-B DEV has 76 rather than the planned >=100 balanced cases.
-- IG01-D retrieval fixtures lack explicit language metadata.
-- Retrieval-tuned E5/BGE models are absent from the offline cache.
-- D0-3 therefore remains partial; no production retrieval conclusion is authorized.
+- Retrieval precision remains below the R3 rethink threshold on both current and tuned stacks.
+- The IG01-B reference DEV remains 76 cases; the new D0 fixture is the balanced retrieval measurement surface.
+- Production retrieval must not be tuned or promoted from this result.
 
-VERDICT:
-D1_BLOCKED
-D0-1 is shipped and D0-2 language balance is confirmed, but the sample-size and tuned-model gates are not complete. Keep Phase 20 FROZEN / LOCKED, V2 SHADOW, and do not open IG-04 through IG-09. The next bounded action is to version a >=100 balanced retrieval fixture and install/provide one retrieval-tuned local model, then rerun this exact probe.
+D1 DECISION:
+BRANCH_B
+
+The embedding-similarity retrieval approach is not graduated. IG-04 through IG-09 remain closed until a separately approved Branch B design is implemented and measured. The R3 plan's recommended next bounded design is B1 semi-automatic memory: keep autonomous capture, present ranked candidates for human confirmation, and remove direct automatic retrieval injection. This report does not implement that product change.
+
+PROGRAM STATE:
+Phase 20 remains FROZEN / LOCKED. V2 remains SHADOW. No Phase 20 work, production retrieval wiring, extraction tuning, correction work, or architecture rewrite was performed.

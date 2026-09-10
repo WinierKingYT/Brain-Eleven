@@ -4,7 +4,8 @@
 
 set -u
 
-BRAIN_ELEVEN_VAULT="${BRAIN_ELEVEN_VAULT:-{{VAULT_PATH}}}"
+DEFAULT_VAULT={{VAULT_PATH}}
+BRAIN_ELEVEN_VAULT="${BRAIN_ELEVEN_VAULT:-$DEFAULT_VAULT}"
 if [ ! -d "$BRAIN_ELEVEN_VAULT" ]; then
     if command -v wslpath >/dev/null 2>&1; then
         CONVERTED_VAULT="$(wslpath -u "$BRAIN_ELEVEN_VAULT" 2>/dev/null || true)"
@@ -17,32 +18,128 @@ if [ ! -d "$BRAIN_ELEVEN_VAULT" ]; then
     fi
 fi
 COMPILER="$BRAIN_ELEVEN_VAULT/scripts/context-compiler.py"
+RESULT_PATH="$BRAIN_ELEVEN_VAULT/.claude/session-run-result.json"
+RESULT_TMP="$RESULT_PATH.tmp.$$"
+START_SECONDS=$SECONDS
+
+mkdir -p "$(dirname "$RESULT_PATH")" 2>/dev/null || true
+
+ERROR_CAPTURE="$(mktemp "${TMPDIR:-/tmp}/brain-eleven-session-start.XXXXXX" 2>/dev/null || true)"
+if [ -z "$ERROR_CAPTURE" ]; then
+    ERROR_CAPTURE="$RESULT_PATH.stderr.$$"
+    : > "$ERROR_CAPTURE" 2>/dev/null || true
+fi
+
+cleanup() {
+    rm -f "$ERROR_CAPTURE" "$RESULT_TMP" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+first_error_line() {
+    local line=""
+    if [ -s "$1" ]; then
+        line="$(sed -n '/[^[:space:]]/ { s/^[[:space:]]*//; p; q; }' "$1" 2>/dev/null || true)"
+    fi
+    line="${line:0:240}"
+    printf '%s' "$line"
+}
+
+json_escape() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\r'/}"
+    value="${value//$'\n'/}"
+    printf '%s' "$value"
+}
+
+write_breadcrumb() {
+    local timestamp duration escaped_error escaped_bootstrap_error
+    timestamp="$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || printf 'unknown')"
+    duration=$((SECONDS - START_SECONDS))
+    escaped_error="$(json_escape "$ERROR_LINE")"
+    escaped_bootstrap_error="$(json_escape "$BOOTSTRAP_ERROR")"
+
+    {
+        printf '{"timestamp":"%s","exit_status":%s,"branch":"%s","duration":%s' \
+            "$timestamp" "$COMPILER_STATUS" "$BRANCH" "$duration"
+        if [ -n "$ERROR_LINE" ]; then
+            printf ',"error":"%s"' "$escaped_error"
+        else
+            printf ',"error":null'
+        fi
+        if [ -n "$BOOTSTRAP_STATUS" ]; then
+            printf ',"bootstrap_exit_status":%s,"bootstrap_error":"%s"' \
+                "$BOOTSTRAP_STATUS" "$escaped_bootstrap_error"
+        else
+            printf ',"bootstrap_exit_status":null,"bootstrap_error":null'
+        fi
+        printf '}\n'
+    } > "$RESULT_TMP" 2>/dev/null && mv -f "$RESULT_TMP" "$RESULT_PATH" 2>/dev/null || true
+}
+
+COMPILER_STATUS=127
+BRANCH="unavailable"
+ERROR_LINE=""
+BOOTSTRAP_STATUS=""
+BOOTSTRAP_ERROR=""
 
 if [ ! -f "$COMPILER" ]; then
-    exit 0
+    ERROR_LINE="context compiler not found"
+else
+    PYTHON_BIN="${PYTHON:-python3}"
+    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+        PYTHON_BIN="python"
+    fi
+
+    if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+        ERROR_LINE="python interpreter not found"
+    else
+        PYTHON_VAULT="$BRAIN_ELEVEN_VAULT"
+        PYTHON_COMPILER="$COMPILER"
+        PYTHON_PROJECT_ROOT="$PWD"
+        # MSYS bash can invoke a Windows Python executable, but that process
+        # does not understand /mnt/<drive>/... paths. Convert only the Python
+        # arguments; native POSIX Python keeps the original paths.
+        if [[ "${PYTHON_BIN,,}" == *.exe ]] && command -v wslpath >/dev/null 2>&1; then
+            PYTHON_VAULT="$(wslpath -w "$BRAIN_ELEVEN_VAULT" 2>/dev/null || printf '%s' "$BRAIN_ELEVEN_VAULT")"
+            PYTHON_COMPILER="$(wslpath -w "$COMPILER" 2>/dev/null || printf '%s' "$COMPILER")"
+            PYTHON_PROJECT_ROOT="$(wslpath -w "$PWD" 2>/dev/null || printf '%s' "$PWD")"
+        fi
+        # Prefer a persisted projection only when it exactly matches the canonical
+        # memory revision and current project scope. On a missing, corrupt, stale, or
+        # scope-mismatched projection, compile a fresh read-only context instead.
+        BRANCH="bootstrap"
+        : > "$ERROR_CAPTURE" 2>/dev/null || true
+        if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$PYTHON_COMPILER" \
+            --vault "$PYTHON_VAULT" \
+            --project-root "$PYTHON_PROJECT_ROOT" \
+            --retrieval-scope default \
+            --load-bootstrap 2>"$ERROR_CAPTURE"; then
+            COMPILER_STATUS=0
+            BOOTSTRAP_STATUS=0
+        else
+            BOOTSTRAP_STATUS=$?
+            BOOTSTRAP_ERROR="$(first_error_line "$ERROR_CAPTURE")"
+            BRANCH="stdout_fallback"
+            : > "$ERROR_CAPTURE" 2>/dev/null || true
+            if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$PYTHON_COMPILER" \
+                --vault "$PYTHON_VAULT" \
+                --project-root "$PYTHON_PROJECT_ROOT" \
+                --retrieval-scope default \
+                --stdout 2>"$ERROR_CAPTURE"; then
+                COMPILER_STATUS=0
+            else
+                COMPILER_STATUS=$?
+                ERROR_LINE="$(first_error_line "$ERROR_CAPTURE")"
+                if [ -z "$ERROR_LINE" ]; then
+                    ERROR_LINE="$BOOTSTRAP_ERROR"
+                fi
+            fi
+        fi
+    fi
 fi
 
-PYTHON_BIN="${PYTHON:-python3}"
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-fi
-if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
-    exit 0
-fi
-
-# Prefer a persisted projection only when it exactly matches the canonical
-# memory revision and current project scope. On a missing, corrupt, stale, or
-# scope-mismatched projection, compile a fresh read-only context instead.
-if ! PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$COMPILER" \
-    --vault "$BRAIN_ELEVEN_VAULT" \
-    --project-root "$PWD" \
-    --retrieval-scope default \
-    --load-bootstrap 2>/dev/null; then
-    PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$COMPILER" \
-        --vault "$BRAIN_ELEVEN_VAULT" \
-        --project-root "$PWD" \
-        --retrieval-scope default \
-        --stdout 2>/dev/null || true
-fi
+write_breadcrumb
 
 exit 0

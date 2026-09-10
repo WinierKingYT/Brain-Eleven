@@ -22,7 +22,12 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-from logging_config import setup_logging
+try:
+    from scripts.logging_config import setup_logging
+except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
+    if exc.name != "scripts":
+        raise
+    from logging_config import setup_logging
 from brain_eleven.memory import filter_memories, infer_memory_scope
 
 logger = setup_logging(__name__)

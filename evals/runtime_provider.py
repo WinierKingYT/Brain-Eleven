@@ -3,7 +3,7 @@ from pathlib import Path
 from brain_eleven.runtime.context import compile_task
 from brain_eleven.memory import MemoryStore
 from context_router import RoutingOptions
-from task_state_context import TaskStateComposer
+from scripts.task_state_context import TaskStateComposer
 from .contracts import NormalizedEvaluationResult, SelectedContextItem
 from .router_provider import RouterContextProvider
 from .compiler_v2_provider import COMPILER_CAPABILITIES
