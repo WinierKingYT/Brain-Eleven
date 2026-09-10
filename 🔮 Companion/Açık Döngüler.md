@@ -12,10 +12,11 @@ created: 2026-08-28
 
 These are the unresolved items supported by the current repository state and this session:
 
-- [ ] **Ahmet confirmation required:** verify whether the six old GitHub branches were deleted; this cannot be established from the local checkout alone.
+- [x] The six old GitHub branches are confirmed deleted — `git ls-remote origin` shows only `master`.
 - [ ] Remote exact-head CI and live native-client trust remain open follow-ups for IG-04 B1 and B2.
 - [ ] The next IG-04 subpackage has not been selected yet.
-- [ ] IG-04 B2 independent read-only review is still pending; the implementation is not self-declared as accepted.
+- [x] IG-04 B2 independent read-only review closed with `SHIP` (`IG04-B2-INDEPENDENT-REVIEW.md`).
+- [x] Vault hygiene change set (104 files, Companion refresh) independently reviewed by Claude and accepted.
 
 ## Historical / abandoned plans
 

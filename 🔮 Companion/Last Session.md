@@ -10,15 +10,15 @@ created: 2026-08-28
 ## Session Summary
 
 - Branch work is synchronized on canonical `master`; the prior topic-branch merge is recorded in git history.
-- IG-04 B1 is closed with independent `SHIP`; IG-04 B2 implementation is complete at `cd59da4` with local focused/full regression green, and its independent review is still pending.
+- IG-04 B1 and B2 are both closed with independent `SHIP` (B2 reviewed at `80f3650`, see `IG04-B2-INDEPENDENT-REVIEW.md`).
 - Vault hygiene fixed the three `[[Beyin]]` links, removed nonexistent template links, moved 104 general notes with `git mv` into `🗂️ Proje Notları/Referans/`; the previously ambiguous six-entry bulk manifest was moved after Ahmet decision.
 - Phase 20 remains `FROZEN / LOCKED`; V2 remains `SHADOW`.
 
 ## Open items
 
-- Ahmet must confirm the deletion state of the six old GitHub branches.
 - Remote CI and native-client trust follow-ups for B1/B2 remain open.
-- The next IG-04 subpackage and B2 independent review are not yet closed.
+- The next IG-04 subpackage has not been selected yet.
+- This vault hygiene change set (104 files moved to `Referans/`, Companion refresh) has now been independently reviewed by Claude and accepted.
 
 ---
 
