@@ -24,6 +24,7 @@ authorize opening Phase 20 or promoting V2.
 | Path | Class / boundary |
 |---|---|
 | `PROJECT-STATUS.md` | CURRENT top-level IG status; explicitly historical sections remain HISTORICAL. |
+| `NEXT.md` | CURRENT plain-language status/next-steps summary for humans; not evidence and not a substitute for `PROJECT-STATUS.md`'s revision-bound claims. |
 | `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |

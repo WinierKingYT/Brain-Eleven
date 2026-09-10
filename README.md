@@ -26,7 +26,8 @@ fail open).
 |---|---|
 | Understand how the pieces fit together | `ARCHITECTURE.md` |
 | Set up your environment, run tests, open a PR | `CONTRIBUTING.md` |
-| Know what's actually done vs. in progress | `PROJECT-STATUS.md` |
+| Know where we are and what's next, in plain language | `NEXT.md` |
+| Know what's actually done vs. in progress, with evidence | `PROJECT-STATUS.md` |
 | Know which other `.md` file to trust | `DOCUMENTATION-AUTHORITY.md` |
 
 Older `IG*`, `PHASE*`, `PRE*` files are package-level contracts and closure
