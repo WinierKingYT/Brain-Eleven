@@ -8,22 +8,21 @@ the end of a work session; keep entries to a few lines.
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed package: **IG-03** (semantic
-extraction). **IG-04 B1 implementation is now active** under the approved
-human-approval contract. The earlier D0/R0 feasibility probes remain
-evaluation-only evidence; see `CODEX-RESULTS-D0.md` /
-`CODEX-RESULTS-R0.md`.
+extraction). **IG-04 B2 implementation is complete locally; independent
+review is pending.** B1 behavior remains covered and unchanged. The earlier
+D0/R0 feasibility probes remain evaluation-only evidence; see
+`CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
 
 Canonical branch: **master**. The topic branches were merged and removed
 locally and on GitHub; only `master` remains remotely. The exact baseline
-snapshot check passes on current master. Ahmet approved B1 on 2026-09-10;
-Codex is implementing the bounded review boundary. V2 remains SHADOW and
-Phase 20 remains FROZEN / LOCKED.
+snapshot check passes on current master. Ahmet approved B1 on 2026-09-10 and
+supplied the B2 work order. Codex implemented the bounded review dedup/order
+boundary. V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Finish the bounded B1 review boundary, focused tests and evidence, then
-  obtain the independent read-only review. Keep V2 SHADOW and Phase 20
-  FROZEN / LOCKED.
+- Obtain the independent read-only review for IG-04 B2. Keep V2 SHADOW and
+  Phase 20 FROZEN / LOCKED.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
