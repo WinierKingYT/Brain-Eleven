@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from project_registry import ProjectRegistry  # noqa: E402
 from state_store import StateService, StateStore  # noqa: E402
 

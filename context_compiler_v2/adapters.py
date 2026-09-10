@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from authority.adapters import AuthorityEvidenceAdapter
 
-
-_ROOT = Path(__file__).resolve().parents[1]
-_SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
 
 from brain_eleven.memory.scope import infer_memory_scope  # noqa: E402
 from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402

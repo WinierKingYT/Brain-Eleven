@@ -113,7 +113,7 @@ class MemoryUpdate(BaseModel):
     expected_revision: Optional[int] = Field(default=None, ge=0)
 
 class SearchRequest(BaseModel):
-    query: str = Field(..., description="Search query")
+    query: str = Field(..., min_length=1, max_length=4096, description="Search query")
     top_k: int = Field(default=5, ge=1, le=100)
     hybrid: bool = Field(default=True, description="Use hybrid search")
     project_id: Optional[str] = None

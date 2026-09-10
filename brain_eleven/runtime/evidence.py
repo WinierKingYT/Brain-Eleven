@@ -3,7 +3,7 @@ import json
 import hashlib
 from pathlib import Path
 from dataclasses import replace
-from evidence import EvidenceBatch, EvidenceMessage, EvidenceTime, EvidenceStore, _record, _safe_source_path
+from scripts.evidence import EvidenceBatch, EvidenceMessage, EvidenceTime, EvidenceStore, _record, _safe_source_path
 from .storage import identity
 
 

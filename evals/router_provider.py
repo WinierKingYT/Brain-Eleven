@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from context_router import ContextRouter, RoutingOptions
@@ -12,17 +11,11 @@ from .schema import GoldenTask
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
 from brain_eleven.memory import MemoryStore  # noqa: E402
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.state.resolver import STATE_NOT_FOUND, StateResolver  # noqa: E402
 from brain_eleven.state import StateService  # noqa: E402
-from task_state_context import TaskStateComposer  # noqa: E402
+from scripts.task_state_context import TaskStateComposer  # noqa: E402
 
 
 ROUTER_PROVIDER_ID = "task_aware_router_v1"

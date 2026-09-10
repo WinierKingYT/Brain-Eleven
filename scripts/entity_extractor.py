@@ -25,15 +25,10 @@ Relationships:
 
 import re
 import json
-import sys
 from pathlib import Path
 from typing import List, Dict, Tuple
 
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
-
-from logging_config import setup_logging
+from scripts.logging_config import setup_logging
 from brain_eleven.graph import KnowledgeGraph, KnowledgeGraphProjectionStale
 from brain_eleven.memory import MemoryStore, infer_memory_scope
 

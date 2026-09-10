@@ -12,7 +12,6 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 import state_store as state_store_module  # noqa: E402
 from memory_store import MemoryStore  # noqa: E402

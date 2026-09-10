@@ -12,7 +12,6 @@ import pytest
 
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 import memory_store as memory_store_module  # noqa: E402
 from entity_extractor import EntityExtractor  # noqa: E402

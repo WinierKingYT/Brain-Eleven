@@ -17,8 +17,6 @@ from types import ModuleType
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SCRIPTS = _ROOT / "scripts"
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
 
 
 @lru_cache(maxsize=None)

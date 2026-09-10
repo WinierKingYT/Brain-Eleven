@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 from entity_extractor import EntityExtractor  # noqa: E402
 from knowledge_graph import KnowledgeGraph  # noqa: E402

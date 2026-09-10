@@ -125,6 +125,92 @@ class TestHealthAndStatus:
 
 class TestSearchRankEmbed:
 
+    @pytest.mark.parametrize("payload", [
+        {},
+        {"query": ""},
+        {"query": "x" * 4097},
+    ])
+    def test_search_rejects_malformed_or_oversized_query(self, client, payload):
+        response = client.post("/search", json=payload)
+
+        assert response.status_code == 422
+
+    def test_search_and_rank_enforce_project_scope(self, client, vault):
+        validated_file = vault / ".claude" / "validated-memory.json"
+        original = validated_file.read_text(encoding="utf-8")
+        try:
+            write_memories(vault, [
+                make_memory(
+                    memory_id="global-memory",
+                    content="Global architecture guidance",
+                    scope="global",
+                ),
+                make_memory(
+                    memory_id="project-a-memory",
+                    content="Project alpha deployment guidance",
+                    scope="project",
+                    project="Project Alpha",
+                    project_id="project-a",
+                ),
+                make_memory(
+                    memory_id="project-b-memory",
+                    content="Project beta deployment guidance",
+                    scope="project",
+                    project="Project Beta",
+                    project_id="project-b",
+                ),
+            ])
+
+            search = client.post(
+                "/search",
+                json={
+                    "query": "deployment guidance",
+                    "top_k": 10,
+                    "project_id": "project-a",
+                    "retrieval_scope": "project",
+                },
+            )
+            assert search.status_code == 200
+            assert {item["memory_id"] for item in search.json()["results"]} <= {"project-a-memory"}
+
+            listed = client.get(
+                "/memories",
+                params={"project_id": "project-a", "retrieval_scope": "project"},
+            )
+            assert listed.status_code == 200
+            assert {item["memory_id"] for item in listed.json()["memories"]} == {"project-a-memory"}
+
+            ranked = client.post(
+                "/rank",
+                json={
+                    "query": "deployment",
+                    "project_id": "project-a",
+                    "retrieval_scope": "project",
+                    "candidates": [
+                        {"memory_id": "project-a-memory", "combined_score": 0.9},
+                        {"memory_id": "project-b-memory", "combined_score": 1.0},
+                    ],
+                },
+            )
+            assert ranked.status_code == 200
+            assert {item["memory_id"] for item in ranked.json()["results"]} <= {"project-a-memory"}
+        finally:
+            validated_file.write_text(original, encoding="utf-8")
+
+    def test_search_returns_empty_result_for_empty_corpus(self, client, vault):
+        validated_file = vault / ".claude" / "validated-memory.json"
+        original = validated_file.read_text(encoding="utf-8")
+        try:
+            write_memories(vault, [])
+
+            response = client.post("/search", json={"query": "nothing here"})
+
+            assert response.status_code == 200
+            assert response.json()["results"] == []
+            assert response.json()["count"] == 0
+        finally:
+            validated_file.write_text(original, encoding="utf-8")
+
     def test_search_corpus_fingerprint_changes_for_same_size_content_mutation(self, client):
         module = client.app.state.search_api_module
         records_a = [make_memory(memory_id="same", content="old content")]
@@ -343,8 +429,37 @@ class TestCacheEndpoints:
         assert response.status_code == 200
         assert client.get("/cache/stats").json()["l1"]["size"] == 0
 
+    def test_cache_endpoints_fail_closed_when_cache_is_uninitialized(self, client):
+        module = client.app.state.search_api_module
+        original_cache = module.cache
+        try:
+            module.cache = None
+
+            assert client.get("/cache/stats").status_code == 503
+            assert client.post("/cache/clear").status_code == 503
+        finally:
+            module.cache = original_cache
+
 
 class TestGraphEndpoints:
+
+    def test_graph_endpoints_fail_closed_when_dependencies_are_uninitialized(self, client):
+        module = client.app.state.search_api_module
+        original_graph = module.graph
+        original_chat_agent = module.chat_agent
+        try:
+            module.graph = None
+            assert client.get("/graph/stats").status_code == 503
+            assert client.get("/graph/entities").status_code == 503
+            assert client.get("/graph/entities/entity/relationships").status_code == 503
+            assert client.get("/graph/traverse/entity").status_code == 503
+            assert client.post("/graph/rebuild").status_code == 503
+
+            module.chat_agent = None
+            assert client.post("/chat", json={"message": "summarize"}).status_code == 503
+        finally:
+            module.graph = original_graph
+            module.chat_agent = original_chat_agent
 
     def test_graph_stats_reflects_seeded_memories(self, client):
         response = client.get("/graph/stats")

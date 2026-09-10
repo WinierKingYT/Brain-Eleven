@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Mapping, Sequence
@@ -18,15 +17,9 @@ from .authority.schema import AuthorityExpectation
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.state import StateService  # noqa: E402
-from task_state_context import TaskStateComposer  # noqa: E402
+from scripts.task_state_context import TaskStateComposer  # noqa: E402
 
 
 NOW = "2026-09-03T12:00:00Z"

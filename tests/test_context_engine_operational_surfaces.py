@@ -10,7 +10,6 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
 from authority import AuthorityResolver  # noqa: E402
 from authority.__main__ import main as authority_main  # noqa: E402

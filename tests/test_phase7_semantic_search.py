@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 # Setup path
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 # Load modules with importlib
 def load_module(name, filename):

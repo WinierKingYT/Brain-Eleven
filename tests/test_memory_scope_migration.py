@@ -9,7 +9,6 @@ import pytest
 
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS))
 
 from memory_scope import (  # noqa: E402
     GLOBAL_SCOPE,

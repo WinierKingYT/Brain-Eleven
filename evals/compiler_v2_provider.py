@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from authority import AuthorityOptions, AuthorityResolver
@@ -15,12 +14,8 @@ from .schema import GoldenTask
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
-if str(SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(SCRIPTS))
-
 from brain_eleven.memory import MemoryStore  # noqa: E402
-from task_state_context import TaskStateComposer  # noqa: E402
+from scripts.task_state_context import TaskStateComposer  # noqa: E402
 
 
 COMPILER_PROVIDER_ID = "context_compiler_v2"

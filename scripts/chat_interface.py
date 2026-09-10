@@ -24,15 +24,10 @@ data - the retrieval/grounding stays deterministic either way.
 import re
 import json
 import uuid
-import sys
 from pathlib import Path
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Optional
-
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.support import AnomalyDetector, MemorySummarizer, setup_logging
 from brain_eleven.graph import KnowledgeGraph
