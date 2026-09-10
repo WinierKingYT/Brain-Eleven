@@ -51,7 +51,7 @@ regressions, authority violations, missing tests and failure modes.
 | **IG-01 Product Evaluation Foundation** | Deterministic retrieval, extraction and correction corpora; public synthetic, private realistic and growing sanitized real-failure sets; realistic distractors; separately measured V1/V2 baselines; evaluation that penalizes selecting everything. Establish answerable labels and version/split provenance before tuning. |
 | **IG-03 Semantic Extraction** | Deterministic prefilter → semantic structured propositions → deterministic validation. Preserve candidate/project/evidence identity, kind/claim key, subject/predicate/value, commitment/time, confidence components, target/reason and source role as applicable. Model proposes only. Beat regex baseline; distinguish questions, hypothetical/quoted text and assistant proposals from explicit user decisions, preferences, lessons and typed state. Contract acceptable false commitment rates before evaluation. |
 | **IG-02 Autonomous Capture Closure** | Real hook → durable queue → worker → evidence → extraction → truth/state → canonical effect → terminal queue outcome. Verify automatic draining, at-least-once/idempotent delivery, bounded retry, dead-letter visibility, leases, crash recovery, retention, error codes and observability. Golden E2E starts with “PromtGen authentication için session cookie kullanacağız.” and observes canonical memory. A COMPLETED job is not itself proof of a canonical effect. |
-| **IG-04 Reference, Correction & Lifecycle** | Resolve within project using conversation lineage, claim, similarity, time and lifecycle. Outcomes RESOLVED_TARGET / AMBIGUOUS / NO_TARGET / REVIEW_REQUIRED; ambiguity never guesses. Distinguish CONFIRM, SUPERSEDE, RESOLVE, CORRECT and REOPEN. Direct, conversational and claim targets tested; inactive/cross-project targets and cycles protected; false supersession is a hard gate. |
+| **IG-04 Reference, Correction & Lifecycle** *(superseded scope — see note below)* | Resolve within project using conversation lineage, claim, similarity, time and lifecycle. Outcomes RESOLVED_TARGET / AMBIGUOUS / NO_TARGET / REVIEW_REQUIRED; ambiguity never guesses. Distinguish CONFIRM, SUPERSEDE, RESOLVE, CORRECT and REOPEN. Direct, conversational and claim targets tested; inactive/cross-project targets and cycles protected; false supersession is a hard gate. |
 | **IG-05 Task-Aware Retrieval Quality** | Task → needs → candidates → scope → authority/lifecycle → relevance/diversity → minimum sufficient context → compiler. Explain task/claim/project relevance, criticality, authority, freshness, dependencies, historical importance and redundancy. Old critical decisions beat fresh irrelevant facts. Meet precision and mandatory recall gates, beat V1, reduce noise and preserve zero forbidden/project/superseded/resolved leakage. |
 | **IG-06 V2 Runtime Integration** | Only after IG-05: SHADOW → MIRROR → CANARY → DEFAULT → V1 FALLBACK → RETIREMENT CANDIDATE. Shadow sends V1 only and measures V2 content-free. Canary is Brain-Eleven only. Verify single-gate V2→V1 rollback, authority/isolation, budget and startup degradation before default V2 delivery, including SessionStart. |
 | **IG-07 Architecture Consolidation** | Move implementation authority into logical `brain_eleven` capture/evidence/extraction/memory/state/retrieval/authority/compiler/lifecycle/projects boundaries. Scripts become adapters/operations/migrations. No copied competing implementations; minimize legacy loaders and hyphenated implementation authority. Clean imports and full regression required. |
@@ -62,6 +62,29 @@ IG-00 through IG-06 are P0 Phase 20 blockers. IG-07/08 are P1 graduation
 blockers. Cosmetic documentation, developer UX, noncritical performance and API
 expansion can wait. IG-09 cannot implement its own fixes; findings return to
 bounded corrective work and a fresh review.
+
+## IG-04 pivot: Branch B (2026-09-10)
+
+`CODEX-RESULTS-D0.md` measured the embedding-similarity retrieval approach
+this program originally planned to build IG-04 through IG-09 on top of, and
+found it does not graduate (empirical ceiling below 0.45). Its D1 decision:
+**Branch B** — automatic capture stays, but retrieval eligibility is gated on
+an explicit human approval step, not on retrieval-quality tuning. **IG-04's
+slot is now the Branch B track**, not the reference/correction/lifecycle work
+described in its original row above. That original scope is not deleted —
+it's deferred; a real reference/correction problem still exists and may
+reopen as a later package once Branch B's daily-use quality is established.
+
+Branch B is delivered as lettered sub-packages under IG-04:
+
+| Sub-package | Scope | Status |
+|---|---|---|
+| **B1 — Human-approved retrieval boundary** | A captured candidate cannot affect retrieval until an explicit accept action. See `IG04-B1-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `IG04-B1-INDEPENDENT-REVIEW.md`. |
+| **B2 — Review queue usability** | Makes B1's review queue actually usable day to day: dedup near-duplicate pending candidates, order the queue so the most decision-worthy items surface first. See `IG04-B2-CONTRACT.md`. | Drafted, pending Ahmet's required human checkpoint. |
+
+IG-05 through IG-09 remain closed until Branch B's daily-use quality is
+established (per D1) — not merely until B1 or B2 ship. That determination is
+a later, explicit call, not automatic on B2's closure.
 
 ## Evaluation contract to establish in IG-01
 
