@@ -21,22 +21,41 @@ Claude's instructions; Claude has no direct connection to Codex in this
 environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 
 Canonical branch: **master**. The exact baseline snapshot check passes.
-B1 is implemented and reviewed but the `b1_human_approval` switch is off by
-default — nobody's daily retrieval changes until it's explicitly turned on.
-**Remote CI is now confirmed green** (fixed 2026-09-10, see below) except
-the long-standing, already-documented PRE-13 quality gate, which is unrelated
-to B1/B2. Live native-client trust remains open, non-blocking. V2 remains
-SHADOW and Phase 20 remains FROZEN / LOCKED.
+**Remote CI is confirmed green** (fixed 2026-09-10) except the long-standing,
+already-documented PRE-13 quality gate. V2 remains SHADOW and Phase 20
+remains FROZEN / LOCKED.
+
+**Pilot status: blocked by design, not by accident.** Ahmet's real install
+(`C:\Users\faruk\Documents\Brain-Eleven`) has `b1_human_approval=true`
+(turned on 2026-09-10) but `mode` could not be promoted to `CANARY` —
+`RuntimeConfig.set_mode` runs the same PRE-13 holdout quality gate before
+allowing CANARY, and it still fails (precision 0.1368). This gate predates
+B1 and assumes safety comes from retrieval quality, not human review; Ahmet
+was asked whether to relax it now that B1 makes it redundant, and **decided
+to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
+improves, rather than bypassing the gate. Current safe state:
+`mode=SHADOW`, `b1_human_approval=true`.
+
+**IG-07 (architecture consolidation) is now the active engineering thread.**
+`IG07-INVENTORY.md` catalogs all 58 `scripts/` modules (14,014 impl LOC, 20
+low/12 medium/26 high risk) and proposes a first slice of four bridge-only,
+non-authority modules: `logging_config.py` → `cache_manager.py` →
+`summarizer.py` → `anomaly_detector.py`. Independently reviewed (LOC and
+module count verified exactly; found and flagged one caller-count
+undercount for `cache_manager.py` — 4 real callers, not 2 — that doesn't
+change its risk bucket). First slice approved; `MemoryStore`/`StateStore`/
+`ProjectRegistry` and capture/retrieval paths are explicitly out of scope
+until this slice closes.
 
 ## What's next
 
-- Vault hygiene is done (Kararlar/Dersler cleaned, Companion memory alive,
-  links fixed), B1's two P2 test-coverage gaps are closed, and remote CI is
-  confirmed green. The agreed next step is a real-use pilot: Ahmet turns on
-  `b1_human_approval` on his own machine (not in this remote session), uses
-  the review screen for real, and notes friction — that also exercises
-  native-client trust as a side effect, so it doesn't need separate
-  engineering work first.
+- Implement IG-07 slice 1 in the stated order, one module at a time, with
+  the inventory's five-gate checklist (identity proof, no second
+  implementation, parity tests, full regression, independent review before
+  the next module).
+- Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
+  PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
+  decision) — no separate action needed to "start" it beyond that.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
