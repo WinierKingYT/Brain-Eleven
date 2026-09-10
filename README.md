@@ -1,30 +1,34 @@
 # Brain-Eleven
 
-Brain-Eleven is a local, privacy-first second-brain system with revisioned
-canonical memory, project-scoped state, safe retrieval, and a non-injecting
-context compiler.
+Local, privacy-first second-brain system: a revisioned canonical memory store,
+project-scoped state, safe retrieval, and a non-injecting context compiler,
+wired into Claude/Codex via hooks so context loads automatically at session
+start.
 
-The repository has closed **Intelligence Graduation IG01-C**. Phase 20 is
-**FROZEN and LOCKED**; the existing V2 path remains shadow-only until the
-evaluation and real-use gates in `INTELLIGENCE-GRADUATION.md` pass. IG01-C's
-production-independent evaluator, anti-gaming controls and safety report are
-closed with independent `SHIP`. IG01-D baseline measurement is the next
-bounded package but is not started in this turn. Production intelligence
-tuning, V2 promotion and Phase 20 work remain closed until the later packages
-pass their independent gates.
+## Quickstart
 
-## Local checks
-
-Use the repository virtual environment for repeatable checks:
-
-```powershell
-.venv\Scripts\python.exe -m pytest tests -m "not integration and not graduation" -q
-.venv\Scripts\python.exe -m pytest tests -m "integration or graduation" -q
+```bash
+pip install -r requirements.txt
+pip install pytest  # not in requirements.txt; needed to run tests locally
+python -m pytest tests -m "not integration and not graduation" -q
 ```
 
-The API exposes `/health` when started through the supported local deployment
-configuration. The API is a consumer of canonical memory; it is not a second
-write authority.
+Or via Docker: `make build && make up && make health`.
 
-Read `PROJECT-STATUS.md`, `RUNTIME-DATAFLOW.md`, and
-`DOCUMENTATION-AUTHORITY.md` before relying on older phase documents.
+Copy `.env.example` to `.env` before running anything that touches embeddings
+or the API — see that file for what each variable does and what happens when
+it's left unset (semantic search and API auth both degrade safely, they don't
+fail open).
+
+## Where to go next
+
+| You want to... | Read |
+|---|---|
+| Understand how the pieces fit together | `ARCHITECTURE.md` |
+| Set up your environment, run tests, open a PR | `CONTRIBUTING.md` |
+| Know what's actually done vs. in progress | `PROJECT-STATUS.md` |
+| Know which other `.md` file to trust | `DOCUMENTATION-AUTHORITY.md` |
+
+Older `IG*`, `PHASE*`, `PRE*` files are package-level contracts and closure
+reports, not entry points — `PROJECT-STATUS.md` tells you which one is
+currently active.
