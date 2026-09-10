@@ -47,6 +47,16 @@ Concretely:
    this project ended up with six stale branches pointing at superseded
    history.
 
+## Roles: Claude vs. Codex
+
+Default split (cost-driven — Claude is the pricier of the two): **Claude
+plans, Codex executes.** Claude is the default for architecture decisions,
+cross-cutting assessment, review, and documentation. Codex is the default for
+implementation — writing the code, tests, and mechanical fixes a plan calls
+for. This is a default, not a hard boundary; either can do either when it
+makes sense. Whoever is doing hands-on work in a given session still follows
+the branch/`NEXT.md` discipline above — the role split doesn't relax it.
+
 ## Documentation
 
 - End a work session by updating `NEXT.md` (a few lines: what changed, what's
