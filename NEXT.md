@@ -7,14 +7,13 @@ the end of a work session; keep entries to a few lines.
 ## Where we are
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
-"Phase 20" plan (frozen). Last closed package: **IG-04 B1** (human-approved
-retrieval boundary) — independent review `SHIP` on 2026-09-10. **IG-04-B2
-(review queue usability: dedup + deterministic ordering) is implemented at
-`cd59da4` and locally verified; independent review is pending.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
-pivot explicitly — IG-04's slot is the Branch B track, not the original
-reference/correction scope (deferred, not deleted). The earlier D0/R0
-feasibility probes remain evaluation-only evidence; see
-`CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
+"Phase 20" plan (frozen). Last closed package: **IG-04 B2** (review queue
+dedup + deterministic ordering) — independent review `SHIP` on 2026-09-10.
+B1 and B2 are both closed; no package is currently active.
+`INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
+the Branch B track, not the original reference/correction scope (deferred,
+not deleted). The earlier D0/R0 feasibility probes remain evaluation-only
+evidence; see `CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
 
 **Ownership as of 2026-09-10:** Ahmet delegated project management — status,
 documentation, quality bar and direction — to Claude. Codex executes from
@@ -30,10 +29,11 @@ section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Verify IG04-B2 independently once committed (per this project's
-  independent-review rule).
+- Decide the next IG-04 sub-package (or whether the Branch B track is mature
+  enough to reconsider IG-05) — Claude's call to make and propose, per the
+  delegated ownership above.
 - Decide whether/when to turn `b1_human_approval` on for real use, and close
-  the two remaining B1 follow-ups (remote CI, native-client trust) or accept
+  the remaining B1/B2 remote-CI and native-client-trust follow-ups or accept
   them as tracked-open.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.

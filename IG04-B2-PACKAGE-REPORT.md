@@ -81,7 +81,10 @@ package report.
 
 ## INDEPENDENT REVIEW
 
-**PENDING — user-owned review.** No `SHIP` verdict is issued here.
+**SHIP**, recorded 2026-09-10 by a Claude session with no implementation
+participation. Full regression and the B1+B2 focused suite were
+independently re-run (not just re-read) on this exact HEAD. See
+`IG04-B2-INDEPENDENT-REVIEW.md` for the criterion-by-criterion finding.
 
 ## SCORE BEFORE / AFTER
 
@@ -90,5 +93,7 @@ determinism only; B1 and intelligence quality baselines remain unchanged.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED** — implementation and local regression evidence are
-complete, but the contract-required independent review remains open.
+**ACCEPTED** — independent review returned `SHIP` on 2026-09-10. Remote
+exact-head CI remains an open, tracked follow-up (same status already
+accepted for other closed packages); it does not reopen this verdict. V2
+remains `SHADOW`; Phase 20 remains `FROZEN / LOCKED`.
