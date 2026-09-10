@@ -44,9 +44,15 @@ class RuntimeConfig:
         self.path = self.root / 'config.json'
 
     def load(self):
-        value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None})
+        value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
+                                      'b1_human_approval': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
+        # The key was introduced additively so existing vaults keep the
+        # pre-B1 behavior until an operator explicitly enables it.
+        value.setdefault('b1_human_approval', False)
+        if not isinstance(value['b1_human_approval'], bool):
+            raise ValueError('Invalid B1 human approval configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -72,5 +78,14 @@ class RuntimeConfig:
             from .graduation import verify
             verify(self.vault)
         value['mode'] = mode
+        write_json(self.path, value)
+        return value
+
+    def set_human_approval(self, enabled):
+        """Enable or disable B1's human approval boundary explicitly."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Human approval flag must be boolean')
+        value = self.load()
+        value['b1_human_approval'] = enabled
         write_json(self.path, value)
         return value

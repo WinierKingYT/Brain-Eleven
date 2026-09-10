@@ -19,6 +19,8 @@ def main(argv=None):
     review.add_argument('--no-open', action='store_true')
     rollout = sub.add_parser('rollout')
     rollout.add_argument('mode', choices=['OFF', 'SHADOW', 'CANARY', 'ACTIVE'])
+    approval = sub.add_parser('approval')
+    approval.add_argument('state', choices=['OFF', 'ON'])
     migration = sub.add_parser('migration')
     migration.add_argument('action', choices=['upgrade', 'rollback'])
     graduation = sub.add_parser('graduation')
@@ -41,6 +43,9 @@ def main(argv=None):
         elif args.command == 'rollout':
             from .runtime.storage import RuntimeConfig
             result = RuntimeConfig(args.vault).set_mode(args.mode)
+        elif args.command == 'approval':
+            from .runtime.storage import RuntimeConfig
+            result = RuntimeConfig(args.vault).set_human_approval(args.state == 'ON')
         elif args.command == 'migration':
             from .runtime.migration import migrate, rollback
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)

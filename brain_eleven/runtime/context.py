@@ -34,7 +34,10 @@ def compile_bootstrap(vault, project_root, *, budget=3000):
                'source_state_status': compiler.source_state_status}
     def safe(text):
         return not contains_secret(text) and evaluate_capture(text).accepted
-    memories = [item for item in compiler._rank_memories(limit=5) if safe(item['content'])]
+    b1_enabled = runtime.load().get('b1_human_approval', False)
+    memories = [item for item in compiler._rank_memories(limit=5)
+                if (not b1_enabled or item.get('is_approved', True) is True)
+                and safe(item['content'])]
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.

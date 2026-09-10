@@ -166,7 +166,7 @@ def create_app(vault, *, token=None, background=True):
     @app.get('/api/review/candidates')
     def candidates():
         from context_compiler_v2.safety import contains_secret
-        from capture_safety import evaluate_capture
+        from scripts.capture_safety import evaluate_capture
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
         state = StateStore(vault)

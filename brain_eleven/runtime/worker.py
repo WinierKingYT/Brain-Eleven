@@ -49,6 +49,7 @@ _STATE_RECEIPT_RECORDS = {
 _REVIEW_REASONS = frozenset({
     'LIFECYCLE_TARGET_UNKNOWN', 'REVIEW_REQUIRED', 'MODEL_PROPOSAL',
     'LOW_EVIDENCE_COMMITMENT', 'SCOPE_ERROR', 'DEGRADED',
+    'HUMAN_APPROVAL_REQUIRED',
 })
 _REVIEW_SOURCE_FIELDS = frozenset({'client', 'session_hash', 'evidence_id', 'role'})
 
@@ -161,6 +162,24 @@ class Worker:
         self.config = RuntimeConfig(vault)
         self.queue = CaptureQueue(vault)
         self.review = ReviewStore(vault)
+
+    def _add_review(self, candidate, reason, source):
+        """Persist a review item and suppress terminal fingerprint replays.
+
+        A pending item is a receipt effect for the current job.  If the same
+        candidate was already rejected, expired or accepted, the terminal
+        audit record is returned by ``ReviewStore`` but must not be counted as
+        a new effect in this job.
+        """
+        review_id = self.review.add(candidate, reason, source)
+        if not review_id:
+            raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
+        item = read_json(self.review.path(review_id))
+        if not isinstance(item, dict):
+            raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
+        if item.get('status') != 'PENDING':
+            return None
+        return review_id
 
     @contextmanager
     def _worker_lock(self):
@@ -640,14 +659,19 @@ class Worker:
                 candidate = asdict(item)
                 if candidate.get('occurred_at'):
                     candidate['occurred_at'] = candidate['occurred_at']['value']
-                requires_review = correction or candidate.get('operation', '').startswith('RESOLVE') or message.record.role != 'user'
-                if requires_review or self.config.load()['mode'] == 'SHADOW':
-                    review_id = self.review.add(candidate, 'LIFECYCLE_TARGET_UNKNOWN' if correction else 'REVIEW_REQUIRED', source)
-                    if not review_id:
-                        raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
-                    effect_ids.append(review_id)
-                    review_effect_ids.append(review_id)
-                    review_effect_count += 1
+                config = self.config.load()
+                requires_review = (config.get('b1_human_approval', False) or correction
+                                   or candidate.get('operation', '').startswith('RESOLVE')
+                                   or message.record.role != 'user')
+                if requires_review or config['mode'] == 'SHADOW':
+                    reason = ('LIFECYCLE_TARGET_UNKNOWN' if correction else
+                              'HUMAN_APPROVAL_REQUIRED' if config.get('b1_human_approval', False) else
+                              'REVIEW_REQUIRED')
+                    review_id = self._add_review(candidate, reason, source)
+                    if review_id:
+                        effect_ids.append(review_id)
+                        review_effect_ids.append(review_id)
+                        review_effect_count += 1
                     continue
                 if self.config.load()['mode'] not in {'CANARY', 'ACTIVE'}:
                     raise ValueError('Runtime stopped during processing')
@@ -675,12 +699,11 @@ class Worker:
                                'client':client, 'role':message.record.role, 'evidence_id':message.record.evidence_id, 'at':now()})
                 if outcome['status'] not in {'SUCCESS', 'EMPTY'}:
                     if outcome['status'] in {'REVIEW_REQUIRED', 'SCOPE_ERROR', 'DEGRADED'}:
-                        review_id = self.review.add(candidate, outcome['status'], source)
-                        if not review_id:
-                            raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
-                        effect_ids.append(review_id)
-                        review_effect_ids.append(review_id)
-                        review_effect_count += 1
+                        review_id = self._add_review(candidate, outcome['status'], source)
+                        if review_id:
+                            effect_ids.append(review_id)
+                            review_effect_ids.append(review_id)
+                            review_effect_count += 1
                     else:
                         raise RuntimeError('Candidate not applied')
                 outcomes.append(outcome['status'])
@@ -692,12 +715,11 @@ class Worker:
                                  'project_id': project['project_id'], 'scope': 'project', 'content': content,
                                  'memory_type': _memory_type(content), 'commitment': _classify_commitment(content, 'user').value,
                                  'confidence': 0, 'evidence_refs': [message.record.evidence_id]}
-                    review_id = self.review.add(candidate, 'LOW_EVIDENCE_COMMITMENT', source)
-                    if not review_id:
-                        raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
-                    effect_ids.append(review_id)
-                    review_effect_ids.append(review_id)
-                    review_effect_count += 1
+                    review_id = self._add_review(candidate, 'LOW_EVIDENCE_COMMITMENT', source)
+                    if review_id:
+                        effect_ids.append(review_id)
+                        review_effect_ids.append(review_id)
+                        review_effect_count += 1
             proposals, model_error = propose(self.config.load().get('local_model'), message)
             if model_error:
                 write_json(self.config.root / 'model-status.json', {'at': now(), 'status': model_error})
@@ -705,12 +727,11 @@ class Worker:
                 candidate = {**item, 'candidate_id': identity('cand_', message.record.evidence_id, 'model', index), 'candidate_type': 'NEW_MEMORY',
                              'project_id': project['project_id'], 'scope': 'project', 'commitment': 'PROPOSED', 'confidence': 0,
                              'evidence_refs': [message.record.evidence_id]}
-                review_id = self.review.add(candidate, 'MODEL_PROPOSAL', source)
-                if not review_id:
-                    raise WorkerProcessingError('REVIEW_PERSIST_FAILED')
-                effect_ids.append(review_id)
-                review_effect_ids.append(review_id)
-                review_effect_count += 1
+                review_id = self._add_review(candidate, 'MODEL_PROPOSAL', source)
+                if review_id:
+                    effect_ids.append(review_id)
+                    review_effect_ids.append(review_id)
+                    review_effect_count += 1
         return {
             'status': 'PROCESSED',
             'job_id': job['job_id'],

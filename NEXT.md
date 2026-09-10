@@ -7,21 +7,23 @@ the end of a work session; keep entries to a few lines.
 ## Where we are
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
-"Phase 20" plan (frozen). Last closed package: **IG-02** (autonomous
-capture). **IG-04 is not open yet** — before opening it, two feasibility
-probes (D0, R0) were run to de-risk the retrieval approach; see
-`CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`. Neither probe opens IG-04 by
-itself.
+"Phase 20" plan (frozen). Last closed package: **IG-03** (semantic
+extraction). **IG-04 B1 implementation is now active** under the approved
+human-approval contract. The earlier D0/R0 feasibility probes remain
+evaluation-only evidence; see `CODEX-RESULTS-D0.md` /
+`CODEX-RESULTS-R0.md`.
 
 Canonical branch: **master**. The topic branches were merged and removed
 locally and on GitHub; only `master` remains remotely. The exact baseline
-snapshot check passes on current master. Branch B/B1 implementation has not
-started; owner and kickoff remain an explicit Ahmet decision.
+snapshot check passes on current master. Ahmet approved B1 on 2026-09-10;
+Codex is implementing the bounded review boundary. V2 remains SHADOW and
+Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Decide the retrieval approach for IG-04 based on the D0/R0 probe results,
-  then open IG-04 under its own contract.
+- Finish the bounded B1 review boundary, focused tests and evidence, then
+  obtain the independent read-only review. Keep V2 SHADOW and Phase 20
+  FROZEN / LOCKED.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
@@ -33,4 +35,5 @@ Merged the implementation and documentation branches into `master`, refreshed
 the deterministic baseline snapshot, and removed the superseded local and
 remote refs. Added `README.md`/`ARCHITECTURE.md`/`CONTRIBUTING.md`, fixed stale
 vault paths in `CLAUDE.md`, and registered two evidence docs in
-`DOCUMENTATION-AUTHORITY.md`. The full regression is green; B1 has not started.
+`DOCUMENTATION-AUTHORITY.md`. The B1 contract was approved and its bounded
+human-approval implementation started; no V2 or Phase 20 work was opened.

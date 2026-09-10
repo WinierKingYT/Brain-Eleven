@@ -3,7 +3,7 @@ const token = new URLSearchParams(location.hash.slice(1)).get('token') || '';
 history.replaceState(null, '', '/review');
 const el = id => document.getElementById(id);
 const names = {OFF:'Kapalı',SHADOW:'Gözlem',CANARY:'Sınırlı kullanım',ACTIVE:'Etkin',SUCCESS:'Hazır',DEGRADED:'Eksik bilgi',STALE_INPUT:'Yenilenmeli'};
-const reasons = {MODEL_PROPOSAL:'Yerel model önerisi',LOW_EVIDENCE_COMMITMENT:'Karar netleştirilmeli',LIFECYCLE_TARGET_UNKNOWN:'Değiştirilecek karar seçilmeli',REVIEW_REQUIRED:'İnceleme gerekli'};
+const reasons = {MODEL_PROPOSAL:'Yerel model önerisi',LOW_EVIDENCE_COMMITMENT:'Karar netleştirilmeli',LIFECYCLE_TARGET_UNKNOWN:'Değiştirilecek karar seçilmeli',REVIEW_REQUIRED:'İnceleme gerekli',HUMAN_APPROVAL_REQUIRED:'İnsan onayı gerekli'};
 async function api(path, body) {
   const response = await fetch(path, {method:body?'POST':'GET', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, ...(body?{body:JSON.stringify(body)}:{})});
   const result = await response.json();

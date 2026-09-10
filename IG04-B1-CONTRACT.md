@@ -1,12 +1,14 @@
 # IG-04-B1 — Human-Approved Retrieval Contract
 
-**Status:** DRAFT — HUMAN APPROVAL REQUIRED
+**Status:** APPROVED — HUMAN CHECKPOINT PASS (2026-09-10)
 
 **Package:** IG-04, Branch B1 (automatic capture with human-approved retrieval)
 
-**Implementation authorization:** None. This document is a proposal only. No
-B1 production implementation may start until Ahmet explicitly approves this
-contract and assigns the implementation owner.
+**Implementation authorization:** Ahmet explicitly approved this contract on
+2026-09-10. Implementation owner: Codex. The accepted review surface is the
+existing local `/review` UI/API. Lifecycle names are `PENDING`, `ACCEPTED`,
+`REJECTED` and `EXPIRED`; the single rollback switch is
+`b1_human_approval=false`.
 
 **Program boundary:** Phase 20 remains FROZEN / LOCKED and V2 remains SHADOW.
 
@@ -89,6 +91,9 @@ open a window.
 The primary review surface is the existing local review UI/API (`/review` and
 its review-candidate endpoints). A CLI adapter may expose the same operations,
 but it must not create a second approval authority or a second storage format.
+The rollout switch is exposed by the existing CLI as
+`python -m brain_eleven --vault <vault> approval ON|OFF`; it changes only the
+B1 boundary and does not change the runtime mode.
 
 Each pending item shown to the user contains only bounded review information:
 
