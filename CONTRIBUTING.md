@@ -49,6 +49,9 @@ Concretely:
 
 ## Documentation
 
+- End a work session by updating `NEXT.md` (a few lines: what changed, what's
+  next) — that's the file meant to answer "where are we" without reading
+  `PROJECT-STATUS.md`'s evidence ledger.
 - New package contracts/reports (`IGxx-*.md`) get an entry in
   `DOCUMENTATION-AUTHORITY.md`'s override table — an unregistered doc
   defaults to HISTORICAL and shouldn't be treated as current guidance.

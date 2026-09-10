@@ -24,6 +24,7 @@ authorize opening Phase 20 or promoting V2.
 | Path | Class / boundary |
 |---|---|
 | `PROJECT-STATUS.md` | CURRENT top-level IG status; explicitly historical sections remain HISTORICAL. |
+| `NEXT.md` | CURRENT plain-language status/next-steps summary for humans; not evidence and not a substitute for `PROJECT-STATUS.md`'s revision-bound claims. |
 | `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
@@ -49,6 +50,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG02-AUTONOMOUS-CAPTURE-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG-02 hook → queue → worker → evidence → canonical-effect receipt path; it forbids retrieval/V2/Phase 20 changes and requires receipt-verified acknowledgement. |
 | `IG02-NATIVE-SMOKE-EVIDENCE.md` | GENERATED EVIDENCE for the exact IG-02 executable smoke; real-client authentication/network limitations remain explicitly bounded and the launcher golden path evidence is separated. |
 | `IG02-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for IG-02; acceptance status, exact implementation SHA, CI, native smoke and independent review are recorded here. It does not authorize IG-04, V2 promotion or Phase 20 until `SHIP`. |
+| `CODEX-RESULTS-R0.md` | GENERATED EVIDENCE / real semantic + embedding provider socket probe at `88821a8`; adds provider adapters behind explicit switches with no canonical-store import and a green regression. Evaluation-only; it does not open IG-04, wire production retrieval or promote V2. |
+| `CODEX-RESULTS-D0.md` | GENERATED EVIDENCE / IG-04-adjacent retrieval-ceiling probe (package D0) at `5deebe8`; measures scope, corpus balance and a retrieval-tuned-model spike ahead of a RETHINK branch decision. Evaluation-only, bound to `evals/ig01d/d0-probe-real.json`; it does not open IG-04 by itself or authorize production tuning. |
 | `evals/ig01b/public/ig-eval-v1/**` | GENERATED EVIDENCE / versioned public synthetic corpus; holdout bytes are pinned by the IG01-B integrity module and sidecar hash. |
 | `evals/ig01b/public/ig-eval-v2/**` | GENERATED EVIDENCE / current IG01-B public synthetic corpus; holdout bytes are pinned by the `ig01b-corpus-v2` tag, integrity module and sidecar hash. |
 | `evals/ig01b/public/README.md` | CURRENT version map; v1 is retained as historical provenance and v2 is the active package corpus. |
