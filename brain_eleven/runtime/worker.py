@@ -11,12 +11,12 @@ from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateStore, StateStoreConflict
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 from brain_eleven.operations import operation, operation_result
-from capture_event import parse_hook_event
-from capture_queue import CaptureQueue
-from evidence import EvidenceStore, EvidenceBatch
-from extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
-from memory_truth import MemoryTruthEngine, TruthCandidate
-from state_boundary import StateBoundary
+from scripts.capture_event import parse_hook_event
+from scripts.capture_queue import CaptureQueue
+from scripts.evidence import EvidenceStore, EvidenceBatch
+from scripts.extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
+from scripts.memory_truth import MemoryTruthEngine, TruthCandidate
+from scripts.state_boundary import StateBoundary
 from .storage import RuntimeConfig, read_json, write_json, identity, now
 from .evidence import read_increment
 from .review import ReviewStore
@@ -128,7 +128,7 @@ def enqueue(vault, client, payload):
 
 def apply_candidate(vault, candidate, *, op_id, approved=False, target_id=None, expected_revision=None):
     """Apply one effect. Receipt and effect share the store transaction."""
-    from capture_safety import evaluate_capture
+    from scripts.capture_safety import evaluate_capture
     from context_compiler_v2.safety import contains_secret
     if RuntimeConfig(vault).load()['mode'] not in {'CANARY', 'ACTIVE'}:
         return {'status': 'SCOPE_ERROR'}

@@ -95,14 +95,25 @@ else
     if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
         ERROR_LINE="python interpreter not found"
     else
+        PYTHON_VAULT="$BRAIN_ELEVEN_VAULT"
+        PYTHON_COMPILER="$COMPILER"
+        PYTHON_PROJECT_ROOT="$PWD"
+        # MSYS bash can invoke a Windows Python executable, but that process
+        # does not understand /mnt/<drive>/... paths. Convert only the Python
+        # arguments; native POSIX Python keeps the original paths.
+        if [[ "${PYTHON_BIN,,}" == *.exe ]] && command -v wslpath >/dev/null 2>&1; then
+            PYTHON_VAULT="$(wslpath -w "$BRAIN_ELEVEN_VAULT" 2>/dev/null || printf '%s' "$BRAIN_ELEVEN_VAULT")"
+            PYTHON_COMPILER="$(wslpath -w "$COMPILER" 2>/dev/null || printf '%s' "$COMPILER")"
+            PYTHON_PROJECT_ROOT="$(wslpath -w "$PWD" 2>/dev/null || printf '%s' "$PWD")"
+        fi
         # Prefer a persisted projection only when it exactly matches the canonical
         # memory revision and current project scope. On a missing, corrupt, stale, or
         # scope-mismatched projection, compile a fresh read-only context instead.
         BRANCH="bootstrap"
         : > "$ERROR_CAPTURE" 2>/dev/null || true
-        if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$COMPILER" \
-            --vault "$BRAIN_ELEVEN_VAULT" \
-            --project-root "$PWD" \
+        if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$PYTHON_COMPILER" \
+            --vault "$PYTHON_VAULT" \
+            --project-root "$PYTHON_PROJECT_ROOT" \
             --retrieval-scope default \
             --load-bootstrap 2>"$ERROR_CAPTURE"; then
             COMPILER_STATUS=0
@@ -112,9 +123,9 @@ else
             BOOTSTRAP_ERROR="$(first_error_line "$ERROR_CAPTURE")"
             BRANCH="stdout_fallback"
             : > "$ERROR_CAPTURE" 2>/dev/null || true
-            if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$COMPILER" \
-                --vault "$BRAIN_ELEVEN_VAULT" \
-                --project-root "$PWD" \
+            if PYTHONIOENCODING=utf-8 "$PYTHON_BIN" "$PYTHON_COMPILER" \
+                --vault "$PYTHON_VAULT" \
+                --project-root "$PYTHON_PROJECT_ROOT" \
                 --retrieval-scope default \
                 --stdout 2>"$ERROR_CAPTURE"; then
                 COMPILER_STATUS=0
