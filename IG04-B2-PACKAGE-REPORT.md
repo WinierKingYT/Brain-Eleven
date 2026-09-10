@@ -1,7 +1,7 @@
 # IG-04 B2 Package Report
 
 **PACKAGE:** IG-04 B2 — Review Deduplication and Deterministic Ordering
-**REVISION:** `c08f64e057c8ae53047fc80e0aa3788813be1fd6`
+**REVISION:** `cd59da42dca3b2ae41507a9530479f37dc3be5fb`
 
 ## OBJECTIVE
 
@@ -42,11 +42,12 @@ authentication, scope isolation and V2 remain unchanged.
    first), candidate type order `STATE_MUTATION`, `NEW_MEMORY`, then unknown,
    followed by review ID; repeated listing returns the same order.
 3. Identical content in different projects is never grouped.
+4. Duplicate expiry remains per candidate, preserving the B1 lifecycle.
 
 ## TESTS EXECUTED
 
-* `.venv\\Scripts\\python.exe -m pytest tests/test_ig04_b2_review_order.py tests/test_ig04_b1_human_approval.py -q` — **6 passed**.
-* `.venv\\Scripts\\python.exe -m pytest tests -q` — **854 passed, 2 warnings**.
+* `.venv\\Scripts\\python.exe -m pytest tests/test_ig04_b2_review_order.py tests/test_ig04_b1_human_approval.py -q` — **7 passed**.
+* `.venv\\Scripts\\python.exe -m pytest tests -q` — **855 passed, 2 warnings**.
 * Critical flake8 (`E9,F63,F7,F82`) on changed runtime files — **pass**.
 * `compileall` for `brain_eleven` — **pass**.
 * `git diff --check` — **pass**.

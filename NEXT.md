@@ -10,7 +10,7 @@ Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed package: **IG-04 B1** (human-approved
 retrieval boundary) — independent review `SHIP` on 2026-09-10. **IG-04-B2
 (review queue usability: dedup + deterministic ordering) is implemented at
-`c08f64e` and locally verified; independent review is pending.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
+`cd59da4` and locally verified; independent review is pending.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
 pivot explicitly — IG-04's slot is the Branch B track, not the original
 reference/correction scope (deferred, not deleted). The earlier D0/R0
 feasibility probes remain evaluation-only evidence; see
