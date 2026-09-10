@@ -7,10 +7,16 @@ can be suppressed on replay without retaining the candidate text.
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
+import math
 import re
 from brain_eleven.infrastructure.locking import file_lock
 from context_compiler_v2.safety import contains_secret
 from .storage import read_json, write_json, identity, now, RuntimeConfig
+
+_REVIEW_CANDIDATE_TYPE_ORDER = {
+    'STATE_MUTATION': 0,
+    'NEW_MEMORY': 1,
+}
 
 
 class ReviewStore:
@@ -24,7 +30,7 @@ class ReviewStore:
 
     @staticmethod
     def fingerprint(candidate):
-        """Return a stable, content-free identity for replay suppression."""
+        """Return an event identity for exact replay suppression."""
         text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
         evidence = candidate.get('evidence_refs', [])
         if not isinstance(evidence, list):
@@ -39,6 +45,70 @@ class ReviewStore:
             'evidence_refs': sorted(str(item) for item in evidence),
         }
         return 'fp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def content_fingerprint(candidate):
+        """Return the B2 grouping identity, independent of evidence identity."""
+        text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
+        values = {
+            'project_id': candidate.get('project_id'),
+            'candidate_type': candidate.get('candidate_type'),
+            'scope': candidate.get('scope'),
+            'memory_type': candidate.get('memory_type'),
+            'operation': candidate.get('operation'),
+            'content': candidate.get(text_key),
+        }
+        return 'cfp_' + hashlib.sha256(json.dumps(values, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def _candidate(item):
+        candidate = item.get('candidate')
+        if isinstance(candidate, dict):
+            return candidate
+        return item
+
+    @classmethod
+    def _project_id(cls, item):
+        candidate = cls._candidate(item)
+        return candidate.get('project_id') or item.get('project_id')
+
+    @classmethod
+    def _content_fingerprint(cls, item):
+        stored = item.get('content_fingerprint')
+        if isinstance(stored, str) and stored:
+            return stored
+        candidate = item.get('candidate')
+        if isinstance(candidate, dict):
+            return cls.content_fingerprint(candidate)
+        return None
+
+    @staticmethod
+    def _created_timestamp(value):
+        if not isinstance(value, str):
+            return float('inf')
+        try:
+            parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.timestamp()
+        except (TypeError, ValueError, OverflowError):
+            return float('inf')
+
+    @classmethod
+    def _sort_key(cls, item):
+        candidate = cls._candidate(item)
+        confidence = candidate.get('confidence', 0)
+        try:
+            confidence = float(confidence)
+            if not math.isfinite(confidence):
+                confidence = 0.0
+        except (TypeError, ValueError):
+            confidence = 0.0
+        type_rank = _REVIEW_CANDIDATE_TYPE_ORDER.get(candidate.get('candidate_type'), 2)
+        return (-confidence, cls._created_timestamp(item.get('created_at')), type_rank, str(item.get('id', '')))
+
+    def _items(self):
+        return [read_json(path) for path in sorted(self.root.glob('rev_*.json'))]
 
     def find_by_fingerprint(self, project_id, fingerprint):
         """Find an existing review item for one project/content fingerprint."""
@@ -67,6 +137,7 @@ class ReviewStore:
         candidate = {key: value for key, value in candidate.items() if key in fields}
         source = {key: value for key, value in source.items() if key in {'client', 'session_hash', 'evidence_id', 'role'}}
         fingerprint = self.fingerprint(candidate)
+        content_fingerprint = self.content_fingerprint(candidate)
         key = identity('rev_', candidate['candidate_id'], candidate['project_id'])
         path = self.path(key)
         # The index lock serializes different candidate IDs that describe the
@@ -92,21 +163,31 @@ class ReviewStore:
                 write_json(path, {'id': key, 'status': 'PENDING', 'created_at': now(),
                                  'expires_at': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
                                  'candidate': candidate, 'candidate_fingerprint': fingerprint,
+                                 'content_fingerprint': content_fingerprint,
                                  'project_id': candidate['project_id'], 'reason': reason, 'source': source})
         return key
 
     def expire(self):
-        for path in self.root.glob('rev_*.json'):
-            with file_lock(path):
+        with file_lock(self.root / 'index'):
+            for path in self.root.glob('rev_*.json'):
                 item = read_json(path)
-                if item['status'] == 'PENDING' and datetime.fromisoformat(item['expires_at']) <= datetime.now(timezone.utc):
+                if (isinstance(item, dict) and item.get('status') == 'PENDING'
+                        and datetime.fromisoformat(item['expires_at']) <= datetime.now(timezone.utc)):
                     self.finish(item, 'EXPIRED')
 
-    def finish(self, item, status, result=None):
-        if status not in {'ACCEPTED', 'REJECTED', 'EXPIRED'}:
-            raise ValueError('Invalid review terminal status')
-        if item.get('status') != 'PENDING':
+    def primary(self, item):
+        """Return the deterministic visible item for an item's B2 group."""
+        if not isinstance(item, dict) or item.get('status') != 'PENDING':
             return item
+        project_id = self._project_id(item)
+        content_fingerprint = self._content_fingerprint(item)
+        group = [candidate for candidate in self._items()
+                 if isinstance(candidate, dict) and candidate.get('status') == 'PENDING'
+                 and self._project_id(candidate) == project_id
+                 and self._content_fingerprint(candidate) == content_fingerprint]
+        return sorted(group, key=self._sort_key)[0] if group else item
+
+    def _terminal_value(self, item, status, result=None, *, duplicate_of=None):
         candidate = item.get('candidate') if isinstance(item.get('candidate'), dict) else {}
         source = item.get('source') if isinstance(item.get('source'), dict) else {}
         value = {key: item[key] for key in ('id', 'created_at', 'expires_at')}
@@ -117,17 +198,62 @@ class ReviewStore:
             'reason': item.get('reason'),
             'source': {key: source[key] for key in ('client', 'session_hash', 'evidence_id', 'role') if key in source},
             'candidate_fingerprint': item.get('candidate_fingerprint') or self.fingerprint(candidate),
-            'candidate_id': candidate.get('candidate_id'),
-            'candidate_type': candidate.get('candidate_type'),
+            'content_fingerprint': item.get('content_fingerprint') or self.content_fingerprint(candidate),
+            'candidate_id': candidate.get('candidate_id') or item.get('candidate_id'),
+            'candidate_type': candidate.get('candidate_type') or item.get('candidate_type'),
             'project_id': candidate.get('project_id') or item.get('project_id'),
-            'scope': candidate.get('scope'),
-            'memory_type': candidate.get('memory_type'),
-            'evidence_refs': candidate.get('evidence_refs', []),
-            'occurred_at': candidate.get('occurred_at'),
+            'scope': candidate.get('scope') or item.get('scope'),
+            'memory_type': candidate.get('memory_type') or item.get('memory_type'),
+            'confidence': candidate.get('confidence', item.get('confidence', 0)),
+            'evidence_refs': candidate.get('evidence_refs', item.get('evidence_refs', [])),
+            'occurred_at': candidate.get('occurred_at') or item.get('occurred_at'),
         })
-        write_json(self.path(item['id']), value)
+        if duplicate_of:
+            value['duplicate_of'] = duplicate_of
         return value
+
+    def finish(self, item, status, result=None):
+        if status not in {'ACCEPTED', 'REJECTED', 'EXPIRED'}:
+            raise ValueError('Invalid review terminal status')
+        if item.get('status') != 'PENDING':
+            return item
+        group = [candidate for candidate in self._items()
+                 if isinstance(candidate, dict) and candidate.get('status') == 'PENDING'
+                 and self._project_id(candidate) == self._project_id(item)
+                 and self._content_fingerprint(candidate) == self._content_fingerprint(item)]
+        primary = sorted(group, key=self._sort_key)[0] if group else item
+        primary_id = primary.get('id')
+        primary_value = None
+        for candidate in group or [item]:
+            duplicate_of = None if candidate.get('id') == primary_id else primary_id
+            candidate_result = result if duplicate_of is None else {'status': status, 'duplicate_of': primary_id}
+            value = self._terminal_value(candidate, status, candidate_result, duplicate_of=duplicate_of)
+            write_json(self.path(candidate['id']), value)
+            if candidate.get('id') == primary_id:
+                primary_value = value
+        return primary_value or self._terminal_value(item, status, result)
 
     def list(self):
         self.expire()
-        return [read_json(path) for path in sorted(self.root.glob('rev_*.json'))]
+        with file_lock(self.root / 'index'):
+            items = self._items()
+            groups = {}
+            for item in items:
+                if isinstance(item, dict) and item.get('status') == 'PENDING':
+                    group_key = (self._project_id(item), self._content_fingerprint(item))
+                    groups.setdefault(group_key, []).append(item)
+            visible = [item for item in items if not (isinstance(item, dict) and item.get('status') == 'PENDING')]
+            for group in groups.values():
+                ordered = sorted(group, key=self._sort_key)
+                primary = ordered[0]
+                primary_view = dict(primary)
+                primary_view.pop('duplicate_of', None)
+                primary_view['duplicate_count'] = len(ordered) - 1
+                primary_view['duplicate_ids'] = [item['id'] for item in ordered[1:]]
+                visible.append(primary_view)
+                for duplicate in ordered[1:]:
+                    if duplicate.get('duplicate_of') != primary['id'] or duplicate.get('duplicate_status') != 'DUPLICATE_PENDING':
+                        duplicate['duplicate_of'] = primary['id']
+                        duplicate['duplicate_status'] = 'DUPLICATE_PENDING'
+                        write_json(self.path(duplicate['id']), duplicate)
+            return sorted(visible, key=self._sort_key)

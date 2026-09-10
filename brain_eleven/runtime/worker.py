@@ -353,13 +353,23 @@ class Worker:
                 item = read_json(self.review.path(review_id))
             except (OSError, ValueError, TypeError):
                 return False
-            if not isinstance(item, dict) or item.get('id') != review_id or item.get('status') != 'PENDING':
+            if (not isinstance(item, dict) or item.get('id') != review_id
+                    or item.get('status') not in {'PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED'}):
                 return False
-            candidate = item.get('candidate')
             source = item.get('source')
-            candidate_id = candidate.get('candidate_id') if isinstance(candidate, dict) else None
-            if (not isinstance(candidate, dict) or candidate.get('project_id') != project_id
-                    or not isinstance(candidate_id, str)
+            if item.get('status') == 'PENDING':
+                candidate = item.get('candidate')
+                candidate_id = candidate.get('candidate_id') if isinstance(candidate, dict) else None
+                candidate_project = candidate.get('project_id') if isinstance(candidate, dict) else None
+                references = candidate.get('evidence_refs') if isinstance(candidate, dict) else None
+            else:
+                candidate = None
+                candidate_id = item.get('candidate_id')
+                candidate_project = item.get('project_id')
+                references = item.get('evidence_refs')
+            if (item.get('status') == 'PENDING' and not isinstance(candidate, dict)):
+                return False
+            if (candidate_project != project_id or not isinstance(candidate_id, str)
                     or identity('rev_', candidate_id, project_id) != review_id):
                 return False
             evidence_id = source.get('evidence_id') if isinstance(source, dict) else None
@@ -374,14 +384,18 @@ class Worker:
                 return False
             if source.get('client') not in {'claude', 'codex'} or source.get('role') not in {'user', 'assistant', 'tool', 'system'}:
                 return False
-            references = candidate.get('evidence_refs')
             if (not isinstance(references, list) or not references or len(references) > 64
                     or len(references) != len(set(references))
                     or not all(isinstance(reference, str) and re.fullmatch(r'evd_[a-f0-9]{32}', reference)
                                for reference in references)
                     or evidence_id not in references):
                 return False
-            if any(field in item or field in candidate for field in ('raw_prompt', 'prompt_content', 'transcript_content', 'token')):
+            if any(field in item or (isinstance(candidate, dict) and field in candidate)
+                   for field in ('raw_prompt', 'prompt_content', 'transcript_content', 'token')):
+                return False
+            duplicate_of = item.get('duplicate_of')
+            if duplicate_of is not None and (not isinstance(duplicate_of, str)
+                                              or not re.fullmatch(r'rev_[a-f0-9]{64}', duplicate_of)):
                 return False
             expected_effect_ids.append(review_id)
         actual_effect_ids = receipt.get('effect_ids')

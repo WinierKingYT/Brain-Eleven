@@ -23,43 +23,54 @@ def review_action(vault, review_id, action, payload):
     store = ReviewStore(vault)
     store.expire()
     path = store.path(review_id)
-    with file_lock(path):
-        item = read_json(path)
-        if item is None:
+    with file_lock(store.root / 'index'):
+        requested = read_json(path)
+        if requested is None:
             raise ValueError('Review candidate not found')
-        if item['status'] != 'PENDING':
-            return item
-        if action == 'reject':
-            return store.finish(item, 'REJECTED')
-        if action != 'accept':
-            raise ValueError('Unknown review action')
-        candidate = dict(item['candidate'])
-        if 'content' in payload:
-            if not isinstance(payload['content'], str) or not 3 <= len(payload['content']) <= 8000:
-                raise ValueError('Candidate text must be 3..8000 characters')
-            candidate['text' if candidate['candidate_type'] == 'STATE_MUTATION' else 'content'] = payload['content']
-        candidate['commitment'] = 'COMMITTED'
-        expected = payload.get('expected_revision')
-        if isinstance(expected, bool) or not isinstance(expected, int):
-            raise ValueError('Expected revision required')
-        # The request identity is durable before canonical write. A crash cannot
-        # replay a changed edit under the old operation receipt.
-        intent = {'candidate': candidate, 'target_id': payload.get('target_id'), 'expected_revision': expected}
-        if 'accept_intent' in item and item['accept_intent'] != intent:
-            raise ValueError('A different acceptance is already pending recovery')
-        item['accept_intent'] = intent
-        write_json(path, item)
-        result = apply_candidate(vault, candidate, op_id=identity('op_', review_id), approved=True,
-                                 target_id=intent['target_id'], expected_revision=expected)
-        if result['status'] == 'SUCCESS':
-            decisions = result.get('decisions', [])
-            if any(x.get('action') in {'REJECT', 'REVIEW_REQUIRED', 'CONFLICT'} for x in decisions):
-                raise ValueError('Candidate still requires review')
-            return store.finish(item, 'ACCEPTED', result)
-        if result['status'] in {'STALE_INPUT', 'REVIEW_REQUIRED', 'SCOPE_ERROR', 'REJECTED', 'DEGRADED'}:
-            item.pop('accept_intent', None)
-            write_json(path, item)
-        return result
+        if requested['status'] != 'PENDING':
+            return requested
+        # B2 hides duplicate pending records, but a stale/direct caller may
+        # still address one by ID. Resolve it to the deterministic primary so
+        # acceptance can never create a second canonical effect.
+        item = store.primary(requested)
+        primary_path = store.path(item['id'])
+        with file_lock(primary_path):
+            item = read_json(primary_path)
+            if item is None:
+                raise ValueError('Review candidate not found')
+            if item['status'] != 'PENDING':
+                return item
+            if action == 'reject':
+                return store.finish(item, 'REJECTED')
+            if action != 'accept':
+                raise ValueError('Unknown review action')
+            candidate = dict(item['candidate'])
+            if 'content' in payload:
+                if not isinstance(payload['content'], str) or not 3 <= len(payload['content']) <= 8000:
+                    raise ValueError('Candidate text must be 3..8000 characters')
+                candidate['text' if candidate['candidate_type'] == 'STATE_MUTATION' else 'content'] = payload['content']
+            candidate['commitment'] = 'COMMITTED'
+            expected = payload.get('expected_revision')
+            if isinstance(expected, bool) or not isinstance(expected, int):
+                raise ValueError('Expected revision required')
+            # The request identity is durable before canonical write. A crash cannot
+            # replay a changed edit under the old operation receipt.
+            intent = {'candidate': candidate, 'target_id': payload.get('target_id'), 'expected_revision': expected}
+            if 'accept_intent' in item and item['accept_intent'] != intent:
+                raise ValueError('A different acceptance is already pending recovery')
+            item['accept_intent'] = intent
+            write_json(primary_path, item)
+            result = apply_candidate(vault, candidate, op_id=identity('op_', item['id']), approved=True,
+                                     target_id=intent['target_id'], expected_revision=expected)
+            if result['status'] == 'SUCCESS':
+                decisions = result.get('decisions', [])
+                if any(x.get('action') in {'REJECT', 'REVIEW_REQUIRED', 'CONFLICT'} for x in decisions):
+                    raise ValueError('Candidate still requires review')
+                return store.finish(item, 'ACCEPTED', result)
+            if result['status'] in {'STALE_INPUT', 'REVIEW_REQUIRED', 'SCOPE_ERROR', 'REJECTED', 'DEGRADED'}:
+                item.pop('accept_intent', None)
+                write_json(primary_path, item)
+            return result
 
 
 def runtime_status(vault):
