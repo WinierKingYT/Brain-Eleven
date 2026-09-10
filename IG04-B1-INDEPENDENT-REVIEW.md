@@ -54,10 +54,19 @@ Ahmet has confirmed verbally in this session that the approval occurred
 before implementation started. This review records that confirmation; it is
 not itself evidence of it.
 
-## Deferred / Not Verified
+## Deferred / Not Verified — UPDATED 2026-09-10
 
-- **Remote exact-head CI.** Not run by this reviewer; no CI access in this
-  session. Package report marks this open — unchanged.
+**Remote exact-head CI status was previously mischaracterized as "not run."**
+It was actually running on every push and failing 100% of the time due to an
+unrelated pre-existing regression (`09935e0` removed a needed `import sys`
+from `scripts/session_pipeline.py`); neither this reviewer's Linux checks nor
+the implementer's Windows checks covered the exact failing lint scope, so it
+went unnoticed until checked directly via the GitHub Actions API. Fixed at
+`647bfad`; confirmed via the API that "Reject fatal lint errors" and
+"Unit tests (ubuntu-latest)" now report `success` on master. The only
+remaining CI failure is the long-standing, already-documented PRE-13
+historical quality gate (precision 0.1368) — not new, not this package's.
+
 - **Native Claude/Codex client trust.** Not verified — no live authenticated
   client turn was exercised. Package report marks this open — unchanged.
 - **Cross-project leakage for B1 candidates specifically** — inherited from
