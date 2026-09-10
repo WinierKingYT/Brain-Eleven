@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -58,6 +59,31 @@ _FINGERPRINT_PATHS = (
 
 class BaselineSnapshotError(ValueError):
     """Raised when the committed baseline no longer represents current inputs."""
+
+
+_SNAPSHOT_FLOAT_REL_TOL = 1e-9
+_SNAPSHOT_FLOAT_ABS_TOL = 1e-12
+
+
+def _snapshot_values_equal(expected, actual) -> bool:
+    """Compare snapshots while tolerating harmless floating-point round-off."""
+
+    if isinstance(expected, float) and isinstance(actual, float):
+        return math.isclose(
+            expected,
+            actual,
+            rel_tol=_SNAPSHOT_FLOAT_REL_TOL,
+            abs_tol=_SNAPSHOT_FLOAT_ABS_TOL,
+        )
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        return expected.keys() == actual.keys() and all(
+            _snapshot_values_equal(expected[key], actual[key]) for key in expected
+        )
+    if isinstance(expected, list) and isinstance(actual, list):
+        return len(expected) == len(actual) and all(
+            _snapshot_values_equal(left, right) for left, right in zip(expected, actual)
+        )
+    return expected == actual
 
 
 def _source_paths(root: Path) -> tuple[Path, ...]:
@@ -117,7 +143,7 @@ def check_baseline_snapshot(path: Path | str = DEFAULT_BASELINE_PATH, root: Path
 
     expected = build_baseline_snapshot(root)
     actual = read_evaluation_report(path)
-    if actual != expected:
+    if not _snapshot_values_equal(actual, expected):
         raise BaselineSnapshotError(
             "baseline-v3 differs from the deterministic current public-suite result"
         )

@@ -12,6 +12,7 @@ from evals.baseline_snapshot import (
     BASELINE_V1_ID,
     check_baseline_snapshot,
     check_historical_baseline,
+    _snapshot_values_equal,
     source_fingerprint,
 )
 
@@ -62,3 +63,18 @@ def test_source_fingerprint_is_independent_of_checkout_line_endings(tmp_path):
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
 
     assert source_fingerprint(tmp_path) == crlf_fingerprint
+
+
+def test_snapshot_comparison_tolerates_nested_float_rounding():
+    expected = {"metrics": {"precision": 0.123456789}, "invariants": [{"score": 1.0}]}
+    actual = {"metrics": {"precision": 0.12345678905}, "invariants": [{"score": 1.0 + 5e-13}]}
+
+    assert _snapshot_values_equal(actual, expected)
+
+
+def test_snapshot_comparison_keeps_non_float_values_exact():
+    expected = {"metrics": {"precision": 0.5}, "case_count": 130}
+
+    assert not _snapshot_values_equal({"metrics": {"precision": 0.5}, "case_count": 131}, expected)
+    assert not _snapshot_values_equal({"metrics": {"precision": "0.5"}, "case_count": 130}, expected)
+    assert not _snapshot_values_equal({"metrics": {"precision": 0.500001}, "case_count": 130}, expected)
