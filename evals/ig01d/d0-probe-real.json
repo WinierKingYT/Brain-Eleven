@@ -1,0 +1,313 @@
+{
+  "case_ids_hashed": [
+    "sha256:3c34d7e671ffe8bbb989facd9e5bc9ab65801f3a9d25818ba9163be20ef9c8d0",
+    "sha256:53da5a1673b2a94c4e4ace527faabf022fd093415b89451ab66c8c787aa20033",
+    "sha256:c2cbe441d921674fe32870ba99c4c22ab2144914f2283dd363c72925014386f1",
+    "sha256:0c7e8b1f18f719aa5c3c3b62a902c36e1850f2c32512c1422e90c282494c2bcf",
+    "sha256:e17b844ede97c3df167efd6fbee28f0219657d159a3ae35fabede61971ef35c7",
+    "sha256:d2268176690294c89039575a98d6e775d022ef276d95786aff5ec603651a8eba",
+    "sha256:68e3de26629dd4c671a96de3c5b027685930523fb4e21231f496b85a23aceb5e",
+    "sha256:d29a31edee5343c1141a0ff6e3d1d09f04cf2b71e0895ec4ccc4b77d5abb3fcc",
+    "sha256:7db162bf245212790ada0806065af75a37cb209ecddddc37b2f36c96ab751207",
+    "sha256:035231adadc05e6d70e67b8162ea78613f97d053197087e38c3c2974368d1a4f",
+    "sha256:3b014d5b1364db2bb4264cbabc801f23fde5c349347345dba97e8804f5b47382",
+    "sha256:f546ad0d63dcff723a3dd36d6da8df6d3f83c48d3f870af8a40db3a346cf5e64",
+    "sha256:281f327855d2e3d6fbc9f488cf95bc4e5e12db46aa4102aa9282c9af88aa14a8",
+    "sha256:6e52691011143a2d11675ffd49752d9f0e4e48bd93b7eb269c2f3a191d4d0630",
+    "sha256:7cf016c8ca1366718d3231751bcdcda0bb6c040c696b147cc5df4bc1ac91259e",
+    "sha256:88419ce2ba95da4020a263b19c7dbc58c4a8e241902661017ba8faf706caca86",
+    "sha256:bc39cb02f2c940d83001d2356075167ffbe7c101d5b84cc98fe993d9f701b964",
+    "sha256:fae62f4971e8bf4ce34f5562cfcc1277ec8a80e637529c95cdd1359641964e67",
+    "sha256:005709db996c5f5a05adb3c224b7cc55b08681b138a4097336661d329ac7e17e",
+    "sha256:c5d4bb94842f59358fac3914caa6477d6a551e17c4bb40ee1a2105e33b2b053a",
+    "sha256:34a1af521d8a96b66c43812d1b9fd0d6b2ab054c011eaf44d88c23c7106f21a8",
+    "sha256:2d52b37cf4d36145def9cc928e5821c65dbd3ad4797df608dcdf862a16bf587e",
+    "sha256:5f775fe02fbf02802d7f4a3ca1f7f6a527abac53dbb2af4825211bc3c6081cba",
+    "sha256:d3f8c3c768f32b31740352275ad509a34c64b3f53bc480ae68740d4b263a58b0",
+    "sha256:a951877683bf2d1cdfe6b7604ecff4756c5758ce935b69e6c02ed75450a0654b",
+    "sha256:accb9f2fede059cbbca5fa1ec93bd24996c9635ff6c8ffb499fb39ff28bde715",
+    "sha256:59ff568faf7220768624bd8a8c74e7f7b6ab20110624d9edc4d85daab6d15300",
+    "sha256:b6be054c4a27ddc05081c95ae1c2f8edf59cc3499fb56ba8fd5197c6b630c032",
+    "sha256:f558fded27a755165ad3bb3e6810aa2347a0cf918ea4e86ce901d8ba9e6c9836",
+    "sha256:5a472e2ce570f3cab89fac26df17fdc0b0b0ecfeb4bcf5d58b540580cab1060e",
+    "sha256:13202599e02e787695dfc87f458691b3f020cc5c8a8cf2b76209ca99ba15b6f9",
+    "sha256:711388b4cca377c9f9960af405fd7af1ce1bb478186a1e80ffd3a3588d7a6a92",
+    "sha256:2d98acaab671f2c622886133af51df40c043a5668af2f6140b53a8cdf937eb19",
+    "sha256:66081de8cfd310aa6b11e4562837044d3f3939c86e4817c51cc724291ef2b8c9",
+    "sha256:a117a423e371993aa5da5d0013bf6da6424924b8d5f8ea9eeb0853e5b3d88556",
+    "sha256:8fa68757e6cfc6300a0fecb73af7dd1d919a8d4979d14279e361607325be57c5",
+    "sha256:c09853b4c46e74bf1f89a6f8e7599cd573948c4dfacaca20acb9449e170b9f27",
+    "sha256:a83d19b0df817c4c8c79bdd307ef71b820302ad23e562887a8acc5c4de12a2fd",
+    "sha256:9582f732cd41e8eb9f7f3c636a3b5cce78646f0259fad9fa60116add2720db49",
+    "sha256:5c3bd4d6b9948914a8360998b77b757956276a210238a92184c51b98c02dd9f7",
+    "sha256:2d02885ffbca18bd80bf44ea0e6d0b1a8db57b4c1c0aa4dd2c998b34f72b3240",
+    "sha256:ff0353ef4cc3b4365b0bf090638efde30fb292427b957a1ef8280d6710cc5f9d",
+    "sha256:e16183585e6b609bb645a9574ca74f36038834274feaf952a0792a6a1952dcaa",
+    "sha256:0b0a872b0026f781a62cdd8e9c92bba71908a9d9e6156a6fd5982c8e5c6f1f35",
+    "sha256:b8492d2838609fdc0870d7f201ae9055223520e16f648828a585b29f63da494b",
+    "sha256:52837c52e59be0b205252eef32f89ea0f322b5b37938d48c8fff593361025d7c",
+    "sha256:26db7944f2703d85dfe25c9c319a4edc022b99a4aace8ec0cf1dbd96f3a45346",
+    "sha256:97f5a4e23afbbbff2db41bb4411defe251db77fe2a30deef34deaeb5b4071a89",
+    "sha256:c0cf9ac5ca37f39373a60a28be0ae7ece1f5b71ed5bfefb6c6d1fd341be35582",
+    "sha256:909efe81d60e57975b6332fa22f17b05c0c29fd4259a535b0c754a845a923bdc",
+    "sha256:7aed2df8ee9c0cc4c0965169e407157c13317d3e47d4fcdaea71274eb7de2273",
+    "sha256:bf76456dfb4e7a25dddd182c1285aab3f64693edcd84139e10f97381f85f12b9",
+    "sha256:186d883ee1763b488e864f9e0e8b408fd25549acf8c098e4b0f1706c091dac72",
+    "sha256:1970e4c6a5be5a3b23e3cb19ce8b82b0f72a5c4b14df69364091d98ccf3dbf03",
+    "sha256:b2fcdfb9ab65884433f88204caf0c46d3a47fa3777133795a18154ea5f789451",
+    "sha256:41f95053ce17cedbcd5929921299d933855af7cc704525ea68d198e0e7a31bc7",
+    "sha256:14e35522fa716b93404694a95f4a81125bae1ddc52bce6a8b0f3d171c34b507f",
+    "sha256:692e33434b72c2e72d05f9cb290d9962affddeaeb088434743889a4cea586620",
+    "sha256:e6b5496d1f8856fb303aafd97efba0a7d137b46acba23d644b14e65a55c1ee81",
+    "sha256:d9e2c0c3f0c1959a73c56d00deb736fea12f23b7fff807c347d3e48ff82afbf6",
+    "sha256:0082dbf1c3d07cffe4e35e11b553cc6ccbbe9002fd1897ef4fa6393668bbd621",
+    "sha256:3c7ac77663584b9477cf934c15d3f0aa1cb45148f5a757d7b1bc49f3ee1910c8",
+    "sha256:e40e38d5441750591ab4c4ff81d092fcefd7647810446cb90f9cadc009d7a5b7",
+    "sha256:10227f31324e90c6e56d930f2ebd7eba4a41cf57e2673b3f3ca004e457710cc3",
+    "sha256:a34973abe586f7194d93e13d04618cc515c46e28fb7b54c106572d93d9e72289",
+    "sha256:20cfb9eb0679699eb68bbe39e64e616376224a6cf29ab27135de94671e0c6dd3",
+    "sha256:5ba4df95f32c9ed5f7912a61e70554dc73f40b5ec48ce4f1e0ed3ace0c81f950",
+    "sha256:b20e8d0bf6c22b9b4a66b3257af8f7e6b9c52325642ea2d581989ea358be265e",
+    "sha256:f11ec4e7cfc7647fc1e3ad717b4e46214099d7f4a4c6fd9724212181448837cf",
+    "sha256:13abed5c7f0625d36254362559efaadd3b306680288a455d6d298fffb10cd012"
+  ],
+  "d0_1_scope_audit": {
+    "scope_filter": "current_project_plus_global",
+    "status": "PASS",
+    "wrong_project_leakage": {
+      "mpnet_hybrid": 0,
+      "mpnet_scope_filtered": 0
+    }
+  },
+  "d0_2_corpus_balance": {
+    "ig01b_dev": {
+      "answerability_counts": {
+        "answerable": 76
+      },
+      "answerable_case_count": 76,
+      "case_count": 76,
+      "category_counts": {
+        "ambiguous_reference": 4,
+        "assistant_proposal": 4,
+        "correction": 4,
+        "explicit_decision": 4,
+        "hypothetical": 5,
+        "irrelevant_recent_memory": 4,
+        "lesson": 4,
+        "negation": 5,
+        "old_critical_decision": 5,
+        "preference": 5,
+        "question": 4,
+        "quoted_material": 5,
+        "requirement": 5,
+        "resolved_blocker": 5,
+        "suggestion": 4,
+        "superseded_memory": 4,
+        "wrong_project_candidate": 5
+      },
+      "corpus_version": "ig-eval-v2",
+      "dataset_class": "PUBLIC_SYNTHETIC",
+      "language_balance_min_fraction": 0.328947,
+      "language_counts": {
+        "en": 25,
+        "tr": 26,
+        "tr-en": 25
+      },
+      "language_fractions": {
+        "en": 0.328947,
+        "tr": 0.342105,
+        "tr-en": 0.328947
+      },
+      "path": "evals/ig01b/public/ig-eval-v2/dev.jsonl",
+      "status": "BALANCED_LANGUAGE_STRATA_CASE_COUNT_BELOW_TARGET",
+      "target_min_cases": 100
+    },
+    "ig01d_retrieval_fixture": {
+      "case_count": 70,
+      "language_distribution": {
+        "en": 58,
+        "tr": 5,
+        "tr-en": 7
+      },
+      "language_field_present": false,
+      "status": "LANGUAGE_METADATA_MISSING"
+    },
+    "status": "CASE_COUNT_BELOW_TARGET"
+  },
+  "d0_3_tuned_model_spike": {
+    "mpnet_status": {
+      "status": "AVAILABLE"
+    },
+    "status": "MEASURED_HYBRID_ONLY_TUNED_UNAVAILABLE",
+    "tuned_provider": {
+      "attempts": [
+        {
+          "embedding_model": "intfloat/multilingual-e5-large",
+          "reason": "ProviderConfigurationError:local_embedding_init_failed",
+          "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+        },
+        {
+          "embedding_model": "BAAI/bge-m3",
+          "reason": "ProviderConfigurationError:local_embedding_init_failed",
+          "reranker_model": "BAAI/bge-reranker-v2-m3"
+        }
+      ],
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "reason": "retrieval-tuned local model is not available in the offline cache",
+      "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+      "status": "UNAVAILABLE"
+    },
+    "variants_measured": [
+      "mpnet_hybrid",
+      "mpnet_scope_filtered"
+    ]
+  },
+  "report_type": "ig_rethink_d0_probe",
+  "safety": {
+    "mpnet_hybrid": {
+      "forbidden_leakage": 0,
+      "resolved_leakage": 0,
+      "superseded_leakage": 0,
+      "wrong_project_leakage": 0
+    },
+    "mpnet_scope_filtered": {
+      "forbidden_leakage": 0,
+      "resolved_leakage": 0,
+      "superseded_leakage": 0,
+      "wrong_project_leakage": 0
+    }
+  },
+  "schema_version": 1,
+  "source": {
+    "git_sha": "5deebe8574276e335a3502baead6ea6875479d6a",
+    "holdout_included": false,
+    "ig01d_case_count": 70,
+    "ig01d_corpus_fingerprint": "sha256:ede45d7278dffb206819af95ddddf625f4521cf2cedbaab433cafb358eee3234",
+    "ig01d_split": "dev",
+    "noise_count": 24,
+    "seed": 17
+  },
+  "variants": {
+    "mpnet_hybrid": {
+      "case_count": 70,
+      "metrics": {
+        "context_precision": 0.17142857142857143,
+        "mandatory_recall": 0.7285714285714285,
+        "mrr": 0.3992857142857143,
+        "noise_ratio": 0.8285714285714286,
+        "recall_at_k": 0.7285714285714285
+      },
+      "per_language": {
+        "en": {
+          "case_count": 58,
+          "metrics": {
+            "context_precision": 0.17586206896551726,
+            "mandatory_recall": 0.75,
+            "mrr": 0.4060344827586207,
+            "noise_ratio": 0.8241379310344829,
+            "recall_at_k": 0.75
+          }
+        },
+        "tr": {
+          "case_count": 5,
+          "metrics": {
+            "context_precision": 0.2,
+            "mandatory_recall": 0.8,
+            "mrr": 0.58,
+            "noise_ratio": 0.8,
+            "recall_at_k": 0.8
+          }
+        },
+        "tr-en": {
+          "case_count": 7,
+          "metrics": {
+            "context_precision": 0.1142857142857143,
+            "mandatory_recall": 0.5,
+            "mrr": 0.21428571428571427,
+            "noise_ratio": 0.8857142857142858,
+            "recall_at_k": 0.5
+          }
+        }
+      },
+      "production_mutation": false,
+      "provider_identity": [
+        {
+          "embedding_model": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+          "embedding_provider": "sentence-transformers",
+          "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+          "reranker_provider": "cross-encoder"
+        }
+      ],
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "scope_filter": "current_project_plus_global",
+      "status": "MEASURED",
+      "variant": "mpnet_hybrid"
+    },
+    "mpnet_scope_filtered": {
+      "case_count": 70,
+      "metrics": {
+        "context_precision": 0.22,
+        "mandatory_recall": 0.6714285714285714,
+        "mrr": 0.3952380952380953,
+        "noise_ratio": 0.78,
+        "recall_at_k": 0.6714285714285714
+      },
+      "per_language": {
+        "en": {
+          "case_count": 58,
+          "metrics": {
+            "context_precision": 0.22413793103448276,
+            "mandatory_recall": 0.6724137931034483,
+            "mrr": 0.39741379310344827,
+            "noise_ratio": 0.7758620689655172,
+            "recall_at_k": 0.6724137931034483
+          }
+        },
+        "tr": {
+          "case_count": 5,
+          "metrics": {
+            "context_precision": 0.24,
+            "mandatory_recall": 0.5,
+            "mrr": 0.5,
+            "noise_ratio": 0.76,
+            "recall_at_k": 0.5
+          }
+        },
+        "tr-en": {
+          "case_count": 7,
+          "metrics": {
+            "context_precision": 0.17142857142857146,
+            "mandatory_recall": 0.7857142857142857,
+            "mrr": 0.30238095238095236,
+            "noise_ratio": 0.8285714285714286,
+            "recall_at_k": 0.7857142857142857
+          }
+        }
+      },
+      "production_mutation": false,
+      "provider_identity": [
+        {
+          "embedding_model": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+          "embedding_provider": "sentence-transformers",
+          "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+          "reranker_provider": "cross-encoder"
+        }
+      ],
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "scope_filter": "current_project_plus_global",
+      "status": "MEASURED",
+      "variant": "mpnet_scope_filtered"
+    }
+  },
+  "verdict": "FIX-FIRST"
+}
