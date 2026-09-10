@@ -23,18 +23,20 @@ environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 Canonical branch: **master**. The exact baseline snapshot check passes.
 B1 is implemented and reviewed but the `b1_human_approval` switch is off by
 default — nobody's daily retrieval changes until it's explicitly turned on.
-Remote exact-head CI and live native-client trust for B1 remain open,
-non-blocking follow-ups (see `IG04-B1-INDEPENDENT-REVIEW.md`'s Deferred
-section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
+**Remote CI is now confirmed green** (fixed 2026-09-10, see below) except
+the long-standing, already-documented PRE-13 quality gate, which is unrelated
+to B1/B2. Live native-client trust remains open, non-blocking. V2 remains
+SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Decide the next IG-04 sub-package (or whether the Branch B track is mature
-  enough to reconsider IG-05) — Claude's call to make and propose, per the
-  delegated ownership above.
-- Decide whether/when to turn `b1_human_approval` on for real use, and close
-  the remaining B1/B2 remote-CI and native-client-trust follow-ups or accept
-  them as tracked-open.
+- Vault hygiene is done (Kararlar/Dersler cleaned, Companion memory alive,
+  links fixed), B1's two P2 test-coverage gaps are closed, and remote CI is
+  confirmed green. The agreed next step is a real-use pilot: Ahmet turns on
+  `b1_human_approval` on his own machine (not in this remote session), uses
+  the review screen for real, and notes friction — that also exercises
+  native-client trust as a side effect, so it doesn't need separate
+  engineering work first.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
@@ -48,3 +50,18 @@ remote refs. Added `README.md`/`ARCHITECTURE.md`/`CONTRIBUTING.md`, fixed stale
 vault paths in `CLAUDE.md`, and registered two evidence docs in
 `DOCUMENTATION-AUTHORITY.md`. The B1 contract was approved and its bounded
 human-approval implementation started; no V2 or Phase 20 work was opened.
+Later the same day: B1 and B2 both closed with independent `SHIP`; ran a
+rigorous vault content assessment (dead Companion memory, `Kararlar/`
+polluted with generic reference notes, broken wikilinks); Codex executed a
+vault-hygiene pass (104 files reclassified to `Referans/`, links fixed,
+Companion memory revived from real git history), independently reviewed and
+accepted; closed B1's two P2 test-coverage gaps (crash/replay, cross-project
+isolation), independently reviewed and accepted. Checked remote CI directly
+via the GitHub Actions API instead of trusting the "not run" assumption
+everyone had been carrying: it had actually been running and failing 100%
+of the time since a pre-existing regression (`09935e0` dropped `import sys`
+from `scripts/session_pipeline.py`, breaking a flake8 F821 check that only
+Ubuntu's CI runs - Windows skips that step, so Codex's local checks never
+saw it, and Linux-side local checks used a different scope). Fixed at
+`647bfad`, confirmed green via the API. Agreed next step is a real-use
+pilot, not more engineering, before deciding IG-04's next sub-package.

@@ -54,10 +54,19 @@ Ahmet has confirmed verbally in this session that the approval occurred
 before implementation started. This review records that confirmation; it is
 not itself evidence of it.
 
-## Deferred / Not Verified
+## Deferred / Not Verified — UPDATED 2026-09-10
 
-- **Remote exact-head CI.** Not run by this reviewer; no CI access in this
-  session. Package report marks this open — unchanged.
+**Remote exact-head CI status was previously mischaracterized as "not run."**
+It was actually running on every push and failing 100% of the time due to an
+unrelated pre-existing regression (`09935e0` removed a needed `import sys`
+from `scripts/session_pipeline.py`); neither this reviewer's Linux checks nor
+the implementer's Windows checks covered the exact failing lint scope, so it
+went unnoticed until checked directly via the GitHub Actions API. Fixed at
+`647bfad`; confirmed via the API that "Reject fatal lint errors" and
+"Unit tests (ubuntu-latest)" now report `success` on master. The only
+remaining CI failure is the long-standing, already-documented PRE-13
+historical quality gate (precision 0.1368) — not new, not this package's.
+
 - **Native Claude/Codex client trust.** Not verified — no live authenticated
   client turn was exercised. Package report marks this open — unchanged.
 - **Cross-project leakage for B1 candidates specifically** — inherited from
@@ -73,13 +82,23 @@ None.
 
 None.
 
-## P2 Findings
+## P2 Findings — RESOLVED 2026-09-10
 
-- Add a focused B1 test that kills/interrupts between `accept_intent` write
+Both closed at `d97e666` (`tests/test_ig04_b1_p2_coverage.py`), independently
+verified: read the 3 new tests line by line (real fault-injection via
+monkeypatch, a genuine CAS conflict via a competing canonical write, and a
+two-real-project fingerprint/visibility check — not happy-path repeats), and
+independently re-ran them (6/6 passed) plus the full suite (858 passed, 0
+failed on this reviewer's Linux environment). The implementer separately
+reported one "IG-00 cold native" failure in their full-suite run on Windows
+that passed in isolation; this reviewer's full run reproduced no failure at
+all. Treated as environment-specific, not a regression from this change, but
+worth re-checking if it recurs.
+
+- ~~Add a focused B1 test that kills/interrupts between `accept_intent` write
   and the canonical write, and one that forces a stale `expected_revision` on
-  accept, to close the criterion-4 gap explicitly rather than by inheritance.
-- Add a B1-specific cross-project rejection/acceptance test rather than
-  relying solely on inherited `MemoryStore` scope isolation.
+  accept~~ — done.
+- ~~Add a B1-specific cross-project rejection/acceptance test~~ — done.
 
 ## Final Verdict
 

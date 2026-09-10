@@ -44,10 +44,16 @@ one the ordering itself would prefer, not an arbitrary "first written" pick.
 Worth noting explicitly in case a future package assumes "first captured" was
 the rule.
 
-## Deferred / Not Verified
+## Deferred / Not Verified — UPDATED 2026-09-10
 
-- **Remote exact-head CI** — not run by this reviewer; no CI access in this
-  session. Package report marks this open — unchanged.
+Remote CI was checked directly via the GitHub Actions API after this review:
+it had actually been running and failing on every push (unrelated
+pre-existing regression, fixed at `647bfad`), not "not run" as originally
+stated here. Confirmed green on the exact-head commit chain covering B2
+(only the long-standing, already-documented PRE-13 quality gate remains
+red, unrelated to B1/B2). See `IG04-B1-INDEPENDENT-REVIEW.md` for the full
+finding.
+
 - **Live native-client trust** — out of scope for B2 specifically (it's a
   B1-level, already-tracked item); not re-verified here.
 
