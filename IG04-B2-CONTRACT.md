@@ -1,10 +1,11 @@
 # IG-04-B2 — Review Queue Usability Contract
 
-**Status:** DRAFT — awaiting Ahmet's required human checkpoint.
+**Status:** APPROVED — HUMAN CHECKPOINT PASS (2026-09-10). Ahmet approved
+this contract in the Claude session before implementation began.
 
 **Package:** IG-04, Branch B, sub-package B2 (review queue usability)
 
-**Implementation owner (once approved):** Codex.
+**Implementation owner:** Codex.
 
 **Program boundary:** Phase 20 remains FROZEN / LOCKED and V2 remains SHADOW.
 This package does not reopen or change `IG04-B1-CONTRACT.md`'s boundary; it
@@ -95,7 +96,6 @@ revision:
 
 ## Required human checkpoint
 
-Ahmet must review and approve this contract before implementation begins,
-per this project's standing rule (see `IG04-B1-CONTRACT.md`'s own checkpoint
-and `CONTRIBUTING.md`'s roles section). Until that approval is recorded here,
-this file remains a draft and B2 is unopened.
+Ahmet approved this contract on 2026-09-10, before implementation began, per
+this project's standing rule (see `IG04-B1-CONTRACT.md`'s own checkpoint and
+`CONTRIBUTING.md`'s roles section).

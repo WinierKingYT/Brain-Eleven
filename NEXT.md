@@ -9,9 +9,8 @@ the end of a work session; keep entries to a few lines.
 Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed package: **IG-04 B1** (human-approved
 retrieval boundary) — independent review `SHIP` on 2026-09-10. **IG-04-B2
-(review queue usability: dedup + deterministic ordering) is drafted in
-`IG04-B2-CONTRACT.md`, awaiting Ahmet's required approval before Codex
-implements it.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
+(review queue usability: dedup + deterministic ordering) is approved in
+`IG04-B2-CONTRACT.md` (2026-09-10) and handed to Codex to implement.** `INTELLIGENCE-GRADUATION.md` now documents the Branch B
 pivot explicitly — IG-04's slot is the Branch B track, not the original
 reference/correction scope (deferred, not deleted). The earlier D0/R0
 feasibility probes remain evaluation-only evidence; see
@@ -31,8 +30,8 @@ section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Get Ahmet's approval on `IG04-B2-CONTRACT.md`, then hand implementation
-  instructions to Codex.
+- IG04-B2 is approved and handed to Codex; verify its implementation
+  independently once committed (per this project's independent-review rule).
 - Decide whether/when to turn `b1_human_approval` on for real use, and close
   the two remaining B1 follow-ups (remote CI, native-client trust) or accept
   them as tracked-open.
