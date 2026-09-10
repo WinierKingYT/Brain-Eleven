@@ -7,23 +7,25 @@ the end of a work session; keep entries to a few lines.
 ## Where we are
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
-"Phase 20" plan (frozen). Last closed package: **IG-03** (semantic
-extraction). **IG-04 B1 implementation is now active** under the approved
-human-approval contract. The earlier D0/R0 feasibility probes remain
-evaluation-only evidence; see `CODEX-RESULTS-D0.md` /
-`CODEX-RESULTS-R0.md`.
+"Phase 20" plan (frozen). Last closed package: **IG-04 B1** (human-approved
+retrieval boundary) — independent review `SHIP` on 2026-09-10. No package is
+currently active; the next IG-04 sub-package or IG-05 has not been opened.
+The earlier D0/R0 feasibility probes remain evaluation-only evidence; see
+`CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
 
-Canonical branch: **master**. The topic branches were merged and removed
-locally and on GitHub; only `master` remains remotely. The exact baseline
-snapshot check passes on current master. Ahmet approved B1 on 2026-09-10;
-Codex is implementing the bounded review boundary. V2 remains SHADOW and
-Phase 20 remains FROZEN / LOCKED.
+Canonical branch: **master**. The exact baseline snapshot check passes.
+B1 is implemented and reviewed but the `b1_human_approval` switch is off by
+default — nobody's daily retrieval changes until it's explicitly turned on.
+Remote exact-head CI and live native-client trust for B1 remain open,
+non-blocking follow-ups (see `IG04-B1-INDEPENDENT-REVIEW.md`'s Deferred
+section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Finish the bounded B1 review boundary, focused tests and evidence, then
-  obtain the independent read-only review. Keep V2 SHADOW and Phase 20
-  FROZEN / LOCKED.
+- Decide whether/when to turn `b1_human_approval` on for real use, and close
+  the two remaining B1 follow-ups (remote CI, native-client trust) or accept
+  them as tracked-open.
+- Decide the next IG-04 sub-package or whether IG-05 opens next.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
