@@ -29,12 +29,14 @@ section). V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 ## What's next
 
-- Decide the next IG-04 sub-package (or whether the Branch B track is mature
-  enough to reconsider IG-05) — Claude's call to make and propose, per the
-  delegated ownership above.
-- Decide whether/when to turn `b1_human_approval` on for real use, and close
-  the remaining B1/B2 remote-CI and native-client-trust follow-ups or accept
-  them as tracked-open.
+- Vault hygiene is done (Kararlar/Dersler cleaned, Companion memory alive,
+  links fixed) and B1's two P2 test-coverage gaps are closed. The agreed
+  next step is a real-use pilot: Ahmet turns on `b1_human_approval` on his
+  own machine (not in this remote session), uses the review screen for
+  real, and notes friction — that also exercises native-client trust as a
+  side effect, so it doesn't need separate engineering work first.
+- Remote exact-head CI for B1/B2 remains open and low-priority; doesn't
+  block the pilot.
 - Before starting any new work, read this file and confirm the active owner,
   branch and package. Update it with a few lines when the work session ends.
 
@@ -48,3 +50,12 @@ remote refs. Added `README.md`/`ARCHITECTURE.md`/`CONTRIBUTING.md`, fixed stale
 vault paths in `CLAUDE.md`, and registered two evidence docs in
 `DOCUMENTATION-AUTHORITY.md`. The B1 contract was approved and its bounded
 human-approval implementation started; no V2 or Phase 20 work was opened.
+Later the same day: B1 and B2 both closed with independent `SHIP`; ran a
+rigorous vault content assessment (dead Companion memory, `Kararlar/`
+polluted with generic reference notes, broken wikilinks); Codex executed a
+vault-hygiene pass (104 files reclassified to `Referans/`, links fixed,
+Companion memory revived from real git history), independently reviewed and
+accepted; closed B1's two P2 test-coverage gaps (crash/replay, cross-project
+isolation), independently reviewed and accepted. Agreed next step is a
+real-use pilot, not more engineering, before deciding IG-04's next
+sub-package.

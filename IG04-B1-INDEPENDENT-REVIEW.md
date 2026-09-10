@@ -73,13 +73,23 @@ None.
 
 None.
 
-## P2 Findings
+## P2 Findings — RESOLVED 2026-09-10
 
-- Add a focused B1 test that kills/interrupts between `accept_intent` write
+Both closed at `d97e666` (`tests/test_ig04_b1_p2_coverage.py`), independently
+verified: read the 3 new tests line by line (real fault-injection via
+monkeypatch, a genuine CAS conflict via a competing canonical write, and a
+two-real-project fingerprint/visibility check — not happy-path repeats), and
+independently re-ran them (6/6 passed) plus the full suite (858 passed, 0
+failed on this reviewer's Linux environment). The implementer separately
+reported one "IG-00 cold native" failure in their full-suite run on Windows
+that passed in isolation; this reviewer's full run reproduced no failure at
+all. Treated as environment-specific, not a regression from this change, but
+worth re-checking if it recurs.
+
+- ~~Add a focused B1 test that kills/interrupts between `accept_intent` write
   and the canonical write, and one that forces a stale `expected_revision` on
-  accept, to close the criterion-4 gap explicitly rather than by inheritance.
-- Add a B1-specific cross-project rejection/acceptance test rather than
-  relying solely on inherited `MemoryStore` scope isolation.
+  accept~~ — done.
+- ~~Add a B1-specific cross-project rejection/acceptance test~~ — done.
 
 ## Final Verdict
 
