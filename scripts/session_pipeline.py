@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import subprocess  # nosec B404 - runs only this repository's fixed scripts.
+import sys
 import tempfile
 import time
 import uuid
