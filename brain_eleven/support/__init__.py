@@ -1,23 +1,24 @@
-"""Stable support-package boundary for legacy utility implementations.
+"""Stable support-package boundary for support utilities.
 
-PRE-12 keeps the existing logging, digest, anomaly, and cache behavior
-unchanged while giving callers one import surface.  The legacy scripts remain
-the backing implementations during the compatibility window.
+Logging now has its canonical implementation in this package.  The remaining
+support utilities continue to use the cached legacy loader during the
+compatibility window.
 """
 
 from __future__ import annotations
 
 from brain_eleven._legacy import load_legacy_module
+from brain_eleven.support.logging import (
+    ColoredFormatter,
+    JSONFormatter,
+    logger,
+    setup_logging,
+)
 
 
-_logging = load_legacy_module("logging_config", "logging_config.py")
 _summarizer = load_legacy_module("summarizer", "summarizer.py")
 _anomaly_detector = load_legacy_module("anomaly_detector", "anomaly_detector.py")
 _cache_manager = load_legacy_module("cache_manager", "cache_manager.py")
-
-JSONFormatter = _logging.JSONFormatter
-ColoredFormatter = _logging.ColoredFormatter
-setup_logging = _logging.setup_logging
 
 MemorySummarizer = _summarizer.MemorySummarizer
 tokenize = _summarizer.tokenize
@@ -40,6 +41,7 @@ __all__ = [
     "MemorySummarizer",
     "REDIS_AVAILABLE",
     "jaccard_similarity",
+    "logger",
     "setup_logging",
     "tokenize",
 ]
