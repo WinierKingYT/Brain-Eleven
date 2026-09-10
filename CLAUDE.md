@@ -20,7 +20,7 @@ Güncel üretim yolları ve kurulu istemci ayrımı RUNTIME-DATAFLOW.md içinded
 1. Vault iskeletı ✓
 2. CLAUDE.md (bu dosya) ✓
 3. Hooks ✓ (SessionStart, bounded capture hand-off, audit)
-4. Companion hafıza (🔮 850-Companion/) ✓
+4. Companion hafıza (🔮 Companion/) ✓
 5. İçerik iskeletı (🧠 Brain-Eleven ana sayfa) ✓
 6. Git (opsiyonel) ✓
 
@@ -28,24 +28,29 @@ Güncel üretim yolları ve kurulu istemci ayrımı RUNTIME-DATAFLOW.md içinded
 
 | Kullanıcı ister | Yapılacak | Kısayol |
 |---|---|---|
-| Günlük not | 🔮 850-Companion/Daily'ye gir, {{DATE}} başlığında yaz | `/daily` |
+| Günlük not | 🔮 Companion/Daily.md içine {{DATE}} başlığında yaz | `/daily` |
 | Proje notu | 🗂️ Proje Notları/'na yaz, başlıkta proje adı | `/project` |
-| Kaynağı kaydet | 📚 Kaynaklar/'na wikilink + özet | `/source` |
-| Geçmiş görüntüle | 🔮 850-Companion/Last Session veya Threads | `/history` |
+| Geçmiş görüntüle | 🔮 Companion/Last Session.md veya Threads.md | `/history` |
 
 ## Hafıza protokolü
 
-- **Günlük girdiler**: 🔮 850-Companion/Daily/{{DATE}}.md
-- **Aktif konular**: 🔮 850-Companion/Threads (bölüm başlıkları)
-- **Kapatılan**: 🔮 850-Companion/Threads ## Closed Threads
-- **Profil**: 🔮 850-Companion/Jane: Core (bu dosya)
-- **Kural'lar**: 🔮 850-Companion/Rules
+- **Günlük girdiler**: 🔮 Companion/Daily.md (tek dosya, tarih başlıklarıyla)
+- **Aktif konular**: 🔮 Companion/Threads.md (bölüm başlıkları)
+- **Kapatılan**: 🔮 Companion/Threads.md ## Closed Threads
+- **Profil**: 🔮 Companion/Jane - Core.md
+- **Açık döngüler**: 🔮 Companion/Açık Döngüler.md
+
+Not: Kaynak kaydetme (`📚 Kaynaklar/`) ve ayrı bir kurallar dosyası
+(`Rules`) tasarımda geçiyordu ama henüz oluşturulmadı — CLAUDE.md'nin bu
+sürümü yalnızca var olan dosyalara işaret eder. Biri gerekli görürse önce
+burada bir satırla kayda geçirilip sonra klasör/dosya açılmalı; tersi
+sırayla (önce dosya, sonra iz sürülemeyen referans) bu proje daha önce
+defalarca doküman sürüklenmesine yol açtı.
 
 ## Devir kuralı
 
-1. Oturum başında: Last Session oku, Threads'i açık tut
-2. Oturum sonunda: {{DATE}} daily'yi yazışır'dan önce kaydet
-3. Gece derleyicisi: Günlükleri makine-okunur bilgiye çevir → 📚 Kaynaklar/
+1. Oturum başında: Last Session.md oku, Threads.md'yi açık tut
+2. Oturum sonunda: {{DATE}} daily girdisini yazışmadan önce kaydet
 
 ## Doğrulama
 
