@@ -8,6 +8,15 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+from brain_eleven.memory import (
+    GLOBAL_SCOPE as _PACKAGE_GLOBAL_SCOPE,
+    PROJECT_SCOPE as _PACKAGE_PROJECT_SCOPE,
+)
+from brain_eleven.projects.registry import (
+    ProjectRegistry as _ProjectRegistry,
+    registry_path as _registry_path,
+)
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 if str(REPO_ROOT) not in sys.path:
@@ -25,9 +34,11 @@ def _load_canonical(name: str) -> ModuleType:
 
 _capture = _load_canonical("brain_eleven.memory.capture")
 
-GLOBAL_SCOPE = _capture.GLOBAL_SCOPE
-PROJECT_SCOPE = _capture.PROJECT_SCOPE
+GLOBAL_SCOPE = _PACKAGE_GLOBAL_SCOPE
+PROJECT_SCOPE = _PACKAGE_PROJECT_SCOPE
 DEFAULT_VAULT = _capture.DEFAULT_VAULT
+ProjectRegistry = _ProjectRegistry
+project_registry_path = _registry_path
 MemoryValidator = _capture.MemoryValidator
 EntityExtractor = _capture.EntityExtractor
 CaptureSafetyError = _capture.CaptureSafetyError
@@ -45,6 +56,8 @@ __all__ = [
     "GLOBAL_SCOPE",
     "PROJECT_SCOPE",
     "DEFAULT_VAULT",
+    "ProjectRegistry",
+    "project_registry_path",
     "MemoryValidator",
     "EntityExtractor",
     "CaptureSafetyError",
