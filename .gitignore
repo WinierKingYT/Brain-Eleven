@@ -84,3 +84,6 @@ authority-*-report.json
 # Loose local test/coverage artifacts (regenerated)
 coverage.json
 pytest-results-local.xml
+
+# Claude Code agent-isolation worktrees; never source-controlled.
+.claude/worktrees/
