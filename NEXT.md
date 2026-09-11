@@ -74,20 +74,26 @@ contract across package/script/bare names and revision/lock/corruption/scope
 parity evidence (these two modules are HIGH risk — derived graph projection,
 not simple utility code).
 
-**Slice 2B Step B2.1 (graph projection) is closed.** `brain_eleven/graph/projection.py`
-is now the sole `KnowledgeGraph` implementation; `scripts/knowledge_graph.py`
-is adapter-only. Independently verified byte-for-byte against the
-pre-migration script — only the docstring, one import, and CLI wrapping
-differ, no logic changed. Full suite reproduces at 905 passed; entity
-extraction and canonical authority paths confirmed untouched by diff.
-Independent review: `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+**IG-07 Slice 2B is fully closed (B2.1 + B2.2).** `brain_eleven/graph/projection.py`
+and `brain_eleven/extraction/entities.py` are now the sole implementation
+authorities for graph projection and entity extraction; `scripts/knowledge_graph.py`
+and `scripts/entity_extractor.py` are adapter-only, and `scripts/remember.py`
+now consumes the package surface directly instead of a dynamic legacy
+loader. Both moves independently verified byte-for-byte against the
+pre-migration scripts — only docstrings, one import each, and additive CLI
+wrapping differ, no logic changed. Full suite reproduces at 913 passed;
+`brain_eleven/graph/*` and all canonical authority paths confirmed untouched
+by diff at each step. Independent reviews: `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`
+and `IG07-SLICE2B-INDEPENDENT-REVIEW.md`, both `SHIP`. This closes all of
+Slice 2 (2A + 2B) from `IG07-SLICE2-PLAN.md`.
 
 ## What's next
 
-- Implement Step B2.2 (entity extraction inversion into
-  `brain_eleven/extraction/entities.py`, per `IG07-SLICE2B-PLAN.md` section
-  2) under its own bounded contract — same five-gate discipline. This closes
-  Slice 2B as a whole once independently reviewed.
+- Plan Slice 2C (`dedupe-validated-memory.py`, `migrate-legacy-memory.py`,
+  `migrate-memory-scope.py`, per `IG07-SLICE2-PLAN.md` section "Sonraki
+  bounded dilimler") — needs its own bounded plan before implementation
+  begins; these touch canonical memory/lifecycle writes and migration, so
+  expect a stricter contract than Slice 2A/2B.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
