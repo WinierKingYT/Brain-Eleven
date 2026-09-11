@@ -46,9 +46,20 @@ One P2 finding open (unnecessary `sys.modules` dependency lookup in
 `anomaly.py` — not blocking). `MemoryStore`/`StateStore`/`ProjectRegistry`
 and capture/retrieval paths remain untouched and out of scope.
 
+**Slice 2A approved, not yet implemented.** `IG07-SLICE2-PLAN.md` reassessed
+all 11 remaining medium-risk modules more deeply than slice 1's coarse pass —
+several got reclassified to HIGH (`entity_extractor`, `knowledge_graph`,
+`remember`, both `migrate-*` scripts, `install-cross-project-memory`,
+`task_model`). Approved sub-slice 2A: `memory_provenance.py` →
+`chat_interface.py` → `post_session_maintenance.py`, in that order.
+`task_state_context.py` (26-27 callers, highest blast radius in the whole
+inventory) is excluded from Slice 2 entirely, needs its own plan later.
+
 ## What's next
 
-- Decide and plan IG-07 slice 2 (medium/high-risk modules) — needs a new
+- Implement Slice 2A in the stated order, one module at a time, same five-
+  gate discipline as slice 1 (identity proof, adapter-only, parity tests,
+  full regression, independent review before the next module).
   bounded plan before implementation begins, same as slice 1 did.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
