@@ -1,9 +1,9 @@
 """Public boundary for deterministic entity extraction.
 
-The legacy implementation remains in ``scripts/entity_extractor.py`` while
-repository consolidation proceeds incrementally.  This package re-exports
-the exact implementation objects so callers share one extractor and existing
-graph projection behavior remains unchanged.
+The entity implementation remains in ``scripts/entity_extractor.py`` until
+Slice 2B Step B2.2. The graph projection it consumes is already canonical in
+``brain_eleven.graph.projection``; re-exporting the current entity objects
+keeps callers on one extractor while that second inversion is pending.
 """
 
 from __future__ import annotations
