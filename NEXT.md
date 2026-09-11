@@ -61,12 +61,26 @@ remain open and unaffected.
 `task_state_context.py` (26-27 callers, highest blast radius in the whole
 inventory) is excluded from Slice 2 entirely, needs its own plan later.
 
+**Slice 2B plan approved, not yet implemented.** `IG07-SLICE2B-PLAN.md`
+covers `entity_extractor.py` and `knowledge_graph.py` — unlike slices 1/2A,
+this is a bridge-direction *inversion* (package currently re-exports the
+script; target is the reverse). Independently spot-checked: every cited
+bridge line, docstring, and caller reference in the plan matched the actual
+code exactly. Approved order: graph projection inverts first (`brain_eleven/graph/projection.py`
+becomes canonical) since entity extraction already depends on it; entity
+extraction inverts second into a new `brain_eleven/extraction/entities.py`.
+Same five-gate discipline as before, plus an explicit object-identity
+contract across package/script/bare names and revision/lock/corruption/scope
+parity evidence (these two modules are HIGH risk — derived graph projection,
+not simple utility code).
+
 ## What's next
 
-- Plan Slice 2B (`entity_extractor.py`, `knowledge_graph.py`, per
-  `IG07-SLICE2-PLAN.md`'s proposed order) — needs its own bounded contract
-  before implementation begins, same discipline as slices 1 and 2A (identity
-  proof, adapter-only, parity tests, full regression, independent review).
+- Implement Slice 2B in the approved order (graph projection, then entity
+  extraction), one bounded commit sequence at a time per
+  `IG07-SLICE2B-PLAN.md` section 3 — contract per module, identity proof,
+  adapter-only AST check, parity tests, full regression, independent review
+  before the next module.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
@@ -108,4 +122,8 @@ Codex implemented all three Slice 2A modules (`memory_provenance.py`,
 reviewed, full suite re-run at 895 passed, CI's exact lint command clean,
 adapter-only/identity/parity checks re-verified rather than trusted from the
 report. Closed with `IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
-No new P0/P1/P2 findings.
+No new P0/P1/P2 findings. Same day: Codex produced `IG07-SLICE2B-PLAN.md`
+(a bridge-direction inversion for `entity_extractor.py`/`knowledge_graph.py`,
+not a simple move); independently spot-checked every cited line reference
+against actual code and approved for implementation in the plan's
+graph-first order.
