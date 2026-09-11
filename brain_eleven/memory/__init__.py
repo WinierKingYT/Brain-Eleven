@@ -43,6 +43,12 @@ from .provenance import (
     TimeValue,
     provenance_path,
 )
+from .migrations import (
+    SCOPE_MIGRATION_NAME,
+    MemoryScopeMigrationError,
+    migrate_scope,
+    rollback_scope,
+)
 
 __all__ = [
     "CANONICAL_SCHEMA_VERSION",
@@ -82,4 +88,8 @@ __all__ = [
     "ProvenanceStoreError",
     "TimeValue",
     "provenance_path",
+    "SCOPE_MIGRATION_NAME",
+    "MemoryScopeMigrationError",
+    "migrate_scope",
+    "rollback_scope",
 ]
