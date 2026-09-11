@@ -132,13 +132,29 @@ instead of list order. Full suite reproduces at 920 passed.
 `MemoryLifecycleManager` confirmed untouched. Independent review:
 `IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
+**IG-07 Slice 2C is fully closed (C1 + C3).** `brain_eleven/memory/migrations.py`
+is now canonical for scope migration (`migrate_scope`/`rollback_scope`);
+`scripts/migrate-memory-scope.py` is adapter-only. The rollback CAS gap the
+plan flagged (`replace()` called with no `expected_revision`) is fixed and
+independently verified under an actually forced concurrent-write race (not
+just asserted) — `MemoryStore.replace` was monkeypatched to inject a real
+concurrent write mid-call, and `MemoryStoreConflict` correctly fires with no
+data loss. A second rollback of the same backup is a guarded
+`already_rolled_back` no-op. Full suite reproduces at 927 passed.
+`migrate-legacy-memory.py` (C2) remains archived per the C0 decision,
+untouched. Independent review: `IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`,
+verdict `SHIP`. One non-blocking finding: the combined report's original
+commit-chain citations didn't exist in git history (pre-push local rewrite),
+corrected in-file.
+
 ## What's next
 
-- Implement Slice 2C step C3 (`migrate-memory-scope.py` + rollback) under
-  its own bounded contract, per `IG07-SLICE2C-PLAN.md` §5-7 — this has the
-  widest data-transformation surface in the slice and existing behavioral
-  coverage (8 tests) that must not regress, plus new rollback/CAS/concurrency
-  evidence. This closes Slice 2C once independently reviewed.
+- IG-07's remaining scope needs a new bounded plan before implementation:
+  `install-cross-project-memory.py` + `remember.py` (Slice 2D per
+  `IG07-SLICE2-PLAN.md` — live client-config mutation, security review
+  needed) and `task_model.py` (Slice 2E — widest authority/evaluation blast
+  radius after `task_state_context.py`, which stays excluded with its own
+  separate plan).
 - Claude-track pivoted to retrieval/recall quality research (2026-09-12).
   First finding is significant: `D0-RECHECK-FINDINGS.md` shows the D1
   decision's own evidence has a metric-design flaw (0.45/0.60 thresholds

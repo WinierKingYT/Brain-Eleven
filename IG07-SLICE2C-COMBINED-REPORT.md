@@ -88,16 +88,30 @@ Warnings mevcut FastAPI/Starlette dependency deprecation uyarılarıdır.
 
 ## COMMIT CHAIN
 
-- `433b98e` — canonical scope migration + rollback CAS fix + adapter;
-- `b7c1327` — C3 safety/identity/rollback tests;
-- `34d4eac` — PRE-12 explicit package import compatibility fix.
+- `1cc8846` — canonical scope migration + rollback CAS fix;
+- `c69ed46` — C3 safety/identity/rollback tests;
+- `0bde793` — adapter `MemoryStore` identity fix (caught by the tests in
+  `c69ed46` before review).
+
+*(Correction, independent review 2026-09-12: this section originally cited
+`433b98e`/`b7c1327`/`34d4eac`, which do not exist anywhere in this
+repository — local commits were evidently rewritten before pushing without
+updating the already-drafted report text. The commits above are the actual
+pushed history and were what was reviewed.)*
 
 ## INDEPENDENT REVIEW
 
-C1 bağımsız review sonucu: **SHIP**.
-C3 bağımsız review: **bekliyor**.
-Slice 2C combined verdict, C3 review tamamlanana kadar **REVIEW PENDING** olarak kalır.
+C1 bağımsız review sonucu: **SHIP** (`IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`).
+C3 bağımsız review sonucu: **SHIP**, 2026-09-12 —
+`IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`. Rollback CAS fix, gerçekten
+zorlanmış bir concurrent-writer testiyle doğrulandı (`MemoryStore.replace`
+monkeypatch'lenerek stale `expected_revision` ile gerçek bir yarış
+koşulu tetiklendi); tam suite 927 passed olarak yeniden üretildi.
 
 ## VERDICT
 
-**REVIEW PENDING** — implementer self-review ile Slice 2C veya C3 için SHIP verilmedi. Bağımsız reviewer onayı olmadan Slice 2C frozen/closed kabul edilmeyecek.
+**ACCEPTED.** IG-07 Slice 2C (C1 + C3) kapalı; C2 (`migrate-legacy-memory.py`)
+C0 kararı gereği arşivlenmiş ve dışlanmış kalmaya devam ediyor. IG-07'nin
+kalan kapsamı (Slice 2-PLAN'daki `install-cross-project-memory.py`,
+`remember.py`, `task_model.py`, ve ayrı ele alınması gereken
+`task_state_context.py`) yeni bir bounded plan gerektiriyor.
