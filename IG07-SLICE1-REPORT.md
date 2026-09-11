@@ -54,7 +54,12 @@ The canonical support implementations contain **993 physical lines / 808 nonblan
 
 ## Review and verdict
 
-**Independent review:** PENDING — must cover all four modules, the five migration gates, the recorded regression failure, and adapter/package boundaries.  
-**Self-review:** Not accepted as graduation evidence.  
-**Verdict:** `INDEPENDENT REVIEW REQUIRED` (no self-issued `SHIP`).
+**Independent review:** **SHIP**, recorded 2026-09-11. See
+`IG07-SLICE1-INDEPENDENT-REVIEW.md` — all four modules independently
+re-verified (tests re-run, diffs read, LOC spot-checked), one P2 finding
+(unnecessary `sys.modules` dependency lookup in `anomaly.py`, not blocking),
+the reported intermittent failure reproduced-clean 3/3 in isolation.
+**Self-review:** Not accepted as graduation evidence (unchanged principle).  
+**Verdict:** **ACCEPTED.** Slice 1 is closed. The next slice requires a new
+bounded plan before implementation begins.
 
