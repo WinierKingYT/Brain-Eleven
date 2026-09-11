@@ -1,9 +1,9 @@
 # IG-07 Slice 2D — Global Installer ve Manual Capture Planı
 
-**Durum:** PLAN ONLY / IMPLEMENTATION NOT AUTHORIZED  
-**Program:** Intelligence Graduation  
-**Slice:** IG-07 / Slice 2D  
-**İncelenen revision:** `2ae9aec4c567298a8e70981b3bd4140272b7a32d` (`origin/master`)  
+**Durum:** PLAN ONLY / IMPLEMENTATION NOT AUTHORIZED
+**Program:** Intelligence Graduation
+**Slice:** IG-07 / Slice 2D
+**İncelenen revision:** `2ae9aec4c567298a8e70981b3bd4140272b7a32d` (`origin/master`)
 **Kapsam:** `scripts/install-cross-project-memory.py`, `scripts/remember.py`
 
 ## 0. Sınır ve karar sırası
