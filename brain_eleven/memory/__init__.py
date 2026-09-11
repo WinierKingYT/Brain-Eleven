@@ -49,7 +49,6 @@ from .migrations import (
     migrate_scope,
     rollback_scope,
 )
-
 __all__ = [
     "CANONICAL_SCHEMA_VERSION",
     "MemoryStore",
@@ -92,4 +91,39 @@ __all__ = [
     "MemoryScopeMigrationError",
     "migrate_scope",
     "rollback_scope",
+    "DEFAULT_VAULT",
+    "CaptureSafetyError",
+    "CaptureSafetyResult",
+    "default_project_id",
+    "default_vault_path",
+    "evaluate_capture",
+    "is_project_opted_in",
+    "proactive_capture_policy",
+    "remember",
+    "require_safe_capture",
 ]
+
+
+_CAPTURE_EXPORTS = {
+    "DEFAULT_VAULT",
+    "CaptureSafetyError",
+    "CaptureSafetyResult",
+    "default_project_id",
+    "default_vault_path",
+    "evaluate_capture",
+    "is_project_opted_in",
+    "proactive_capture_policy",
+    "remember",
+    "require_safe_capture",
+}
+
+
+def __getattr__(name):
+    """Load capture orchestration lazily to keep package imports acyclic."""
+    if name in _CAPTURE_EXPORTS:
+        from . import capture
+
+        value = getattr(capture, name)
+        globals()[name] = value
+        return value
+    raise AttributeError(name)

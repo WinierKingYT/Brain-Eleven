@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from remember import proactive_capture_policy
+from brain_eleven.memory.capture import proactive_capture_policy
 
 
 def main(argv=None) -> int:
