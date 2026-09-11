@@ -1,14 +1,13 @@
-"""Public boundary for deterministic entity extraction.
+"""Public boundary for deterministic and semantic extraction.
 
-The entity implementation remains in ``scripts/entity_extractor.py`` until
-Slice 2B Step B2.2. The graph projection it consumes is already canonical in
-``brain_eleven.graph.projection``; re-exporting the current entity objects
-keeps callers on one extractor while that second inversion is pending.
+The deterministic entity implementation is canonical in ``.entities``.
+``scripts.entity_extractor`` remains a compatibility/direct-execution adapter;
+semantic extraction stays proposal-only in ``.semantic``.
 """
 
 from __future__ import annotations
 
-from scripts.entity_extractor import (
+from .entities import (
     PHASE_PATTERN,
     TECH_LEXICON,
     EntityExtractor,
