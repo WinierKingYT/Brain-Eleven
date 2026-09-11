@@ -322,3 +322,20 @@ VERDICT: SHIP / FIX-FIRST / RETHINK
 ```
 
 **Plan status:** REVIEW PENDING — implementation başlamadı.
+
+## 11. C0 kararı (2026-09-11, Ahmet onayı ile)
+
+- **`dedupe-validated-memory.py`: Retain & migrate.** Tekrarlayan, operasyonel
+  bir ihtiyaç (pilot başladığında capture'dan biriken duplicate memory'ler
+  için gerekecek); en düşük blast radius; mevcut CAS yolu zaten güvenli.
+  **C1 açıktır.**
+- **`migrate-legacy-memory.py`: Archive as historical/operational.**
+  Bir kereye mahsus şema yükseltme aracıdır (dedupe gibi tekrar eden bir
+  ihtiyaç değil); sıfır caller + sıfır test + bilinen `migrated_at`
+  idempotence bug'ı (bkz. §2.2) "işini zaten yaptı" profiliyle uyumlu.
+  Script'e dokunulmayacak — package'a taşınmayacak, bug düzeltilmeyecek,
+  silinmeyecek. **C2 bu haliyle Slice 2C kapsamından çıkarılmıştır.**
+  Gerçek install'de hâlâ eski formatlı (`migration_version` alanı olmayan)
+  kayıt bulunursa bu karar gözden geçirilecektir.
+- Sıralama buna göre güncellenmiştir: **C1 (dedupe) → C3 (scope
+  migration + rollback)**, C2 atlanmıştır.

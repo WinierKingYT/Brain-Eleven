@@ -87,13 +87,36 @@ by diff at each step. Independent reviews: `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.
 and `IG07-SLICE2B-INDEPENDENT-REVIEW.md`, both `SHIP`. This closes all of
 Slice 2 (2A + 2B) from `IG07-SLICE2-PLAN.md`.
 
+**Two-track workflow started (2026-09-11).** Codex continues on relayed
+instructions as before; Claude now also implements small bounded pieces
+directly via an isolated agent worktree, reviewed with the same rigor as
+Codex's work before merging. First Claude-track task in flight: the
+`anomaly.py` P2 fix (plain imports instead of `sys.modules.get`) and a real
+diagnosis of the intermittent `test_cold_native_session_start_delivers_v1_within_hook_budget`
+flake.
+
+**Slice 2C plan approved with a scope change.** `IG07-SLICE2C-PLAN.md`
+covers the three canonical-memory-writing migration tools; unlike Slice
+2A/2B these touch real writes, so the plan requires idempotence, backup,
+rollback, and CAS evidence, not just object-identity/adapter checks. It also
+caught a real bug by code inspection: `migrate-legacy-memory.py` writes
+`migrated_at`/`migration_version` unconditionally every run, and its
+mutator never signals `_NoChange` to `MemoryStore.transact`, so re-running
+it bumps the revision even with zero actual changes. C0 usage decision
+(2026-09-11): `dedupe-validated-memory.py` is retained and migrated (C1,
+now open) since it's a recurring operational need once the pilot starts
+generating duplicates; `migrate-legacy-memory.py` is archived in place,
+untouched, excluded from this slice (one-time schema tool, zero callers,
+known bug, not worth full migration). C3 (scope migration + rollback)
+remains gated on C1's independent review.
+
 ## What's next
 
-- Plan Slice 2C (`dedupe-validated-memory.py`, `migrate-legacy-memory.py`,
-  `migrate-memory-scope.py`, per `IG07-SLICE2-PLAN.md` section "Sonraki
-  bounded dilimler") — needs its own bounded plan before implementation
-  begins; these touch canonical memory/lifecycle writes and migration, so
-  expect a stricter contract than Slice 2A/2B.
+- Implement Slice 2C step C1 (`dedupe-validated-memory.py` →
+  `brain_eleven/lifecycle/dedupe.py`) under its own bounded contract, per
+  `IG07-SLICE2C-PLAN.md` §5-7 — idempotence, CAS/stale-snapshot, and
+  equal-timestamp tie-break evidence required, not just identity/adapter
+  checks. Independent review required before C3 opens.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
