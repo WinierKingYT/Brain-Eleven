@@ -14,4 +14,11 @@ _legacy = load_legacy_module("memory_lifecycle", "memory-lifecycle.py")
 
 MemoryLifecycleManager = _legacy.MemoryLifecycleManager
 
-__all__ = ["MemoryLifecycleManager"]
+from .dedupe import SUPERSESSION_NOTE, main as dedupe_main, plan_dedupe
+
+__all__ = [
+    "MemoryLifecycleManager",
+    "SUPERSESSION_NOTE",
+    "plan_dedupe",
+    "dedupe_main",
+]
