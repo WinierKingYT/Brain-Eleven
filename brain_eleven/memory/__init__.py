@@ -32,6 +32,17 @@ from .scope import (
     scope_sort_key,
     scoped_fingerprint,
 )
+from .provenance import (
+    MemoryProvenance,
+    MemoryProvenanceStore,
+    PROVENANCE_FILENAME,
+    PROVENANCE_SCHEMA_VERSION,
+    ProvenanceCorruptError,
+    ProvenanceError,
+    ProvenanceStoreError,
+    TimeValue,
+    provenance_path,
+)
 
 __all__ = [
     "CANONICAL_SCHEMA_VERSION",
@@ -62,4 +73,13 @@ __all__ = [
     "resolved_project_identity",
     "scope_sort_key",
     "scoped_fingerprint",
+    "MemoryProvenance",
+    "MemoryProvenanceStore",
+    "PROVENANCE_FILENAME",
+    "PROVENANCE_SCHEMA_VERSION",
+    "ProvenanceCorruptError",
+    "ProvenanceError",
+    "ProvenanceStoreError",
+    "TimeValue",
+    "provenance_path",
 ]
