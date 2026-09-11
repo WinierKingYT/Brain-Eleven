@@ -25,13 +25,12 @@ from brain_eleven.support.summarizer import (
     jaccard_similarity,
     tokenize,
 )
+from brain_eleven.support.anomaly import AnomalyDetector
 
 
 _summarizer_adapter = load_legacy_module("summarizer", "summarizer.py")
-_anomaly_detector = load_legacy_module("anomaly_detector", "anomaly_detector.py")
+_anomaly_detector_adapter = load_legacy_module("anomaly_detector", "anomaly_detector.py")
 _cache_manager_adapter = load_legacy_module("cache_manager", "cache_manager.py")
-
-AnomalyDetector = _anomaly_detector.AnomalyDetector
 
 __all__ = [
     "AnomalyDetector",
