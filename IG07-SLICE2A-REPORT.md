@@ -74,12 +74,14 @@ independent review/acceptance gate remains open by design.
 
 ## Review and verdict
 
-**INDEPENDENT REVIEW:** Pending. The reviewer must inspect the contract, all
-three diffs, unchanged caller behavior, tests, and CI/runtime evidence.
+**Independent review:** **SHIP**, recorded 2026-09-11. See
+`IG07-SLICE2A-INDEPENDENT-REVIEW.md` — all three modules independently
+re-verified (tests re-run, diffs read, identity re-checked), full suite
+reproduced at 895 passed with no open findings.
+**Self-review:** Not accepted as graduation evidence (unchanged principle).
 
 **SCORE BEFORE / AFTER:** Not rescored in this implementation turn; Slice 2A
 does not claim intelligence-quality improvement.
 
-**VERDICT:** **REVIEW PENDING — NO SELF-SHIP**
-
-The next module remains blocked until independent review accepts this slice.
+**VERDICT:** **ACCEPTED.** Slice 2A is closed. Slice 2B requires a new
+bounded plan before implementation begins.
