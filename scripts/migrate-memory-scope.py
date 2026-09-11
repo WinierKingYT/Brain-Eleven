@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+from brain_eleven.memory import MemoryStore as _PackageMemoryStore  # noqa: E402
+
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -31,7 +33,7 @@ SCOPE_MIGRATION_NAME = _migration.SCOPE_MIGRATION_NAME
 MIGRATION_NAME = SCOPE_MIGRATION_NAME
 GLOBAL_SCOPE = _migration.GLOBAL_SCOPE
 PROJECT_SCOPE = _migration.PROJECT_SCOPE
-MemoryStore = _migration.MemoryStore
+MemoryStore = _PackageMemoryStore
 MemoryStoreCorrupt = _migration.MemoryStoreCorrupt
 infer_memory_scope = _migration.infer_memory_scope
 no_change = _migration.no_change
