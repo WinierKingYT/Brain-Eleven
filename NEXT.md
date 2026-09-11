@@ -117,13 +117,32 @@ untouched, excluded from this slice (one-time schema tool, zero callers,
 known bug, not worth full migration). C3 (scope migration + rollback)
 remains gated on C1's independent review.
 
+**Slice 2C step C1 (dedupe) is closed.** `brain_eleven/lifecycle/dedupe.py`
+is now canonical; `scripts/dedupe-validated-memory.py` is adapter-only. This
+is the first canonical-memory-writing migration in IG-07, and it met a
+meaningfully higher bar than the earlier read-only slices: idempotence,
+CAS-conflict, dry-run, and integrity are proven by tests that would fail if
+the property didn't actually hold (verified independently, not taken on the
+report's word) — e.g. a spy manager proving `save()` is called exactly once
+across two `--apply` runs, and a concurrent-write test proving a stale
+snapshot raises `MemoryStoreConflict` with no partial write. One intentional
+behavior change: equal-timestamp tie-break is now `(timestamp, memory_id)`
+instead of list order. Full suite reproduces at 920 passed.
+`migrate-legacy-memory.py`, `migrate-memory-scope.py`, `MemoryStore`, and
+`MemoryLifecycleManager` confirmed untouched. Independent review:
+`IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+
 ## What's next
 
-- Implement Slice 2C step C1 (`dedupe-validated-memory.py` →
-  `brain_eleven/lifecycle/dedupe.py`) under its own bounded contract, per
-  `IG07-SLICE2C-PLAN.md` §5-7 — idempotence, CAS/stale-snapshot, and
-  equal-timestamp tie-break evidence required, not just identity/adapter
-  checks. Independent review required before C3 opens.
+- Implement Slice 2C step C3 (`migrate-memory-scope.py` + rollback) under
+  its own bounded contract, per `IG07-SLICE2C-PLAN.md` §5-7 — this has the
+  widest data-transformation surface in the slice and existing behavioral
+  coverage (8 tests) that must not regress, plus new rollback/CAS/concurrency
+  evidence. This closes Slice 2C once independently reviewed.
+- Separately: Claude-track is now pivoting toward retrieval/recall quality
+  research (the actual "intelligence" gap flagged in the 2026-09-11 status
+  assessment) rather than more IG-07 architecture work — see conversation
+  for the research plan once scoped.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.

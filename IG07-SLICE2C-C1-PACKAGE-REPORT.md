@@ -82,7 +82,12 @@ Warnings mevcut FastAPI/Starlette dependency deprecation uyarılarıdır; C1 de�
 
 ## INDEPENDENT REVIEW
 
-Implementer self-review ile SHIP verilmedi. Bağımsız reviewer'ın byte-level script/package karşılaştırması, sıfırdan CAS/idempotence testleri ve scope kontrolü bekleniyor.
+**SHIP**, recorded 2026-09-12. See `IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md` —
+idempotence, CAS-conflict, dry-run, and integrity tests independently
+re-read and re-run (each test confirmed to prove the claimed property, not
+just assert a trivial outcome); full suite reproduced at 920 passed;
+`migrate-legacy-memory.py`, `migrate-memory-scope.py`, `MemoryStore`, and
+`MemoryLifecycleManager` confirmed untouched by diff.
 
 ## SCORE BEFORE / AFTER
 
@@ -92,4 +97,6 @@ Implementer self-review ile SHIP verilmedi. Bağımsız reviewer'ın byte-level 
 
 ## VERDICT
 
-**REVIEW PENDING** — bağımsız reviewer onayı olmadan C2/C3 veya Slice 2C kapanışı başlatılmayacak.
+**ACCEPTED.** C1 kapalı. C3 (`migrate-memory-scope.py` + rollback) kendi
+bounded contract'ı ile açılabilir; `migrate-legacy-memory.py` C0 kararı
+gereği bu slice'ın dışında kalmaya devam eder.
