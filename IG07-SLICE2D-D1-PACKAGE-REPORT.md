@@ -1,7 +1,7 @@
 # IG-07 Slice 2D — D1 Package Report
 
 **PACKAGE:** IG-07 / Slice 2D / D1 (`remember.py`)
-**IMPLEMENTATION REVISION:** `3c1f557` (including `d1d563d` and `9d089a2`)
+**IMPLEMENTATION REVISION:** `f95ce00` (including `17ed7bd` and `7063bc5`)
 **OBJECTIVE:** Move manual memory capture orchestration into the canonical
 `brain_eleven.memory.capture` package while preserving the existing validator
 transaction authority and legacy CLI/import compatibility.
