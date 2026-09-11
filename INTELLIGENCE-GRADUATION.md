@@ -80,11 +80,30 @@ Branch B is delivered as lettered sub-packages under IG-04:
 | Sub-package | Scope | Status |
 |---|---|---|
 | **B1 — Human-approved retrieval boundary** | A captured candidate cannot affect retrieval until an explicit accept action. See `IG04-B1-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `IG04-B1-INDEPENDENT-REVIEW.md`. |
-| **B2 — Review queue usability** | Makes B1's review queue actually usable day to day: dedup near-duplicate pending candidates, order the queue so the most decision-worthy items surface first. See `IG04-B2-CONTRACT.md`. | Drafted, pending Ahmet's required human checkpoint. |
+| **B2 — Review queue usability** | Makes B1's review queue actually usable day to day: dedup near-duplicate pending candidates, order the queue so the most decision-worthy items surface first. See `IG04-B2-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `IG04-B2-INDEPENDENT-REVIEW.md`. |
 
 IG-05 through IG-09 remain closed until Branch B's daily-use quality is
 established (per D1) — not merely until B1 or B2 ship. That determination is
 a later, explicit call, not automatic on B2's closure.
+
+### D0 recheck (2026-09-12) — the evidence behind D1 needs a second look
+
+`D0-RECHECK-FINDINGS.md` independently re-derives D0's own numbers and finds
+two problems with the evidence D1 was based on, both verified directly
+against the code by this session (not taken on a subagent's word): the
+0.45/0.60 thresholds are below/at the mathematical ceiling of D0's own
+scoring metric on its own corpus (an oracle retriever scores 0.425 mean, not
+1.0), and the "hybrid doesn't help" finding fused real semantic search with
+a control arm (`BaselineContextProvider`) that is documented to never see
+the query at all. Separately, the production V1 path that actually runs
+today never used embedding retrieval in the first place, so D1's pivot away
+from it changed nothing about current user-facing quality either way. This
+does **not** reopen D1 by itself — Branch B (human-approved retrieval)
+remains closed, accepted, and valuable regardless — but it means the
+"embedding retrieval caps at 0.20 against a 0.60 floor, abandon it" framing
+overstates the case. Two cheap, infrastructure-free recheck experiments are
+proposed in that document; their results are the next real input to whether
+D1 should be revisited.
 
 ## Evaluation contract to establish in IG-01
 

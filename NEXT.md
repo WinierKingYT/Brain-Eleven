@@ -139,10 +139,16 @@ instead of list order. Full suite reproduces at 920 passed.
   widest data-transformation surface in the slice and existing behavioral
   coverage (8 tests) that must not regress, plus new rollback/CAS/concurrency
   evidence. This closes Slice 2C once independently reviewed.
-- Separately: Claude-track is now pivoting toward retrieval/recall quality
-  research (the actual "intelligence" gap flagged in the 2026-09-11 status
-  assessment) rather than more IG-07 architecture work — see conversation
-  for the research plan once scoped.
+- Claude-track pivoted to retrieval/recall quality research (2026-09-12).
+  First finding is significant: `D0-RECHECK-FINDINGS.md` shows the D1
+  decision's own evidence has a metric-design flaw (0.45/0.60 thresholds
+  are below/at the mathematical ceiling of D0's `precision@5` metric on its
+  own corpus — oracle ceiling is 0.425, independently re-derived twice) and
+  a mislabeled "hybrid" control (fused real semantic search with a
+  query-blind ranker). Does not reopen D1 by itself. Next: run the two
+  cheap recheck experiments the doc proposes (fair-metric rescoring of
+  existing D0 output; a real query-aware lexical+semantic hybrid) before
+  deciding whether to revisit D1.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
