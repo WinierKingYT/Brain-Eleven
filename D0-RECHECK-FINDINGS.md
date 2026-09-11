@@ -127,9 +127,13 @@ what is and isn't claimed.
 
 ## Longer-term, lower-priority gaps identified but not yet actioned
 
-- A second embedding model (`BAAI/bge-m3`) was listed as a D0 candidate but
-  never actually run — `_try_tuned_provider` (`d0_rethink.py:280-311`) stops
-  at the first success (E5-large).
+- ~~A second embedding model (`BAAI/bge-m3`) was listed as a D0 candidate but
+  never actually run~~ — **run 2026-09-12**, see `evals/ig01d/D0-BGE-M3-RESULTS.md`.
+  BGE-M3 (dense mode) lands roughly in the same range as MPNet/E5-large on
+  this corpus (precision@5 0.1867 vs MPNet's 0.205 vs E5-large's 0.190; no
+  model wins on all four metrics across all three fusion variants) — not a
+  clear win or loss. Only dense embedding output was measured; sparse/ColBERT
+  multi-vector modes would need new scoring infrastructure and weren't tried.
 - Query expansion/rewriting before embedding: not present anywhere in
   `evals/ig01d/`.
 - The eval corpus itself is 40 underlying tasks × 3 mechanical
