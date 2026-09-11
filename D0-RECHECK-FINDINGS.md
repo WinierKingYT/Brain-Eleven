@@ -112,6 +112,19 @@ place.**
    `_rrf`) for `retrieval_decision_v2.engine`'s IDF scorer or
    `scripts/memory-retriever.py`'s Jaccard scorer.
 
+**Both run, 2026-09-12 — see `evals/ig01d/D0-RECHECK-RESULTS.md`.**
+Independently re-verified: the corrected metric moves MPNet from
+precision@5 0.205 to precision@min(5,\|relevant\|) 0.259722 (against the
+0.425 oracle ceiling — meaningfully more of the ceiling than the raw 0.205
+suggested, but still a real gap). The real lexical+semantic hybrid's effect
+is **not consistent across models**: it's the best of three variants for
+MPNet (0.215 vs 0.205 semantic-only vs 0.185 query-blind control) but the
+worst for E5-large (0.185 vs 0.190 vs 0.202). Both models independently
+reproduced the original D0 run's saved aggregates almost exactly first,
+confirming the recheck pipeline itself is sound. This is a real, honest
+signal but not a clean "hybrid wins" story — see the results doc's §5 for
+what is and isn't claimed.
+
 ## Longer-term, lower-priority gaps identified but not yet actioned
 
 - A second embedding model (`BAAI/bge-m3`) was listed as a D0 candidate but

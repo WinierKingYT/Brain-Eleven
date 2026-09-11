@@ -145,10 +145,15 @@ instead of list order. Full suite reproduces at 920 passed.
   are below/at the mathematical ceiling of D0's `precision@5` metric on its
   own corpus — oracle ceiling is 0.425, independently re-derived twice) and
   a mislabeled "hybrid" control (fused real semantic search with a
-  query-blind ranker). Does not reopen D1 by itself. Next: run the two
-  cheap recheck experiments the doc proposes (fair-metric rescoring of
-  existing D0 output; a real query-aware lexical+semantic hybrid) before
-  deciding whether to revisit D1.
+  query-blind ranker). Does not reopen D1 by itself. Both recheck
+  experiments now run (2026-09-12, `evals/ig01d/D0-RECHECK-RESULTS.md`):
+  corrected MPNet precision is 0.259722 against the 0.425 ceiling (vs raw
+  0.205); a real lexical+semantic hybrid beats semantic-only for MPNet
+  (0.215) but underperforms it for E5-large (0.185 vs 0.190) — an honest,
+  model-inconsistent result, not a clean case to reverse D1 on its own.
+  Whether to revisit D1 next (try a third embedding model, fix the eval
+  corpus's synthetic/templated queries, or accept Branch B and move on) is
+  Ahmet's call.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
