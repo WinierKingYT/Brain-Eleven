@@ -14,6 +14,11 @@ if str(_ROOT) not in sys.path:
     # Historical direct execution starts with ``scripts/`` on sys.path.
     sys.path.insert(0, str(_ROOT))
 
+# Keep the migration contract explicit: legacy callers resolve both canonical
+# graph and memory dependencies through package-owned surfaces.
+from brain_eleven.graph import KnowledgeGraph, KnowledgeGraphProjectionStale  # noqa: F401,E402
+from brain_eleven.memory import MemoryStore, infer_memory_scope  # noqa: F401,E402
+
 
 def _load_canonical(name: str, path: Path) -> ModuleType:
     """Load and cache the package implementation for the legacy entrypoint."""

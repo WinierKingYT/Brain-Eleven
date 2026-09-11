@@ -30,6 +30,7 @@ from brain_eleven.memory import (
     project_identity,
     resolve_capture_scope,
 )
+from brain_eleven.extraction import EntityExtractor
 from brain_eleven.projects.registry import ProjectRegistry, registry_path as project_registry_path
 from capture_safety import evaluate_capture
 
@@ -58,7 +59,6 @@ if str(SCRIPT_DIR) not in sys.path:
 
 _memory_validator = _load_hyphenated_module("memory_validator", "memory-validator.py")
 MemoryValidator = _memory_validator.MemoryValidator
-EntityExtractor = _load_hyphenated_module("entity_extractor", "entity_extractor.py").EntityExtractor
 
 
 def default_vault_path() -> Path:
