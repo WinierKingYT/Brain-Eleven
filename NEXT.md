@@ -90,10 +90,17 @@ Slice 2 (2A + 2B) from `IG07-SLICE2-PLAN.md`.
 **Two-track workflow started (2026-09-11).** Codex continues on relayed
 instructions as before; Claude now also implements small bounded pieces
 directly via an isolated agent worktree, reviewed with the same rigor as
-Codex's work before merging. First Claude-track task in flight: the
-`anomaly.py` P2 fix (plain imports instead of `sys.modules.get`) and a real
-diagnosis of the intermittent `test_cold_native_session_start_delivers_v1_within_hook_budget`
-flake.
+Codex's work before merging. First Claude-track task closed: `anomaly.py`'s
+`sys.modules.get` P2 finding fixed with plain imports (`9712d39`),
+independently re-verified (standalone import, focused + full suite at 913
+passed, clean flake8). The intermittent
+`test_cold_native_session_start_delivers_v1_within_hook_budget` flake was
+investigated thoroughly (~90 reproduction attempts including cold-bytecode
+and CPU-stress conditions) but could not be reproduced; no speculative fix
+was applied — the test's 3s budget matches a real host-enforced hook
+`timeout: 3` in `brain_eleven/runtime/install.py:113`, so loosening it would
+stop validating a real contract. Left as-is; still worth a future look if it
+recurs.
 
 **Slice 2C plan approved with a scope change.** `IG07-SLICE2C-PLAN.md`
 covers the three canonical-memory-writing migration tools; unlike Slice
