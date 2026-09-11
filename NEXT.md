@@ -147,14 +147,31 @@ verdict `SHIP`. One non-blocking finding: the combined report's original
 commit-chain citations didn't exist in git history (pre-push local rewrite),
 corrected in-file.
 
+**IG-07 Slice 2D plan approved, scoped down to D1 only.**
+`IG07-SLICE2D-PLAN.md` covers `install-cross-project-memory.py` and
+`remember.py`; independently spot-checked (found and verified two real bugs
+by reading the code: `uninstall()` deletes manifest-listed paths with no
+containment check against `home/.claude`, and `_atomic_json_write` never
+calls `fsync`). C0 decision (2026-09-12): the installer is not in active
+operational use, so it's **archived as historical** — not migrated,
+security findings documented but not fixed while unused. D2 (installer) is
+removed from this slice. Capture-safety bridge direction set to a minimal
+identity-preserving bridge (no logic copy from `capture_safety.py`).
+**Slice 2D now covers only D1** (`remember.py` → `brain_eleven/memory/capture.py`),
+approved for implementation — real production caller
+(`scripts/remember_opt_in.py`), lock-based (not CAS) canonical write via
+`memory-validator.py`'s `transact`, which the plan correctly says must not
+be copied into the new capture package.
+
 ## What's next
 
-- IG-07's remaining scope needs a new bounded plan before implementation:
-  `install-cross-project-memory.py` + `remember.py` (Slice 2D per
-  `IG07-SLICE2-PLAN.md` — live client-config mutation, security review
-  needed) and `task_model.py` (Slice 2E — widest authority/evaluation blast
-  radius after `task_state_context.py`, which stays excluded with its own
-  separate plan).
+- Implement Slice 2D D1 (`remember.py` → `brain_eleven/memory/capture.py`)
+  under its own bounded contract, per `IG07-SLICE2D-PLAN.md` §B3 — same
+  five-gate discipline, plus duplicate/project-isolation/registry-opt-in/
+  safety-rejection evidence. Closes Slice 2D once independently reviewed.
+- `task_model.py` (Slice 2E — widest authority/evaluation blast radius after
+  `task_state_context.py`, which stays excluded with its own separate plan)
+  remains after that.
 - Claude-track pivoted to retrieval/recall quality research (2026-09-12).
   First finding is significant: `D0-RECHECK-FINDINGS.md` shows the D1
   decision's own evidence has a metric-design flaw (0.45/0.60 thresholds

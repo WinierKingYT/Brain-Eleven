@@ -344,3 +344,22 @@ VERDICT: SHIP / FIX-FIRST / RETHINK
 ```
 
 **Plan status:** REVIEW PENDING — implementation başlamadı, Phase 20 açılmadı.
+
+## 7. C0 ve B2.3 kararları (2026-09-12, Ahmet ve Claude onayı ile)
+
+- **Installer (`install-cross-project-memory.py`) C0: Archive as historical.**
+  Ahmet bu aracı operasyonel olarak kullanmadığını belirtti. **D2 bu slice'ın
+  kapsamından tamamen çıkarılmıştır** — script package'a taşınmayacak,
+  `uninstall()`'daki path-containment açığı ve `_atomic_json_write`'daki
+  eksik `fsync` bu turda düzeltilmeyecek. Kullanılmayan kod için kabul
+  edilebilir bir risk olarak belgelenir; script gerçekten çalıştırılmaya
+  başlanırsa bu karar ve güvenlik bulguları yeniden gözden geçirilmelidir.
+- **B2.3 capture-safety bridge yönü: minimal identity-preserving bridge.**
+  `brain_eleven/memory/capture.py`, `capture_safety.py`'nin regex/mantığını
+  kopyalamayacak veya yeniden yazmayacak — mevcut projedeki `load_legacy_module`
+  deseniyle (bkz. `brain_eleven/lifecycle/__init__.py`) aynı obje kimliğini
+  koruyan ince bir bridge yeterli. `capture_safety.py`'nin kendi ayrı
+  migration'ı (varsa) ayrı bir bounded plan gerektirir; bu slice'ın işi değil.
+
+**Slice 2D artık yalnızca D1 (remember) içerir.** D0 (installer C0 kararı)
+tamamlandı; D2 kapatıldı. D1 implementasyonuna başlanabilir.
