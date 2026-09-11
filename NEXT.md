@@ -36,23 +36,20 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**IG-07 (architecture consolidation) is now the active engineering thread.**
-`IG07-INVENTORY.md` catalogs all 58 `scripts/` modules (14,014 impl LOC, 20
-low/12 medium/26 high risk) and proposes a first slice of four bridge-only,
-non-authority modules: `logging_config.py` → `cache_manager.py` →
-`summarizer.py` → `anomaly_detector.py`. Independently reviewed (LOC and
-module count verified exactly; found and flagged one caller-count
-undercount for `cache_manager.py` — 4 real callers, not 2 — that doesn't
-change its risk bucket). First slice approved; `MemoryStore`/`StateStore`/
-`ProjectRegistry` and capture/retrieval paths are explicitly out of scope
-until this slice closes.
+**IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
+catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
+risk). Slice 1's four bridge-only, non-authority modules (`logging_config`,
+`cache_manager`, `summarizer`, `anomaly_detector`) are all migrated into
+`brain_eleven/support/*` with real implementation authority, independently
+reviewed and accepted (`IG07-SLICE1-INDEPENDENT-REVIEW.md`, verdict `SHIP`).
+One P2 finding open (unnecessary `sys.modules` dependency lookup in
+`anomaly.py` — not blocking). `MemoryStore`/`StateStore`/`ProjectRegistry`
+and capture/retrieval paths remain untouched and out of scope.
 
 ## What's next
 
-- Implement IG-07 slice 1 in the stated order, one module at a time, with
-  the inventory's five-gate checklist (identity proof, no second
-  implementation, parity tests, full regression, independent review before
-  the next module).
+- Decide and plan IG-07 slice 2 (medium/high-risk modules) — needs a new
+  bounded plan before implementation begins, same as slice 1 did.
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
