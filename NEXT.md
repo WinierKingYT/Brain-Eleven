@@ -46,21 +46,27 @@ One P2 finding open (unnecessary `sys.modules` dependency lookup in
 `anomaly.py` — not blocking). `MemoryStore`/`StateStore`/`ProjectRegistry`
 and capture/retrieval paths remain untouched and out of scope.
 
-**Slice 2A approved, not yet implemented.** `IG07-SLICE2-PLAN.md` reassessed
-all 11 remaining medium-risk modules more deeply than slice 1's coarse pass —
+**IG-07 Slice 2A is closed.** `IG07-SLICE2-PLAN.md` reassessed all 11
+remaining medium-risk modules more deeply than slice 1's coarse pass —
 several got reclassified to HIGH (`entity_extractor`, `knowledge_graph`,
 `remember`, both `migrate-*` scripts, `install-cross-project-memory`,
-`task_model`). Approved sub-slice 2A: `memory_provenance.py` →
-`chat_interface.py` → `post_session_maintenance.py`, in that order.
+`task_model`). Sub-slice 2A (`memory_provenance.py` → `chat_interface.py` →
+`post_session_maintenance.py`) is fully migrated into `brain_eleven/memory/`
+and `brain_eleven/runtime/`, independently reviewed and accepted
+(`IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`, 2026-09-11). Full
+suite reproduces at 895 passed; `session_pipeline.py` and the hook budget
+are unchanged. No new P0/P1/P2 findings; Slice 1's two open P2s (the
+`anomaly.py` `sys.modules` lookup and a hook-timing stabilization pass)
+remain open and unaffected.
 `task_state_context.py` (26-27 callers, highest blast radius in the whole
 inventory) is excluded from Slice 2 entirely, needs its own plan later.
 
 ## What's next
 
-- Implement Slice 2A in the stated order, one module at a time, same five-
-  gate discipline as slice 1 (identity proof, adapter-only, parity tests,
-  full regression, independent review before the next module).
-  bounded plan before implementation begins, same as slice 1 did.
+- Plan Slice 2B (`entity_extractor.py`, `knowledge_graph.py`, per
+  `IG07-SLICE2-PLAN.md`'s proposed order) — needs its own bounded contract
+  before implementation begins, same discipline as slices 1 and 2A (identity
+  proof, adapter-only, parity tests, full regression, independent review).
 - Vault hygiene and B1's P2 gaps are closed; pilot resumes automatically once
   PRE-13 quality clears the CANARY gate (or Ahmet revisits the gate
   decision) — no separate action needed to "start" it beyond that.
@@ -92,3 +98,14 @@ Ubuntu's CI runs - Windows skips that step, so Codex's local checks never
 saw it, and Linux-side local checks used a different scope). Fixed at
 `647bfad`, confirmed green via the API. Agreed next step is a real-use
 pilot, not more engineering, before deciding IG-04's next sub-package.
+
+**2026-09-11** — Closed IG-07 Slice 1 (independent `SHIP`). Planned and
+approved Slice 2A (`IG07-SLICE2-PLAN.md`, several modules reclassified to
+HIGH risk vs. slice 1's coarse pass; `task_state_context.py` excluded).
+Codex implemented all three Slice 2A modules (`memory_provenance.py`,
+`chat_interface.py`, `post_session_maintenance.py`) into
+`brain_eleven/memory/` and `brain_eleven/runtime/`; each independently
+reviewed, full suite re-run at 895 passed, CI's exact lint command clean,
+adapter-only/identity/parity checks re-verified rather than trusted from the
+report. Closed with `IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+No new P0/P1/P2 findings.
