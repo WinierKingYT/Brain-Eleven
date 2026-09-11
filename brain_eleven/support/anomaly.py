@@ -22,21 +22,13 @@ helpers directly.
 
 import json
 import re
-import sys
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-_logging = sys.modules.get("brain_eleven.support.logging")
-_summarizer = sys.modules.get("brain_eleven.support.summarizer")
-if _logging is None or _summarizer is None:  # pragma: no cover - package load order
-    raise ImportError(
-        "brain_eleven.support.logging and summarizer must load before anomaly"
-    )
-setup_logging = _logging.setup_logging
-tokenize = _summarizer.tokenize
-jaccard_similarity = _summarizer.jaccard_similarity
+from brain_eleven.support.logging import setup_logging
+from brain_eleven.support.summarizer import tokenize, jaccard_similarity
 
 logger = setup_logging(__name__)
 
