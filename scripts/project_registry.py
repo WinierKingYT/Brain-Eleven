@@ -7,6 +7,7 @@ same opaque identity when its directory is moved or renamed.
 """
 
 import argparse
+from copy import deepcopy
 import json
 import os
 import secrets
@@ -25,6 +26,8 @@ except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
 
 REGISTRY_SCHEMA_VERSION = 1
 REGISTRY_FILENAME = "project-registry.json"
+REGISTRY_BACKUP_FILENAME = "project-registry.backup.json"
+BACKUP_SCHEMA_VERSION = 1
 VALID_STATUSES = {"active", "archived"}
 
 
@@ -32,9 +35,30 @@ class ProjectRegistryError(ValueError):
     """Raised when the local project registry is invalid or inconsistent."""
 
 
+class ProjectRegistryConflict(ProjectRegistryError):
+    """Raised when a registry mutation uses an obsolete revision."""
+
+    def __init__(self, expected_revision: int, actual_revision: int):
+        self.expected_revision = expected_revision
+        self.actual_revision = actual_revision
+        super().__init__(
+            f"Project registry revision conflict: expected {expected_revision}, "
+            f"actual {actual_revision}"
+        )
+
+
+class ProjectRegistryBackupError(ProjectRegistryError):
+    """Raised when the fixed registry backup cannot be trusted."""
+
+
 def registry_path(vault_path: Union[str, Path]) -> Path:
     """Return the ignored, vault-local registry path."""
     return Path(vault_path).expanduser() / ".claude" / REGISTRY_FILENAME
+
+
+def registry_backup_path(vault_path: Union[str, Path]) -> Path:
+    """Return the fixed, vault-local registry backup path."""
+    return Path(vault_path).expanduser() / ".claude" / REGISTRY_BACKUP_FILENAME
 
 
 def normalize_registry_root(project_root: Union[str, Path]) -> str:
@@ -47,6 +71,19 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _fsync_parent_directory(path: Path) -> None:
+    """Persist the directory entry after replace where the host supports it."""
+    if os.name == "nt":
+        # Windows flushes the file handle above; directory handles are not
+        # consistently openable for fsync across supported Windows versions.
+        return
+    descriptor = os.open(str(path.parent), os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_write(path: Path, data: Dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
@@ -56,7 +93,10 @@ def _atomic_write(path: Path, data: Dict) -> None:
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             json.dump(data, handle, indent=2, ensure_ascii=False)
             handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
         Path(temporary_name).replace(path)
+        _fsync_parent_directory(path)
     finally:
         temporary = Path(temporary_name)
         if temporary.exists():
@@ -66,6 +106,7 @@ def _atomic_write(path: Path, data: Dict) -> None:
 def _empty_registry() -> Dict:
     return {
         "schema_version": REGISTRY_SCHEMA_VERSION,
+        "revision": 0,
         "updated_at": _utc_now(),
         "projects": [],
     }
@@ -77,6 +118,17 @@ class ProjectRegistry:
     def __init__(self, vault_path: Union[str, Path]):
         candidate = Path(vault_path).expanduser()
         self.path = candidate if candidate.name == REGISTRY_FILENAME else registry_path(candidate)
+        self.backup_path = self.path.with_name(REGISTRY_BACKUP_FILENAME)
+
+    @staticmethod
+    def _normalize(data: Dict) -> Dict:
+        if not isinstance(data, dict):
+            raise ProjectRegistryError("Project registry must be a JSON object")
+        normalized = dict(data)
+        # Schema 1 documents written before W-08A did not have a revision.
+        normalized.setdefault("revision", 0)
+        ProjectRegistry._validate(normalized)
+        return normalized
 
     def load(self) -> Dict:
         """Load and validate the registry; corruption is never treated as empty."""
@@ -86,13 +138,15 @@ class ProjectRegistry:
             data = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise ProjectRegistryError(f"Cannot read project registry: {self.path}") from exc
-        self._validate(data)
-        return data
+        return self._normalize(data)
 
     @staticmethod
     def _validate(data: Dict) -> None:
         if not isinstance(data, dict) or data.get("schema_version") != REGISTRY_SCHEMA_VERSION:
             raise ProjectRegistryError("Unsupported project registry schema")
+        revision = data.get("revision", 0)
+        if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+            raise ProjectRegistryError("Project registry revision must be a non-negative integer")
         projects = data.get("projects")
         if not isinstance(projects, list):
             raise ProjectRegistryError("Project registry projects must be a list")
@@ -113,13 +167,47 @@ class ProjectRegistry:
             seen_ids.add(project_id)
             seen_roots.add(root)
 
-    def _mutate(self, callback):
+    @staticmethod
+    def _validate_expected_revision(expected_revision: Optional[int]) -> None:
+        if expected_revision is None:
+            return
+        if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision < 0:
+            raise ProjectRegistryError("expected_revision must be a non-negative integer")
+
+    def _write_backup(self, previous: Dict) -> None:
+        envelope = {
+            "backup_schema_version": BACKUP_SCHEMA_VERSION,
+            "captured_at": _utc_now(),
+            "source_revision": int(previous["revision"]),
+            "registry": deepcopy(previous),
+        }
+        try:
+            _atomic_write(self.backup_path, envelope)
+        except (OSError, TypeError, ValueError) as exc:
+            raise ProjectRegistryBackupError(
+                f"Cannot persist project registry backup: {self.backup_path}"
+            ) from exc
+
+    def _persist(self, previous: Dict, current: Dict) -> None:
+        if self.path.exists():
+            self._write_backup(previous)
+        _atomic_write(self.path, current)
+
+    def _mutate(self, callback, expected_revision: Optional[int] = None):
+        self._validate_expected_revision(expected_revision)
         with file_lock(self.path):
             data = self.load()
+            actual_revision = int(data["revision"])
+            if expected_revision is not None and expected_revision != actual_revision:
+                raise ProjectRegistryConflict(expected_revision, actual_revision)
+            before = deepcopy(data)
             result = callback(data)
+            if data == before:
+                return result
             data["updated_at"] = _utc_now()
+            data["revision"] = actual_revision + 1
             self._validate(data)
-            _atomic_write(self.path, data)
+            self._persist(before, data)
             return result
 
     def list_projects(self) -> List[Dict]:
@@ -165,6 +253,7 @@ class ProjectRegistry:
         project_id: Optional[str] = None,
         status: str = "active",
         proactive_capture: bool = False,
+        expected_revision: Optional[int] = None,
     ) -> Dict:
         """Register or return a project identity, rejecting conflicting IDs."""
         normalized_root = normalize_registry_root(project_root)
@@ -204,9 +293,14 @@ class ProjectRegistry:
             projects.append(record)
             return dict(record)
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
 
-    def relocate(self, project_id: str, project_root: Union[str, Path]) -> Dict:
+    def relocate(
+        self,
+        project_id: str,
+        project_root: Union[str, Path],
+        expected_revision: Optional[int] = None,
+    ) -> Dict:
         """Update a registered root while preserving its project_id."""
         normalized_root = normalize_registry_root(project_root)
 
@@ -222,9 +316,14 @@ class ProjectRegistry:
             record["updated_at"] = _utc_now()
             return dict(record)
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
 
-    def rename(self, project_id: str, project_label: str) -> Dict:
+    def rename(
+        self,
+        project_id: str,
+        project_label: str,
+        expected_revision: Optional[int] = None,
+    ) -> Dict:
         """Change the human label without changing the opaque identity."""
         label = str(project_label or "").strip()
         if not label:
@@ -238,9 +337,14 @@ class ProjectRegistry:
             record["updated_at"] = _utc_now()
             return dict(record)
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
 
-    def set_status(self, project_id: str, status: str) -> Dict:
+    def set_status(
+        self,
+        project_id: str,
+        status: str,
+        expected_revision: Optional[int] = None,
+    ) -> Dict:
         if status not in VALID_STATUSES:
             raise ProjectRegistryError(f"Unsupported project status: {status}")
 
@@ -254,9 +358,14 @@ class ProjectRegistry:
             record["updated_at"] = _utc_now()
             return dict(record)
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
 
-    def set_proactive_capture(self, project_id: str, enabled: bool) -> Dict:
+    def set_proactive_capture(
+        self,
+        project_id: str,
+        enabled: bool,
+        expected_revision: Optional[int] = None,
+    ) -> Dict:
         def mutate(data):
             record = next((item for item in data["projects"] if item["project_id"] == project_id), None)
             if record is None:
@@ -267,9 +376,13 @@ class ProjectRegistry:
             record["updated_at"] = _utc_now()
             return dict(record)
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
 
-    def migrate_legacy_opt_in_config(self, config_path: Union[str, Path]) -> Dict:
+    def migrate_legacy_opt_in_config(
+        self,
+        config_path: Union[str, Path],
+        expected_revision: Optional[int] = None,
+    ) -> Dict:
         """Explicitly import legacy config opt-ins into the canonical registry."""
         source = Path(config_path).expanduser()
         if not source.exists():
@@ -327,7 +440,53 @@ class ProjectRegistry:
                 "skipped": skipped,
             }
 
-        return self._mutate(mutate)
+        return self._mutate(mutate, expected_revision=expected_revision)
+
+    def rollback(self, *, expected_revision: int) -> Dict:
+        """Restore the fixed backup without moving the registry revision backwards."""
+        self._validate_expected_revision(expected_revision)
+        with file_lock(self.path):
+            current = self.load()
+            actual_revision = int(current["revision"])
+            if expected_revision != actual_revision:
+                raise ProjectRegistryConflict(expected_revision, actual_revision)
+            if not self.backup_path.is_file():
+                raise ProjectRegistryBackupError(
+                    f"Project registry backup does not exist: {self.backup_path}"
+                )
+            try:
+                envelope = json.loads(self.backup_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ProjectRegistryBackupError(
+                    f"Cannot read project registry backup: {self.backup_path}"
+                ) from exc
+            if not isinstance(envelope, dict) or envelope.get("backup_schema_version") != BACKUP_SCHEMA_VERSION:
+                raise ProjectRegistryBackupError("Unsupported project registry backup schema")
+            backup = envelope.get("registry")
+            source_revision = envelope.get("source_revision")
+            if not isinstance(source_revision, int) or source_revision < 0 or not isinstance(backup, dict):
+                raise ProjectRegistryBackupError("Project registry backup envelope is invalid")
+            normalized_backup = self._normalize(backup)
+            if source_revision != int(normalized_backup["revision"]):
+                raise ProjectRegistryBackupError("Project registry backup revision is inconsistent")
+            if current.get("projects") == normalized_backup.get("projects"):
+                return {
+                    "status": "already_restored",
+                    "revision": actual_revision,
+                    "source_revision": source_revision,
+                }
+            restored = deepcopy(normalized_backup)
+            restored["revision"] = actual_revision + 1
+            restored["updated_at"] = _utc_now()
+            self._validate(restored)
+            # Keep the verified backup as the rollback source. A later ordinary
+            # mutation will rotate it to the then-current registry.
+            _atomic_write(self.path, restored)
+            return {
+                "status": "rolled_back",
+                "revision": restored["revision"],
+                "source_revision": source_revision,
+            }
 
 
 def main(argv=None) -> int:
@@ -382,6 +541,14 @@ def main(argv=None) -> int:
     migrate_legacy.add_argument("--config", required=True)
     migrate_legacy.set_defaults(
         command_handler=lambda registry, args: registry.migrate_legacy_opt_in_config(args.config)
+    )
+
+    rollback = subparsers.add_parser("rollback")
+    rollback.add_argument("--expected-revision", type=int, required=True)
+    rollback.set_defaults(
+        command_handler=lambda registry, args: registry.rollback(
+            expected_revision=args.expected_revision
+        )
     )
 
     args = parser.parse_args(argv)
