@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `8b0c0b7`  
+**Repository revision:** `b35facf`  
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,8 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite: **943 passed, 2 dependency deprecation warnings**.
+- Full local suite after W-01/W-02 bounded fixes: **961 passed, 2 dependency
+  deprecation warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -23,14 +24,14 @@ the behavior and operational evidence found in the current repository.
 |---|---:|---|
 | Persistence and concurrency | 7.0 | Registry durability/revision gap; uncoordinated multi-authority backup; state-memory reference TOCTOU. |
 | Scope and fail-closed safety | 6.0 | Transcript locator is not confined to a trusted client/project boundary; V1 related-note path is not confined to its notes directory. |
-| Capture runtime | 7.5 | Queue/receipt design is strong, but claim transition crash-loss, late transcript loss and prompt-event dead-letter paths remain. |
+| Capture runtime | 8.0 | Claim, retry and lease transition crash-loss is covered and independently shipped; late transcript loss and prompt-event dead-letter paths remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | V1 SessionStart ranking is not task-aware and has file-order tie behavior. |
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
-| Context compilation | 5.0 | V1 reads untrusted related-note paths and injects raw continuity markdown; V2 remains shadow-only. |
+| Context compilation | 6.0 | Related-note path traversal is closed and independently shipped; raw continuity markdown remains and V2 is shadow-only. |
 | V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall. |
 | Reminder/continuity runtime | 3.5 | Session end queues evidence, but Daily/Last Session/open-loop maintenance remains legacy/manual. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
@@ -57,6 +58,12 @@ not change ranking or V2 behavior.
 `capture_queue.py` moves a job to `processing` before rewriting its status.
 An exit between those operations leaves a `QUEUED` document in `processing`,
 which lease recovery rejects. A bounded fault-injection package is required.
+
+**Status:** Closed and independently reviewed `SHIP` at `46f2ff8` (evidence
+report correction at `b35facf`). Claim, retry/requeue, retry/dead-letter and
+lease-recovery transitions now persist the next state before rename, repair
+state-location pairs after an interrupted rename, and have pre/post-rename
+fault-injection coverage.
 
 ### W-03 — Transcript provenance boundary (P1)
 
@@ -99,11 +106,13 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-02 capture queue claim crash window.
-**Closed package:** W-01 context related-note boundary — `SHIP`, report in
-`WEAKNESS-W01-PACKAGE-REPORT.md`.
-**Required outcome:** focused crash-injection tests, full regression, critical
-lint/compile checks, and independent read-only review.
+**Next package:** W-03 transcript provenance boundary.
+**Closed packages:** W-01 context related-note boundary — `SHIP`, report in
+`WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
+`SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`.
+**Required outcome:** a bounded transcript provenance contract, focused
+trusted-root/session tests, full regression, critical lint/compile checks, and
+independent read-only review.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
