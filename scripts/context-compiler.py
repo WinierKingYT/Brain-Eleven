@@ -549,6 +549,68 @@ class ContextCompiler:
 
         return related
 
+    _CONTINUITY_LIMITS = {
+        "active_work_items": 3,
+        "active_requirements": 3,
+        "active_blockers": 3,
+        "constraints": 3,
+        "risks": 3,
+    }
+    _CONTINUITY_TEXT_LIMIT = 160
+
+    @classmethod
+    def _bounded_state_records(cls, records: object, limit: int) -> List[Tuple[str, str]]:
+        """Return deterministic, bounded ``(text, severity)`` state entries.
+
+        StateResolver normally supplies validated mappings.  Optional records
+        are still treated as untrusted at this rendering boundary so one
+        malformed item cannot discard an otherwise usable bootstrap.
+        """
+        if not isinstance(records, (list, tuple)):
+            return []
+        entries = []
+        for record in records:
+            if not isinstance(record, Mapping):
+                continue
+            text = record.get("text")
+            if not isinstance(text, str) or not text.strip():
+                text = record.get("title")
+            if not isinstance(text, str) or not text.strip():
+                continue
+            severity = record.get("severity")
+            severity_text = severity.strip().upper() if isinstance(severity, str) else ""
+            identity = record.get("id")
+            identity_text = str(identity).casefold() if identity is not None else ""
+            bounded_text = text.strip()[:cls._CONTINUITY_TEXT_LIMIT]
+            entries.append((identity_text, bounded_text.casefold(), severity_text, bounded_text, severity_text))
+        entries.sort(key=lambda item: (item[0], item[1], item[2]))
+        return [(item[3], item[4]) for item in entries[:max(0, limit)]]
+
+    @classmethod
+    def _append_continuity_section(
+        cls,
+        lines: List[str],
+        current_state: CurrentProjectState,
+        attribute: str,
+        heading: str,
+        label: str,
+        *,
+        inline: bool = False,
+    ) -> None:
+        records = cls._bounded_state_records(
+            getattr(current_state, attribute, ()),
+            cls._CONTINUITY_LIMITS[attribute],
+        )
+        if not records:
+            return
+        if inline:
+            lines.append(heading + ": " + ", ".join(f"[{label}] {text}" for text, _ in records))
+            return
+        lines.append(heading + ":")
+        for text, severity in records:
+            suffix = f" [{severity}]" if severity else ""
+            lines.append(f"- [{label}]{suffix} {text}")
+
     def _resolve_related_note(self, link: object) -> Optional[Path]:
         """Resolve one related-note basename inside the configured notes dir.
 
@@ -662,20 +724,32 @@ class ContextCompiler:
         if current_state is not None:
             lines.append("\n## CURRENT PROJECT STATE")
             lines.append(f"Status: {current_state.status}")
-            phase_id = current_state.current.get("phase_id")
+            current_value = getattr(current_state, "current", {})
+            current = current_value if isinstance(current_value, Mapping) else {}
+            phase_id = current.get("phase_id")
             if phase_id:
                 lines.append(f"Phase: {phase_id}")
-            objective = current_state.current.get("objective")
-            if objective:
+            objective = current.get("objective")
+            if isinstance(objective, Mapping) and isinstance(objective.get("text"), str):
                 lines.append(f"Objective: {objective['text'][:200]}")
-            if current_state.active_blockers:
-                lines.append("Active blockers:")
-                for blocker in current_state.active_blockers[:3]:
-                    lines.append(f"- {blocker['text'][:160]}")
-            if current_state.constraints:
-                lines.append("Constraints: " + ", ".join(
-                    constraint["text"][:80] for constraint in current_state.constraints[:5]
-                ))
+            milestone = current.get("milestone")
+            if isinstance(milestone, Mapping) and isinstance(milestone.get("title"), str):
+                lines.append(f"Milestone: {milestone['title'][:160]}")
+            self._append_continuity_section(
+                lines, current_state, "active_work_items", "Active work items", "WORK_ITEM"
+            )
+            self._append_continuity_section(
+                lines, current_state, "active_requirements", "Active requirements", "REQUIREMENT"
+            )
+            self._append_continuity_section(
+                lines, current_state, "active_blockers", "Active blockers", "BLOCKER"
+            )
+            self._append_continuity_section(
+                lines, current_state, "constraints", "Constraints", "CONSTRAINT", inline=True
+            )
+            self._append_continuity_section(
+                lines, current_state, "risks", "Risks", "RISK"
+            )
 
         # Top memories
         if memories:
