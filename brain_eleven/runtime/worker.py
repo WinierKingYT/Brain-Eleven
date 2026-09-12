@@ -11,7 +11,7 @@ from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateStore, StateStoreConflict
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 from brain_eleven.operations import operation, operation_result
-from scripts.capture_event import parse_hook_event
+from scripts.capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
 from scripts.capture_provenance import TranscriptProvenanceError, resolve_transcript_path
 from scripts.capture_queue import CaptureQueue
 from scripts.evidence import EvidenceStore, EvidenceBatch
@@ -471,7 +471,8 @@ class Worker:
         if client not in {'claude', 'codex'}:
             client = 'claude'
             session = 'claude:' + hashlib.sha256(session.encode()).hexdigest()
-        return self.config.root / 'cursors' / (identity('src_', client, session, event['transcript_path']) + '.json')
+        locator = event.get('transcript_path') or ('event:' + event['event_id'])
+        return self.config.root / 'cursors' / (identity('src_', client, session, locator) + '.json')
 
     def _persist_checkpoint(self, job, checkpoint_key, cursor):
         checkpoint = self._checkpoint_for(job)
@@ -643,6 +644,28 @@ class Worker:
         project = allowed(self.vault, event['project_root'])
         if not project or project['project_id'] != event['project']['project_id']:
             return {'status': 'SCOPE_DISABLED', 'job_id': job['job_id']}
+        if event.get('event_type') == EVENT_USER_PROMPT_SUBMIT:
+            checkpoint = self._checkpoint_for(job)
+            return {
+                'status': 'PROCESSED',
+                'job_id': job['job_id'],
+                'messages': 0,
+                'effects': 0,
+                'evidence_count': 0,
+                'canonical_effect_count': 0,
+                'review_effect_count': 0,
+                'effect_ids': [],
+                'canonical_operation_ids': [],
+                'review_effect_ids': [],
+                'effect_verified': True,
+                'has_more': False,
+                'checkpoint_key': checkpoint.name,
+                'cursor': {
+                    'offset': 0,
+                    'prefix_hash': hashlib.sha256(b'').hexdigest(),
+                    'has_more': False,
+                },
+            }
         if 'transcript_path' not in event:
             return {'status': 'NO_EVIDENCE', 'job_id': job['job_id']}
         session = event['session_id']
