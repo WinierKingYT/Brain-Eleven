@@ -6,7 +6,8 @@ Smart bootstrap generator: compile top memories + related notes for SessionStart
 Pipeline:
   1. Load validated-memory.json
   2. Load Last Session.md + Open Loops
-  3. Rank by: type priority + freshness + confidence
+  3. Rank by: type priority + freshness + confidence, with bounded current
+     project-state relevance when available
   4. Fetch related Hamle notes via wikilinks
   5. Output: context-bootstrap.json (ready for SessionStart hook)
 """
@@ -15,13 +16,14 @@ import json
 import re
 import argparse
 import io
+import math
 import os
 import sys
 import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from datetime import datetime
-from typing import List, Dict, Tuple, Set, Optional
+from typing import List, Dict, Tuple, Set, Optional, Mapping
 
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
@@ -311,8 +313,134 @@ class ContextCompiler:
     # RANKING
     # ========================================================================
 
+    _BOOTSTRAP_TYPE_WEIGHT = 0.30
+    _BOOTSTRAP_QUALITY_WEIGHT = 0.30
+    _BOOTSTRAP_FRESHNESS_WEIGHT = 0.15
+    _BOOTSTRAP_RELEVANCE_WEIGHT = 0.25
+    _MAX_BOOTSTRAP_QUERY_TOKENS = 64
+    _MAX_BOOTSTRAP_QUERY_CHARS = 2400
+    _MAX_BOOTSTRAP_QUERY_ITEMS = 32
+    _TOKEN_PATTERN = re.compile(r"[^\W_]+(?:[-_][^\W_]+)*", re.UNICODE)
+
+    @classmethod
+    def _text_tokens(cls, value: object) -> List[str]:
+        """Return bounded, local tokens for deterministic bootstrap matching."""
+        if not isinstance(value, str):
+            return []
+        return [token for token in cls._TOKEN_PATTERN.findall(value.casefold()) if len(token) > 1]
+
+    @classmethod
+    def _state_query_tokens(cls, state: Optional[CurrentProjectState]) -> Set[str]:
+        """Build a bounded lexical query from resolved structured project state.
+
+        Only state text already read by ``StateResolver`` is considered.  IDs,
+        source references, filesystem paths and arbitrary vault content are
+        intentionally excluded from the query.
+        """
+        if state is None or getattr(state, "status", None) != STATE_AVAILABLE:
+            return set()
+
+        chunks: List[str] = []
+
+        def add_value(value: object, fields: Tuple[str, ...] = ("text", "title")) -> None:
+            if isinstance(value, str):
+                chunks.append(value)
+                return
+            if isinstance(value, Mapping):
+                for field in fields:
+                    field_value = value.get(field)
+                    if isinstance(field_value, str):
+                        chunks.append(field_value)
+
+        current = getattr(state, "current", {})
+        if isinstance(current, Mapping):
+            phase_id = current.get("phase_id")
+            if isinstance(phase_id, str):
+                chunks.append(phase_id)
+            add_value(current.get("milestone"), ("title", "text"))
+            add_value(current.get("objective"), ("text", "title"))
+
+        for attribute in (
+            "active_requirements",
+            "active_work_items",
+            "active_blockers",
+            "constraints",
+            "risks",
+        ):
+            values = getattr(state, attribute, ())
+            if not isinstance(values, (list, tuple)):
+                continue
+            for item in values[: cls._MAX_BOOTSTRAP_QUERY_ITEMS]:
+                add_value(item)
+                if isinstance(item, Mapping):
+                    severity = item.get("severity")
+                    if isinstance(severity, str):
+                        chunks.append(severity)
+
+        bounded = " ".join(chunks)[: cls._MAX_BOOTSTRAP_QUERY_CHARS]
+        return set(cls._text_tokens(bounded)[: cls._MAX_BOOTSTRAP_QUERY_TOKENS])
+
+    @classmethod
+    def _memory_relevance(cls, memory: Mapping, query_tokens: Set[str]) -> float:
+        """Return bounded query coverage; malformed content has zero relevance."""
+        if not query_tokens:
+            return 0.0
+        content_tokens = set(cls._text_tokens(memory.get("content")))
+        if not content_tokens:
+            return 0.0
+        return len(query_tokens.intersection(content_tokens)) / len(query_tokens)
+
+    @staticmethod
+    def _stable_memory_key(memory: Mapping) -> str:
+        """Return a deterministic identity/content tie-break independent of input order."""
+        identity = memory.get("memory_id")
+        if not isinstance(identity, (str, int, float)) or isinstance(identity, bool):
+            identity = memory.get("id")
+        identity_text = str(identity) if identity is not None else ""
+        content = memory.get("content")
+        content_text = content.casefold() if isinstance(content, str) else ""
+        if identity_text:
+            return f"1\x00{identity_text}\x00{content_text}"
+        try:
+            canonical_text = json.dumps(
+                dict(memory),
+                ensure_ascii=False,
+                sort_keys=True,
+                default=str,
+                separators=(",", ":"),
+            )
+        except (TypeError, ValueError):
+            canonical_text = repr(sorted((str(key), repr(value)) for key, value in memory.items()))
+        return f"{identity_text}\x00{content_text}\x00{canonical_text}"
+
+    @staticmethod
+    def _safe_quality(memory: Mapping) -> float:
+        value = memory.get("quality_score", memory.get("confidence", 0.5))
+        if isinstance(value, bool):
+            return 0.5
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return 0.5
+        if not math.isfinite(value):
+            return 0.5
+        return min(1.0, max(0.0, value))
+
+    @staticmethod
+    def _safe_freshness(memory: Mapping) -> float:
+        timestamp = memory.get("timestamp")
+        if not isinstance(timestamp, str) or not timestamp:
+            return 0.5
+        try:
+            parsed = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            now = datetime.now(parsed.tzinfo) if parsed.tzinfo else datetime.now()
+            days_old = max(0, (now - parsed).days)
+            return max(0.3, 1.0 - (days_old * 0.05))
+        except (TypeError, ValueError, OverflowError):
+            return 0.5
+
     def _rank_memories(self, limit: int = 5) -> List[Dict]:
-        """Rank memories by type priority + freshness + confidence (skip inactive)"""
+        """Rank active memories for V1 bootstrap with bounded state relevance."""
 
         type_priority = {
             "decision": 1.0,
@@ -322,10 +450,11 @@ class ContextCompiler:
         }
 
         scoped_memories = filter_memories(
-            self.memories,
+            (memory for memory in self.memories if isinstance(memory, Mapping)),
             project_id=self.project_id,
             retrieval_scope=self.retrieval_scope,
         )
+        query_tokens = self._state_query_tokens(self.current_project_state)
         ranked = []
 
         for memory in scoped_memories:
@@ -335,20 +464,25 @@ class ContextCompiler:
                 continue
 
             # Type priority
-            priority = type_priority.get(memory["type"], 0.5)
+            memory_type = memory.get("type")
+            priority = type_priority.get(memory_type, 0.5) if isinstance(memory_type, str) else 0.5
 
-            # Freshness
-            try:
-                dt = datetime.fromisoformat(memory["timestamp"])
-                now = datetime.now()
-                days_old = (now - dt).days
-                freshness = max(0.3, 1.0 - (days_old * 0.05))
-            except:
-                freshness = 0.5
+            freshness = self._safe_freshness(memory)
 
-            # Combine scores
-            confidence = memory["quality_score"]
-            score = (priority * 0.4) + (confidence * 0.4) + (freshness * 0.2)
+            # Preserve the historical formula when no state/query is
+            # available.  With state/query text, use the same signals with a
+            # bounded relevance component whose weights sum to one.
+            confidence = self._safe_quality(memory)
+            relevance = self._memory_relevance(memory, query_tokens)
+            if query_tokens:
+                score = (
+                    (priority * self._BOOTSTRAP_TYPE_WEIGHT)
+                    + (confidence * self._BOOTSTRAP_QUALITY_WEIGHT)
+                    + (freshness * self._BOOTSTRAP_FRESHNESS_WEIGHT)
+                    + (relevance * self._BOOTSTRAP_RELEVANCE_WEIGHT)
+                )
+            else:
+                score = (priority * 0.4) + (confidence * 0.4) + (freshness * 0.2)
 
             ranked.append({
                 **memory,
@@ -361,6 +495,7 @@ class ContextCompiler:
             key=lambda m: (
                 0 if self.project_id and infer_memory_scope(m)[2] == self.project_id else 1,
                 -m["ranking_score"],
+                self._stable_memory_key(m),
             )
         )
 

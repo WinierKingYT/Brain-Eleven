@@ -13,6 +13,7 @@ import json
 import importlib.util
 from pathlib import Path
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 
@@ -165,6 +166,72 @@ class TestRankMemories:
         ranked = compiler._rank_memories(limit=5)
 
         assert "ranking_score" in ranked[0]
+
+    def test_state_relevance_prioritizes_matching_memory(self, vault):
+        compiler = ContextCompiler(str(vault))
+        compiler.current_project_state = SimpleNamespace(
+            status=context_compiler.STATE_AVAILABLE,
+            current={
+                "phase_id": "phase-16",
+                "milestone": {"title": "Authentication migration"},
+                "objective": {"text": "Fix PostgreSQL authentication"},
+            },
+            active_requirements=(),
+            active_work_items=(),
+            active_blockers=(),
+            constraints=(),
+            risks=(),
+        )
+        timestamp = "2026-01-01T00:00:00"
+        compiler.memories = [
+            make_memory(
+                memory_id="unrelated",
+                content="The button color is blue",
+                timestamp=timestamp,
+            ),
+            make_memory(
+                memory_id="relevant",
+                content="Fix PostgreSQL authentication migration",
+                timestamp=timestamp,
+            ),
+        ]
+
+        ranked = compiler._rank_memories(limit=5)
+
+        assert ranked[0]["memory_id"] == "relevant"
+        assert ranked[0]["ranking_score"] > ranked[1]["ranking_score"]
+
+    def test_equal_scores_have_stable_identity_order_independent_of_input(self, vault):
+        compiler = ContextCompiler(str(vault))
+        timestamp = "2026-01-01T00:00:00"
+        memories = [
+            make_memory(memory_id="b", timestamp=timestamp),
+            make_memory(memory_id="a", timestamp=timestamp),
+        ]
+
+        compiler.memories = memories
+        first = [item["memory_id"] for item in compiler._rank_memories(limit=5)]
+        compiler.memories = list(reversed(memories))
+        second = [item["memory_id"] for item in compiler._rank_memories(limit=5)]
+
+        assert first == ["a", "b"]
+        assert second == first
+
+    def test_malformed_optional_fields_remain_fail_soft(self, vault):
+        compiler = ContextCompiler(str(vault))
+        compiler.memories = [{
+            "memory_id": "malformed",
+            "type": None,
+            "content": 42,
+            "quality_score": "not-a-number",
+            "timestamp": None,
+            "status": "active",
+        }]
+
+        ranked = compiler._rank_memories(limit=5)
+
+        assert [item["memory_id"] for item in ranked] == ["malformed"]
+        assert ranked[0]["ranking_score"] == pytest.approx(0.5)
 
 
 class TestWikilinksAndHamles:

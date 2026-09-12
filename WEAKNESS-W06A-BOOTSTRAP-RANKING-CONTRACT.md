@@ -52,12 +52,18 @@ When no state/query text is available, retain the current weighted behavior:
 score = 0.40 * type_priority + 0.40 * quality + 0.20 * freshness
 ```
 
-When bounded state/query text is available, add a documented lexical relevance
-term with fixed weights. The exact implementation weights must be recorded in
-the package report and covered by fixed-input tests; they must not be tuned on
-holdout data in this package. Scope tier remains the primary sort key. The
-remaining keys must include descending score and a stable memory identity
-(`memory_id`/`id`, with a deterministic content fallback when absent).
+When bounded state/query text is available, use the same signals with the
+following fixed, normalized weights:
+
+```
+score = 0.30 * type_priority + 0.30 * quality + 0.15 * freshness
+        + 0.25 * lexical_relevance
+```
+
+These weights are a bounded V1 contract, not a holdout-tuned claim. Scope tier
+remains the primary sort key. The remaining keys must include descending score
+and a stable memory identity (`memory_id`/`id`, with a deterministic content
+fallback when absent).
 
 Lexical matching must use normalized text tokens and must not treat a memory's
 filesystem path or unrelated vault content as query input. A missing or
