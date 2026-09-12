@@ -96,6 +96,11 @@ Legacy `USER_PROMPT_SUBMIT` events have no transcript locator, yet the worker
 routes every no-evidence result through retry/dead-letter. The event contract
 must be made explicit and tested.
 
+**Status:** Closed and independently reviewed `SHIP` at `ac29c51`
+(implementation `1f98a7d`, report `WEAKNESS-W05-PACKAGE-REPORT.md`). Validated
+prompt events now complete once with a zero-effect receipt; SessionEnd evidence
+behavior remains unchanged.
+
 ### W-06 — V1 task-unaware ranking (P1)
 
 `context-compiler.py`, `memory-retriever.py` and `hybrid-search.py` rank by
@@ -118,14 +123,16 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-05 prompt event dead-letter semantics.
+**Next package:** W-06 V1 task-unaware ranking.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
 confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`; W-04 late
-transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`.
-**Required outcome:** a bounded prompt-event contract, focused queue/worker
-tests, full regression, critical lint/compile checks, and independent
+transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`; W-05
+prompt event terminal semantics — `SHIP`, report in
+`WEAKNESS-W05-PACKAGE-REPORT.md`.
+**Required outcome:** a bounded task-aware ranking contract, evaluation-backed
+focused tests, full regression, critical lint/compile checks, and independent
 read-only review.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
