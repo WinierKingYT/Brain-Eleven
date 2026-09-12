@@ -1,7 +1,7 @@
 # W-01 Package Report — V1 Context Related-Note Boundary
 
 **PACKAGE:** W-01 / V1 context related-note boundary  
-**REVISION:** pending commit (working-tree evidence below)  
+**REVISION:** `1a586d3`  
 **OBJECTIVE:** Prevent V1 context compilation from reading a related note
 outside the configured `Kararlar` directory.  
 **FILES CHANGED:** `scripts/context-compiler.py`,
