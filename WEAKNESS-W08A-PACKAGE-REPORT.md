@@ -34,7 +34,7 @@ introduced.
 
 ## TESTS ADDED
 
-Eight focused W-08A tests cover legacy schema normalization and upgrade,
+Ten focused W-08A tests cover legacy schema normalization and upgrade,
 stale conflict plus explicit retry, compatibility callers, backup envelope,
 monotonic/idempotent rollback, stale rollback, missing/corrupt backup,
 fsync/main persistence failures, parent-directory sync invocation and package
