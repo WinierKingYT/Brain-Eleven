@@ -6,7 +6,9 @@ W-07A — Native SessionStart Continuity Read
 
 ## REVISION
 
-`a83f93d46146798cac17c1567c564f89909284d8`
+Implementation: `a83f93d46146798cac17c1567c564f89909284d8`
+
+Baseline evidence refresh: `2fff176c02353319bcb49dea8c7d114ad11e07db`
 
 ## OBJECTIVE
 
@@ -20,6 +22,8 @@ native SessionStart.
 
 - `scripts/context-compiler.py`
 - `tests/test_w07a_continuity.py`
+- `evals/reports/baseline-v3.json` (source fingerprint refresh only; metrics and
+  corpus inputs unchanged)
 
 No changes were made to `brain_eleven/runtime/context.py`, companion markdown,
 maintenance, writers, schedulers, V2, canonical stores or Phase 20.
@@ -66,13 +70,16 @@ context block. Optional malformed records could also raise during rendering.
 - Critical flake8 (`E9,F63,F7,F82`) on changed files: **passed**.
 - `compileall` on changed files: **passed**.
 - `git diff --check`: **passed**.
-- Full `pytest tests -q`: **981 passed, 1 failed, 2 warnings**.
+- Full `pytest tests -q` after the evidence refresh: **982 passed, 2 warnings**.
 
-The single full-suite failure is the pre-existing
+The pre-refresh run exposed the baseline source-fingerprint guard after the
+bounded `context-compiler.py` change:
 `tests/test_evaluation_baseline_snapshot.py::test_baseline_v2_snapshot_matches_current_public_suite_inputs`
-failure: committed `evals/reports/baseline-v3.json` does not match the current
-deterministic public-suite snapshot. It is outside W-07A files and behavior;
-the failure remains visible and was not changed here.
+reported that the committed `evals/reports/baseline-v3.json` no longer matched
+the current deterministic public-suite source. The baseline was regenerated
+through the official evaluator; the only diff is `source_fingerprint`, while
+`case_count`, metrics and invariants remain unchanged. The post-refresh
+baseline guard passes.
 
 ## QUALITY METRICS BEFORE/AFTER
 
@@ -90,13 +97,13 @@ delivery for the five resolved-state categories.
 
 ## KNOWN LIMITATIONS
 
-The full-suite baseline snapshot mismatch remains open and is unrelated to this
-package. Companion markdown remains informational/manual and is intentionally
-not included in native SessionStart continuity.
+Companion markdown remains informational/manual and is intentionally not
+included in native SessionStart continuity. The two test-suite warnings are
+dependency deprecation warnings from the existing FastAPI/Starlette test
+stack.
 
 ## OPEN FAILURES
 
-- Existing baseline-v3 snapshot mismatch described above.
 - Independent read-only review has not yet been performed.
 
 ## INDEPENDENT REVIEW
@@ -111,4 +118,3 @@ package score update.
 ## VERDICT
 
 REVIEW PENDING
-
