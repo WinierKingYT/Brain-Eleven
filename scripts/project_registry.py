@@ -191,7 +191,12 @@ class ProjectRegistry:
     def _persist(self, previous: Dict, current: Dict) -> None:
         if self.path.exists():
             self._write_backup(previous)
-        _atomic_write(self.path, current)
+        try:
+            _atomic_write(self.path, current)
+        except (OSError, TypeError, ValueError) as exc:
+            raise ProjectRegistryError(
+                f"Cannot persist project registry: {self.path}"
+            ) from exc
 
     def _mutate(self, callback, expected_revision: Optional[int] = None):
         self._validate_expected_revision(expected_revision)
@@ -481,7 +486,12 @@ class ProjectRegistry:
             self._validate(restored)
             # Keep the verified backup as the rollback source. A later ordinary
             # mutation will rotate it to the then-current registry.
-            _atomic_write(self.path, restored)
+            try:
+                _atomic_write(self.path, restored)
+            except (OSError, TypeError, ValueError) as exc:
+                raise ProjectRegistryError(
+                    f"Cannot persist rolled-back project registry: {self.path}"
+                ) from exc
             return {
                 "status": "rolled_back",
                 "revision": restored["revision"],
