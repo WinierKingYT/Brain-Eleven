@@ -1,7 +1,7 @@
 # W-02 Package Report — Capture Queue Claim Crash Safety
 
 **PACKAGE:** W-02 / capture queue claim crash safety  
-**REVISION:** 46f2ff86878d0d176d2b717dc2cb8d2ec9b6798e  
+**REVISION:** 46f2ff86878d0d176d2b717dc2cb8d2ec9b6798e
 **OBJECTIVE:** Eliminate the crash window that could leave a `QUEUED`
 document stranded in the `processing` directory.  
 **FILES CHANGED:** `scripts/capture_queue.py`, `tests/test_capture_queue.py`  
@@ -63,11 +63,11 @@ accepted.
 
 **QUALITY METRICS BEFORE:** Queue claim, retry, and lease recovery had
   rename/write crash windows; full suite was 953 passed after the initial W-02
-  implementation.  
+  implementation.
 **QUALITY METRICS AFTER:** All three transition families have pre/post-rename
-  fault-injection coverage; full suite is 961 passed.  
+  fault-injection coverage; full suite is 961 passed.
 **SCORE BEFORE/AFTER:** Capture runtime 7.5 → 8.0 (provisional; transcript
 boundary and late-event loss remain open).  
 **OPEN FAILURES:** None known in W-02; independent review of revision-bound
-  evidence is pending.  
+  evidence is pending.
 **VERDICT:** REVIEW PENDING
