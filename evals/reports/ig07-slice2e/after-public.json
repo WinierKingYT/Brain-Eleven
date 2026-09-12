@@ -1,0 +1,730 @@
+{
+  "schema_version": 1,
+  "report_type": "brain_eleven_task_state_evaluation",
+  "provider": "task_state_v1",
+  "suite": "public",
+  "metrics": {
+    "task_case_count": 24,
+    "state_case_count": 24,
+    "task_pass_rate": 1.0,
+    "state_pass_rate": 1.0,
+    "wrong_project_state_leakage_rate": 0.0
+  },
+  "invariants": {
+    "task_project_resolution": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "task_intent_accuracy": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "explicit_constraint_recall": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "risk_flag_recall": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "state_accuracy": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "wrong_project_state_leakage": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "resolved_item_leakage": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "corruption_detection": {
+      "state": "pass",
+      "failed_case_ids": []
+    }
+  },
+  "task_cases": [
+    {
+      "case_id": "task_plan_tr",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_plan_en",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [],
+      "risk_flags": [
+        "architecture_change"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_review",
+      "project_status": "resolved",
+      "intent": "REVIEW",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_debug",
+      "project_status": "resolved",
+      "intent": "DEBUG",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_migrate",
+      "project_status": "resolved",
+      "intent": "MIGRATE",
+      "constraints": [],
+      "risk_flags": [
+        "migration"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_test",
+      "project_status": "resolved",
+      "intent": "TEST",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_research",
+      "project_status": "resolved",
+      "intent": "RESEARCH",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_explain",
+      "project_status": "resolved",
+      "intent": "EXPLAIN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_design",
+      "project_status": "resolved",
+      "intent": "DESIGN",
+      "constraints": [],
+      "risk_flags": [
+        "architecture_change"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_operate",
+      "project_status": "resolved",
+      "intent": "OPERATE",
+      "constraints": [],
+      "risk_flags": [
+        "external_dependency"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_implement",
+      "project_status": "resolved",
+      "intent": "IMPLEMENT",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_unknown_intent",
+      "project_status": "resolved",
+      "intent": "UNKNOWN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_archived",
+      "project_status": "archived",
+      "intent": "PLAN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_unknown_project",
+      "project_status": "unresolved",
+      "intent": "EXPLAIN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_no_router",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [
+        "no_router"
+      ],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_no_production",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [
+        "no_production_changes"
+      ],
+      "risk_flags": [
+        "architecture_change"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_offline",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [
+        "offline_only"
+      ],
+      "risk_flags": [
+        "external_dependency"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_cross_project",
+      "project_status": "resolved",
+      "intent": "REVIEW",
+      "constraints": [],
+      "risk_flags": [
+        "cross_project"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_security",
+      "project_status": "resolved",
+      "intent": "DEBUG",
+      "constraints": [],
+      "risk_flags": [
+        "security"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_destructive",
+      "project_status": "resolved",
+      "intent": "REVIEW",
+      "constraints": [],
+      "risk_flags": [
+        "destructive_change",
+        "canonical_store"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_dev_unicode",
+      "project_status": "resolved",
+      "intent": "EXPLAIN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_dev_constraints",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [
+        "no_commit_or_push"
+      ],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_dev_migration",
+      "project_status": "resolved",
+      "intent": "MIGRATE",
+      "constraints": [],
+      "risk_flags": [
+        "migration"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "task_dev_design",
+      "project_status": "resolved",
+      "intent": "DESIGN",
+      "constraints": [],
+      "risk_flags": [
+        "architecture_change"
+      ],
+      "failures": []
+    }
+  ],
+  "state_cases": [
+    {
+      "case_id": "state_available",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_missing",
+      "status": "STATE_NOT_FOUND",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_unknown",
+      "status": "PROJECT_UNKNOWN",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_archived",
+      "status": "PROJECT_ARCHIVED",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_corrupt",
+      "status": "STATE_CORRUPT",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_stale",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "stale_candidate",
+      "counts": {
+        "phase": null,
+        "freshness": "stale_candidate",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_active_phase",
+      "status": "AVAILABLE",
+      "phase": "phase-16",
+      "freshness": "current",
+      "counts": {
+        "phase": "phase-16",
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_completed_phase",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_active_requirement",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 1,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_resolved_requirement",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_todo_work",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 1,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_done_work",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_active_blocker",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 1,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_resolved_blocker",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_constraint",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 1,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_risk",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 1,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_other_project",
+      "status": "STATE_NOT_FOUND",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_dangling_reference",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 1,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_wrong_project_reference",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 1
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_global_reference",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 1,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_dev_phase",
+      "status": "AVAILABLE",
+      "phase": "phase-16",
+      "freshness": "current",
+      "counts": {
+        "phase": "phase-16",
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_dev_blocker",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 1,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_dev_resolved",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_dev_global",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 1,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    }
+  ]
+}

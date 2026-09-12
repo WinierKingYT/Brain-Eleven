@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "report_type": "brain_eleven_task_state_evaluation",
+  "provider": "task_state_v1",
+  "suite": "holdout",
+  "metrics": {
+    "task_case_count": 4,
+    "state_case_count": 4,
+    "task_pass_rate": 1.0,
+    "state_pass_rate": 1.0,
+    "wrong_project_state_leakage_rate": 0.0
+  },
+  "invariants": {
+    "task_project_resolution": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "task_intent_accuracy": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "explicit_constraint_recall": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "risk_flag_recall": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "state_accuracy": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "wrong_project_state_leakage": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "resolved_item_leakage": {
+      "state": "pass",
+      "failed_case_ids": []
+    },
+    "corruption_detection": {
+      "state": "pass",
+      "failed_case_ids": []
+    }
+  },
+  "task_cases": [
+    {
+      "case_id": "task_holdout_review",
+      "project_status": "resolved",
+      "intent": "REVIEW",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_holdout_debug",
+      "project_status": "resolved",
+      "intent": "DEBUG",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_holdout_unknown",
+      "project_status": "unresolved",
+      "intent": "UNKNOWN",
+      "constraints": [],
+      "risk_flags": [],
+      "failures": []
+    },
+    {
+      "case_id": "task_holdout_risk",
+      "project_status": "resolved",
+      "intent": "PLAN",
+      "constraints": [],
+      "risk_flags": [
+        "migration",
+        "security"
+      ],
+      "failures": []
+    }
+  ],
+  "state_cases": [
+    {
+      "case_id": "state_holdout_archived",
+      "status": "PROJECT_ARCHIVED",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_holdout_corrupt",
+      "status": "STATE_CORRUPT",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_holdout_dangling",
+      "status": "AVAILABLE",
+      "phase": null,
+      "freshness": "current",
+      "counts": {
+        "phase": null,
+        "freshness": "current",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 1,
+        "wrong_project": 0
+      },
+      "failures": []
+    },
+    {
+      "case_id": "state_holdout_unknown",
+      "status": "PROJECT_UNKNOWN",
+      "phase": null,
+      "freshness": "unknown",
+      "counts": {
+        "phase": null,
+        "freshness": "unknown",
+        "requirements": 0,
+        "work_items": 0,
+        "blockers": 0,
+        "constraints": 0,
+        "risks": 0,
+        "valid": 0,
+        "dangling": 0,
+        "wrong_project": 0
+      },
+      "failures": []
+    }
+  ]
+}
