@@ -1,302 +1,226 @@
 # IG-07 Slice 2E — `task_model.py` Migration Plan
 
-**Durum:** PLAN ONLY — bu doküman implementasyon izni vermez.
-**Plan temeli:** `971726bf7434ef47386007e95b5b13aa20af84a6` (`origin/master`)
-**Kapsam:** yalnız `scripts/task_model.py` için package yönünün çevrilmesi.
-**Hedef:** `brain_eleven/runtime/task.py`
-**Hariç:** `scripts/task_state_context.py`, `MemoryStore`, `StateStore`,
-`ProjectRegistry` implementasyonu, capture/retrieval ve Phase 20.
+**Durum:** PLAN ONLY / IMPLEMENTATION NOT AUTHORIZED
+**Plan baseline:** `09935e0` (`IG07-INVENTORY.md` kaydındaki son legacy
+uygulama revision'ı)
+**Kapsam:** yalnız `scripts/task_model.py`
+**Önerilen hedef:** `brain_eleven/runtime/task.py`
+**Kapsam dışı:** `task_state_context.py` (Slice 2F), MemoryStore, StateStore,
+ProjectRegistry implementasyonları, capture, retrieval, embedding/search,
+context compiler/V1/V2 ve Phase 20.
 
-## 1. Karar özeti
+Bu doküman hiçbir `.py` dosyasını değiştirmez ve package implementasyonu
+oluşturma izni vermez.
 
-`task_model.py` halen script içinde gerçek implementasyonu taşıyor ve mevcut
-package katmanında bir köprü bulunmuyor. `task_state_context.py` bu modülü
-doğrudan kullanan, 26+ caller'lı ayrı ve daha geniş bir migration alanıdır.
+## 0. Reality note: baseline ile mevcut HEAD ayrımı
 
-Öneri, `task_model.py`'yi `brain_eleven/runtime/task.py` içine **salt yön
-çevirme** olarak taşımaktır. Bu, `task_state_context.py`'yi şimdi taşımak veya
-değiştirmek anlamına gelmez. `scripts/task_model.py` aynı public isimleri
-package modülünden yükleyen thin adapter olarak kaldığı sürece:
+İstenen envanter değerleri `09935e0` üzerinde tekrar doğrulandı:
 
-- `task_state_context.py`'nin import satırları değişmeden kalabilir;
-- `TaskAnalyzer`, `TaskEnvelope` ve hata sınıfları aynı object identity'yi
-  korur;
-- `authority/serialization.py` ve `evals/task_state_eval.py` mevcut import
-  yollarıyla çalışmaya devam eder;
-- task/state context davranışı için yeni bir semantic değişiklik yapılmaz.
+- `scripts/task_model.py`: **668 fiziksel / 577 boş olmayan satır**;
+- `git grep -n "task_model" 09935e0 -- '*.py'`: **8 dosyada 10 eşleşme**;
+- o revision'da `brain_eleven/` tarafında task-model bridge'i yok.
 
-Bu nedenle modülü sonsuza kadar ertelemek yerine, **ayrı bounded contract,
-exact baseline ve bağımsız review sonrasında** Slice 2E olarak ele almak daha
-güvenlidir. Ancak bu hâlâ HIGH riskli bir pakettir: 668 fiziksel satır,
-schema doğrulama, proje çözümleme, authority serialization ve holdout eval
-aynı public yüzeye bağlıdır. Taşıma sırasında refactor, yeni kural, keyword
-tuning veya `task_state_context.py` değişikliği yapılmayacaktır.
+Çalışma ağacının güncel HEAD'i `c7f8913` ise önceki oturumdan gelen
+`brain_eleven/runtime/task.py` ve thin `scripts/task_model.py` adapter'ını
+zaten içeriyor. Bu turda bu production değişikliklerini geri almıyor,
+değiştirmiyor veya yeniden uygulamıyorum. Aşağıdaki plan, 09935e0'daki
+legacy başlangıç durumunun bounded migration contract'ıdır; mevcut HEAD'deki
+implementation bu planın bu turda onaylandığı anlamına gelmez.
 
-## 2. Güncel envanter ve caller kanıtı
+## 1. Caller envanteri: 8 dosya / 10 eşleşme
 
-Caller sayısı, hedef script dışındaki Python dosyalarında gerçek import veya
-runtime referansına göre sayıldı. Docstring'ler, yorumlar ve yalnızca statik
-migration listeleri sayılmadı. `conftest.py`'nin bare-module alias'ı test
-bootstrap kanıtıdır; production caller değildir.
-
-### 2.1 `scripts/task_model.py`
-
-| Ölçüm | Güncel durum |
-|---|---|
-| Fiziksel satır | 668 |
-| Boş olmayan satır | 577 |
-| Son değişiklik | 2026-09-10 (`git log -1`) |
-| Mevcut package bridge | Yok; gerçek implementasyon scriptte |
-| Önerilen canonical modül | `brain_eleven/runtime/task.py` |
-| Doğrudan production caller | 3 dosya |
-| Doğrudan test caller | 2 dosya |
-
-### 2.2 Gerçek production caller'lar
-
-1. **`scripts/task_state_context.py:14-18`**
-   `TaskAnalyzer`, `TaskEnvelope`, `TaskProjectResolutionError` ve
-   `TaskValidationError` için önce `scripts.task_model`, yalnız deployed
-   copied-hook fallback durumunda bare `task_model` import eder. Bu dosya
-   Slice 2E'de değiştirilmeyecek.
-
-2. **`authority/serialization.py:106-115`**
-   `task_state_from_dict()` içinde `TaskEnvelope`'ı process sınırından gelen
-   JSON task bölümünü doğrulamak için dinamik olarak import eder ve
-   `TaskEnvelope.from_dict()` çağırır. Bu kullanım authority store'a yazmaz;
-   strict schema/content-free decode sınırıdır.
-
-3. **`evals/task_state_eval.py:19,135-158`**
-   `TaskAnalyzer` ile task case'lerini offline ve deterministic olarak
-   değerlendirir. Bu eval harness production path değildir, fakat public ve
-   holdout sonuçlarının migration öncesi/sonrası aynı kalması gerekir.
-
-### 2.3 Gerçek test caller'lar
-
-1. **`tests/test_task_model.py:14-21`** — task schema round-trip, validation,
-   task id, project resolution ve deterministic analyzer davranışı.
-2. **`tests/test_pre12_project_caller_migration.py:13-14`** — `ProjectRegistry`
-   ve `ProjectRegistryError` isimlerinin historical `task_model` yüzeyinden
-   erişilebilir olmasını kontrol eden compatibility caller.
-
-Dolaylı fakat migration kanıtı olarak mutlaka çalıştırılacak test yüzeyleri:
-
-- `tests/test_task_state_context.py`
-- `tests/test_context_router.py`
-- `tests/test_context_engine_operational_surfaces.py`
-- `tests/test_context_compiler_v2.py`
-- `tests/test_context_compiler_v2_hardening.py`
-- `tests/test_authority_resolver.py`
-- `tests/test_task_state_eval.py`
-- `tests/test_pre12_memory_state_caller_migration.py`
-- `tests/test_pre12_project_caller_migration.py`
-
-`brain_eleven/runtime/context.py`, `authority/shadow.py`, router benchmark ve
-diğer eval provider'lar `task_model.py`yi doğrudan değil,
-`task_state_context.py` üzerinden kullanır. Bunlar 26+ caller'lı ayrı
-`task_state_context.py` migration'ının blast radius'udur; bu planda caller
-listesine doğrudan task-model caller'ı olarak eklenmez.
-
-## 3. Gerçek implementasyon yapısı
-
-`task_model.py` yalnızca deterministic task-envelope üretir ve doğrular; kendi
-başına MemoryStore/StateStore/capture/retrieval yazımı yapmaz.
-
-### 3.1 Sabitler ve authority import'ı
-
-- `ProjectRegistry`, `ProjectRegistryError`: **20. satır**; package registry
-  yüzeyinden gelir ve historical `task_model.ProjectRegistry` erişimi nedeniyle
-  adapter tarafından da re-export edilmelidir.
-- Schema/namespace sabitleri: **23-59** — `TASK_SCHEMA_VERSION=1`, `tsk_`
-  prefix, lifecycle/status kümeleri, intent/operation/risk/output/evidence
-  kümeleri, `MAX_REQUEST_CHARS` ve Crockford alphabet.
-
-### 3.2 Hata, kural ve analiz yüzeyi
-
-- `TaskValidationError`: **62-64**
-- `TaskProjectResolutionError`: **66-68**
-- `_Rule`: **70-73**
-- zaman/id ve project read-only çözümleme: `utc_now` **150-152**,
-  `_encode_crockford` **155-160**, `new_task_id` **163-167**,
-  `resolve_project` **170-192**
-- deterministic text/rule helpers: **195-268** — normalize, word-boundary
-  phrase match, rule collection/confidence, entity extraction, risk level ve
-  context-needs çıkarımı.
-
-### 3.3 Public analyzer ve envelope modelleri
-
-- `TaskAnalyzer`: **271-341**; registry üzerinden yalnız okur, request'i
-  intent/domain/constraint/risk/context-need alanlarına ayırır ve
-  `TaskEnvelope.from_dict(envelope.to_dict())` ile son schema doğrulaması yapar.
-- validation helpers `_require_string`–`_exact_keys`: **344-387**.
-- `Evidence`: **390-412**, value/source/confidence provenance alanıdır.
-- `ProjectResolution`: **415-454**; resolved/unresolved/archived ayrımını ve
-  project id zorunluluklarını doğrular.
-- `TaskEnvelope`: **457-618**; immutable dataclass, schema v1 round-trip,
-  task id namespace, lifecycle, nested evidence, confidence ve optional parent/
-  continuation id doğrulamasını taşır.
-- `validate_task`: **621-623**, `render_task_json`: **626-628**,
-  human summary: **631-643**, direct CLI `main`: **646-668**.
-
-Taşıma hedefinde bu sınırların tamamı tek canonical implementasyon olarak
-`brain_eleven/runtime/task.py` içinde kalır. Adapter yalnız loader, re-export,
-legacy alias ve direct CLI delegation içerir.
-
-## 4. `task_state_context.py` bağımlılığı ve öneri
-
-`task_state_context.py`'nin import ve kullanım haritası:
-
-- **14. satır:** `from scripts.task_model import ...`
-- **18. satır:** yalnız `scripts` paketi yoksa bare `task_model` fallback'i
-- **45. satır:** `TaskAnalyzer` constructor'ı
-- **49-67:** `TaskEnvelope` üzerinde state'ten inherited constraint ve
-  `context_needs` birleştirmesi; sonucu `TaskEnvelope.from_dict()` ile yeniden
-  doğrular
-- **70-72:** task analizi + `StateResolver` çağrısı ile
-  `TaskStateContext` oluşturur
-- **84-86:** task model hata sınıflarını CLI hata cevabına dönüştürür.
-
-Bu bağımlılıkta davranışsal olarak sıfır etki mümkündür, çünkü adapter:
-
-1. `scripts.task_model` adını korur;
-2. bare `task_model` alias'ını korur;
-3. bütün public class/function/constant nesnelerini canonical modülden tekrar
-   export eder;
-4. exception class identity'sini değiştirmez;
-5. `TaskEnvelope` JSON şekline, field sırasına, default değerlerine veya
-   `TaskAnalyzer` rule tablolarına dokunmaz.
-
-Bu şartlardan biri sağlanamıyorsa migration durur; `task_state_context.py`ye
-geçici uyumluluk kodu eklenmez. `task_state_context.py`nin kendi migration'ı
-ayrı bir plan ve ayrı blast-radius review olarak kalır.
-
-## 5. Authority serialization ve evaluation güvenlik sınırı
-
-### 5.1 `authority/serialization.py`
-
-`task_state_from_dict()` yalnızca `TaskEnvelope.from_dict()` çağırır; task
-modeli authority truth yazmaz, state snapshot'ını da `CurrentProjectState`
-olarak decode eder. Package migration sonrasında:
-
-- `TaskEnvelope` class identity'si aynı kalmalı;
-- schema version `1`, exact keys, `tsk_` namespace, source/confidence ve
-  unresolved/resolved project kuralları değişmemeli;
-- content-free authority serialization kuralı etkilenmemeli;
-- `authority/__main__.py` üzerinden decode edilen JSON çıktısı ve hata türleri
-  byte/parity testinde aynı kalmalı;
-- authority resolver'ın task/state input validation'ı yeni bir import yan
-  etkisiyle bypass edilmemeli.
-
-Bu migration `authority/serialization.py`yi veya authority modellerini
-değiştirmez. Gerekli adapter import değişikliği package yüzeyinden değil,
-legacy `scripts.task_model` compatibility yüzeyinden karşılanır.
-
-### 5.2 `evals/task_state_eval.py` ve holdout immutability
-
-`evals/task_state_eval.py` içinde `_TASK_CASES` ve `_STATE_CASES` sabit tuple
-olarak tanımlıdır; `SUITES` smoke/public/holdout/all ayrımını yapar. Task
-model migration'ı:
-
-- eval dosyasına,
-- case label'larına,
-- holdout request/status/expected değerlerine,
-- provider/schema version'a,
-- evaluation ağırlıklarına veya threshold'larına
-
-dokunmayacaktır.
-
-Migration öncesi ve sonrası aynı exact revision ile şu raporlar alınacaktır:
+Sayım, legacy başlangıç revision'ında şu komutla yapıldı:
 
 ```text
-python -m evals.task_state_eval --suite smoke --report before-smoke.json
-python -m evals.task_state_eval --suite public --report before-public.json
-python -m evals.task_state_eval --suite holdout --report before-holdout.json
+git grep -n "task_model" 09935e0 -- '*.py'
 ```
 
-Sonuçlar `task_cases`, `state_cases`, `metrics`, `invariants`, provider ve
-schema alanlarında karşılaştırılacak; geçici dizin adları rapora girmediği için
-deterministic public/holdout eşitliği aranacaktır. Holdout yalnız doğrulama
-olarak okunur; başarısızlık varsa task rules veya labels değiştirilerek
-gizlenmez. `git diff -- evals/task_state_eval.py evals/` boş olmalıdır.
+| Dosya | Satır | Eşleşme türü | Gerçek etkisi |
+|---|---:|---|---|
+| `scripts/task_state_context.py` | 14 | `from scripts.task_model import TaskAnalyzer, TaskEnvelope, TaskProjectResolutionError, TaskValidationError` | Production import |
+| `scripts/task_state_context.py` | 18 | `from task_model import ...` fallback | Copied/deployed hook fallback |
+| `authority/serialization.py` | 109 | function içi `TaskEnvelope` import'u | Authority JSON decode caller'ı |
+| `evals/task_state_eval.py` | 19 | `from scripts.task_model import TaskAnalyzer` | Offline evaluation caller'ı |
+| `tests/test_task_model.py` | 14 | bare task-model contract import'u | Behavioral test caller'ı |
+| `tests/test_pre12_project_caller_migration.py` | 13 | `task_model.ProjectRegistry` | Compatibility test caller'ı |
+| `tests/test_pre12_project_caller_migration.py` | 14 | `task_model.ProjectRegistryError` | Compatibility test caller'ı |
+| `conftest.py` | 75 | test alias listesi | Test bootstrap, runtime caller değil |
+| `scripts/check_context_engine_coverage.py` | 21 | coverage path string'i | Static inventory, runtime caller değil |
+| `tests/test_context_engine_coverage.py` | 23 | coverage path string'i | Static inventory, runtime caller değil |
 
-## 6. Önerilen migration sınırı
+Sonuç:
 
-### Step E1 — contract ve baseline (önkoşul)
+- Inventory lexical sayımı: **8 dosya / 10 eşleşme**, doğrulandı.
+- Gerçek production import dosyaları: **3** (`task_state_context.py`,
+  `authority/serialization.py`, `evals/task_state_eval.py`).
+- Gerçek behavioral test caller dosyaları: **2** (`test_task_model.py`,
+  `test_pre12_project_caller_migration.py`).
+- Bootstrap/coverage metadata: **3**, caller sayısına dahil edilmemeli fakat
+  migration sonrası static gate olarak korunmalı.
 
-- `brain_eleven/runtime/task.py` public export listesi ve legacy isim matrisi
-  yazılı contract'a alınır.
-- `scripts/task_model.py` için adapter-only AST kriteri belirlenir.
-- Task model, task-state context, authority serialization ve eval public/
-  holdout snapshot'ları migration öncesi kaydedilir.
-- Bu adımda production davranışı değiştirilmez.
+`task_state_context.py`'nin kendisi daha geniş 26+ caller blast radius'una
+sahiptir; bu tablo yalnız onun `task_model.py` dependency edge'ini gösterir.
+`brain_eleven/runtime/context.py`, router, authority shadow ve eval provider
+dosyaları task modelini doğrudan değil `task_state_context.py` üzerinden
+kullanır; Slice 2F envanterine aittir.
 
-### Step E2 — canonical inversion
+## 2. Legacy implementasyon haritası
 
-- `scripts/task_model.py` implementasyonu byte/parity korunarak
-  `brain_eleven/runtime/task.py` içine alınır.
-- Imports package-owned `brain_eleven.projects.registry` yüzeyinde kalır.
-- `scripts/task_model.py` `_load_canonical`/`importlib` adapter'ına indirilir;
-  `TaskAnalyzer`, `TaskEnvelope`, tüm sabitler, validation helpers'ın public
-  olması gerekenleri, `ProjectRegistry`/`ProjectRegistryError`,
-  `validate_task`, `render_task_json`, `main` re-export edilir.
-- `sys.modules['task_model']` ve `scripts.task_model` compatibility alias'ları
-  korunur; direct `python scripts/task_model.py analyze ...` CLI package
-  `main()` fonksiyonuna delegasyon yapar.
-- `task_state_context.py`, `authority/serialization.py` ve eval harness bu
-  adımda değiştirilmez.
+Satır referansları `09935e0:scripts/task_model.py`'ye aittir. `@dataclass`
+dekoratörleri bir önceki satırda bulunduğundan aralıklar dekoratör gövdesini
+de kapsar.
 
-### Step E3 — evidence and closure
+### 2.1 Modül sabitleri ve dış bağımlılık
 
-Focused tests, exact before/after eval comparison, full regression, critical
-lint/compile checks ve bağımsız read-only review tamamlanır. Reviewer SHIP
-vermeden Slice 2E kapanmaz; task_state_context migration'ı açılmaz.
+- **1-5:** CLI modül docstring'i; task envelope'ın invocation contract'ı
+  olduğunu ve memory selection yapmadığını belirtir.
+- **8-18:** yalnız stdlib (`json`, `re`, `secrets`, `time`, `argparse`,
+  dataclass, datetime, pathlib, typing) import'ları.
+- **20:** `brain_eleven.projects.registry` üzerinden
+  `ProjectRegistry`/`ProjectRegistryError` import'u. Registry yalnız proje
+  kimliği çözümleme için okunur.
+- **23-59:** schema/namespace ve vocabulary sabitleri:
+  `TASK_SCHEMA_VERSION`, `TASK_ID_PREFIX`, lifecycle/status kümeleri,
+  `INTENTS`, `OPERATIONS`, `RISK_LEVELS`, `REQUESTED_OUTPUTS`,
+  `EVIDENCE_SOURCES`, `MAX_REQUEST_CHARS` ve Crockford alphabet.
 
-## 7. Beş kapılı kanıt planı
+Legacy kaynak üzerinde `MemoryStore`, `StateStore`, `open`, `write_text`,
+`transact`, `replace`, `register` veya canonical memory/state mutation çağrısı
+bulunmadı. Task modelinin persistence authority'si yoktur; yine de bu
+özellik Gate 3'te AST ve runtime evidence ile yeniden kanıtlanmalıdır.
 
-### Gate 1 — identity
+### 2.2 Hatalar, kurallar ve deterministic analyzer
 
-Aşağıdaki isimler için package, `scripts.task_model` ve bare `task_model`
-aynı object olmalıdır:
+- **62-68:** `TaskValidationError` ve `TaskProjectResolutionError`.
+- **70-73:** immutable `_Rule` dataclass.
+- **76-147:** intent/domain/constraint/risk rule tabloları ve phrase sözlüğü.
+- **150-167:** `utc_now`, Crockford encoder ve `new_task_id`; ID üretimi
+  process-local/random'dır, canonical write değildir.
+- **170-192:** `resolve_project(vault_path, project_root)`;
+  `ProjectRegistry.resolve` çağırır, registry hatasını
+  `TaskProjectResolutionError` olarak görünür kılar, unknown project'i
+  `unresolved` döndürür, kayıt açmaz.
+- **195-268:** request normalization, word-boundary phrase matching, rule
+  collection/confidence, entity extraction, risk level ve context-needs
+  çıkarımı.
+- **271-341:** `TaskAnalyzer`; request'i normalize eder, project resolution
+  alır, intent/domain/constraint/risk/context ihtiyaçlarını deterministic
+  olarak üretir ve son olarak `TaskEnvelope.from_dict(envelope.to_dict())`
+  ile schema doğrulaması yapar.
 
-- `TaskAnalyzer`, `TaskEnvelope`, `Evidence`, `ProjectResolution`;
-- `TaskValidationError`, `TaskProjectResolutionError`;
-- `TASK_SCHEMA_VERSION`, `TASK_ID_PREFIX`, `TASK_LIFECYCLES`,
-  `PROJECT_RESOLUTION_STATUSES`, `INTENTS`, `OPERATIONS`, `RISK_LEVELS`,
-  `REQUESTED_OUTPUTS`, `EVIDENCE_SOURCES`;
-- `new_task_id`, `resolve_project`, `validate_task`, `render_task_json`;
-- compatibility için `ProjectRegistry` ve `ProjectRegistryError`.
+### 2.3 Veri modelleri ve validation
 
-`TaskEnvelope.from_dict` gibi classmethod referansları da canonical class
-üzerinde çalıştığı ayrıca gösterilecektir.
+- **344-387:** `_require_string`, `_require_confidence`,
+  `_require_string_tuple`, `_mapping`, `_exact_keys`.
+- **390-412:** `Evidence` frozen dataclass; value/source/confidence provenance.
+- **415-454:** `ProjectResolution`; resolved/unresolved/archived statüleri,
+  project-id zorunlulukları ve confidence.
+- **457-618:** `TaskEnvelope` frozen dataclass; schema v1, `tsk_` namespace,
+  lifecycle, nested evidence, constraints, domains, risk, context needs,
+  ambiguity, confidence ve parent/continuation linkleri.
+- **621-628:** `validate_task` ve deterministic `render_task_json`.
+- **631-643:** persistence'siz human summary.
+- **646-668:** `analyze` subcommand'ı ve direct CLI `main`.
 
-### Gate 2 — adapter-only AST
+### 2.4 Phase 16 ilişkisi
 
-`scripts/task_model.py` içinde ikinci class/dataclass, analyzer/rule helper,
-schema validation, JSON persistence veya registry write kodu kalmayacak. İzin
-verilenler: root path kurulumu, canonical loader/cache, re-export tabloları,
-legacy bare alias ve `main()` delegation. `open`, `json.dump`, `MemoryStore`,
-`StateStore` ve direct registry mutation AST/grep kontrollerinde bulunmayacak.
+`PROJECT-STATUS.md:158-172`, Phase 16'nın üç authority'sini
+`MemoryStore`, `ProjectRegistry`, `StateStore` olarak ayırır ve task-model
+CLI'sını deterministic task envelope inspection aracı olarak tanımlar.
+`task_model.py` bu modelde yalnız request/task contract üretir:
 
-### Gate 3 — parity and safety
+- `ProjectRegistry` → mevcut project identity/status read-only çözümlemesi;
+- `TaskEnvelope` → invocation input contract;
+- `StateStore`/`MemoryStore` → task modelinin dışında, ayrı authorities;
+- `evals/task_state_eval.py` → offline public/holdout ölçümü.
 
-- `tests/test_task_model.py` değişmeden geçer.
-- task envelope valid/invalid round-trip, unknown key, invalid source,
-  confidence, lifecycle, namespace ve project status parity'si korunur.
-- Turkish/English intent, ambiguity, entity, risk ve context-needs çıktıları
-  exact karşılaştırılır.
-- known/unknown/archived/relocated/corrupt registry çözümlemesi aynı olur ve
-  analyzer registry'ye yeni kayıt yazmaz.
-- `task_state_context.py` byte diff'i boştur; compose sonucu ve exception
-  identity'si E2E karşılaştırılır.
-- `authority/serialization.py` task-state decode ve authority CLI parity'si
-  korunur.
-- `evals/task_state_eval.py` public ve holdout raporlarında case id, metrics,
-  invariant ve failure listeleri değişmez.
-- direct CLI (`analyze --json` ve human summary) package/legacy yollarında
-  aynı çıktıyı verir; no-network/no-persistence koşulu korunur.
+Taşıma bu sınırları birleştirmemeli, task analyzer'ı state veya memory writer'a
+dönüştürmemeli, Phase 16 evaluator'ını tuning yüzeyine çevirmemelidir.
 
-### Gate 4 — full verification
+## 3. Önerilen package ve adapter sözleşmesi
 
-Minimum odaklı suite:
+### 3.1 Hedef
+
+Canonical implementation: `brain_eleven/runtime/task.py`.
+`brain_eleven/runtime/__init__.py` içinden eager re-export zorunlu değildir;
+canonical import yüzeyi açıkça `brain_eleven.runtime.task` olarak kalmalıdır.
+
+### 3.2 Thin adapter
+
+`scripts/task_model.py` yalnız şu sorumlulukları taşıyabilir:
+
+1. repo root'u güvenli biçimde `sys.path`e eklemek;
+2. `brain_eleven.runtime.task` modülünü bir kez yükleyip cache'lemek;
+3. canonical sabit, class, exception ve function isimlerini re-export etmek;
+4. historical `ProjectRegistry`/`ProjectRegistryError` erişimini korumak;
+5. `sys.modules['scripts.task_model']` ve bare `task_model` fallback alias'ını
+   korumak;
+6. `python scripts/task_model.py analyze ...` çağrısını canonical `main()`e
+   delege etmek.
+
+Adapter'da ikinci dataclass/class, rule tablosu, analyzer, schema validator,
+JSON/file write, registry mutation veya alternative CLI implementasyonu
+olamaz. Private helper'lar compatibility için alias yapılabilir; yeniden
+tanımlanamaz.
+
+### 3.3 `task_state_context.py` sınırı
+
+`task_state_context.py:14` normal package import'u, `:18` copied-hook fallback'i,
+`:45` analyzer construction'ı, `:49-67` envelope merge/round-trip'i ve
+`:70-86` compose/error yüzeyini kullanır. Migration yalnız adapter identity'si
+korunarak yapılırsa bu dosyanın davranışsal etkisi sıfır olabilir.
+
+Bu iddia ancak şu beş koşulla geçerlidir:
+
+- import isimleri ve bare fallback korunur;
+- `TaskAnalyzer`, `TaskEnvelope` ve iki exception aynı object identity'de kalır;
+- JSON key seti, key sırası, schema ve default değerler değişmez;
+- registry resolution hata/unknown/archived semantiği değişmez;
+- deterministic rule tabloları, confidence ve context-needs çıktıları değişmez.
+
+Bir koşul sağlanamazsa geçici uyumluluk kodu yazılmaz; migration durur ve
+`RETHINK/defer` raporlanır. `task_state_context.py` bu Slice 2E'de
+değiştirilemez; kendi migration'ı Slice 2F'dir.
+
+## 4. Migration invariant'ları
+
+### Contract ve behavior
+
+- `TASK_SCHEMA_VERSION=1`, `tsk_` ID namespace ve lifecycle/status kümeleri
+  birebir kalır.
+- `TaskEnvelope.to_dict()` key seti ve deterministic field order değişmez.
+- Valid/invalid JSON, unknown key, missing key, confidence, source,
+  lifecycle, project status ve namespace hataları aynı exception sınıfını ve
+  görünür mesaj semantiğini korur.
+- Turkish/English intent/domain/constraint/risk/entity/context-needs çıktıları
+  exact parity gösterir.
+- `new_task_id` uzunluğu/prefix'i ve `utc_now` formatı korunur.
+- `resolve_project` read-only kalır; unknown, archived, relocated ve corrupt
+  registry davranışı değişmez.
+- Analyzer hiçbir MemoryStore/StateStore/ProjectRegistry write yolu açmaz.
+- `main --json` ve human summary yalnız task contract üretir; canonical state,
+  memory veya eval corpus yazmaz.
+
+### Caller parity
+
+Değişmeden çalışan production callers:
+
+- `scripts/task_state_context.py` normal/fallback import ve compose;
+- `authority/serialization.py:task_state_from_dict` strict task decode;
+- `evals/task_state_eval.py` task case execution.
+
+Değişmeden çalışan test/tool surfaces:
+
+- `tests/test_task_model.py`;
+- `tests/test_pre12_project_caller_migration.py`;
+- `conftest.py` bare alias bootstrap;
+- iki context-coverage path listesi.
+
+## 5. Test planı
+
+### Existing tests — source değişmeden
+
+Minimum suite:
 
 ```text
 tests/test_task_model.py
@@ -311,84 +235,117 @@ tests/test_pre12_project_caller_migration.py
 tests/test_pre12_memory_state_caller_migration.py
 ```
 
-Ardından:
+### New bounded tests
+
+- package/adapter/bare `TaskAnalyzer`, `TaskEnvelope`, `Evidence`,
+  `ProjectResolution`, errors, constants and public functions identity;
+- `TaskEnvelope.from_dict.__func__` classmethod identity;
+- adapter-only AST: zero class/dataclass/validator/rule implementation;
+- adapter'da zero `open`, JSON persistence, MemoryStore/StateStore access;
+- old/new CLI JSON shape parity (dynamic task id/timestamp normalized only for
+  comparison);
+- known/unknown/archived/relocated/corrupt registry parity;
+- Turkish/English deterministic analyzer fixtures;
+- `task_state_context.py` byte diff empty;
+- authority `task_state_from_dict` parity;
+- before/after evaluator equality for smoke, public ve holdout.
+
+Holdout labels, fixtures, thresholds and evaluator source'u test tuning için
+kullanılamaz veya değiştirilemez.
+
+## 6. Tahmini diff büyüklüğü
+
+Legacy başlangıç implementation'ı **668 fiziksel / 577 boş olmayan satır**tır.
+Beklenti:
+
+- `brain_eleven/runtime/task.py`: **660-700 satır** taşınan implementation;
+- `scripts/task_model.py`: **70-120 satır** loader/re-export adapter;
+- yeni identity/parity tests: **120-220 satır**;
+- package report/contract: **100-180 satır** dokümantasyon;
+- toplam bounded code/test diff: yaklaşık **850-1.040 satır**.
+
+Bu tahmin taşınan kod ağırlıklıdır; yeni semantic feature, rule tuning veya
+task-state refactor içermez.
+
+## 7. Beş kapılı exit gate
+
+### Gate 1 — Identity
+
+Package, `scripts.task_model` ve bare `task_model` yüzeyleri aynı object'leri
+verir: tüm public constants, `TaskAnalyzer`, `TaskEnvelope`, `Evidence`,
+`ProjectResolution`, iki error, `ProjectRegistry` compatibility names,
+`new_task_id`, `resolve_project`, `validate_task`, `render_task_json` ve
+`main`. Classmethod underlying function identity de kontrol edilir.
+
+### Gate 2 — Adapter-only
+
+AST/grep kanıtı: adapter'da class/dataclass, analyzer/rule/validation helper,
+JSON/file write, registry mutation veya duplicate CLI implementation yoktur.
+Canonical source package-owned import yüzeylerini kullanır.
+
+### Gate 3 — Parity + safety
+
+Existing tests değişmeden geçer; task/state/authority/eval caller çıktıları
+before/after exact karşılaştırılır. `task_state_context.py` byte diff boş,
+registry read-only, persistence write sayısı sıfır, holdout corpus immutable
+olmalıdır. Fark çıkarsa fixture/label değiştirilmez; migration düzeltilir veya
+`RETHINK/defer` verilir.
+
+### Gate 4 — Full verification
 
 ```text
 python -m pytest tests -q
-python -m flake8 brain_eleven/runtime/task.py scripts/task_model.py \
-  tests/test_task_model_package_migration.py --select=E9,F63,F7,F82
+python -m flake8 brain_eleven/runtime/task.py scripts/task_model.py tests/test_task_model_package_migration.py --select=E9,F63,F7,F82
 python -m compileall -q brain_eleven/runtime/task.py scripts/task_model.py
 git diff --check
 ```
 
-Exact revision, test sonucu ve holdout raporları package report'a yazılır.
+Exact HEAD, test sonuçları, before/after evaluator JSON'ları ve warning'ler
+package report'a bağlanır.
 
-### Gate 5 — independent review
+### Gate 5 — Independent review
 
-Reviewer implementasyon reasoning'ini devralmadan şunları kontrol eder:
+Ayrı read-only reviewer; baseline revision, caller listesi, byte/parity,
+adapter AST, task-state context değişmezliği, authority serialization,
+holdout immutability ve full verification kanıtını inceler. Karar yalnız
+`SHIP`, `FIX-FIRST` veya `RETHINK` olabilir. Self-review `SHIP` değildir.
 
-- package/adapter/bare identity ve adapter-only AST;
-- `task_state_context.py`nin gerçekten değişmediği;
-- `authority/serialization.py` ve eval dosyalarının contract dışı
-  değişmediği;
-- task model byte/parity, read-only registry davranışı ve CLI;
-- holdout label/fixture/tuning gizleme girişimi olup olmadığı;
-- full regression ve exact evidence revision'ı.
+## 8. Package report şablonu
 
-Karar yalnız `SHIP`, `FIX-FIRST` veya `RETHINK` olabilir. Bu plan ve olası
-uygulama kendi kendine SHIP vermez.
+Uygulama yetkisi verildiğinde rapor aşağıdaki alanları doldurmalıdır:
 
-## 8. Risk kararı
+```text
+PACKAGE: IG-07 / Slice 2E
+REVISION: <exact implementation/evidence SHA>
+OBJECTIVE: <bounded task-model inversion objective>
+FILES CHANGED: <canonical, adapter, tests, evidence>
+ROOT CAUSES ADDRESSED: <implementation authority / compatibility causes>
+TESTS ADDED: <identity, AST, parity, safety>
+TESTS EXECUTED: <focused, full, lint, compile, diff>
+QUALITY METRICS BEFORE: <baseline suite/evaluator outputs>
+QUALITY METRICS AFTER: <after suite/evaluator outputs>
+SAFETY METRICS: <write paths, read-only registry, leakage, holdout integrity>
+KNOWN LIMITATIONS: <remaining task_state_context / warnings>
+OPEN FAILURES: <P0/P1/P2 or none>
+INDEPENDENT REVIEW: <SHIP / FIX-FIRST / RETHINK + reviewer evidence>
+SCORE BEFORE: <score or not rescored>
+SCORE AFTER: <score or not rescored>
+VERDICT: SHIP / FIX-FIRST / RETHINK / REVIEW PENDING
+```
 
-**Risk:** HIGH remains.
+## 9. Unexpected-risk stop condition
 
-Gerekçe: düşük direct writer riski olsa da task model, task-state context'in
-en yoğun bağımlılığıdır; schema/error identity ve deterministic analyzer
-çıktıları authority serialization, router/compiler zinciri ve holdout eval
-sonuçlarına yayılır. Ayrıca historical `task_model.ProjectRegistry` export'u
-adapter compatibility'sini zorunlu kılar.
+Plan sırasında şu bulgulardan biri ortaya çıkarsa implementation kapsamı
+genişletilmeyecek ve ayrı `RETHINK/defer` bulgusu yazılacaktır:
 
-Risk azaltma stratejisi:
+- task modelinin gizli MemoryStore/StateStore/registry write yolu;
+- task_state_context.py ile adapter identity korunarak ayrıştırılamayan davranış;
+- authority serialization'ın task model private implementation detayına
+  bağımlılığı;
+- holdout fixture/label/threshold değişikliği gerektiren bir parity farkı;
+- canonical module ile legacy adapter arasında iki farklı schema/error
+  authority oluşması.
 
-- `task_state_context.py` değişmeden kalır;
-- canonical implementation byte/parity ile taşınır;
-- package/legacy/bare identity zorunlu tutulur;
-- eval corpus ve holdout immutable kalır;
-- full suite ve bağımsız reviewer olmadan sonraki migration açılmaz.
+Bu planın incelemesi tamamlanmadan hiçbir production `.py` dosyası değişmez.
 
-Bu plan, task model'in davranışını iyileştirme veya task understanding tuning'i
-önermemektedir. Eğer E1 baseline/parity kanıtı üretilemezse sonuç **RETHINK /
-defer** olur ve implementasyon başlamaz.
-
-## 9. Tahmini diff ve sıralama
-
-Beklenen bounded değişiklik:
-
-- `brain_eleven/runtime/task.py`: yaklaşık **668 fiziksel / 577 boş olmayan
-  satır** implementation taşınması;
-- `scripts/task_model.py`: yaklaşık **80–120 satır** thin adapter;
-- package export/identity ve adapter parity testleri: yaklaşık **180–260
-  satır**;
-- toplam diff: yaklaşık **930–1.050 satır** (taşınan kod ağırlıklı; yeni
-  semantic davranış hedeflenmiyor).
-
-Önerilen sıra:
-
-1. E1 contract + exact baseline;
-2. E2 canonical inversion + adapter;
-3. identity/parity tests;
-4. full verification;
-5. independent review.
-
-`task_state_context.py` için ayrı migration planı ve ayrı caller audit'i
-hazırlanmadan onun implementasyonuna geçilmez. Bu plan yalnız task model
-inversion'ını tanımlar ve hiçbir `.py` production dosyasını değiştirmez.
-
-## 10. Plan verdict
-
-**PLAN ACCEPTANCE STATUS: REVIEW PENDING**
-
-`task_model.py` davranış olarak sıfır etkili bir adapter inversion ile
-taşınabilir; ancak HIGH blast radius nedeniyle bu belge implementasyon onayı
-değildir. İnsan/bağımsız review onayı olmadan E1 dışındaki hiçbir adım
-başlatılmamalıdır.
+**Plan status: REVIEW PENDING — implementation başlamadı**
