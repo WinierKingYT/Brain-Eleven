@@ -24,7 +24,7 @@ the behavior and operational evidence found in the current repository.
 |---|---:|---|
 | Persistence and concurrency | 7.0 | Registry durability/revision gap; uncoordinated multi-authority backup; state-memory reference TOCTOU. |
 | Scope and fail-closed safety | 7.0 | Related-note and native transcript path boundaries are independently shipped; project/session ownership proof remains open. |
-| Capture runtime | 8.0 | Claim, retry and lease transition crash-loss is covered and independently shipped; late transcript loss and prompt-event dead-letter paths remain. |
+| Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | V1 SessionStart ranking is not task-aware and has file-order tie behavior. |
@@ -84,6 +84,12 @@ The worker refuses to enqueue a missing transcript and returns degraded before
 durable queueing. A normal SessionEnd race can therefore lose the event before
 retry/dead-letter handling begins.
 
+**Status:** Closed as the bounded W-04 package and independently reviewed
+`SHIP` at `6a786b6` (implementation `64e2591`, report
+`WEAKNESS-W04-PACKAGE-REPORT.md`). A trusted but temporarily absent locator is
+now durable and retryable; a missing locator is still explicitly degraded and
+never guessed.
+
 ### W-05 — Prompt event dead-letter loop (P1)
 
 Legacy `USER_PROMPT_SUBMIT` events have no transcript locator, yet the worker
@@ -112,14 +118,15 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-04 late transcript loss.
+**Next package:** W-05 prompt event dead-letter semantics.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
-confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`.
-**Required outcome:** a bounded late-transcript durability contract, focused
-queueing/race tests, full regression, critical lint/compile checks, and
-independent read-only review.
+confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`; W-04 late
+transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`.
+**Required outcome:** a bounded prompt-event contract, focused queue/worker
+tests, full regression, critical lint/compile checks, and independent
+read-only review.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
