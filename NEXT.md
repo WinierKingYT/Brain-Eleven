@@ -176,25 +176,38 @@ constructed too early; a real `ThreadPoolExecutor` race), independently
 re-run, not just asserted. Full suite reproduces at 936 passed. Independent
 review: `IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
-**IG-07 Slice 2E plan approved.** `IG07-SLICE2E-PLAN.md` covers
-`task_model.py` → `brain_eleven/runtime/task.py`. Independently spot-checked
-roughly 20 line-number/structural citations, all accurate. Resolves the key
-open question (can `task_model.py` move without touching the excluded
-`task_state_context.py`, its heaviest caller) with a zero-behavioral-impact
-adapter inversion under five explicit halt conditions — if any can't be
-met, the plan itself says the result is RETHINK/defer, not a forced ship.
-HOLDOUT eval immutability is protected with concrete before/after report
-comparison commands. No business C0 needed this time — implementation
-(E1 baseline, then E2 inversion) is approved.
+**IG-07 Slice 2E is fully closed.** `IG07-SLICE2E-PLAN.md` covered
+`task_model.py` → `brain_eleven/runtime/task.py`; plan independently
+spot-checked (roughly 20 line-number/structural citations, all accurate)
+and approved for E1 (baseline) then E2 (inversion) implementation. E1/E2
+implemented (`b739241`/`c0fe23f`), evidence recorded (`7aad3d0`), package
+report written (`c7f8913`). Independent review re-verified every
+load-bearing claim directly rather than on the report's word: byte-identical
+canonical source at the moment of the cut (27428 bytes both sides), adapter
+is a genuine thin loader with zero duplicate implementation, `task_state_context.py`
+diff empty across the whole range, exact before/after evaluator JSON
+equality on smoke/public/holdout, full suite reproduces at 943 passed,
+focused suite at 114 passed. Independent review: `IG07-SLICE2E-INDEPENDENT-REVIEW.md`,
+verdict `SHIP`. One documentation-hygiene note: a later commit
+(`0a8f26a`) regenerated `IG07-SLICE2E-PLAN.md` from the pre-inversion
+baseline for an unrelated reason and left a stale "PLAN ONLY/REVIEW
+PENDING" header despite implementation already being complete — corrected
+in-file, not a functional finding.
 
 ## What's next
 
-- Implement Slice 2E per `IG07-SLICE2E-PLAN.md` §6-7 — E1 (contract +
-  exact before/after baseline for task model, task-state context, authority
-  serialization, and eval public/holdout snapshots) then E2 (canonical
-  inversion, adapter-only, identity preserved). `task_state_context.py`
-  itself must not change. Independent review checks byte/parity plus that
-  no holdout label/fixture was quietly adjusted to pass.
+- IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
+  highest blast-radius module in the whole inventory, 26/26 callers,
+  deliberately excluded from every slice so far including 2E) — needs its
+  own new bounded plan before implementation, same discipline as 2E.
+- After 2F, the non-retrieval high-risk cluster (`memory_store.py`,
+  `state_store.py`, `project_registry.py`, `memory_scope.py`,
+  `memory_store_lock.py`, `memory_backup.py`, `memory-validator.py`, the
+  capture/safety/truth chain) is the largest remaining untouched share of
+  `IG07-INVENTORY.md`'s 26 high-risk modules (~8,500 of 14,014 total impl
+  LOC) and does not depend on the retrieval-quality question below.
+  Embedding/search/`context-compiler.py` remain correctly deferred per
+  `IG07-INVENTORY.md` §5 until Branch B's daily-use quality resolves.
 - The retrieval-quality research track (D0 recheck + BGE-M3) has run its
   cheap experiments; the next move there is Ahmet's call — see
   `D0-RECHECK-FINDINGS.md` for the options (try a third angle like eval

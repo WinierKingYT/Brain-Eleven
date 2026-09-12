@@ -1,6 +1,11 @@
 # IG-07 Slice 2E — `task_model.py` Migration Plan
 
-**Durum:** PLAN ONLY / IMPLEMENTATION NOT AUTHORIZED
+**Durum:** CLOSED / SHIPPED — implementation tamamlandı ve bağımsız
+incelemeden `SHIP` aldı, bkz. `IG07-SLICE2E-PACKAGE-REPORT.md` ve
+`IG07-SLICE2E-INDEPENDENT-REVIEW.md` (2026-09-12). Aşağıdaki plan metni,
+bu doküman `09935e0` baseline'ından yeniden üretildiği için tarihsel bir
+kayıt olarak korunuyor; "PLAN ONLY/REVIEW PENDING" ifadesi §0'da açıklanan
+nedenle artık güncel değildir.
 **Plan baseline:** `09935e0` (`IG07-INVENTORY.md` kaydındaki son legacy
 uygulama revision'ı)
 **Kapsam:** yalnız `scripts/task_model.py`
@@ -348,4 +353,6 @@ genişletilmeyecek ve ayrı `RETHINK/defer` bulgusu yazılacaktır:
 
 Bu planın incelemesi tamamlanmadan hiçbir production `.py` dosyası değişmez.
 
-**Plan status: REVIEW PENDING — implementation başlamadı**
+**Plan status: CLOSED — implementation (E1+E2) tamamlandı, bağımsız inceleme
+`SHIP` verdiği verdi. Bkz. `IG07-SLICE2E-PACKAGE-REPORT.md`,
+`IG07-SLICE2E-INDEPENDENT-REVIEW.md`.**

@@ -133,10 +133,11 @@ second run; it is recorded rather than hidden.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** No self-SHIP verdict is claimed. Independent review must
-verify the byte-identical canonical source, adapter-only AST, legacy identity,
-untouched task-state context, authority serialization, and exact holdout
-before/after reports.
+**SHIP.** See `IG07-SLICE2E-INDEPENDENT-REVIEW.md` (2026-09-12). The
+byte-identical canonical source, adapter-only AST, legacy identity,
+untouched task-state context, and exact holdout before/after reports were
+each independently re-verified against the repository, not accepted on this
+report's word.
 
 ## SCORE BEFORE / AFTER
 
@@ -146,5 +147,7 @@ before/after reports.
 
 ## VERDICT
 
-**REVIEW PENDING** — E1 and E2 implementation/evidence are complete and
-pushed, but Slice 2E remains open until independent review returns `SHIP`.
+**SHIP** — E1 and E2 implementation/evidence are complete and pushed;
+independent review (`IG07-SLICE2E-INDEPENDENT-REVIEW.md`, 2026-09-12)
+re-verified every load-bearing claim directly against the repository.
+IG-07 Slice 2E is closed.
