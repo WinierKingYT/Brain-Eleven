@@ -23,7 +23,7 @@ the behavior and operational evidence found in the current repository.
 | Area | Score | Evidence / status |
 |---|---:|---|
 | Persistence and concurrency | 7.0 | Registry durability/revision gap; uncoordinated multi-authority backup; state-memory reference TOCTOU. |
-| Scope and fail-closed safety | 6.0 | Transcript locator is not confined to a trusted client/project boundary; V1 related-note path is not confined to its notes directory. |
+| Scope and fail-closed safety | 7.0 | Related-note and native transcript path boundaries are independently shipped; project/session ownership proof remains open. |
 | Capture runtime | 8.0 | Claim, retry and lease transition crash-loss is covered and independently shipped; late transcript loss and prompt-event dead-letter paths remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -72,6 +72,12 @@ only generic filesystem properties. It does not prove that the file belongs to
 the trusted client/project transcript root or current session. This needs a
 separate capture-safety contract.
 
+**W-03A status:** Path confinement is independently shipped at `bae7c15` (code
+`a6f7fd1`, report `WEAKNESS-W03A-PACKAGE-REPORT.md`). Enqueue and worker read
+boundaries now enforce configured/native client roots, traversal and symlink
+containment. Project-slug ownership, Codex project association, session
+ownership and stable replacement identity remain explicit follow-up work.
+
 ### W-04 — Late transcript loss (P1)
 
 The worker refuses to enqueue a missing transcript and returns degraded before
@@ -106,12 +112,13 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-03 transcript provenance boundary.
+**Next package:** W-04 late transcript loss.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
-`SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`.
-**Required outcome:** a bounded transcript provenance contract, focused
-trusted-root/session tests, full regression, critical lint/compile checks, and
+`SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
+confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`.
+**Required outcome:** a bounded late-transcript durability contract, focused
+queueing/race tests, full regression, critical lint/compile checks, and
 independent read-only review.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
