@@ -1,7 +1,7 @@
 # W-06A Package Report — V1 SessionStart Bootstrap Ranking
 
 **PACKAGE:** W-06A
-**REVISION:** `7005daf`
+**REVISION:** `8270fef`
 **OBJECTIVE:** Make the active V1 SessionStart bootstrap ranking use bounded
 current-project state relevance and deterministic tie-breaking without changing
 V2, canonical authorities or Phase 20 state.
@@ -47,11 +47,11 @@ scope tier, descending score and a deterministic identity/content fallback.
 
 - Pre-change focused baseline: `tests/test_context_compiler.py` — **42 passed**.
 - W-06A focused ranking suite — **47 passed**.
-- Context/scope/router focused suite including cold SessionStart — **111
+- Context/scope/router focused suite including cold SessionStart — **113
   passed**.
-- Focused suite plus cold native SessionStart — **48 passed**.
+- Cold native SessionStart repeated independently — **5 passed**.
 - Baseline snapshot integrity — **5 passed**.
-- Full regression: `pytest tests -q` — **976 passed, 2 warnings**.
+- Full regression: `pytest tests -q` — **978 passed, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on touched Python files — **PASS**.
 - `compileall` on touched Python files — **PASS**.
 - `git diff --check` — **PASS**.
@@ -92,9 +92,10 @@ evaluation-backed retrieval work.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** An independent read-only reviewer must inspect the contract,
-diff, tests, baseline refresh and full-regression evidence and return exactly
-`SHIP`, `FIX-FIRST` or `RETHINK`.
+The first independent review returned `FIX-FIRST` for missing state-query test
+coverage and report trailing whitespace. Both findings were fixed in
+`8270fef`; a fresh independent read-only review is still required and must
+return exactly `SHIP`, `FIX-FIRST` or `RETHINK`.
 
 ## SCORE BEFORE/AFTER
 
