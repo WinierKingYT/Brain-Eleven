@@ -383,8 +383,13 @@ class CaptureQueue:
                     job["status"] = CLAIMED
                     job["attempt"] += 1
                     job["claimed_at"] = claimed_at
+                    # Persist the new state while the job is still in the
+                    # queued directory. If the process exits during the
+                    # rename, claim_next() can safely see the CLAIMED record
+                    # there and retry it; a QUEUED document can never be
+                    # stranded in processing by this transition.
+                    _atomic_write_json(source, job)
                     self._move(source, destination)
-                    _atomic_write_json(destination, job)
                     self._ledger(action="CLAIMED", job=job)
                     return job
         except MemoryStoreLockTimeout as exc:
