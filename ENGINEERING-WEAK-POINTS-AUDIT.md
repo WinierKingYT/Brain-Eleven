@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `b35facf`  
+**Repository revision:** `cc1c0b5`  
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after W-01/W-02 bounded fixes: **961 passed, 2 dependency
+- Full local suite after the shipped W-06A package: **978 passed, 2 dependency
   deprecation warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
@@ -27,11 +27,11 @@ the behavior and operational evidence found in the current repository.
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
-| Retrieval quality | 4.5 | V1 SessionStart ranking is not task-aware and has file-order tie behavior. |
+| Retrieval quality | 4.5 | Broader task-aware retrieval remains open; W-06A only improves the V1 bootstrap slice. |
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
-| Context compilation | 6.0 | Related-note path traversal is closed and independently shipped; raw continuity markdown remains and V2 is shadow-only. |
+| Context compilation | 6.3 | Related-note boundary and V1 bootstrap relevance/order are shipped; raw continuity markdown remains and V2 is shadow-only. |
 | V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall. |
 | Reminder/continuity runtime | 3.5 | Session end queues evidence, but Daily/Last Session/open-loop maintenance remains legacy/manual. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
@@ -108,6 +108,14 @@ type, confidence, freshness and lexical signals without the current task.
 Tie behavior can depend on input/file order. This remains behind the evaluation
 and retrieval-quality gates; no ranking tuning starts from this audit alone.
 
+**W-06A status:** The bounded SessionStart bootstrap slice is independently
+shipped at `cc1c0b5` (implementation/tests `8270fef`, report
+`WEAKNESS-W06A-PACKAGE-REPORT.md`). It uses resolved project-state lexical
+relevance, fixed normalized weights and deterministic identity/content
+tie-breaking. The broader task-aware retrieval work in
+`memory-retriever.py`/`hybrid-search.py` remains deferred behind evaluation
+gates.
+
 ### W-07 — Reminder/continuity is not an automatic product path (P2)
 
 Session end queues an event, but continuity files are still updated through
@@ -123,17 +131,20 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-06 V1 task-unaware ranking.
+**Next package:** W-07 reminder/continuity runtime contract.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
 confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`; W-04 late
 transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`; W-05
 prompt event terminal semantics — `SHIP`, report in
-`WEAKNESS-W05-PACKAGE-REPORT.md`.
-**Required outcome:** a bounded task-aware ranking contract, evaluation-backed
-focused tests, full regression, critical lint/compile checks, and independent
-read-only review.
+`WEAKNESS-W05-PACKAGE-REPORT.md`; W-06A V1 bootstrap ranking — `SHIP`, report
+in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
+`WEAKNESS-W06A-INDEPENDENT-REVIEW.md`.
+**Required outcome:** a bounded reminder/continuity runtime contract,
+evidence-backed focused tests, full regression, critical lint/compile checks,
+and independent read-only review. Broader W-06 retrieval remains an explicit
+deferred package rather than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
