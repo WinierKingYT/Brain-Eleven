@@ -1,7 +1,7 @@
 # W-06A Package Report — V1 SessionStart Bootstrap Ranking
 
-**PACKAGE:** W-06A  
-**REVISION:** `7005daf`  
+**PACKAGE:** W-06A
+**REVISION:** `7005daf`
 **OBJECTIVE:** Make the active V1 SessionStart bootstrap ranking use bounded
 current-project state relevance and deterministic tie-breaking without changing
 V2, canonical authorities or Phase 20 state.
@@ -46,10 +46,10 @@ scope tier, descending score and a deterministic identity/content fallback.
 ## TESTS EXECUTED
 
 - Pre-change focused baseline: `tests/test_context_compiler.py` — **42 passed**.
-- W-06A focused ranking suite — **45 passed**.
+- W-06A focused ranking suite — **47 passed**.
 - Context/scope/router focused suite including cold SessionStart — **111
   passed**.
-- Focused suite plus cold native SessionStart — **46 passed**.
+- Focused suite plus cold native SessionStart — **48 passed**.
 - Baseline snapshot integrity — **5 passed**.
 - Full regression: `pytest tests -q` — **976 passed, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on touched Python files — **PASS**.

@@ -201,6 +201,49 @@ class TestRankMemories:
         assert ranked[0]["memory_id"] == "relevant"
         assert ranked[0]["ranking_score"] > ranked[1]["ranking_score"]
 
+    def test_state_query_includes_blockers_constraints_and_fixed_weights(self, vault):
+        compiler = ContextCompiler(str(vault))
+        compiler.current_project_state = SimpleNamespace(
+            status=context_compiler.STATE_AVAILABLE,
+            current={"phase_id": None, "milestone": None, "objective": None},
+            active_requirements=(),
+            active_work_items=(),
+            active_blockers=({"text": "blocked queue", "severity": "HIGH"},),
+            constraints=({"text": "SQLite only"},),
+            risks=(),
+        )
+        memory = make_memory(
+            memory_id="state-match",
+            type="observation",
+            content="blocked queue HIGH SQLite only",
+            quality_score=0.8,
+            timestamp="not-a-real-timestamp",
+        )
+        compiler.memories = [memory]
+
+        tokens = compiler._state_query_tokens(compiler.current_project_state)
+        ranked = compiler._rank_memories(limit=5)
+
+        assert {"blocked", "queue", "high", "sqlite", "only"}.issubset(tokens)
+        # observation=.60, quality=.80, malformed timestamp=.50 and full
+        # lexical coverage=1.0 under the documented 0.30/0.30/0.15/0.25 mix.
+        assert ranked[0]["ranking_score"] == pytest.approx(0.745)
+
+    def test_empty_or_malformed_state_produces_no_query_tokens(self, vault):
+        compiler = ContextCompiler(str(vault))
+        malformed = SimpleNamespace(
+            status=context_compiler.STATE_AVAILABLE,
+            current=None,
+            active_requirements=(None,),
+            active_work_items="not-a-sequence",
+            active_blockers=(),
+            constraints=(),
+            risks=(),
+        )
+
+        assert compiler._state_query_tokens(malformed) == set()
+        assert compiler._state_query_tokens(None) == set()
+
     def test_equal_scores_have_stable_identity_order_independent_of_input(self, vault):
         compiler = ContextCompiler(str(vault))
         timestamp = "2026-01-01T00:00:00"
