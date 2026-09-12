@@ -29,6 +29,7 @@ def runtime(tmp_path):
         "mode": "CANARY",
         "project_ids": [project["project_id"]],
         "local_model": None,
+        "transcript_roots": {"claude": [str(tmp_path)], "codex": [str(tmp_path)]},
     })
     return vault, project["project_id"]
 

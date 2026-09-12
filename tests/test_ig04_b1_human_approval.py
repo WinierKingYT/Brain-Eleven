@@ -30,6 +30,7 @@ def b1_runtime(tmp_path):
         "project_ids": [project["project_id"]],
         "local_model": None,
         "b1_human_approval": True,
+        "transcript_roots": {"claude": [str(tmp_path)], "codex": [str(tmp_path)]},
     })
     return vault, project["project_id"]
 

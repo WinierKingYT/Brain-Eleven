@@ -12,6 +12,7 @@ from brain_eleven.state import StateStore, StateStoreConflict
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 from brain_eleven.operations import operation, operation_result
 from scripts.capture_event import parse_hook_event
+from scripts.capture_provenance import TranscriptProvenanceError, resolve_transcript_path
 from scripts.capture_queue import CaptureQueue
 from scripts.evidence import EvidenceStore, EvidenceBatch
 from scripts.extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
@@ -114,9 +115,12 @@ def enqueue(vault, client, payload):
     session = payload.get('session_id')
     if not isinstance(session, str) or not session:
         raise ValueError('Session identity required')
-    path = Path(source)
     try:
+        path = resolve_transcript_path(vault, client, source)
         stamp = path.stat()
+    except TranscriptProvenanceError as exc:
+        error = 'TRANSCRIPT_NOT_FOUND' if exc.code == 'TRANSCRIPT_PROVENANCE_MISSING' else exc.code
+        return {'status': 'DEGRADED', 'error': error}
     except OSError:
         return {'status': 'DEGRADED', 'error': 'TRANSCRIPT_NOT_FOUND'}
     session_key = client + ':' + hashlib.sha256(session.encode()).hexdigest()
@@ -645,12 +649,17 @@ class Worker:
             # Existing Foundation queue jobs are Claude SessionEnd events.
             client = 'claude'
             session = 'claude:' + hashlib.sha256(session.encode()).hexdigest()
+        try:
+            transcript_path = resolve_transcript_path(self.vault, client, event['transcript_path'])
+        except TranscriptProvenanceError as exc:
+            code = 'TRANSCRIPT_NOT_FOUND' if exc.code == 'TRANSCRIPT_PROVENANCE_MISSING' else exc.code
+            raise WorkerProcessingError(code) from exc
         checkpoint = self._checkpoint_for(job)
         stored_cursor = read_json(checkpoint) if cursor_override is None else cursor_override
         if stored_cursor is not None:
             stored_cursor = _validate_cursor(stored_cursor)
         try:
-            batch, cursor = read_increment(self.vault, event['transcript_path'], client, session,
+            batch, cursor = read_increment(self.vault, transcript_path, client, session,
                                            project['project_id'], event['event_at'], stored_cursor)
         except FileNotFoundError as exc:
             raise WorkerProcessingError('TRANSCRIPT_NOT_FOUND') from exc

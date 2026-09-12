@@ -21,7 +21,8 @@ def runtime(tmp_path):
     StateService(vault).init_project(project['project_id'], source={'type': 'user', 'reference': 'test'})
     migrate(vault)
     cfg = RuntimeConfig(vault)
-    write_json(cfg.path, {'schema_version': 1, 'mode': 'CANARY', 'project_ids': [project['project_id']], 'local_model': None})
+    write_json(cfg.path, {'schema_version': 1, 'mode': 'CANARY', 'project_ids': [project['project_id']], 'local_model': None,
+                          'transcript_roots': {'claude': [str(tmp_path)], 'codex': [str(tmp_path)]}})
     return vault, project['project_id']
 
 
