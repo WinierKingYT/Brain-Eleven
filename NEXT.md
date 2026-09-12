@@ -163,15 +163,29 @@ approved for implementation — real production caller
 `memory-validator.py`'s `transact`, which the plan correctly says must not
 be copied into the new capture package.
 
+**IG-07 Slice 2D is fully closed (D1 shipped, D2 archived).**
+`brain_eleven/memory/capture.py` is now canonical for manual capture
+(`remember`); `scripts/remember.py` is adapter-only, and
+`scripts/remember_opt_in.py` now calls the package surface directly. The
+core risk — a second canonical write path — was verified absent both by
+reading the code and via a structural test that greps `capture.py`'s own
+source for `MemoryStore(`/`.transact(` and fails if either appears.
+Safety-before-registry ordering and concurrent-replay idempotence were
+proven under genuine conditions (a registry double that raises if
+constructed too early; a real `ThreadPoolExecutor` race), independently
+re-run, not just asserted. Full suite reproduces at 936 passed. Independent
+review: `IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+
 ## What's next
 
-- Implement Slice 2D D1 (`remember.py` → `brain_eleven/memory/capture.py`)
-  under its own bounded contract, per `IG07-SLICE2D-PLAN.md` §B3 — same
-  five-gate discipline, plus duplicate/project-isolation/registry-opt-in/
-  safety-rejection evidence. Closes Slice 2D once independently reviewed.
-- `task_model.py` (Slice 2E — widest authority/evaluation blast radius after
-  `task_state_context.py`, which stays excluded with its own separate plan)
-  remains after that.
+- IG-07's remaining scope is `task_model.py` (Slice 2E — widest
+  authority/evaluation blast radius after `task_state_context.py`, which
+  stays excluded with its own separate plan) — needs a new bounded plan
+  before implementation.
+- The retrieval-quality research track (D0 recheck + BGE-M3) has run its
+  cheap experiments; the next move there is Ahmet's call — see
+  `D0-RECHECK-FINDINGS.md` for the options (try a third angle like eval
+  corpus representativeness, or treat Branch B as settled for now).
 - Claude-track pivoted to retrieval/recall quality research (2026-09-12).
   First finding is significant: `D0-RECHECK-FINDINGS.md` shows the D1
   decision's own evidence has a metric-design flaw (0.45/0.60 thresholds

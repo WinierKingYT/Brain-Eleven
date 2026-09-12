@@ -101,10 +101,12 @@ The two warnings are pre-existing FastAPI/Starlette dependency deprecations.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** The implementation is intentionally not self-accepted and
-no `SHIP` verdict is claimed here. Independent review must verify the
-canonical write boundary, identity, scope/safety behavior, and the exact-head
-evidence before D1 is closed.
+**SHIP**, recorded 2026-09-12. See `IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md` —
+the absence of a second canonical write path was verified both by reading
+`capture.py` and via the structural test that greps for it; the
+safety-before-registry and concurrent-replay tests were independently
+re-run and confirmed to prove genuine conditions (an exploding registry
+double, a real thread race), not just assert happy-path outcomes.
 
 ## SCORE BEFORE / AFTER
 
@@ -113,5 +115,6 @@ evidence before D1 is closed.
 
 ## VERDICT
 
-**REVIEW PENDING** — D1 implementation and evidence are complete for review;
-independent acceptance is required before the next Slice 2D package.
+**ACCEPTED.** D1 is closed; Slice 2D is fully closed (D1 shipped, D2
+archived per the C0 decision). IG-07's remaining scope is `task_model.py`
+(Slice 2E), requiring its own new bounded plan.
