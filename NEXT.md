@@ -176,12 +176,25 @@ constructed too early; a real `ThreadPoolExecutor` race), independently
 re-run, not just asserted. Full suite reproduces at 936 passed. Independent
 review: `IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
+**IG-07 Slice 2E plan approved.** `IG07-SLICE2E-PLAN.md` covers
+`task_model.py` → `brain_eleven/runtime/task.py`. Independently spot-checked
+roughly 20 line-number/structural citations, all accurate. Resolves the key
+open question (can `task_model.py` move without touching the excluded
+`task_state_context.py`, its heaviest caller) with a zero-behavioral-impact
+adapter inversion under five explicit halt conditions — if any can't be
+met, the plan itself says the result is RETHINK/defer, not a forced ship.
+HOLDOUT eval immutability is protected with concrete before/after report
+comparison commands. No business C0 needed this time — implementation
+(E1 baseline, then E2 inversion) is approved.
+
 ## What's next
 
-- IG-07's remaining scope is `task_model.py` (Slice 2E — widest
-  authority/evaluation blast radius after `task_state_context.py`, which
-  stays excluded with its own separate plan) — needs a new bounded plan
-  before implementation.
+- Implement Slice 2E per `IG07-SLICE2E-PLAN.md` §6-7 — E1 (contract +
+  exact before/after baseline for task model, task-state context, authority
+  serialization, and eval public/holdout snapshots) then E2 (canonical
+  inversion, adapter-only, identity preserved). `task_state_context.py`
+  itself must not change. Independent review checks byte/parity plus that
+  no holdout label/fixture was quietly adjusted to pass.
 - The retrieval-quality research track (D0 recheck + BGE-M3) has run its
   cheap experiments; the next move there is Ahmet's call — see
   `D0-RECHECK-FINDINGS.md` for the options (try a third angle like eval
