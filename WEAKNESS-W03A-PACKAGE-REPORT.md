@@ -1,7 +1,7 @@
 # W-03A Package Report — Transcript Path Confinement
 
-**PACKAGE:** W-03A / native transcript path confinement  
-**REVISION:** a6f7fd1  
+**PACKAGE:** W-03A / native transcript path confinement
+**REVISION:** a6f7fd1
 **OBJECTIVE:** Prevent native capture from queueing or reading a transcript
 outside the trusted Claude/Codex transcript roots.
 
@@ -47,10 +47,10 @@ read an unrelated local file.
 ## Quality metrics
 
 **BEFORE:** Transcript locator was only checked for absolute/local-file
-properties; client-root confinement was absent.  
+properties; client-root confinement was absent.
 **AFTER:** Root confinement is enforced at enqueue and worker read boundaries;
-foreign-root and symlink inputs have focused evidence.  
-**Scope score:** 6.0 → 7.0 provisional.  
+foreign-root and symlink inputs have focused evidence.
+**Scope score:** 6.0 → 7.0 provisional.
 **Capture score:** 8.0 → 8.0 provisional; W-04 late transcript loss and W-05
 prompt-event semantics remain open.
 
