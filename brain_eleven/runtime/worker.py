@@ -116,8 +116,8 @@ def enqueue(vault, client, payload):
     if not isinstance(session, str) or not session:
         raise ValueError('Session identity required')
     try:
-        path = resolve_transcript_path(vault, client, source)
-        stamp = path.stat()
+        path = resolve_transcript_path(vault, client, source, allow_missing=True)
+        stamp = path.stat() if path.exists() else None
     except TranscriptProvenanceError as exc:
         error = 'TRANSCRIPT_NOT_FOUND' if exc.code == 'TRANSCRIPT_PROVENANCE_MISSING' else exc.code
         return {'status': 'DEGRADED', 'error': error}
@@ -126,7 +126,9 @@ def enqueue(vault, client, payload):
     session_key = client + ':' + hashlib.sha256(session.encode()).hexdigest()
     event = parse_hook_event({'event_type': 'SESSION_END', 'session_id': session_key,
                              'project_root': str(root), 'transcript_path': str(path), 'event_at': now()}, vault_path=vault)
-    key = identity('capture_', session_key, str(path), stamp.st_size, stamp.st_mtime_ns)
+    key = identity('capture_', session_key, str(path),
+                   ('pending' if stamp is None else stamp.st_size),
+                   ('pending' if stamp is None else stamp.st_mtime_ns))
     event = replace(event, idempotency_key=key, event_id=identity('evt_', key)[:30])
     return CaptureQueue(vault).enqueue(event).to_dict()
 

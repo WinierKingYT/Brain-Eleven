@@ -139,14 +139,24 @@ def test_native_session_end_golden_path_records_effect_and_receipt(runtime, tmp_
     assert "session cookies" not in rendered
 
 
-def test_missing_transcript_is_bounded_and_does_not_enqueue(runtime):
+def test_late_transcript_locator_is_durable_and_retryable(runtime):
     vault, _ = runtime
 
     result = enqueue(vault, "codex", {
-        "session_id": "missing",
+        "session_id": "late-transcript",
         "cwd": str(vault),
         "transcript_path": str(vault / "missing.jsonl"),
     })
+
+    assert result["status"] == "QUEUED"
+    assert result["duplicate"] is False
+    assert list((vault / ".brain-eleven" / "capture" / "queued").glob("*.json"))
+
+
+def test_missing_transcript_locator_is_still_degraded_without_a_safe_identity(runtime):
+    vault, _ = runtime
+
+    result = enqueue(vault, "codex", {"session_id": "missing-locator", "cwd": str(vault)})
 
     assert result == {"status": "DEGRADED", "error": "TRANSCRIPT_NOT_FOUND"}
 

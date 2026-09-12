@@ -156,3 +156,35 @@ def test_worker_revalidates_root_before_evidence_read(tmp_path):
     assert result["error"] == "TRANSCRIPT_PROVENANCE_SCOPE"
     assert receipt["job_id"]
     assert not MemoryStore(vault).load()["validated_memory"]
+
+
+def test_late_file_arrival_reuses_one_durable_job(tmp_path):
+    trusted = tmp_path / "trusted"
+    trusted.mkdir()
+    vault, _ = _runtime(tmp_path, roots=trusted)
+    transcript = trusted / "late.jsonl"
+    payload = {
+        "session_id": "late-arrival",
+        "cwd": str(vault),
+        "transcript_path": str(transcript),
+    }
+
+    first = enqueue(vault, "claude", payload)
+    duplicate = enqueue(vault, "claude", payload)
+    assert first["status"] == "QUEUED"
+    assert duplicate["job_id"] == first["job_id"]
+    assert duplicate["duplicate"] is True
+
+    waiting = Worker(vault).once()
+    assert waiting["status"] == "QUEUED"
+    assert waiting["error"] == "TRANSCRIPT_NOT_FOUND"
+
+    transcript.write_text(
+        json.dumps({"type": "user", "message": {"role": "user", "content": "We decided to use the late source when it becomes available."}}) + "\n",
+        encoding="utf-8",
+    )
+    processed = Worker(vault).once()
+
+    assert processed["status"] == "PROCESSED"
+    assert processed["job_id"] == first["job_id"]
+    assert len(MemoryStore(vault).load()["validated_memory"]) == 1

@@ -66,8 +66,19 @@ def _configured_roots(vault: str | Path, client: str) -> tuple[Path, ...]:
     return tuple(roots)
 
 
-def resolve_transcript_path(vault: str | Path, client: str, source: str | Path) -> Path:
-    """Return a canonical transcript path only when it is root-confined."""
+def resolve_transcript_path(
+    vault: str | Path,
+    client: str,
+    source: str | Path,
+    *,
+    allow_missing: bool = False,
+) -> Path:
+    """Return a canonical transcript path only when it is root-confined.
+
+    ``allow_missing`` is reserved for the enqueue boundary: a trusted locator
+    may briefly precede the client's file write. Readers must keep the strict
+    default so an absent source remains a retryable processing error.
+    """
     if client not in {"claude", "codex"}:
         raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_CLIENT", "unsupported transcript client")
     if not isinstance(source, (str, Path)) or not str(source) or "\x00" in str(source):
@@ -78,13 +89,19 @@ def resolve_transcript_path(vault: str | Path, client: str, source: str | Path) 
     try:
         if original.is_symlink():
             raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_SYMLINK", "transcript path must not be a symlink")
-        resolved = original.resolve(strict=True)
+        resolved = original.resolve(strict=not allow_missing)
     except TranscriptProvenanceError:
         raise
+    except FileNotFoundError as exc:
+        if not allow_missing:
+            raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_MISSING", "transcript source is unavailable") from exc
+        resolved = original.resolve(strict=False)
     except (OSError, RuntimeError) as exc:
         raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_MISSING", "transcript source is unavailable") from exc
-    if not resolved.is_file():
+    if resolved.exists() and not resolved.is_file():
         raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_FILE", "transcript source is not a regular file")
+    if not resolved.exists() and not allow_missing:
+        raise TranscriptProvenanceError("TRANSCRIPT_PROVENANCE_MISSING", "transcript source is unavailable")
     for root in _configured_roots(vault, client):
         try:
             resolved.relative_to(root)
