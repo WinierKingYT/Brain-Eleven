@@ -138,7 +138,11 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-08 persistence consistency gaps.
+**W-08 contract status:** `SHIP` at `90ac899`, reviewed in
+`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. The next bounded implementation
+package is W-08A ProjectRegistry durability/CAS parity; W-08A is not yet
+started.
+**Next package:** W-08A ProjectRegistry durability/CAS parity implementation.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -151,10 +155,10 @@ in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
 report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`.
 **Required outcome:** a bounded W-08 persistence consistency contract,
- evidence-backed focused tests, full regression, critical lint/compile checks,
- and independent read-only review. Broader W-06 retrieval and automatic
- markdown reminder writing remain explicit deferred work rather than being
- treated as complete.
+followed by W-08A evidence-backed focused tests, full regression, critical
+lint/compile checks, and independent read-only review. Broader W-06 retrieval
+and automatic markdown reminder writing remain explicit deferred work rather
+than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
