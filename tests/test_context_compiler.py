@@ -221,6 +221,60 @@ class TestWikilinksAndHamles:
 
         assert related == {}
 
+    @pytest.mark.parametrize(
+        "link",
+        [
+            "../outside",
+            r"..\outside",
+            r"..\outside/child",
+            "/outside",
+            r"C:\outside",
+        ],
+    )
+    def test_fetch_related_hamles_rejects_path_values(self, vault, tmp_path, link):
+        outside = tmp_path / "outside.md"
+        outside.write_text("must never be read", encoding="utf-8")
+        compiler = ContextCompiler(str(vault))
+
+        related = compiler._fetch_related_hamles([make_memory(related_notes=[link])])
+
+        assert related == {}
+
+    def test_fetch_related_hamles_rejects_symlink_escape(self, vault, tmp_path):
+        outside = tmp_path / "outside.md"
+        outside.write_text("must never be read", encoding="utf-8")
+        escaped = vault / "🗂️ Proje Notları" / "Kararlar" / "escaped.md"
+        try:
+            escaped.symlink_to(outside)
+        except (OSError, NotImplementedError) as exc:
+            pytest.skip(f"symlinks unavailable in this test environment: {exc}")
+
+        compiler = ContextCompiler(str(vault))
+
+        related = compiler._fetch_related_hamles([make_memory(related_notes=["escaped"])])
+
+        assert related == {}
+
+    def test_fetch_related_hamles_preserves_in_bound_truncation(self, vault):
+        content = "x" * 250
+        (vault / "🗂️ Proje Notları" / "Kararlar" / "hamle-long.md").write_text(
+            content, encoding="utf-8"
+        )
+        compiler = ContextCompiler(str(vault))
+
+        related = compiler._fetch_related_hamles([make_memory(related_notes=["hamle-long"])])
+
+        assert related == {"hamle-long": content[:200]}
+
+    def test_fetch_related_hamles_skips_malformed_link_values(self, vault):
+        compiler = ContextCompiler(str(vault))
+
+        related = compiler._fetch_related_hamles(
+            [make_memory(related_notes=[None, "", 42, ".."])]
+        )
+
+        assert related == {}
+
 
 class TestCompileAndSave:
 

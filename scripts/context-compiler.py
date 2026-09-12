@@ -19,7 +19,7 @@ import os
 import sys
 import tempfile
 from contextlib import redirect_stdout
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from datetime import datetime
 from typing import List, Dict, Tuple, Set, Optional
 
@@ -396,16 +396,58 @@ class ContextCompiler:
         # Fetch each Hamle note
         if self.hamle_dir.exists():
             for link in all_links:
-                # Try to find the file (handle various formats)
-                hamle_file = self.hamle_dir / f"{link}.md"
+                hamle_file = self._resolve_related_note(link)
+                if hamle_file is None:
+                    continue
 
-                if hamle_file.exists():
+                try:
                     with open(hamle_file, 'r', encoding='utf-8') as f:
                         content = f.read()
-                    # Store first 200 chars
-                    related[link] = content[:200]
+                except (OSError, UnicodeError):
+                    # A missing/unreadable note is a bounded miss.  Related
+                    # notes are optional continuity context and must not make
+                    # bootstrap compilation fail.
+                    continue
+
+                # Store first 200 chars
+                related[link] = content[:200]
 
         return related
+
+    def _resolve_related_note(self, link: object) -> Optional[Path]:
+        """Resolve one related-note basename inside the configured notes dir.
+
+        ``related_notes`` is canonical memory data, so its values are treated
+        as untrusted names rather than filesystem paths.  The legacy on-disk
+        representation stores a basename and appends ``.md`` here.  Rejecting
+        separators before resolution keeps the accepted representation
+        portable across POSIX and Windows, while resolving and checking
+        containment also blocks symlink escapes.
+        """
+
+        if not isinstance(link, str) or not link or "\x00" in link:
+            return None
+        if link in {".", ".."} or "/" in link or "\\" in link:
+            return None
+
+        # PureWindowsPath catches drive-relative/absolute Windows paths even
+        # when this code is running on Linux; PurePosixPath covers POSIX
+        # absolute paths independent of the host platform.
+        windows_link = PureWindowsPath(link)
+        if Path(link).is_absolute() or PurePosixPath(link).is_absolute():
+            return None
+        if windows_link.drive or windows_link.anchor:
+            return None
+
+        notes_root = self.hamle_dir.resolve()
+        candidate = (self.hamle_dir / f"{link}.md").resolve()
+        try:
+            candidate.relative_to(notes_root)
+        except ValueError:
+            return None
+        if not candidate.is_file():
+            return None
+        return candidate
 
     # ========================================================================
     # COMPILE CONTEXT

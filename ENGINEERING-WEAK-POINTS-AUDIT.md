@@ -99,10 +99,11 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-01 context related-note boundary.  
-**Contract:** `WEAKNESS-W01-CONTEXT-NOTE-BOUNDARY-CONTRACT.md`  
-**Required outcome:** focused security tests, full regression, critical lint/
-compile checks, and independent read-only review.  
+**Next package:** W-02 capture queue claim crash window.
+**Closed package:** W-01 context related-note boundary — `SHIP`, report in
+`WEAKNESS-W01-PACKAGE-REPORT.md`.
+**Required outcome:** focused crash-injection tests, full regression, critical
+lint/compile checks, and independent read-only review.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
