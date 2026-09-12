@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `cc1c0b5`
+**Repository revision:** `ad8c544`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after the shipped W-06A package: **978 passed, 2 dependency
+- Full local suite after the shipped W-07A package: **982 passed, 2 dependency
   deprecation warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
@@ -31,9 +31,9 @@ the behavior and operational evidence found in the current repository.
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
-| Context compilation | 6.3 | Related-note boundary and V1 bootstrap relevance/order are shipped; raw continuity markdown remains and V2 is shadow-only. |
+| Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
 | V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall. |
-| Reminder/continuity runtime | 3.5 | Session end queues evidence, but Daily/Last Session/open-loop maintenance remains legacy/manual. |
+| Reminder/continuity runtime | 5.0 | Native V1 reads bounded project state for continuity; automatic Daily/Last Session/open-loop maintenance remains legacy/manual. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
 
@@ -122,6 +122,13 @@ Session end queues an event, but continuity files are still updated through
 legacy/manual maintenance. This needs a bounded runtime contract after capture
 reliability is fixed.
 
+**W-07A status:** Native SessionStart structured continuity is independently
+shipped at `ad8c544` (implementation `a83f93d`, baseline evidence refresh
+`2fff176`, review `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`). The V1 read path now
+renders bounded, deterministic, project-scoped work items, requirements,
+blockers, constraints and risks. Automatic markdown reminder writing remains
+open and is not implied by this package.
+
 ### W-08 — Persistence consistency gaps (P1/P2)
 
 Backup reads multiple authorities without a coordinated snapshot; registry
@@ -131,7 +138,7 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 ## Current package selection
 
-**Next package:** W-07 reminder/continuity runtime contract.
+**Next package:** W-08 persistence consistency gaps.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -140,11 +147,14 @@ transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`; W-
 prompt event terminal semantics — `SHIP`, report in
 `WEAKNESS-W05-PACKAGE-REPORT.md`; W-06A V1 bootstrap ranking — `SHIP`, report
 in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
-`WEAKNESS-W06A-INDEPENDENT-REVIEW.md`.
-**Required outcome:** a bounded reminder/continuity runtime contract,
-evidence-backed focused tests, full regression, critical lint/compile checks,
-and independent read-only review. Broader W-06 retrieval remains an explicit
-deferred package rather than being treated as complete.
+`WEAKNESS-W06A-INDEPENDENT-REVIEW.md`; W-07A native continuity read — `SHIP`,
+report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
+`WEAKNESS-W07A-INDEPENDENT-REVIEW.md`.
+**Required outcome:** a bounded W-08 persistence consistency contract,
+ evidence-backed focused tests, full regression, critical lint/compile checks,
+ and independent read-only review. Broader W-06 retrieval and automatic
+ markdown reminder writing remain explicit deferred work rather than being
+ treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
