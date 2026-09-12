@@ -48,7 +48,9 @@ surface which imports the implementation from `scripts/project_registry.py`.
 The implementation remains in the legacy module; this contract does not move it.
 
 `scripts/project_registry.py:26-28` defines `REGISTRY_SCHEMA_VERSION = 1`, the
-registry filename and the valid statuses. `scripts/project_registry.py:50-64`
+registry filename and the valid statuses. W-08A freezes this schema version at
+`1`; the revision field below is an additive field, not a schema-version bump.
+`scripts/project_registry.py:50-64`
 implements `_atomic_write`: it writes JSON to a temporary file and calls
 `Path.replace`, but the handle is not explicitly flushed/fsynced and the parent
 directory is not synced.
@@ -150,8 +152,11 @@ failure modes already covered for memory and state.
 
 - `scripts/project_registry.py` implementation and its
   `brain_eleven.projects.registry` identity-preserving surface.
-- A backward-compatible, versioned registry representation or explicit read
-  normalization for existing schema-1 files.
+- The exact current representation remains `schema_version: 1` with a required
+  non-negative integer `revision`. A missing revision in an existing schema-1
+  file normalizes to `0` in memory; the first successful mutation persists the
+  same schema version with `revision: 1`. No schema-2 representation is created
+  by W-08A.
 - Monotonic registry revision, stale-write rejection, backup creation and
   flush/fsync-before-replace behavior.
 - Focused registry tests and package evidence.
@@ -172,7 +177,11 @@ failure modes already covered for memory and state.
    explicit `ProjectRegistryError` failures; corruption is never treated as an
    empty registry.
 6. Legacy schema-1 registries remain readable through an explicit compatibility
-   path. No project root is inserted into memory records, and no registry write
+   path. A normalized empty registry is exactly
+   `{"schema_version": 1, "revision": 0, "updated_at": <timestamp>,
+   "projects": []}`; a legacy file without `revision` is treated as revision
+   zero and is never silently assigned a higher revision without a successful
+   write. No project root is inserted into memory records, and no registry write
    becomes a MemoryStore or StateStore write.
 7. `brain_eleven.projects.registry.ProjectRegistry`,
    `scripts.project_registry.ProjectRegistry` and any historical bare-module alias
@@ -185,10 +194,11 @@ failure modes already covered for memory and state.
 
 - Fresh empty registry receives a revision and passes validation.
 - Legacy schema-1 load preserves all project records and an explicit upgrade
-  write produces the chosen current representation.
-- Two writers from one starting revision: exactly one succeeds, one receives a
-  typed stale/CAS error, and the final project set contains both no lost update
-  and no silent overwrite according to the chosen API contract.
+  write produces schema version `1` with the additive revision field.
+- Two writers from one starting revision: exactly one succeeds; the other
+  receives a typed stale/CAS conflict and does not change the file. A separate
+  explicit retry that reloads the new revision may then succeed. The test must
+  assert both phases and prove no update is silently lost or overwritten.
 - `register`, `relocate`, `rename`, status and proactive-capture mutations each
   increment revision once and preserve existing fail-closed rules.
 - `os.fsync`/replace fault injection proves a failed durability step does not
@@ -200,12 +210,41 @@ failure modes already covered for memory and state.
 
 ### Compatibility and rollback
 
-The first write must be staged behind an explicit schema/revision compatibility
-decision. Old schema-1 files are read-only compatible until a normal mutation
-performs a validated upgrade. A backup is retained before every replacement.
-Rollback is a registry-only restore of the verified backup while holding the same
-lock; it must use expected revision and refuse a stale rollback. No bulk vault
-restore, memory rewrite or state rewrite is part of W-08A.
+The first write uses the frozen schema-1 representation described above. Old
+schema-1 files are read-only compatible until a normal mutation performs the
+validated additive revision upgrade. The fixed backup path is
+`.claude/project-registry.backup.json`. Before an ordinary replacement, it is
+written atomically as this explicit envelope:
+
+```json
+{
+  "backup_schema_version": 1,
+  "captured_at": "<UTC timestamp>",
+  "source_revision": 3,
+  "registry": {
+    "schema_version": 1,
+    "revision": 3,
+    "updated_at": "<UTC timestamp>",
+    "projects": []
+  }
+}
+```
+
+`registry` is the validated prior payload; the envelope is not accepted as the
+main registry document. A missing or corrupt backup raises a typed
+`ProjectRegistryBackupError`.
+
+The exact rollback API is
+`ProjectRegistry.rollback(*, expected_revision: int) -> Dict`. Under the same
+registry lock it validates that the current revision equals
+`expected_revision`, validates the fixed backup envelope, and restores its
+`projects` payload while assigning `current_revision + 1` and a fresh
+`updated_at`. Rollback therefore never moves revision backwards and a stale
+rollback raises `ProjectRegistryConflict` without changing bytes. The verified
+backup remains the rollback source during that operation. If the current
+projects already equal the backup projects, rollback returns an explicit
+`already_restored` result without another revision bump. No bulk vault restore,
+memory rewrite or state rewrite is part of W-08A.
 
 ## 5. Deferred bounded slices
 
@@ -266,6 +305,15 @@ Hard gates are: no silent overwrite, no lost successful mutation, no wrong-proje
 identity, no corruption-as-empty behavior, no direct file writes outside the
 authority boundary, and no change to Phase 20/V2 state. A failing holdout or
 existing intelligence-quality metric remains visible and is not tuned in W-08.
+
+The official `baseline-v3` source fingerprint may change as a derived consequence
+of a registry implementation change, but only under a narrow evidence rule: a
+refresh is permitted when the corpus, labels, case membership, `task_cases`,
+`state_cases`, metrics, invariants and thresholds are byte-for-byte/semantically
+unchanged, and the diff changes only the recorded `source_fingerprint`. The
+snapshot test, full suite and an explicit before/after metrics comparison must
+be rerun at the exact post-change revision. Any metric, corpus or invariant
+change is a separate evaluation change and is forbidden in W-08A.
 
 ## 8. Explicit out of scope
 
