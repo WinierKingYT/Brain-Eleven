@@ -187,8 +187,10 @@ failure modes already covered for memory and state.
    `scripts.project_registry.ProjectRegistry` and any historical bare-module alias
    remain the same class object.
 8. Existing callers that do not supply an expected revision retain a documented
-   compatibility behavior. New callers may opt into CAS; the implementation must
-   not guess a stale caller's intent.
+   compatibility behavior: they mutate the latest snapshot loaded under the
+   registry lock, exactly as the current API does. CAS is enforced only when an
+   `expected_revision` is supplied; the implementation must not silently invent
+   a caller revision or guess a stale caller's intent.
 
 ### Required focused evidence
 
@@ -326,7 +328,10 @@ change is a separate evaluation change and is forbidden in W-08A.
   authority; W-08A hardens the existing registry boundary only.
 - Automatic markdown reminders, Daily/Threads/Last Session maintenance.
 - API authentication/authorization; that is a separate security package.
-- Changing evaluation labels, holdout data, thresholds or baseline snapshots.
+- Changing evaluation labels, holdout data or thresholds. Baseline snapshots are
+  also frozen, except for the narrowly defined Section 7
+  `source_fingerprint`-only derived refresh when every corpus/metric/invariant
+  check there passes; that explicit exception overrides this general prohibition.
 
 ## 9. Package report template
 
