@@ -171,6 +171,122 @@ def test_claim_crash_after_rename_leaves_recoverable_processing_job(tmp_path, mo
     assert reclaimed["attempt"] == 2
 
 
+@pytest.mark.parametrize("fail_after_rename", [False, True])
+def test_retry_requeue_transition_is_crash_recoverable(tmp_path, monkeypatch, fail_after_rename):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(vault, config=CaptureQueueConfig(max_attempts=3))
+    receipt = queue.enqueue(_session_event(vault, tmp_path / "project"))
+    assert queue.claim_next(now="2026-09-05T10:00:00Z") is not None
+    assert queue.start_processing(receipt.job_id)["status"] == PROCESSING
+    original_move = queue._move
+
+    def move_then_crash(source, destination):
+        original_move(source, destination)
+        raise CaptureQueueWriteError("simulated post-rename crash")
+
+    def fail_before_rename(source, destination):
+        raise CaptureQueueWriteError("simulated pre-rename crash")
+
+    monkeypatch.setattr(queue, "_move", move_then_crash if fail_after_rename else fail_before_rename)
+    with pytest.raises(CaptureQueueWriteError):
+        queue.retry_or_dead_letter(receipt.job_id, error_code="TRANSCRIPT_NOT_FOUND")
+
+    monkeypatch.setattr(queue, "_move", original_move)
+    if fail_after_rename:
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:11Z") == 0
+    else:
+        processing = queue._job_path(CLAIMED, receipt.job_id)
+        assert json.loads(processing.read_text(encoding="utf-8"))["status"] == QUEUED
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:11Z") == 1
+
+    queued = queue.job_path(receipt.job_id)
+    assert queued is not None and queued.parent.name == "queued"
+    assert json.loads(queued.read_text(encoding="utf-8"))["status"] == QUEUED
+    reclaimed = queue.claim_next(now="2026-09-05T10:00:12Z")
+    assert reclaimed is not None
+    assert reclaimed["job_id"] == receipt.job_id
+    assert reclaimed["attempt"] == 2
+
+
+@pytest.mark.parametrize("fail_after_rename", [False, True])
+def test_retry_dead_letter_transition_is_crash_recoverable(tmp_path, monkeypatch, fail_after_rename):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(vault, config=CaptureQueueConfig(max_attempts=1))
+    receipt = queue.enqueue(_session_event(vault, tmp_path / "project"))
+    assert queue.claim_next(now="2026-09-05T10:00:00Z") is not None
+    assert queue.start_processing(receipt.job_id)["status"] == PROCESSING
+    original_move = queue._move
+
+    def move_then_crash(source, destination):
+        original_move(source, destination)
+        raise CaptureQueueWriteError("simulated post-rename crash")
+
+    def fail_before_rename(source, destination):
+        raise CaptureQueueWriteError("simulated pre-rename crash")
+
+    monkeypatch.setattr(queue, "_move", move_then_crash if fail_after_rename else fail_before_rename)
+    with pytest.raises(CaptureQueueWriteError):
+        queue.retry_or_dead_letter(receipt.job_id, error_code="TRANSCRIPT_NOT_FOUND")
+
+    monkeypatch.setattr(queue, "_move", original_move)
+    if fail_after_rename:
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:11Z") == 0
+    else:
+        processing = queue._job_path(CLAIMED, receipt.job_id)
+        assert json.loads(processing.read_text(encoding="utf-8"))["status"] == DEAD_LETTER
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:11Z") == 1
+
+    dead_letter = queue.job_path(receipt.job_id)
+    assert dead_letter is not None and dead_letter.parent.name == "dead-letter"
+    assert json.loads(dead_letter.read_text(encoding="utf-8"))["status"] == DEAD_LETTER
+
+
+@pytest.mark.parametrize("max_attempts", [1, 3])
+@pytest.mark.parametrize("fail_after_rename", [False, True])
+def test_lease_recovery_transition_is_crash_recoverable(
+    tmp_path, monkeypatch, max_attempts, fail_after_rename
+):
+    vault = tmp_path / "vault"
+    queue = CaptureQueue(
+        vault,
+        config=CaptureQueueConfig(max_attempts=max_attempts, lease_seconds=10),
+    )
+    receipt = queue.enqueue(_session_event(vault, tmp_path / "project"))
+    assert queue.claim_next(now="2026-09-05T10:00:00Z") is not None
+    original_move = queue._move
+
+    def move_then_crash(source, destination):
+        original_move(source, destination)
+        raise CaptureQueueWriteError("simulated post-rename crash")
+
+    def fail_before_rename(source, destination):
+        raise CaptureQueueWriteError("simulated pre-rename crash")
+
+    monkeypatch.setattr(queue, "_move", move_then_crash if fail_after_rename else fail_before_rename)
+    with pytest.raises(CaptureQueueWriteError):
+        queue.recover_expired_claims(now="2026-09-05T10:00:11Z")
+
+    monkeypatch.setattr(queue, "_move", original_move)
+    if fail_after_rename:
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:12Z") == 0
+    else:
+        processing = queue._job_path(CLAIMED, receipt.job_id)
+        expected_status = DEAD_LETTER if max_attempts == 1 else QUEUED
+        assert json.loads(processing.read_text(encoding="utf-8"))["status"] == expected_status
+        assert queue.recover_expired_claims(now="2026-09-05T10:00:12Z") == 1
+
+    destination = queue.job_path(receipt.job_id)
+    assert destination is not None
+    expected_status = DEAD_LETTER if max_attempts == 1 else QUEUED
+    assert destination.parent.name == ("dead-letter" if max_attempts == 1 else "queued")
+    assert json.loads(destination.read_text(encoding="utf-8"))["status"] == expected_status
+    if max_attempts > 1:
+        reclaimed = queue.claim_next(now="2026-09-05T10:00:13Z")
+        assert reclaimed is not None
+        assert reclaimed["job_id"] == receipt.job_id
+        assert reclaimed["attempt"] == 2
+
+
 def test_retry_and_lease_recovery_are_bounded_and_content_safe(tmp_path):
     vault = tmp_path / "vault"
     queue = CaptureQueue(vault, config=CaptureQueueConfig(max_attempts=2, lease_seconds=10))

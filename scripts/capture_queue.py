@@ -461,17 +461,17 @@ class CaptureQueue:
                 job["last_error_code"] = error_code
                 if job["attempt"] >= self.config.max_attempts:
                     destination = self._job_path(DEAD_LETTER, job_id)
-                    self._move(source, destination)
                     job["status"] = DEAD_LETTER
                     job["dead_lettered_at"] = _utc_now()
-                    _atomic_write_json(destination, job)
+                    _atomic_write_json(source, job)
+                    self._move(source, destination)
                     self._ledger(action="DEAD_LETTER", job=job, error_code=error_code)
                     return QueueReceipt(job_id=job_id, status=DEAD_LETTER)
                 destination = self._job_path(QUEUED, job_id)
-                self._move(source, destination)
                 job["status"] = QUEUED
                 job["retry_enqueued_at"] = _utc_now()
-                _atomic_write_json(destination, job)
+                _atomic_write_json(source, job)
+                self._move(source, destination)
                 self._ledger(action="REQUEUED", job=job, error_code=error_code)
                 return QueueReceipt(job_id=job_id, status=QUEUED)
         except MemoryStoreLockTimeout as exc:
@@ -486,6 +486,15 @@ class CaptureQueue:
             with self._locked():
                 for source in sorted(self._directory(CLAIMED).glob("*.json")):
                     job = self._read_job(source)
+                    # A crash after persisting the next state but before the
+                    # rename leaves the document in the claimed directory.
+                    # Repair that location/state pair before lease handling.
+                    if job["status"] in {QUEUED, DEAD_LETTER}:
+                        destination = self._job_path(job["status"], job["job_id"])
+                        self._move(source, destination)
+                        self._ledger(action="RECOVERED", job=job, error_code=job.get("last_error_code"))
+                        recovered += 1
+                        continue
                     if job["status"] not in {CLAIMED, PROCESSING}:
                         raise CaptureQueueCorruptError("processing job has an invalid state")
                     claimed_at = _parse_utc(job.get("claimed_at"), field="claimed_at")
@@ -494,17 +503,17 @@ class CaptureQueue:
                     job["last_error_code"] = "CAPTURE_LEASE_EXPIRED"
                     if job["attempt"] >= self.config.max_attempts:
                         destination = self._job_path(DEAD_LETTER, job["job_id"])
-                        self._move(source, destination)
                         job["status"] = DEAD_LETTER
                         job["dead_lettered_at"] = current.isoformat().replace("+00:00", "Z")
-                        _atomic_write_json(destination, job)
+                        _atomic_write_json(source, job)
+                        self._move(source, destination)
                         self._ledger(action="DEAD_LETTER", job=job, error_code="CAPTURE_LEASE_EXPIRED")
                     else:
                         destination = self._job_path(QUEUED, job["job_id"])
-                        self._move(source, destination)
                         job["status"] = QUEUED
                         job["retry_enqueued_at"] = current.isoformat().replace("+00:00", "Z")
-                        _atomic_write_json(destination, job)
+                        _atomic_write_json(source, job)
+                        self._move(source, destination)
                         self._ledger(action="RECOVERED", job=job, error_code="CAPTURE_LEASE_EXPIRED")
                     recovered += 1
         except MemoryStoreLockTimeout as exc:
