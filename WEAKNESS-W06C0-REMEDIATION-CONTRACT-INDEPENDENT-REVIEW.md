@@ -72,3 +72,23 @@ allowlist/test interaction is independently re-reviewed.
 
 **Plan status:** contract review complete; no production implementation was
 started or authorized by this review.
+
+## P1-B amendment re-review — `4088516`
+
+The amended contract adds the previously missing cross-package compatibility
+boundary. It now permits only the two evaluator files, one pinned metadata
+file, and narrowly scoped test/report assertions. The exception is constrained
+by the full W-06C0 package-end revision, the expected post-fix blob hash, and
+the requirement that no other `evals/w06c0/` path changes. It also requires
+fresh W-06C0R1 source/evidence/seal fingerprints after its evaluator changes.
+The existing short reference resolves to
+`f676c91d0e41a7523dc2b96a131814b983401456`, which is an ancestor of review
+HEAD.
+
+The required tests now cover both the intended one-time exception and a later
+or unpinned old-path edit failing closed. This addresses blocker B-01 without
+turning the forbidden prefix into a broad allowlist entry. The historical W-06C0
+range is pinned to its package end, while the current HEAD remains diagnostic.
+
+**Amended P1-B verdict: SHIP.** Implementation remains subject to the
+contract's independent package review and all listed evidence gates.
