@@ -71,3 +71,61 @@ The full suite being green proves regression compatibility only; it does not est
 **FIX-FIRST**
 
 The implementation is regression-green and the source revision guard is effective, but the frozen runtime fallback contract and fail-closed malformed-gate contract are not satisfied, and the required quality/operational acceptance evidence is missing. W-06B must remain open; no score increase, V2 promotion, or Phase 20 work is authorized.
+
+## Re-review — exact current head `06644fa`
+
+The F1/F2 fixes and the evaluation work were reviewed independently again. The
+small follow-up at `06644fa` only makes the legacy provider identity explicit;
+it does not change the ranking algorithm or the measured quality.
+
+### Re-review evidence
+
+- `pytest -q tests/test_w06b_task_aware.py tests/test_w09a_retrieval_evaluation.py` — **19 passed**.
+- The full suite at the preceding exact implementation head `0b665a2` — **1081 passed, 2 warnings**. The only subsequent code change is the provider-label fix in `06644fa`; the focused suite was rerun on that head.
+- Critical flake8, compileall and `git diff --check` on the runtime/evaluation surfaces — **PASS**.
+- Fresh W-06B DEV and TEST reports were generated with source SHA `06644fa`; corpus/source/candidate fingerprints match the committed evidence.
+- DEV and TEST safety counters remain all zero.
+
+### F1/F2 resolution
+
+- Wrong-type gate values (`None`, list, object and number) now resolve to
+  `V1_LEGACY` with `RETRIEVAL_MODE_INVALID` telemetry.
+- `NO_NEED` fallback now calls the legacy `compile_task` path and returns a
+  bounded task status while preserving provider identity `V1`.
+- The focused tests cover both changes. These prior blockers are resolved.
+
+### Quality gate result
+
+The frozen contract still fails decisively:
+
+| Split | Provider | Precision | Mandatory recall | MRR | Noise | V1 comparison |
+|---|---|---:|---:|---:|---:|---|
+| DEV | V1 | 0.165714 | 0.714286 | 0.454524 | 0.834286 | baseline |
+| DEV | W-06B | 0.182857 | 0.800000 | 0.448095 | 0.802857 | MRR regresses |
+| TEST | V1 | 0.180000 | 0.825000 | 0.491944 | 0.820000 | baseline |
+| TEST | W-06B | 0.176667 | 0.841667 | 0.424722 | 0.740000 | precision and MRR regress |
+
+The contract requires precision `>= 0.60`, mandatory recall `>= 0.80`, MRR
+non-regression, and W-06B TEST precision strictly above V1. W-06B reaches the
+recall floor and reduces noise/token waste, but precision remains roughly
+0.18, below the required floor on both splits; TEST precision is below V1 and
+TEST MRR is materially worse. This is a quality failure of the current
+task-aware ranking approach, not a documentation-only issue.
+
+Operational evidence reports p95 latency and the five-item bound as passing,
+and all public safety counters are zero. The package report still records
+mandatory-overflow and token-unavailable fault-injection evidence as
+incomplete. The operational report's stored implementation SHA predates the
+provider-label-only follow-up; no ranking code changed, but exact evidence
+should be regenerated if the package is later reconsidered.
+
+### Re-review verdict
+
+**RETHINK**
+
+The runtime safety and fallback defects are fixed, but the frozen W-06B quality
+gate remains far from its minimum precision target and fails TEST precision and
+MRR non-regression. The lexical reranking design should be reconsidered under
+a new bounded contract or amended evidence plan before further tuning. W-06B
+is not SHIP; retrieval/context scores must not increase, V2 remains SHADOW,
+and Phase 20 remains FROZEN / LOCKED.
