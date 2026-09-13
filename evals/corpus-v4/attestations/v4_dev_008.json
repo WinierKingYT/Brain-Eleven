@@ -1,0 +1,22 @@
+{
+  "agreement": true,
+  "attestation_hash": "sha256:d49e7d32f8540baa9c0f5db9e702783ae3d48ead82ea208cea36cd2343e90500",
+  "case_id": "v4_dev_008",
+  "case_payload_hash": "sha256:aca396b2977eeae1c195931e3d1571e075e49d39580e01efa5d476d431d85eb6",
+  "corpus_version": 4,
+  "labelers": [
+    {
+      "id_hash": "sha256:9419a322af042140cc7708f36ffbd80d66541722d907671b9b1304aac1c67cb7",
+      "reason": "query_and_candidate_metadata_support_target",
+      "status": "answerable"
+    },
+    {
+      "id_hash": "sha256:5233ffd81808adbc81d47820fae4a8d5554a37aecf6a4bcec15885e6d70243d5",
+      "reason": "query_and_candidate_metadata_support_target",
+      "status": "answerable"
+    }
+  ],
+  "review_version": "w06c0r1-v1",
+  "schema_version": 1,
+  "split": "dev"
+}

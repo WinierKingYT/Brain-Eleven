@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:4cc060ae3bbcca1f0b29359acbbbb3f7cc9a8e6e1d84fa9635bb3473f9c3a0b6",
+    "case_payload_hash": "sha256:316c1d477834e1e7df83cd0cb1ec40e8648e9faf01a55a3be358b47b0f00743b",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup",
+      "mem_context_budget"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise",
+      "ranking"
+    ],
+    "intent": [
+      "relevance"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: promtgen. Target wording: PromtGen exports IndexedDB drafts before destructive migrations. (public case 052)."
+  },
+  "task_id": "v4_dev_052"
+}

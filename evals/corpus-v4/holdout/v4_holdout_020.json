@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0c9d87b1858bbb120cb71563677fb1403b8f697abd1de306bbfadf3c90812474",
+    "case_payload_hash": "sha256:aab1506c98f94bc771d3614dcb7a55868f8f4eefb9adb3b49b7edfb416efafed",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "malicious_input",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP validates the server protocol version before commands. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 020)."
+  },
+  "task_id": "v4_holdout_020"
+}

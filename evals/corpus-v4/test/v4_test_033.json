@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e8460bf8329c7fbe535fc29dafc46c7befce902c222c6b3e79a38be83c1856f6",
+    "case_payload_hash": "sha256:54323c597fc371171a546fff0299d91c09479f52a80bc59e338412c45ce6642e",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: Never store secrets in public evaluation fixtures or context output. (public case 033)."
+  },
+  "task_id": "v4_test_033"
+}

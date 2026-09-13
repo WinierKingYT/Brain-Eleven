@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d49e7d32f8540baa9c0f5db9e702783ae3d48ead82ea208cea36cd2343e90500",
+    "case_payload_hash": "sha256:aca396b2977eeae1c195931e3d1571e075e49d39580e01efa5d476d431d85eb6",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_pg_indexeddb_backup",
+      "mem_mc_event_stream",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_backup_canonical"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Choose the active rule and ignore obsolete history Project: the shared vault. Target wording: Backups preserve canonical memory identity and revision metadata. Related context: A stale derived projection is never canonical truth. (public case 008)."
+  },
+  "task_id": "v4_dev_008"
+}

@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:cc719c808a886c4736af4eb6c2a2269bb08b3aef431626441379cc2d239953e5",
+    "case_payload_hash": "sha256:5a3439264891feab5a8b77469b7ababe687eac7900125e2fd366ab7ebeba46ae",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_legacy_export",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_vault_manifest"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: eleven_capture. Target wording: Eleven Capture keeps a vault manifest for deterministic recovery checks. Related context: Default retrieval includes global and current-project memory only. (public case 006)."
+  },
+  "task_id": "v4_test_006"
+}

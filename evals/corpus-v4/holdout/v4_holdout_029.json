@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:2e925464008a478de113e38a1d1752c8179ae28631c36afc82c45f53a3cfaa44",
+    "case_payload_hash": "sha256:d4554b3e91ea928ceaea5c19e7ddef2103413726cfc13fcd984663b50d0903f8",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "same_domain_wrong_project",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Find the memory that explains this requirement Project: eleven_capture. Target wording: Eleven Capture local cache is derived and may be rebuilt. Related context: Default retrieval includes global and current-project memory only. (public case 029)."
+  },
+  "task_id": "v4_holdout_029"
+}

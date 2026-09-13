@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:c6db91f6f50c8f69a3396b86db2bfbf748d25c89f5a020eb088b5e213b93d74b",
+    "case_payload_hash": "sha256:3b0c242a4a3e76f973a8219e743c03140b05ff0f2a4298985b3c15c7fdfefe32",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_legacy_export",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the exact rule stated here Project: promtgen. Target wording: PromtGen exports IndexedDB drafts before destructive migrations. Related context: Default retrieval includes global and current-project memory only. (public case 001)."
+  },
+  "task_id": "v4_test_001"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e4b997591b8ea7f76d8e2fff779c5fff7fdf5c0a22006fa9944bae903cb56a45",
+    "case_payload_hash": "sha256:073393a45ffbfe7299f0c9a138f5dda724db547da2949ba767aae860a4fedfe2",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Eleven Capture publishes saved notes through an atomic rename. Related context: Explicit user decisions outrank inferred observations. (public case 023)."
+  },
+  "task_id": "v4_test_023"
+}

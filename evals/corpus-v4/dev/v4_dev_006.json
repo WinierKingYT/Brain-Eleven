@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:59495112b536452127e1bc22aa1c8afe7ea256a357f531f594ee7770129b9a97",
+    "case_payload_hash": "sha256:ab2eb8c59e2ade9702604180b16974bd14b20ce5b3ffaa292ed8a48b9a618793",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_promtgen_storage",
+      "mem_mc_world_backup",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_secret_redaction"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: the shared vault. Target wording: Never store secrets in public evaluation fixtures or context output. Related context: Preserve UTF-8 and Turkish filenames across vault operations. (public case 006)."
+  },
+  "task_id": "v4_dev_006"
+}

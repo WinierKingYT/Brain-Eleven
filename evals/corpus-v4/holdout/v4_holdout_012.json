@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:ec3bb743c52f65ebafdc6f0244ecd4a929a3db0894cad6ae0febb31cc9c8e827",
+    "case_payload_hash": "sha256:eb07b28b39586e243f94244a2fa9e43227b9e9200fdf07dcce612a67583233fe",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_secret_redaction",
+      "mem_pg_redis_cache"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global_project",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Recover the established decision for this long-lived constraint Project: promtgen. Target wording: Never store secrets in public evaluation fixtures or context output. (public case 012)."
+  },
+  "task_id": "v4_holdout_012"
+}

@@ -1,0 +1,22 @@
+{
+  "agreement": true,
+  "attestation_hash": "sha256:dba1da37eeb9a3a6c0d64bf13d589f33f947411e7ccbbb9cbf2175d1e3c5b429",
+  "case_id": "v4_holdout_015",
+  "case_payload_hash": "sha256:9cfc1905e2fcac778eb62917b042ea8035f264b38e66b8fa56bc33b7bf46b1f8",
+  "corpus_version": 4,
+  "labelers": [
+    {
+      "id_hash": "sha256:9419a322af042140cc7708f36ffbd80d66541722d907671b9b1304aac1c67cb7",
+      "reason": "query_and_candidate_metadata_support_target",
+      "status": "answerable"
+    },
+    {
+      "id_hash": "sha256:5233ffd81808adbc81d47820fae4a8d5554a37aecf6a4bcec15885e6d70243d5",
+      "reason": "query_and_candidate_metadata_support_target",
+      "status": "answerable"
+    }
+  ],
+  "review_version": "w06c0r1-v1",
+  "schema_version": 1,
+  "split": "holdout"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:8aa6ebf301f6552eda805796a9f8906ea3bd6a54d7546fb0f68e7211cae38861",
+    "case_payload_hash": "sha256:ecdac8bbc01b465bcb3262833201b5a1751d6ef86a784d3612d6246a29f2e161",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_markdown_source_of_truth",
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Markdown is the canonical source of truth. Related context: Context selection should prefer useful memory over volume. (public case 021)."
+  },
+  "task_id": "v4_dev_021"
+}

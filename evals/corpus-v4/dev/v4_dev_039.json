@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0682a6e263de49bd4f76fbefb8e40a4d8edc5b6333e70959914dd9401814701d",
+    "case_payload_hash": "sha256:75fa60c80f9a6616daa13fe1af662addb5bd3c85e8631d5158ba7e26ae656875",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_old_websocket",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Recover the established decision for this long-lived constraint Project: minecraft_mcp. Target wording: Minecraft MCP validates the server protocol version before commands. Related context: A stale derived projection is never canonical truth. (public case 039)."
+  },
+  "task_id": "v4_dev_039"
+}

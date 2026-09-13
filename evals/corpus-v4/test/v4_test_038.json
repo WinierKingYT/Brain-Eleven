@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3b48879ad3c9eb2b81dcafc3b694bf0001e18fc8986f48021fa5d4da8a16b688",
+    "case_payload_hash": "sha256:172f332660cf49dc01ed109652263f94b9d3af947333fac21733cdc5d9a7ee4b",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Find the memory that explains this requirement Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Explicit user decisions outrank inferred observations. (public case 038)."
+  },
+  "task_id": "v4_test_038"
+}

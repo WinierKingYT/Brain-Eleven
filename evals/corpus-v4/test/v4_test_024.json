@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3cd6d25d75ae5ceb373272c5a232e3edb2bfc335e24fa7f596b788e4a6040ed5",
+    "case_payload_hash": "sha256:3ff1537fd64f691edc14a036777dc74388d3e57e420f1b2974b8e3dd114e1bf5",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: Context selection should prefer useful memory over volume. (public case 024)."
+  },
+  "task_id": "v4_test_024"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:a8f519bae651350d3070fa5999be98b4c5e8175e58c2ede08939c3634b60bd65",
+    "case_payload_hash": "sha256:d7039b5c213d3dc5e2eaeeaf25eb81de2a834ebab3e296e4b28c417683a13029",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_stale_projection",
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: A stale derived projection is never canonical truth. Related context: Context selection should prefer useful memory over volume. (public case 029)."
+  },
+  "task_id": "v4_dev_029"
+}

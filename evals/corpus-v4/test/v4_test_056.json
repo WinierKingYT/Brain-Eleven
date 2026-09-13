@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:05cb56c9d079d6dbc7aead1a52dc0d2c2a97a4ae82ea31a23cf10f7ee055cd3e",
+    "case_payload_hash": "sha256:b3c6ee3d297ba357c9342cd47c6063ca636289b868ffaed0b08dbc6628113c13",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority_traps",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: Reject unsupported canonical schema versions rather than repairing silently. (public case 056)."
+  },
+  "task_id": "v4_test_056"
+}

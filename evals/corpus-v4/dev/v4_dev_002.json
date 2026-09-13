@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:b431612789d2a089a4aea8138c6a238c93e012b227bc53556d0fa11cd3139d29",
+    "case_payload_hash": "sha256:1f451b2d7c5a4c05605a55d9fe92b31664ab65c037b24a2b53ed911b4f16d5e8",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_pg_prompt_versioning",
+      "mem_mc_world_backup",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_atomic_replace"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Find the memory that explains this requirement Project: the shared vault. Target wording: Replace canonical JSON atomically after a complete write. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 002)."
+  },
+  "task_id": "v4_dev_002"
+}

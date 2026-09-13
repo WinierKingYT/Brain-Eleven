@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6f4abacbbd4738aacedc8f64302d3bf4036312c7c0e643b4301077dbb406c0d0",
+    "case_payload_hash": "sha256:69de9ef5232f5e4756f69c438e49356ec35db1b75ca47980eb48a9c0d1ea5c0c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_windows_target"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: promtgen. Target wording: PromtGen validates a template contract before generation. Related context: Use Windows-safe path handling for local vault writes. (public case 027)."
+  },
+  "task_id": "v4_test_027"
+}

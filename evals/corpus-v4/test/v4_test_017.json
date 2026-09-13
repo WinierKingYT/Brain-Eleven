@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:c52582cbdc2b25ce04e0d821d0182484682ed444969a5f0df1e6961465b6fad3",
+    "case_payload_hash": "sha256:9d716ca7e770b20e8e5fbc34c087a9451e3ee4c13416e9f3a86f52ecbefdd0bb",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the active rule and ignore obsolete history Project: eleven_capture. Target wording: Eleven Capture local cache is derived and may be rebuilt. Related context: Restore canonical memory first, then rebuild derived state. (public case 017)."
+  },
+  "task_id": "v4_test_017"
+}

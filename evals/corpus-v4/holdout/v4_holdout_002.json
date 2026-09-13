@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:06901ae8b2a2b2daacdc174abfa0db7eeafd0eca08207aa14d3f5f3d255e329e",
+    "case_payload_hash": "sha256:912344897fdcf7b791f1b5ad5c6b0faa4062bc419d5c5f82743d2a4700233c82",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "basic_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Find the memory that explains this requirement Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Restore canonical memory first, then rebuild derived state. (public case 002)."
+  },
+  "task_id": "v4_holdout_002"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:c9db226150528a0d98cf2042936cb28f01d57359aa13c0dc4b06c9391cb667bf",
+    "case_payload_hash": "sha256:fc7bf59815bb3e77d945c9226dc71356e5516181413e7e842264e33d45ed5017",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_backup_canonical"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Recover the established decision for this long-lived constraint Project: promtgen. Target wording: PromtGen exports IndexedDB drafts before destructive migrations. Related context: Backups preserve canonical memory identity and revision metadata. (public case 021)."
+  },
+  "task_id": "v4_test_021"
+}

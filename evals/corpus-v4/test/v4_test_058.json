@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:2461b005d32b1dd663a3bb1d6ad13162b326d39a986a3fda30c62ab1e5556a0f",
+    "case_payload_hash": "sha256:ffa344b26fb20504c08d7ef333b7213ea78de499ea3f787e33e675292f31079c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_no_network"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority_traps",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Identify the current state or blocker described by this memory Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: Public evaluation must run offline without model or network calls. (public case 058)."
+  },
+  "task_id": "v4_test_058"
+}

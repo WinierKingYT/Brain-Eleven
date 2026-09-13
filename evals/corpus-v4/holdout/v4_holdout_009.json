@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e607bbe022478f2c7f5a0e898228627e837bb7278d98bc41444098075936bf9e",
+    "case_payload_hash": "sha256:54d6e9ab77560990943ca7c393878001b69366b88f287fae8c0c3f47a405b77a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "duplicate_semantics",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: Reject unsupported canonical schema versions rather than repairing silently. (public case 009)."
+  },
+  "task_id": "v4_holdout_009"
+}

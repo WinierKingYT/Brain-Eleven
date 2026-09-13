@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:bf5c9297e3bebf604060a86fab53dc95f680fee014d82a2da0d5d86df88dee19",
+    "case_payload_hash": "sha256:5e6b3232dd47d71ff6553052aca78d3ed38444b902a0f30e93232bfde5219e9b",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the active rule and ignore obsolete history Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: Preserve UTF-8 and Turkish filenames across vault operations. (public case 026)."
+  },
+  "task_id": "v4_holdout_026"
+}

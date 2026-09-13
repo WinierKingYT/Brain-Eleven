@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:b4c6ffb237ba13118249b28dc7a75256478e4c9445b976f82813fed101bd54b9",
+    "case_payload_hash": "sha256:f051249887f5e5579c93a4894829cda0eacef7c2e61e2b05b01805064b2bcbd4",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_mc_protocol_version"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Identify the current state or blocker described by this memory Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: Explicit user decisions outrank inferred observations. (public case 013)."
+  },
+  "task_id": "v4_dev_013"
+}

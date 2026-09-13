@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:a9e30e04baf89aafe319b9af8f2949c73423e1f9bc81c09692f1bd7dc95c1a7a",
+    "case_payload_hash": "sha256:611ef721b2299e29d1be2880a2d5a0e386d24cb73ebff8e950beb7122ad6803d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_legacy_export",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Eleven Capture publishes saved notes through an atomic rename. Related context: Default retrieval includes global and current-project memory only. (public case 003)."
+  },
+  "task_id": "v4_test_003"
+}

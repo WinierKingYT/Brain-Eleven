@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:56a8d3d355a6bbab7ffd76d137e703785afe60117a008ec041cbd40c68d79750",
+    "case_payload_hash": "sha256:4b757f48e5153886853c92fdbc2ac33da88905a9fcf203b58da2b4382320092a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_prompt_versioning",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise_heavy",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Eleven Capture indexes saved Markdown into SQLite after the canonical write. Related context: A stale derived projection is never canonical truth. (public case 023)."
+  },
+  "task_id": "v4_holdout_023"
+}

@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3fbe8a91b5c8d8397148ee41606544658d32a401a002d2ad0fdad09db3d88bae",
+    "case_payload_hash": "sha256:a5ca83c08cf6d99f24bd2d2c35dc8aebd3e56b25af70f99679bf6bbd3868a0d4",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "same_domain_wrong_project",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Recover the established decision for this long-lived constraint Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Restore canonical memory first, then rebuild derived state. (public case 030)."
+  },
+  "task_id": "v4_holdout_030"
+}

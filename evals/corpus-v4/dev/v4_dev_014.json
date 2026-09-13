@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d1fb5b0bc3a8ddbdd6568f63fe81e9f65061c91384bceb9a41d588f61a8193ab",
+    "case_payload_hash": "sha256:8d30468f56b4639a77e0d672d8b7b6e57f064367018e825727a09ab721a7f985",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling",
+      "mem_markdown_before_sqlite"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Use the related lesson that applies to this work Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Explicit user decisions outrank inferred observations. (public case 014)."
+  },
+  "task_id": "v4_dev_014"
+}

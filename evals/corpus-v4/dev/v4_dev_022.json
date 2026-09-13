@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:ae8a6684fd3877e24aa806a0526e3d91898ba932bb3966f280e28d055f5cfaca",
+    "case_payload_hash": "sha256:2ea51c379212e461522ad15577db2f49c9a295f18e58f5f7c94b0574bd3d0158",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_atomic_replace",
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Identify the current state or blocker described by this memory Project: promtgen. Target wording: Replace canonical JSON atomically after a complete write. Related context: Context selection should prefer useful memory over volume. (public case 022)."
+  },
+  "task_id": "v4_dev_022"
+}

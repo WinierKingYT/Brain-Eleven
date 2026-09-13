@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:2a261ccd5d8077374fc9a52763bd8926d17bfe0400328fe4c7f215c32f7d63ce",
+    "case_payload_hash": "sha256:dba2953a4c87b976fd8612b8dbda83ec4321eca912a51b5d20323f552c8d6632",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_markdown_source_of_truth"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "basic_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Markdown is the canonical source of truth. (public case 059)."
+  },
+  "task_id": "v4_test_059"
+}

@@ -1,0 +1,16 @@
+{
+  "attestation_fingerprint": "sha256:2b876c9be5fa2cf53f979203b614f77509c12d0b867e1546f857e4b17f14abae",
+  "corpus_version": 4,
+  "dev_test_evidence_revision": "3f795f94dde199ba4e970705d37686ee4f50bc5d",
+  "dev_test_report_hashes": [
+    "sha256:c2078cf5c7b3c02f6051638d37f83abc26e52c5a42935219c33c29fc0e0d57be",
+    "sha256:d29965f7affaa1c01a60a98f5e6d43569f75239fe4792dd1089fc2b0e5f2de9c"
+  ],
+  "manifest_hash": "sha256:2402edeea32d08b8b5fc342dcaa7051de8d5744033a56900f04d04da17b6e295",
+  "schema_version": 1,
+  "seal_hash": "sha256:9d9fcc4324802d0bc2c9c4271598a9888c2c28e8e9f27b7ec77fb9ba440f940c",
+  "sealed_at_revision": "3f795f94dde199ba4e970705d37686ee4f50bc5d",
+  "split": "holdout",
+  "split_fingerprint": "sha256:b97f00357d5c97c6a0e1667989d5a15790b681776c4de84fcfbf94bb9a048039",
+  "state": "SEALED"
+}

@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3fbeffb8cd5ab40f29080e60832118114911801801cb7dac729b0b036f6823ff",
+    "case_payload_hash": "sha256:bef19108c246d65a4dc40e0c9f36b95e62665aa4f24bacda18edabd66d361bdf",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_legacy_export",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Identify the current state or blocker described by this memory Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: Default retrieval includes global and current-project memory only. (public case 058)."
+  },
+  "task_id": "v4_dev_058"
+}

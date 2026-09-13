@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:87e37977e3ab4e7dd3bb8b07109f2e121f44709171cd87238718ed973eb7834f",
+    "case_payload_hash": "sha256:0ae6df998f1a3d21d21b479770342fcdfe48eecddc2a86196f73bdb26ab45d44",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "contradiction",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Eleven Capture publishes saved notes through an atomic rename. Related context: Reject unsupported canonical schema versions rather than repairing silently. (public case 005)."
+  },
+  "task_id": "v4_holdout_005"
+}

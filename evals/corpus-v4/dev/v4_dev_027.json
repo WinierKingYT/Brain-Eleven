@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:eb62258c0fd8ccb7cb738612597a904180e85e1ee48d9e1b2b27d6bb8c4c740d",
+    "case_payload_hash": "sha256:7fd3432911db14cdeccce104d45aed6d8b186bea7f8dcf6f5d26eef03c91f0f2",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_prompt_versioning",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_utf8_paths",
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: eleven_capture. Target wording: Preserve UTF-8 and Turkish filenames across vault operations. Related context: Context selection should prefer useful memory over volume. (public case 027)."
+  },
+  "task_id": "v4_dev_027"
+}

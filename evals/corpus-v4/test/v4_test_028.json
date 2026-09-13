@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:8ee8128f13e481cf8bd93204c266c1fa9e516e534999eb6389c550da60633418",
+    "case_payload_hash": "sha256:adbe3e00e59b75867d0f7977ceae694907b9e63b2f226b571708ace3cf43f13d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_markdown_source_of_truth"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Markdown is the canonical source of truth. (public case 028)."
+  },
+  "task_id": "v4_test_028"
+}

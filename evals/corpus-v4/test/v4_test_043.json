@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:eca278b2b10038668bc94db733ddbd06260ae1ec04573125d3aa6bd0124da13d",
+    "case_payload_hash": "sha256:ccf2589ff3f64224878ba1b72ff5d13e3361563b35ab5d9821a07833a9d50a36",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Explicit user decisions outrank inferred observations. (public case 043)."
+  },
+  "task_id": "v4_test_043"
+}

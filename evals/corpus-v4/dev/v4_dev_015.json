@@ -1,0 +1,42 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6dcc7726074a034ff40e1e437633b4630a534d2f93d9fdf4768fb7e107902b4c",
+    "case_payload_hash": "sha256:25cd709a1fb87fbeefa5d19f1e2fb21fa9f0b265dec0400622266f446bb6bc8a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule",
+      "mem_promtgen_storage"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "decision"
+    ],
+    "intent": [
+      "conflict"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Explicit user decisions outrank inferred observations. (public case 015)."
+  },
+  "task_id": "v4_dev_015"
+}

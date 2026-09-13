@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:fb355b8484c7a597569b7ad6b53ab45b6c7e52e2ef9386d88dac56bfa840127d",
+    "case_payload_hash": "sha256:99801dbf230778457b98b87ab9faf7f730cb0df1ec3dbe7cfca7aeb70871ab6e",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_legacy_export",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: promtgen. Target wording: PromtGen validates a template contract before generation. Related context: Default retrieval includes global and current-project memory only. (public case 007)."
+  },
+  "task_id": "v4_test_007"
+}

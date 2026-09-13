@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:9621857766089a2c9189438c6b387eac47c3d3fac9dc341455711ad9b13f6e85",
+    "case_payload_hash": "sha256:1dc20baabd151051ba7486bd4aaef29489d0d39d63fbdda9fa87d1a614b3976c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "basic_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 060)."
+  },
+  "task_id": "v4_test_060"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:80a7e6bf49f5aff5da64274c196aa1fab0f15a8a19a1ae87da170158ddfef2c9",
+    "case_payload_hash": "sha256:c85ef8054f63ee9ff2de3b4dbb90081ac920acfccdbe73d9e130e08d97dbef9f",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Eleven Capture local cache is derived and may be rebuilt. Related context: Default retrieval includes global and current-project memory only. (public case 032)."
+  },
+  "task_id": "v4_test_032"
+}

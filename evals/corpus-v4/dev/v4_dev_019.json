@@ -1,0 +1,42 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3f4b6eae0fbf7360802a9d62283789a1982f6bf27be6d7ee719aee99ff346a25",
+    "case_payload_hash": "sha256:155e288bec7ba7f5da016eec36712816126fbdcbc8bfafcf38e25f8c6b6e4cef",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_old_websocket",
+      "mem_ec_atomic_rename"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "decision"
+    ],
+    "intent": [
+      "conflict"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Explicit user decisions outrank inferred observations. (public case 019)."
+  },
+  "task_id": "v4_dev_019"
+}

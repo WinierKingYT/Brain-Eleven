@@ -1,0 +1,42 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:26d2b3f28ce407fa025108f2fe770ca22d0e41fe884a72a29242cb8443166007",
+    "case_payload_hash": "sha256:8ae1d7cc934ecfae734d0360b4ab6b396dc791ac845430388469e6b7a6d2f459",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_mc_event_stream"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "decision"
+    ],
+    "intent": [
+      "conflict"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: promtgen. Target wording: PromtGen validates a template contract before generation. Related context: Explicit user decisions outrank inferred observations. (public case 018)."
+  },
+  "task_id": "v4_dev_018"
+}

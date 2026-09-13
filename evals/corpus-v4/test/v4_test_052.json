@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:9f18a357344955af8423af686fcc6d0b00355090e702366a77cb2e9390ac8527",
+    "case_payload_hash": "sha256:bf72bc731ad73b4022adbb8447c87e4e86c4ff59332913a3ad5ceb3f11c558fd",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_explicit_decision"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": null,
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: the shared vault. Target wording: Explicit user decisions outrank inferred observations. Related context: Context selection should prefer useful memory over volume. (public case 052)."
+  },
+  "task_id": "v4_test_052"
+}

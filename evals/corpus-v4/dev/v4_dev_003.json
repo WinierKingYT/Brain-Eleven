@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0a47fc7bee6912670d32b4efa2667786489646b9df8c0aee945075e6883a0559",
+    "case_payload_hash": "sha256:dbbc3215d6bfe0872a6bdd9035a9324b19712c7589180236a0a1c4ca091517c9",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_pg_indexeddb_backup",
+      "mem_mc_command_policy",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_file_lock"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Recover the established decision for this long-lived constraint Project: the shared vault. Target wording: Serialize concurrent canonical-memory writers with a file lock. Related context: Restore canonical memory first, then rebuild derived state. (public case 003)."
+  },
+  "task_id": "v4_dev_003"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:12ed1bc678aee0fb1de447cebe05de2476986c8c20ac48eeb479b7762004b8f1",
+    "case_payload_hash": "sha256:d43e095c227f998015444029f7420f5310ef6fc6920b8888b154bceffd73c4db",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Use the related lesson that applies to this work Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: A stale derived projection is never canonical truth. (public case 032)."
+  },
+  "task_id": "v4_dev_032"
+}

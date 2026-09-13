@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:30605f94ad64dcb56bb5015da358ca793b28227df93c2329838e7912c3cd5890",
+    "case_payload_hash": "sha256:44292624bf3f4fa4a9e6954a77e0136d6bc4a586298901ec6a5bb64938a7bda1",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_pg_redis_cache",
+      "mem_mc_protocol_version",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_default_scope"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Use the related lesson that applies to this work Project: the shared vault. Target wording: Default retrieval includes global and current-project memory only. Related context: Never store secrets in public evaluation fixtures or context output. (public case 005)."
+  },
+  "task_id": "v4_dev_005"
+}

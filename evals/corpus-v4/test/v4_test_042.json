@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:269ed83f3b87c817b8c52394ffc8207e3298ff8e214552c2860d6f1f10a81436",
+    "case_payload_hash": "sha256:287b4ad210afcd99ae0809ff3bb686ffe730e5a6088e4ec9872e74c8490b6546",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Explicit user decisions outrank inferred observations. (public case 042)."
+  },
+  "task_id": "v4_test_042"
+}

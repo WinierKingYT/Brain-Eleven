@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:25159325c5ca2c5b0ce0c7195b1ffbbcee00327bc66cbb29c66c3f97ddcafd76",
+    "case_payload_hash": "sha256:8557d2f8d16f1c74a38314e3fdc17b39ae826a72f51f2769def0fc500a350fee",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Recover the established decision for this long-lived constraint Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Explicit user decisions outrank inferred observations. (public case 048)."
+  },
+  "task_id": "v4_test_048"
+}

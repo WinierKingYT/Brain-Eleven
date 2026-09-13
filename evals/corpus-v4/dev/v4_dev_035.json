@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e453b9518d351508b749c6cc36b889955a4c7d431a9a60ddcb365daf7619b1d3",
+    "case_payload_hash": "sha256:bc27acdd3738afdf8969bcf3c5686fccb502c774055da5119d2c2b9cf436b27c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the active rule and ignore obsolete history Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: A stale derived projection is never canonical truth. (public case 035)."
+  },
+  "task_id": "v4_dev_035"
+}

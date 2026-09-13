@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:4b849a736156bd38f39d7f468be8d68b4be69563c2d88b43838c3c92e84d1a7b",
+    "case_payload_hash": "sha256:f2bc06c4267a904f3f20bba4931d5150a0df4311ef61b54838c4fa6dad793639",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_vault_manifest"
+    ],
+    "useful": [
+      "mem_windows_target"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority_traps",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Eleven Capture keeps a vault manifest for deterministic recovery checks. Related context: Use Windows-safe path handling for local vault writes. (public case 057)."
+  },
+  "task_id": "v4_test_057"
+}

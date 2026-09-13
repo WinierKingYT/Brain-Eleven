@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:931da5632e370ced34bee27b991b1b47a13ef7f708069b0e222dfe6335419a0d",
+    "case_payload_hash": "sha256:b7dc9ea9b729884d12d6cd8f3de5bb80cf40919ca6535f5fae2aa7c7cb46820a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Eleven Capture publishes saved notes through an atomic rename. Related context: Explicit user decisions outrank inferred observations. (public case 039)."
+  },
+  "task_id": "v4_test_039"
+}

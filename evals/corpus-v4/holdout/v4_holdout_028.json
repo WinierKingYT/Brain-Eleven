@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:351e201f907558accb5bf0b21b817e532e98f180d5a52571832ab42742674707",
+    "case_payload_hash": "sha256:215c2571e6ac06b401ea41cedb49f503ac0c4829123a7a4d400f6b556379783d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "same_domain_wrong_project",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 028)."
+  },
+  "task_id": "v4_holdout_028"
+}

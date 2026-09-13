@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:b32ba7509ed953967904b92c89e314d1234fa2b61f2c5548f75171ad6ab17950",
+    "case_payload_hash": "sha256:40766a60b0f910f29ca6d99f999d10fd58ea77c876dca1ed768bab79d1896591",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_legacy_export",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Identify the current state or blocker described by this memory Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: Default retrieval includes global and current-project memory only. (public case 004)."
+  },
+  "task_id": "v4_test_004"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:009f3faa132c23d9d94feda0250425e8388f387c71432ea3c060b9e46c45523e",
+    "case_payload_hash": "sha256:580a6c79a16117ef290d8ede1813be480c2522d0a1ea09188fe29376a8ce393a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_resolved_json_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Identify the current state or blocker described by this memory Project: eleven_capture. Target wording: Eleven Capture publishes saved notes through an atomic rename. Related context: A stale derived projection is never canonical truth. (public case 040)."
+  },
+  "task_id": "v4_dev_040"
+}

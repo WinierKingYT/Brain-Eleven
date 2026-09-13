@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:4435bb3c368d31efa26d0d97b6a6b12f831eabdf3a3b6d8cd74c16ae774b7030",
+    "case_payload_hash": "sha256:cdcd62948f31d5e319c5dc00d07d787f56c4508aecd6eb22a503b73de2023ace",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_utf8_paths",
+      "mem_ec_local_cache"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global_project",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use the related lesson that applies to this work Project: eleven_capture. Target wording: Preserve UTF-8 and Turkish filenames across vault operations. (public case 014)."
+  },
+  "task_id": "v4_holdout_014"
+}

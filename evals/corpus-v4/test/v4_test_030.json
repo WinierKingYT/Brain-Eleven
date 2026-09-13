@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0031255e17d764de7c21b66cfe60e20f1422a8bce36668a0a9b084eab3f7c895",
+    "case_payload_hash": "sha256:3c0a5d028fe34a0a00d9038515c64f689afaf5b6eed9083310b28ccab08ea532",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Recover the established decision for this long-lived constraint Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 030)."
+  },
+  "task_id": "v4_test_030"
+}

@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:edcc1d51def6d6ba6c3166860ae66ab4ae541c194a1aa5f08a4ebe73ede45900",
+    "case_payload_hash": "sha256:4b9acb7e2d9f63588d5f031b4fb994ce6f4e1d1c0d1f6b3eaa63dc05e5d1cb07",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_legacy_export",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Default retrieval includes global and current-project memory only. (public case 056)."
+  },
+  "task_id": "v4_dev_056"
+}

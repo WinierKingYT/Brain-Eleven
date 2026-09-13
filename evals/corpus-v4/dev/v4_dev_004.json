@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:75846a5588281afc2d2c2ac221bbd5677b062303825a71189585a68cfd30f9f6",
+    "case_payload_hash": "sha256:1183cf8f293e966142840195faccc95a57de71c7afb444f3d7bae8b4c6732866",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_pg_template_contract",
+      "mem_mc_event_stream",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_restore_rebuild"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Identify the current state or blocker described by this memory Project: the shared vault. Target wording: Restore canonical memory first, then rebuild derived state. Related context: Default retrieval includes global and current-project memory only. (public case 004)."
+  },
+  "task_id": "v4_dev_004"
+}

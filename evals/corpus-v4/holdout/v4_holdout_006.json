@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:df6efecf75496d583f3333c5d2f39c406e6dba13b49243403a487e7c7bd04500",
+    "case_payload_hash": "sha256:4aca41ca973ea86acc4c68d78bcc8a78eabd926e5f222d663a5af895c41aea67",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_windows_target",
+      "mem_pg_template_contract"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "cross_phase_traps",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: promtgen. Target wording: Use Windows-safe path handling for local vault writes. (public case 006)."
+  },
+  "task_id": "v4_holdout_006"
+}

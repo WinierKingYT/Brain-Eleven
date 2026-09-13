@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:05719080c7487d9f49782c4baa522733a95d3840c4b95be0506cdef6c5976f99",
+    "case_payload_hash": "sha256:a798d6e927924a13dfc8debb3b39f832809590eb6898e91c9430f56eb46df165",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Select the exact rule stated here Project: eleven_capture. Target wording: Eleven Capture indexes saved Markdown into SQLite after the canonical write. Related context: A stale derived projection is never canonical truth. (public case 037)."
+  },
+  "task_id": "v4_dev_037"
+}

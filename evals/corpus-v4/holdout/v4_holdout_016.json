@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:5068ed445ac8d23d463d72c3701e7a6858f58fa29fd4c1d3aebd313e43f222d8",
+    "case_payload_hash": "sha256:0acf50eae57368cdd282bb355e4c7ad7b924294f564554e2fdf0661599ef321e",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "lexical_traps",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Restore canonical memory first, then rebuild derived state. (public case 016)."
+  },
+  "task_id": "v4_holdout_016"
+}

@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d559a432e72569afdd834d6015467e98ce04160c2dac853ffd253edd8a4323bf",
+    "case_payload_hash": "sha256:22df64b0a4252c510700a3fd39932d070e392859ca645e392fcef677dd40301b",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_no_network"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "contradiction",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Identify the current state or blocker described by this memory Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Public evaluation must run offline without model or network calls. (public case 004)."
+  },
+  "task_id": "v4_holdout_004"
+}

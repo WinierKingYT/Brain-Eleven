@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:3e7a80cbd30bd291bfb6153c65443046fde3507b0b22eff64bf0def097c2402c",
+    "case_payload_hash": "sha256:789cfadf88b3edc8f8243578be12abb85c3cd987309206897d74fd557cd22b9e",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_stale_projection"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": null,
+    "prompt": "Use the related lesson that applies to this work Project: the shared vault. Target wording: A stale derived projection is never canonical truth. Related context: Explicit user decisions outrank inferred observations. (public case 050)."
+  },
+  "task_id": "v4_test_050"
+}

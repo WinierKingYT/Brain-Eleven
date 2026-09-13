@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:046490a8135109df7c37eddcd57a8bdb8cb0506dddc171ee35a1cb6dbcf5ba17",
+    "case_payload_hash": "sha256:668fb23be826a5d6858f82d38cdbcd5a7d77c6f2a39b1c62b3c3afa4f011471c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_prompt_versioning",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Find the memory that explains this requirement Project: eleven_capture. Target wording: Eleven Capture indexes saved Markdown into SQLite after the canonical write. Related context: Preserve UTF-8 and Turkish filenames across vault operations. (public case 020)."
+  },
+  "task_id": "v4_test_020"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:32c6ddf092f1919feafe7233f132c623a8f8efaee703348dd58a53e449808b05",
+    "case_payload_hash": "sha256:8ad4a979f041b176d96830ddafcede15fe3d6fa830bce48acbc309665cb9b0f6",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_atomic_replace"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Replace canonical JSON atomically after a complete write. (public case 015)."
+  },
+  "task_id": "v4_test_015"
+}

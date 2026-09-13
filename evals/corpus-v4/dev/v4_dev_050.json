@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d8d38f7b44b00681c2354b7e874076bf0b248697f2572651617b4a3953a586a5",
+    "case_payload_hash": "sha256:ff60f574fb661d469a0c7fbe5d426e184b4a82199683799153edc293d488713f",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup",
+      "mem_stale_projection"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise",
+      "ranking"
+    ],
+    "intent": [
+      "relevance"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Use the related lesson that applies to this work Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. (public case 050)."
+  },
+  "task_id": "v4_dev_050"
+}

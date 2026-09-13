@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:ffae463fc973fd5c4636857fa5a915a5c91651eb4a2c36340241f4c69873c2c3",
+    "case_payload_hash": "sha256:f5333fdf2f9913e77afd12bdaca72f67b6ab1157c06bde03f420e8027683c72d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule",
+      "mem_promtgen_storage"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Explicit user decisions outrank inferred observations. (public case 009)."
+  },
+  "task_id": "v4_dev_009"
+}

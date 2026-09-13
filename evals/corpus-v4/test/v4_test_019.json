@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:050a31ff3a0176629b6161b1e2ecc9419113328ae00e0fe6b3d7ba44a1ddd134",
+    "case_payload_hash": "sha256:414c8b2c505cca17cea9842439c860916a2c8df7ef143877adca94d9315b16f1",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Never store secrets in public evaluation fixtures or context output. (public case 019)."
+  },
+  "task_id": "v4_test_019"
+}

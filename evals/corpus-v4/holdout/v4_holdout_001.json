@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:353cb4cd2965b2d32f9ce0ec3725a9e5cb7b3dda89482cf59af059d4dfe54fe0",
+    "case_payload_hash": "sha256:b2acc4f36f6a3a36993b2f1e8ac3271066865db839194cf742c07de459597ec0",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_atomic_rename",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_atomic_replace"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "basic_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Replace canonical JSON atomically after a complete write. (public case 001)."
+  },
+  "task_id": "v4_holdout_001"
+}

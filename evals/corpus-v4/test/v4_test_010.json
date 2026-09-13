@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:4f3a8890e9b75988eecd423d0fafdc6b524f9bb51ff79e6861d4200afeb1fe5a",
+    "case_payload_hash": "sha256:54582180032beef424c6128f5f4660dd108598f259ebabcf91ff4b4401f4b84c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_legacy_export",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the exact rule stated here Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Default retrieval includes global and current-project memory only. (public case 010)."
+  },
+  "task_id": "v4_test_010"
+}

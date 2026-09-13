@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6e19c29f0c2b5695c858bb013b5f35fff117c7c3813defe6fb5361252c219f7e",
+    "case_payload_hash": "sha256:ce54a7c0d19e507de9b9b9e2169769531af0c739f933461efcdbbc54f721bfd8",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Identify the current state or blocker described by this memory Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Explicit user decisions outrank inferred observations. (public case 049)."
+  },
+  "task_id": "v4_test_049"
+}

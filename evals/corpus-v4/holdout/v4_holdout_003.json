@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:5a98ad90f2755741917086fb9d85ff302a9181d22b8b2da6be9eff7f144aff21",
+    "case_payload_hash": "sha256:ab454d21e20f0be05b0f3111a5bdcaa2fc2f9a2febe850a1ace82fffb740116c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "contradiction",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Recover the established decision for this long-lived constraint Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: Context selection should prefer useful memory over volume. (public case 003)."
+  },
+  "task_id": "v4_holdout_003"
+}

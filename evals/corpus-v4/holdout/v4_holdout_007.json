@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:dc509466ac19b7b803cec362514c873424dc69ef54e62af440695b2ad9ca57a5",
+    "case_payload_hash": "sha256:9b3d79816ae71e4b363e4b1055d34b4cbd4b8749d2da2e614c286d06679ade2e",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_source_of_truth",
+      "mem_ec_vault_manifest"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "cross_phase_traps",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: eleven_capture. Target wording: Markdown is the canonical source of truth. (public case 007)."
+  },
+  "task_id": "v4_holdout_007"
+}

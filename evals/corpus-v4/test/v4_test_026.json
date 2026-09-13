@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:867d4c4e2e29b670695049b406599b9b7f55e569f8d1ee7534f59795028674f9",
+    "case_payload_hash": "sha256:fd2735f0b130a11ef0b4e532ee475547752d81196f64362d808cb79f6b6f147c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_vault_manifest"
+    ],
+    "useful": [
+      "mem_no_network"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the active rule and ignore obsolete history Project: eleven_capture. Target wording: Eleven Capture keeps a vault manifest for deterministic recovery checks. Related context: Public evaluation must run offline without model or network calls. (public case 026)."
+  },
+  "task_id": "v4_test_026"
+}

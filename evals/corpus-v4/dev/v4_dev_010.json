@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:fc4d94af32878fc02a502baf9703f8c340934542a6e7fcc59ada412d01764aab",
+    "case_payload_hash": "sha256:f49932c39aede428a267413f4c89b60ad55233311362b2c4530709aaa23b584a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_mc_world_backup"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the exact rule stated here Project: promtgen. Target wording: PromtGen versions prompt templates before publishing them. Related context: Explicit user decisions outrank inferred observations. (public case 010)."
+  },
+  "task_id": "v4_dev_010"
+}

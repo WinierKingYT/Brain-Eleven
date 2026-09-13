@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:ced207b31ae83f29384a9136b8358dd62f9aab3395e402365b84a93905e1966d",
+    "case_payload_hash": "sha256:183da96de6b4bed1998b74b7033b9dd7b938183916997f9d60998205c8e5163f",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_secret_redaction",
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the active rule and ignore obsolete history Project: minecraft_mcp. Target wording: Never store secrets in public evaluation fixtures or context output. Related context: Context selection should prefer useful memory over volume. (public case 026)."
+  },
+  "task_id": "v4_dev_026"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:94f5221c0211b3a5302a30c63bd8af9a0c62f1724df67c40709e127bda0fbebe",
+    "case_payload_hash": "sha256:aac92a6529c7315c0925d1809ea52bb8c0ce1d09326588d064083dbe2f74e4ed",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_backup_canonical",
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the exact rule stated here Project: promtgen. Target wording: Backups preserve canonical memory identity and revision metadata. Related context: Context selection should prefer useful memory over volume. (public case 028)."
+  },
+  "task_id": "v4_dev_028"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d366770fdfdee12d058c658fc2f51569e6a93523699593fedefac5eb8dbadae1",
+    "case_payload_hash": "sha256:2bcedf69ac0dbafe50e5115dc350679034650aef2d48fca2b1418100abebaf13",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_default_scope",
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: promtgen. Target wording: Default retrieval includes global and current-project memory only. Related context: Context selection should prefer useful memory over volume. (public case 025)."
+  },
+  "task_id": "v4_dev_025"
+}

@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:dd5622e065831af938fc146d845b9f8c4633274f25985ee4260deae04c8c69e5",
+    "case_payload_hash": "sha256:0363d2b30e1865e2ec5d8cc2cf0c1234ca2413197bf224bd0addff9c1d3e71db",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise_heavy",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Identify the current state or blocker described by this memory Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: Explicit user decisions outrank inferred observations. (public case 022)."
+  },
+  "task_id": "v4_holdout_022"
+}

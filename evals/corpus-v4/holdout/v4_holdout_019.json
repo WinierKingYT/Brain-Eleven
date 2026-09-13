@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:683567d9c39d5f6d6b2f7befa35b1d4e2de1ad046037536ed22fbb8e9c5c3c79",
+    "case_payload_hash": "sha256:33263f5e90722ae967c72965e9e9e9b7c88f58a2fdd02413e3485c74bb42e076",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_atomic_replace"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "malicious_input",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Select the exact rule stated here Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Replace canonical JSON atomically after a complete write. (public case 019)."
+  },
+  "task_id": "v4_holdout_019"
+}

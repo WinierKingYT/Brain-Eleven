@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d851c9ca6c57c603c8ce59a711a93b3e83e5ae2bdcdfb2ec75a29563a9ce5463",
+    "case_payload_hash": "sha256:1f1ef9e7f85e95b0d5756bcf082b1e88999fe19d2a964d4dcd8dd9ac64a05f9d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Identify the current state or blocker described by this memory Project: minecraft_mcp. Target wording: Minecraft MCP validates the server protocol version before commands. Related context: A stale derived projection is never canonical truth. (public case 022)."
+  },
+  "task_id": "v4_test_022"
+}

@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:7fe195d07a6c947c7b3e4fbadc28dba16baa69cf7cbd3d22ee1dea261fa75d43",
+    "case_payload_hash": "sha256:77183d20bd35dc2399f4b6c8297fdafcd05209cdca73fdf3c415a8392047cbd9",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_prompt_versioning",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_backup_canonical"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: eleven_capture. Target wording: Eleven Capture indexes saved Markdown into SQLite after the canonical write. Related context: Backups preserve canonical memory identity and revision metadata. (public case 025)."
+  },
+  "task_id": "v4_holdout_025"
+}

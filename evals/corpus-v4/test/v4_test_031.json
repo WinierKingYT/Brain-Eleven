@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0df60c9d775cc0cc5aa47a6e8f21a09fcb48f207c99a3a6ccdfcc3da1064e179",
+    "case_payload_hash": "sha256:b91196eadfbc948c4705f76717a37245de334e759e886a53cd792fff9cdee08c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Identify the current state or blocker described by this memory Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Restore canonical memory first, then rebuild derived state. (public case 031)."
+  },
+  "task_id": "v4_test_031"
+}

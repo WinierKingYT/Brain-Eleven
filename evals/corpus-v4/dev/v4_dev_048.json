@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:72dff1a6990e965bda9e935d983fe14e2bdcb0c5eceedf34d3fd25cd27fd505f",
+    "case_payload_hash": "sha256:58a68f9bc7b6aa29ac954a80338ec0836b96a7351baadef1ad1aa6f15387b705",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_local_cache",
+      "mem_utf8_paths"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise",
+      "ranking"
+    ],
+    "intent": [
+      "relevance"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Eleven Capture local cache is derived and may be rebuilt. (public case 048)."
+  },
+  "task_id": "v4_dev_048"
+}

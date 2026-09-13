@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:5aeb7064db4aeb1c5f8f1f5bc4f5c666da3476ebf367270a686ee0b6bfc33255",
+    "case_payload_hash": "sha256:678c1fe4b37850323bd9c2f00b8685ee0e53423b73419e15e53c740be8e444f7",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_file_lock"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "lexical_traps",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the active rule and ignore obsolete history Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Serialize concurrent canonical-memory writers with a file lock. (public case 017)."
+  },
+  "task_id": "v4_holdout_017"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6748d3b52ef87495f9aff7dc3a0beaa64348bdff25d34fc440b4b522c0321cca",
+    "case_payload_hash": "sha256:83b68b48c71a67e70d2aa4ef82e3cd1fb21dab65e45ce198f65f057ed1df1c06",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_explicit_decision",
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Explicit user decisions outrank inferred observations. Related context: Context selection should prefer useful memory over volume. (public case 030)."
+  },
+  "task_id": "v4_dev_030"
+}

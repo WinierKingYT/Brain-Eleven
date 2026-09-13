@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:26c8ed974e8f01cb79be580fe1350a0f367e5250e3099b54e10324dc85bbbdf8",
+    "case_payload_hash": "sha256:ef2ad30e096fad4044d0e4da318689faf61b6bcaf48450b5d3b57a89361a0618",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: A stale derived projection is never canonical truth. (public case 027)."
+  },
+  "task_id": "v4_holdout_027"
+}

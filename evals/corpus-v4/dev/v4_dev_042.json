@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:b821b247a2bc2cadf5732952735820c95773c6fe4729b288a7048537d34b2d6f",
+    "case_payload_hash": "sha256:c0701960dbee375270d5f69d28433bfe948ffa86bf21bc9ad3dfa2b945ae45cb",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: A stale derived projection is never canonical truth. (public case 042)."
+  },
+  "task_id": "v4_dev_042"
+}

@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:801390ef8097be94d4c8c3e86d9c6d6d10087340571964d02b288974947f768f",
+    "case_payload_hash": "sha256:ba16cff3dd85a48b11cbcc0966eef1aaa9b6012a6af1b773c0105afa189b8618",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_old_websocket",
+      "mem_ec_vault_manifest"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Explicit user decisions outrank inferred observations. (public case 011)."
+  },
+  "task_id": "v4_dev_011"
+}

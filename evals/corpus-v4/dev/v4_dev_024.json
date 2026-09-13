@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:2daf6c488d338515986b90d1c181c10b0e6f8da2662d58696ec5c3140f013bf2",
+    "case_payload_hash": "sha256:350f4a263fddd80b6c539415d92fe91ee4bbb83336e25c3ba1bb11eb9780801a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_restore_rebuild",
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: eleven_capture. Target wording: Restore canonical memory first, then rebuild derived state. Related context: Context selection should prefer useful memory over volume. (public case 024)."
+  },
+  "task_id": "v4_dev_024"
+}

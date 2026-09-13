@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:75cb35b04fe227a2057e528dc2d23aa877a31e97a7449a182ab8f084bd03db6d",
+    "case_payload_hash": "sha256:2caa515aa35a814172b2191f3300192c82e91741f404cc66ff75992078854e5c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_restore_rebuild",
+      "mem_ec_local_cache"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global_project",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Find the memory that explains this requirement Project: eleven_capture. Target wording: Restore canonical memory first, then rebuild derived state. (public case 011)."
+  },
+  "task_id": "v4_holdout_011"
+}

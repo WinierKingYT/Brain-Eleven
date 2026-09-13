@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:13f678c3711bbcc1861786fdb13c6a709c8da60aa54bd7b43fbdd6d5647212fb",
+    "case_payload_hash": "sha256:127911849c7c91ae5a4c4887373b6489eafad2ed3dea39c544d0281b38a576d5",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_context_budget"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": null,
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: the shared vault. Target wording: Context selection should prefer useful memory over volume. Related context: Reject unsupported canonical schema versions rather than repairing silently. (public case 051)."
+  },
+  "task_id": "v4_test_051"
+}

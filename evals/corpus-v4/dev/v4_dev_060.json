@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e0c7b603fc4715099d435ee3d753f3f1bf428bc4a7a57320bc37f38090b0b971",
+    "case_payload_hash": "sha256:a2ccb488688b6cfe226f84ebffba72b11f5b72956f7530088566de3939af3caa",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_prompt_versioning",
+      "mem_legacy_export",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_sqlite_index"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the relevant rule despite a recent unrelated note Project: eleven_capture. Target wording: Eleven Capture indexes saved Markdown into SQLite after the canonical write. Related context: Default retrieval includes global and current-project memory only. (public case 060)."
+  },
+  "task_id": "v4_dev_060"
+}

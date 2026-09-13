@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:8699938ec38c2661b38d6259788dcf357cfcf7ea8b6c7c4f4d284139e160ecf2",
+    "case_payload_hash": "sha256:751bb8d95fb9593e0001c4a4a88ba246855c0eb6dafee2ec3d9c1fa59e0a545f",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Use the related lesson that applies to this work Project: promtgen. Target wording: PromtGen validates a template contract before generation. Related context: Explicit user decisions outrank inferred observations. (public case 041)."
+  },
+  "task_id": "v4_test_041"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:0ea37b117245279c594aa18ab1bd5e8d191e57831accdae1fc684cb540bf82dc",
+    "case_payload_hash": "sha256:722f009c5a2bd63dc52663555d72f2e697cfc6072f6498e9eb7c97d6915abb3a",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: promtgen. Target wording: PromtGen Redis cache is optional and never canonical. Related context: Default retrieval includes global and current-project memory only. (public case 018)."
+  },
+  "task_id": "v4_test_018"
+}

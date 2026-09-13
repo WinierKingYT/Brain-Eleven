@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6c6e72b304684b2b73e9651adc94fc4f706cd000671ea65fdbfd16e4984bdcfb",
+    "case_payload_hash": "sha256:f66b7e857b413bcac2d107379d249a1d6a09b3b692d448294f39826ba3c801d5",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_legacy_export",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: Default retrieval includes global and current-project memory only. (public case 011)."
+  },
+  "task_id": "v4_test_011"
+}

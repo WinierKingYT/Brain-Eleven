@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6a912c2cfdd5329cc87340fb3bee9a16b314cdfb0a4deb6b1ddae5c0dad609a3",
+    "case_payload_hash": "sha256:d877ef2e0fd89deae55fe0cfaeabe9f6ed7806d4e25f32ea113d9f730178cc81",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: Reject unsupported canonical schema versions rather than repairing silently. (public case 025)."
+  },
+  "task_id": "v4_test_025"
+}

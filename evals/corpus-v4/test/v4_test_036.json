@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:f8fcc730bf1abb7ebfd24acae5b03f0fddd512839ce7d1d68a0d8055720394df",
+    "case_payload_hash": "sha256:ce7ad9b964d38217f12c2953b1c4de7a8f85b70894add77a96c3bb70e0f3a46d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: promtgen. Target wording: PromtGen exports IndexedDB drafts before destructive migrations. Related context: A stale derived projection is never canonical truth. (public case 036)."
+  },
+  "task_id": "v4_test_036"
+}

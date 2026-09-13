@@ -1,0 +1,36 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:8e07153d748ffb0e1da52334cfd197f79d231249af680176d10b6015b2d6c64b",
+    "case_payload_hash": "sha256:caea04e6d542d01b351f99a43b7b922d9362e2188a4f186aebec5ec53de2a7f8",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the active rule and ignore obsolete history Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Explicit user decisions outrank inferred observations. (public case 044)."
+  },
+  "task_id": "v4_test_044"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:4a2101c850fb03407879ee41a362721374b6f923c0c4e9afc7a4922813dfe00d",
+    "case_payload_hash": "sha256:8f1facc4fc122f05584db89d371a923596dcc0b7f4428cda5f83587a5fdfc491",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Choose the active rule and ignore obsolete history Project: promtgen. Target wording: PromtGen validates a template contract before generation. Related context: A stale derived projection is never canonical truth. (public case 044)."
+  },
+  "task_id": "v4_dev_044"
+}

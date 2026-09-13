@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:6f71b6b6a99d948f8b69484e6ff2f8bdce3f7bffe33d3d226b398172a43923ff",
+    "case_payload_hash": "sha256:4f37c5c92a2aee82c2dd73e384998872b309dcac7c19618ff970c1375045d7a5",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_legacy_export",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Recover the established decision for this long-lived constraint Project: eleven_capture. Target wording: Eleven Capture local cache is derived and may be rebuilt. Related context: Default retrieval includes global and current-project memory only. (public case 057)."
+  },
+  "task_id": "v4_dev_057"
+}

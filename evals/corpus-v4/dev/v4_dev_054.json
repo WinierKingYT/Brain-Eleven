@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:1cc077cfc0f97321b04f40de7f777b4d5e5cf399a9fcaa081591589ce4c4f9f6",
+    "case_payload_hash": "sha256:5051ff537e40ff2473439c15b7811a946c0cbec6b6bbf232e36834eb8ac6055f",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_promtgen_storage",
+      "mem_legacy_export",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: eleven_capture. Target wording: Persist Markdown before indexing the note in SQLite. Related context: Default retrieval includes global and current-project memory only. (public case 054)."
+  },
+  "task_id": "v4_dev_054"
+}

@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:27029767985d1ed5ce82837a41af7327184e741211b027ba613137362ab50247",
+    "case_payload_hash": "sha256:d85b699be19d2373b1acf5313b466d8fbde743410e2f2bb0129fbc10a6b579bc",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: Explicit user decisions outrank inferred observations. (public case 037)."
+  },
+  "task_id": "v4_test_037"
+}

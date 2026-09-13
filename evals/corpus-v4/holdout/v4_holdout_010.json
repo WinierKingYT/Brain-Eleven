@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:e8144ac30faa136e7073f6fa0379835b1062750690e30c5b17bfd626f64ef150",
+    "case_payload_hash": "sha256:c2c3e30d30ec12a7c5e5ae92016597395704dbdd10da5ef2d4ec33dc77010888",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "duplicate_semantics",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP command execution follows an explicit allow-list. Related context: Context selection should prefer useful memory over volume. (public case 010)."
+  },
+  "task_id": "v4_holdout_010"
+}

@@ -1,0 +1,38 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:1fe9ad29e83c92a3ff9f0f1764fd89b5fdb0904169e3939eab1e440ae35af45d",
+    "case_payload_hash": "sha256:9a67d7c2707a6b2cad972043913031b6da1a0ddfd95ce0cf1fa1f37d9208e20c",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_legacy_export",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find the memory that explains this requirement Project: minecraft_mcp. Target wording: Minecraft MCP validates the server protocol version before commands. Related context: Default retrieval includes global and current-project memory only. (public case 002)."
+  },
+  "task_id": "v4_test_002"
+}

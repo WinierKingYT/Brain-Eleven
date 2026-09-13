@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:d5a15832e2df1f50cbfa66760a607f51ae950da509d3816129361766cd21cd14",
+    "case_payload_hash": "sha256:63b5f92841a6b92f3f7138c066202e7d4584ea9e79f384185c98a5e4870e03f8",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule for this project and ignore similar wording elsewhere Project: minecraft_mcp. Target wording: Minecraft MCP snapshots a world before destructive commands. Related context: A stale derived projection is never canonical truth. (public case 036)."
+  },
+  "task_id": "v4_dev_036"
+}

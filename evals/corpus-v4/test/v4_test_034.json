@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:96bddb2f044977403e562cd3ee326fbf4985f42ab925c03b8969fdaf84a93a05",
+    "case_payload_hash": "sha256:161de6a204cc7c429d384c05bbf8161c866c323b6446f2b60bfd9b1ac028aaaf",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Choose the rule with this meaning, not another same-keyword rule Project: minecraft_mcp. Target wording: Minecraft MCP validates the server protocol version before commands. Related context: Preserve UTF-8 and Turkish filenames across vault operations. (public case 034)."
+  },
+  "task_id": "v4_test_034"
+}

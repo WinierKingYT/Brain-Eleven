@@ -1,0 +1,44 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:8710977029a4d2194552e6cb4b8a50cb8bf8f3aaec00fd17baf789d07417b5e9",
+    "case_payload_hash": "sha256:3e6c92f8504bf20f468974989946ed66c40ce3609a392a29e7fe75e9f920426d",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_backup_canonical"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "archived_project",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Select the exact rule stated here Project: minecraft_mcp. Target wording: Minecraft MCP event stream is derived session telemetry. Related context: Backups preserve canonical memory identity and revision metadata. (public case 055)."
+  },
+  "task_id": "v4_test_055"
+}

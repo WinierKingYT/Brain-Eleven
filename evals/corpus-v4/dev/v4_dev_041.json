@@ -1,0 +1,37 @@
+{
+  "answerability": {
+    "attestation_hash": "sha256:f3c07617c586f5f051282ef353f049aedefe7b7ab55ca2c42dfe202c323550dc",
+    "case_payload_hash": "sha256:f2b60ccb7914bf7d277fd8c7fcd4c4ca49c3d8c580efb83c0745033784d29461",
+    "reason": "query_and_candidate_metadata_support_target",
+    "review_version": "w06c0r1-v1",
+    "status": "answerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_promtgen_storage"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Use the related lesson that applies to this work Project: promtgen. Target wording: PromtGen stores generation drafts in IndexedDB. Related context: A stale derived projection is never canonical truth. (public case 041)."
+  },
+  "task_id": "v4_dev_041"
+}
