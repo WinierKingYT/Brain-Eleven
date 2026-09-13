@@ -7,7 +7,7 @@ Complete API server with hybrid search, ML ranking, and memory management
 from fastapi import FastAPI, HTTPException, Query, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List, Optional, Dict, Literal
@@ -81,7 +81,7 @@ try:
         scoped_fingerprint,
     )
     from brain_eleven.projects.registry import registry_path as project_registry_path
-    from brain_eleven.memory import MemoryStore, MemoryStoreConflict
+    from brain_eleven.memory import MemoryStore, MemoryStoreConflict, no_change
     from capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
@@ -107,9 +107,15 @@ class MemoryCreate(BaseModel):
     timestamp: Optional[str] = None
 
 class MemoryUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     content: Optional[str] = None
     confidence: Optional[float] = None
     status: Optional[str] = None
+    resolved_by: Optional[str] = Field(default=None, max_length=256)
+    reason: Optional[str] = Field(default=None, max_length=1000)
+    superseded_by: Optional[str] = Field(default=None, max_length=256)
+    project_id: Optional[str] = Field(default=None, max_length=256)
     expected_revision: Optional[int] = Field(default=None, ge=0)
 
 class SearchRequest(BaseModel):
@@ -612,51 +618,221 @@ async def get_memory(memory_id: str):
         logger.error(f"Get memory error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# API lifecycle mutations deliberately use a narrow adapter around the
+# existing lifecycle field vocabulary.  The canonical write remains the
+# MemoryStore transaction below; this adapter only validates the request and
+# applies the same fields/timestamps used by MemoryLifecycleManager.
+_API_LIFECYCLE_STATUSES = {"active", "resolved", "superseded", "deleted"}
+_API_TERMINAL_STATUSES = {"resolved", "superseded", "deleted"}
+_API_MAX_ACTOR_LENGTH = 256
+_API_MAX_REASON_LENGTH = 1000
+
+
+class _ApiLifecycleError(ValueError):
+    """Bounded API lifecycle rejection without exposing record contents."""
+
+    code = "LIFECYCLE_TRANSITION_INVALID"
+
+    def __init__(self, code: str = "LIFECYCLE_TRANSITION_INVALID"):
+        self.code = code
+        super().__init__(code)
+
+
+def _api_error(code: str) -> HTTPException:
+    """Return a fixed, content-free mutation error response."""
+    return HTTPException(status_code=422, detail={"code": code})
+
+
+def _clean_bounded_text(value: Optional[str], maximum: int, *, required: bool = False) -> str:
+    """Normalize a bounded API string without retaining whitespace padding."""
+    if value is None:
+        if required:
+            raise _ApiLifecycleError()
+        return ""
+    cleaned = str(value).strip()
+    if required and not cleaned:
+        raise _ApiLifecycleError()
+    if len(cleaned) > maximum:
+        raise _ApiLifecycleError()
+    return cleaned
+
+
+def _validate_api_project_scope(memory: Dict, requested_project_id: Optional[str]) -> None:
+    """Check an opaque project namespace before any record mutation."""
+    scope, _project, stored_project_id = infer_memory_scope(memory)
+    if scope != "project":
+        # A request-side project_id is intentionally ignored for global
+        # records; it is never copied into canonical data.
+        return
+    requested = str(requested_project_id or "").strip()
+    if not requested:
+        raise _ApiLifecycleError("PROJECT_SCOPE_REQUIRED")
+    if requested != stored_project_id:
+        raise _ApiLifecycleError("PROJECT_SCOPE_MISMATCH")
+
+
+def _api_memory_status(memory: Dict) -> str:
+    """Return the lifecycle status while supporting missing legacy status."""
+    return memory.get("status", "active")
+
+
+def _api_update_scope_and_fingerprint(memory: Dict) -> None:
+    """Preserve the shared scope/fingerprint normalization on content edits."""
+    scope, _project, project_id = infer_memory_scope(memory)
+    memory["scope"] = scope
+    memory["project_id"] = project_id
+    memory["dedup_fingerprint"] = scoped_fingerprint(
+        memory.get("content", ""), scope, project_id, memory.get("type", "")
+    )
+
+
+def _api_transition_target(memory: Dict, target_id: str, memories: List[Dict]) -> Dict:
+    """Resolve a supersession target within the same memory scope."""
+    target = next((item for item in memories if item.get("memory_id") == target_id), None)
+    if target is None or target.get("memory_id") == memory.get("memory_id"):
+        raise _ApiLifecycleError()
+    source_scope, _source_project, source_project_id = infer_memory_scope(memory)
+    target_scope, _target_project, target_project_id = infer_memory_scope(target)
+    if (source_scope, source_project_id) != (target_scope, target_project_id):
+        raise _ApiLifecycleError()
+    return target
+
+
+def _apply_api_lifecycle_transition(
+    memory: Dict,
+    update: MemoryUpdate,
+    memories: List[Dict],
+) -> bool:
+    """Apply one legal API transition; return ``False`` for terminal no-op."""
+    current = _api_memory_status(memory)
+    requested = update.status
+    has_lifecycle_fields = any(
+        value is not None for value in (update.resolved_by, update.reason, update.superseded_by)
+    )
+    has_content_fields = update.content is not None or update.confidence is not None
+
+    if current not in _API_LIFECYCLE_STATUSES:
+        raise _ApiLifecycleError()
+
+    # A repeated terminal operation is an explicit idempotent no-op.  It must
+    # not update timestamps, revision, cache, or the derived graph.
+    if current in _API_TERMINAL_STATUSES and requested == current:
+        if has_content_fields or has_lifecycle_fields:
+            raise _ApiLifecycleError()
+        return False
+
+    if current in _API_TERMINAL_STATUSES:
+        raise _ApiLifecycleError()
+
+    if requested is None:
+        requested = "active"
+    if requested not in _API_LIFECYCLE_STATUSES or requested == "deleted":
+        raise _ApiLifecycleError()
+
+    if requested == "active":
+        if has_lifecycle_fields:
+            raise _ApiLifecycleError()
+        # Materialize the legacy missing-status interpretation only when the
+        # caller has accepted an ordinary active update.  This keeps the
+        # lifecycle target explicit while preserving the missing-status read
+        # compatibility for untouched records.
+        memory["status"] = "active"
+        if update.content is not None:
+            memory["content"] = update.content
+        if update.confidence is not None:
+            memory["confidence"] = update.confidence
+    elif requested == "resolved":
+        if has_content_fields or update.superseded_by is not None:
+            raise _ApiLifecycleError()
+        resolved_by = _clean_bounded_text(
+            update.resolved_by, _API_MAX_ACTOR_LENGTH, required=True
+        )
+        reason = _clean_bounded_text(update.reason, _API_MAX_REASON_LENGTH)
+        memory["status"] = "resolved"
+        memory["resolved_at"] = datetime.now().isoformat()
+        memory["resolved_by"] = resolved_by
+        if reason:
+            memory["resolution_note"] = reason
+    elif requested == "superseded":
+        if has_content_fields or update.resolved_by is not None:
+            raise _ApiLifecycleError()
+        superseded_by = _clean_bounded_text(
+            update.superseded_by, _API_MAX_ACTOR_LENGTH, required=True
+        )
+        reason = _clean_bounded_text(update.reason, _API_MAX_REASON_LENGTH)
+        _api_transition_target(memory, superseded_by, memories)
+        memory["status"] = "superseded"
+        memory["resolved_at"] = datetime.now().isoformat()
+        memory["superseded_by"] = superseded_by
+        if reason:
+            memory["supersession_note"] = reason
+
+    memory["updated_at"] = datetime.now().isoformat()
+    _api_update_scope_and_fingerprint(memory)
+    return True
+
+
+def _projection_degraded(memory_id: str) -> JSONResponse:
+    """Expose a committed canonical write with a bounded projection failure."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "canonical_status": "committed",
+            "memory_id": memory_id,
+            "code": "GRAPH_PROJECTION_DEGRADED",
+        },
+    )
+
+
 @app.put("/memories/{memory_id}")
 async def update_memory(memory_id: str, update: MemoryUpdate):
-    """Update memory"""
+    """Update content or apply one typed, fail-closed lifecycle transition."""
     try:
         if update.content is not None:
             safety = evaluate_capture(update.content)
             if not safety.accepted:
-                raise HTTPException(status_code=422, detail=safety.to_dict())
+                raise HTTPException(
+                    status_code=422,
+                    detail={"code": "CAPTURE_SAFETY_REJECTED", **safety.to_dict()},
+                )
         store = MemoryStore(vault_path)
 
         def mutate(data):
             memories = data.get("validated_memory", [])
             memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
             if not memory:
-                raise HTTPException(status_code=404, detail="Memory not found")
+                raise HTTPException(status_code=404, detail={"code": "MEMORY_NOT_FOUND"})
 
-            if update.content:
-                memory["content"] = update.content
-            if update.confidence is not None:
-                memory["confidence"] = update.confidence
-            if update.status:
-                memory["status"] = update.status
+            _validate_api_project_scope(memory, update.project_id)
+            changed = _apply_api_lifecycle_transition(memory, update, memories)
+            return (memory, True) if changed else no_change((memory, False))
 
-            scope, _project, project_id = infer_memory_scope(memory)
-            memory["scope"] = scope
-            memory["project_id"] = project_id
-            memory["dedup_fingerprint"] = scoped_fingerprint(
-                memory.get("content", ""), scope, project_id, memory.get("type", "")
-            )
-            memory["updated_at"] = datetime.now().isoformat()
-            return memory
-
-        memory, persisted = store.transact(
+        mutation, persisted = store.transact(
             mutate,
             expected_revision=update.expected_revision,
         )
+        memory, changed = mutation
+        # A no-op is represented by an unchanged transaction result and must
+        # not invalidate cache or rebuild a derived projection.
+        is_terminal_noop = not changed
+        if is_terminal_noop:
+            return {**memory, "store_revision": persisted["revision"]}
 
         if cache:
             cache.clear()
-        _rebuild_graph()
+        try:
+            _rebuild_graph()
+        except Exception:
+            logger.error("Graph rebuild failed after API update")
+            return _projection_degraded(memory_id)
 
         logger.info(f"Updated memory: {memory_id}")
         return {**memory, "store_revision": persisted["revision"]}
     except HTTPException:
         raise
+    except _ApiLifecycleError as e:
+        raise _api_error(e.code)
     except MemoryStoreConflict as e:
         raise HTTPException(
             status_code=409,
@@ -666,12 +842,16 @@ async def update_memory(memory_id: str, update: MemoryUpdate):
                 "actual_revision": e.actual_revision,
             },
         )
-    except Exception as e:
-        logger.error(f"Update memory error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.error("Update memory failed")
+        raise HTTPException(status_code=500, detail={"code": "MEMORY_MUTATION_FAILED"})
 
 @app.delete("/memories/{memory_id}")
-async def delete_memory(memory_id: str, expected_revision: Optional[int] = Query(default=None, ge=0)):
+async def delete_memory(
+    memory_id: str,
+    expected_revision: Optional[int] = Query(default=None, ge=0),
+    project_id: Optional[str] = Query(default=None, max_length=256),
+):
     """Delete memory (soft delete - mark as deleted)"""
     try:
         store = MemoryStore(vault_path)
@@ -680,16 +860,34 @@ async def delete_memory(memory_id: str, expected_revision: Optional[int] = Query
             memories = data.get("validated_memory", [])
             memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
             if not memory:
-                raise HTTPException(status_code=404, detail="Memory not found")
+                raise HTTPException(status_code=404, detail={"code": "MEMORY_NOT_FOUND"})
+            _validate_api_project_scope(memory, project_id)
+            status = _api_memory_status(memory)
+            if status == "deleted":
+                return no_change((memory, False))
+            if status != "active":
+                raise _ApiLifecycleError()
             memory["status"] = "deleted"
             memory["deleted_at"] = datetime.now().isoformat()
-            return memory
+            memory["updated_at"] = datetime.now().isoformat()
+            return memory, True
 
-        _memory, persisted = store.transact(mutate, expected_revision=expected_revision)
+        mutation, persisted = store.transact(mutate, expected_revision=expected_revision)
+        memory, changed = mutation
+        if not changed:
+            return {
+                "status": "deleted",
+                "memory_id": memory_id,
+                "store_revision": persisted["revision"],
+            }
 
         if cache:
             cache.clear()
-        _rebuild_graph()
+        try:
+            _rebuild_graph()
+        except Exception:
+            logger.error("Graph rebuild failed after API delete")
+            return _projection_degraded(memory_id)
 
         logger.info(f"Deleted memory: {memory_id}")
         return {
@@ -699,6 +897,8 @@ async def delete_memory(memory_id: str, expected_revision: Optional[int] = Query
         }
     except HTTPException:
         raise
+    except _ApiLifecycleError as e:
+        raise _api_error(e.code)
     except MemoryStoreConflict as e:
         raise HTTPException(
             status_code=409,
@@ -708,9 +908,9 @@ async def delete_memory(memory_id: str, expected_revision: Optional[int] = Query
                 "actual_revision": e.actual_revision,
             },
         )
-    except Exception as e:
-        logger.error(f"Delete memory error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logger.error("Delete memory failed")
+        raise HTTPException(status_code=500, detail={"code": "MEMORY_MUTATION_FAILED"})
 
 # ============================================================================
 # Cache Endpoint (Phase 9A)
