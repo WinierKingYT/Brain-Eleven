@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `3dce089`
+**Repository revision:** `a26912c`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -116,6 +116,15 @@ tie-breaking. The broader task-aware retrieval work in
 `memory-retriever.py`/`hybrid-search.py` remains deferred behind evaluation
 gates.
 
+**W-06B status:** The first task-aware V1 design reached independent
+`RETHINK` at exact review head `a26912c` (`WEAKNESS-W06B-INDEPENDENT-REVIEW.md`).
+Runtime safety, malformed-gate handling, fallback, deterministic ordering and
+public safety counters are covered, but W-06B precision is about `0.18` on
+both DEV and TEST against the frozen `>=0.60` contract floor; TEST precision
+and MRR also regress against V1. The lexical reranking design is rejected for
+promotion. A successor retrieval contract is required before further tuning;
+V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
+
 ### W-07 — Reminder/continuity is not an automatic product path (P2)
 
 Session end queues an event, but continuity files are still updated through
@@ -213,13 +222,12 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-06B Task-Aware Retrieval Quality, a new bounded contract
-derived from the now-shipped W-09A evidence. It may change ranking/retrieval
-only after a contract freezes provider, K, task-need, scope/lifecycle safety,
-DEV/TEST/HOLDOUT tuning discipline, rollback and V1 comparison. W-07B native
-maintenance/reminder delivery remains a separate P2 package and is not opened
-until its trigger, freshness, idempotence, scope and privacy contract is
-independently reviewed.
+**Next package:** A successor W-06 retrieval contract must be designed and
+independently reviewed before implementation. It must address the rejected
+lexical-only approach without weakening the frozen quality floor or safety
+gates. W-07B native maintenance/reminder delivery remains a separate P2
+package and is not opened until its trigger, freshness, idempotence, scope and
+privacy contract is independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
@@ -238,8 +246,9 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
-corrections. W-06B must improve retrieval against the frozen W-09A evidence
-without tuning HOLDOUT, leaking scope, promoting V2, or opening Phase 20.
+corrections. W-06B's lexical design is rejected by independent evidence; its
+successor must improve retrieval against the frozen W-09A evidence without
+tuning HOLDOUT, leaking scope, promoting V2, or opening Phase 20.
 W-07B automatic reminder delivery remains explicit deferred work rather than
 being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
