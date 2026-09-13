@@ -6,16 +6,16 @@
       "review_required": 0,
       "unanswerable": 0
     },
-    "manifest_hash": "sha256:2402edeea32d08b8b5fc342dcaa7051de8d5744033a56900f04d04da17b6e295",
+    "manifest_hash": "sha256:07d27662850613ebd2c513bf410002fb361a562b907b7d06b84e7aa35d17e5ca",
     "split": "holdout",
     "split_fingerprint": "sha256:b97f00357d5c97c6a0e1667989d5a15790b681776c4de84fcfbf94bb9a048039"
   },
   "corpus_version": 4,
   "evaluator_version": "w06c0r1-v1",
   "holdout_evidence": {
-    "command_hash": "sha256:b60a8a5eb4f91c49f7be117346604b4ead1fb3c64b4c7fb658e85e3ab4e8942f",
-    "seal_hash": "sha256:5dd676f618908300eed189654ddd4a50050cf2b502b6f2bd306a1f8345132b25",
-    "unlock_token_hash": "sha256:c1fcb94bf91b7d24aa81295c01296107e4f110dfc53aca19a37a78e16a367849"
+    "command_hash": "sha256:bc43fadfd9013ecd92780883e9e1560a9f4e42f80e63b8675e0b88ada77ec217",
+    "seal_hash": "sha256:01841ed9df09c3e9393c630f22b281dc784c5b2e908f85e7ab331e0fa3a5734a",
+    "unlock_token_hash": "sha256:70f50a97f4b892b8e349f0cdc017b8de361157cd865a674bc84b43d2750b222d"
   },
   "production_mutation": false,
   "promotion": "blocked",
@@ -34,8 +34,8 @@
       },
       "fallback": false,
       "latency_ms": {
-        "p50": 0.987,
-        "p95": 0.869
+        "p50": 0.9855,
+        "p95": 0.818
       },
       "metrics": {
         "1": {
@@ -85,7 +85,7 @@
       "rows": [
         {
           "answerability": "answerable",
-          "latency_ms": 1.962,
+          "latency_ms": 1.834,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -148,7 +148,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.022,
+          "latency_ms": 0.91,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -211,7 +211,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.034,
+          "latency_ms": 0.891,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -274,7 +274,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.069,
+          "latency_ms": 0.937,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -337,7 +337,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.075,
+          "latency_ms": 0.89,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -400,7 +400,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.301,
+          "latency_ms": 0.98,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -463,7 +463,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.369,
+          "latency_ms": 1.082,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -526,7 +526,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.97,
+          "latency_ms": 0.893,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -589,7 +589,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.053,
+          "latency_ms": 1.052,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -652,7 +652,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.073,
+          "latency_ms": 0.903,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -715,7 +715,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.074,
+          "latency_ms": 0.959,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -778,7 +778,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.108,
+          "latency_ms": 1.044,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -841,7 +841,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.028,
+          "latency_ms": 0.976,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -904,7 +904,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.986,
+          "latency_ms": 1.407,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -967,7 +967,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.992,
+          "latency_ms": 1.106,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1030,7 +1030,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.904,
+          "latency_ms": 1.062,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1093,7 +1093,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.985,
+          "latency_ms": 1.035,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1156,7 +1156,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.859,
+          "latency_ms": 1.22,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1219,7 +1219,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.044,
+          "latency_ms": 0.963,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1282,7 +1282,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 2.285,
+          "latency_ms": 1.029,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1345,7 +1345,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.016,
+          "latency_ms": 1.063,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1408,7 +1408,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.842,
+          "latency_ms": 1.278,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1471,7 +1471,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.077,
+          "latency_ms": 1.08,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1534,7 +1534,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.873,
+          "latency_ms": 0.969,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1597,7 +1597,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.036,
+          "latency_ms": 0.974,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1660,7 +1660,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.907,
+          "latency_ms": 1.152,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1723,7 +1723,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.991,
+          "latency_ms": 0.866,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1786,7 +1786,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.143,
+          "latency_ms": 1.04,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1849,7 +1849,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.915,
+          "latency_ms": 0.861,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1912,7 +1912,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.053,
+          "latency_ms": 1.089,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -2004,7 +2004,7 @@
     ],
     "noise_count": 24,
     "seed": 17,
-    "source_fingerprint": "sha256:536644763d9fd7059486d830868774f709315818d185a5ef45b14797749b5e33",
+    "source_fingerprint": "sha256:039089023451675c3e6d69a617c9ec5d07b08fb7cadadcb2eccecc4daf5989d9",
     "task_set_fingerprint": "sha256:ed2e65489500c5084c69869b0e506ba608eca72d2443f17102643d2a484e3628"
   }
 }
