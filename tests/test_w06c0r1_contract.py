@@ -105,6 +105,34 @@ def test_scope_end_revision_is_pinned_and_invalid_end_fails_closed():
     ) == ("evals/w06c0r1/evidence/dev.json",)
 
 
+def test_scope_drift_pin_tampering_fails_closed(monkeypatch, tmp_path):
+    from evals.w06c0r1 import evaluation
+
+    pin = json.loads((ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json").read_text(encoding="utf-8"))
+    pin["evidence_hashes"]["dev"] = "sha256:" + ("0" * 64)
+    replacement = tmp_path / evaluation.SCOPE_DRIFT_PIN.name
+    replacement.write_text(json.dumps(pin), encoding="utf-8")
+    monkeypatch.setattr(evaluation, "SCOPE_DRIFT_PIN", replacement)
+    with pytest.raises(W06C0R1Error, match="dev evidence hash mismatch"):
+        evaluation.verify_scope_diff()
+
+
+def test_unpinned_post_end_owned_path_fails_closed(monkeypatch):
+    from evals.w06c0r1 import evaluation
+
+    current_head = evaluation._resolve_revision(ROOT, "HEAD", "current HEAD")
+    original = evaluation._git_changed_paths
+
+    def fake_changed_paths(root, *revisions):
+        if revisions == (evaluation.IMPLEMENTATION_SCOPE_END_REVISION, current_head):
+            return ("evals/w06c0r1/evidence/future.json",)
+        return original(root, *revisions)
+
+    monkeypatch.setattr(evaluation, "_git_changed_paths", fake_changed_paths)
+    with pytest.raises(W06C0R1Error, match="post-scope package paths"):
+        evaluation.verify_scope_diff()
+
+
 def test_historical_scope_compatibility_is_pinned_and_unpinned_hash_fails(monkeypatch, tmp_path):
     from evals.w06c0r1 import evaluation
 
