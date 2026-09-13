@@ -126,6 +126,36 @@ def test_same_size_replacement_after_ownership_validation_is_detected(runtime, t
         read_increment(vault, path, "claude", session, project_id, "2026-09-13T00:00:00Z", binding=binding)
 
 
+def test_worker_preserves_changed_code_and_writes_no_effect(runtime, tmp_path, monkeypatch):
+    vault, _ = runtime
+    path = _claude_transcript(tmp_path, "worker-stable", "A message with stable size.")
+    enqueue(vault, "claude", {
+        "session_id": "worker-stable",
+        "cwd": str(vault),
+        "transcript_path": str(path),
+    })
+    import brain_eleven.runtime.worker as worker_module
+
+    original_verify = worker_module.verify_transcript_ownership
+    replacement = json.dumps({
+        "type": "user", "sessionId": "worker-stable",
+        "message": {"role": "user", "content": "A message with changed size."},
+    }) + "\n"
+    assert len(replacement.encode()) == path.stat().st_size
+
+    def replace_after_verify(*args, **kwargs):
+        binding = original_verify(*args, **kwargs)
+        path.write_text(replacement, encoding="utf-8")
+        return binding
+
+    monkeypatch.setattr(worker_module, "verify_transcript_ownership", replace_after_verify)
+    result = Worker(vault).once()
+    assert result["status"] == "QUEUED"
+    assert result["error"] == "TRANSCRIPT_CHANGED"
+    assert not list((vault / ".brain-eleven" / "capture" / "evidence").glob("*.json"))
+    assert not MemoryStore(vault).load()["validated_memory"]
+
+
 def test_claude_slug_collision_abstains_before_read(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
     path = _claude_transcript(tmp_path, "collision-session")

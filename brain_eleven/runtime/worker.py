@@ -627,11 +627,14 @@ class Worker:
                 return result
             except Exception as exc:
                 # Exceptions may contain source text or paths: never serialize them.
-                code = getattr(exc, 'code', None) or (
-                    'CANONICAL_CONFLICT' if isinstance(exc, (MemoryStoreConflict, StateStoreConflict))
-                    else 'EVIDENCE_INVALID' if isinstance(exc, (ValueError, UnicodeError))
-                    else 'WORKER_FAILED'
-                )
+                code = getattr(exc, 'code', None)
+                if not code and isinstance(exc, (MemoryStoreConflict, StateStoreConflict)):
+                    code = 'CANONICAL_CONFLICT'
+                if not code and isinstance(exc, ValueError) and str(exc) == 'TRANSCRIPT_CHANGED':
+                    code = 'TRANSCRIPT_CHANGED'
+                if not code and isinstance(exc, (ValueError, UnicodeError)):
+                    code = 'EVIDENCE_INVALID'
+                code = code or 'WORKER_FAILED'
                 terminal = code in {
                     'TRANSCRIPT_OWNERSHIP_MISMATCH',
                     'TRANSCRIPT_OWNERSHIP_UNVERIFIED',
