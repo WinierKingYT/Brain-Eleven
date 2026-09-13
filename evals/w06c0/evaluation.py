@@ -50,6 +50,7 @@ SOURCE_FILES = (
     "evals/w06c0/evaluation.py",
 )
 IMPLEMENTATION_BASE_REVISION = "fa5b920"
+IMPLEMENTATION_SCOPE_END_REVISION = "f676c91d0e41a7523dc2b96a131814b983401456"
 ALLOWED_SCOPE_PREFIXES = (
     "evals/corpus-v3/",
     "evals/w06c0/",
@@ -144,6 +145,7 @@ def source_fingerprint(root: Path | str = ROOT) -> str:
 def verify_scope_diff(
     *,
     base_revision: str = IMPLEMENTATION_BASE_REVISION,
+    scope_end_revision: str = IMPLEMENTATION_SCOPE_END_REVISION,
     root: Path | str = ROOT,
 ) -> dict[str, Any]:
     """Fail closed when the W-06C0 tree leaves its bounded allowlist.
@@ -157,7 +159,42 @@ def verify_scope_diff(
     root = Path(root)
     if not re.fullmatch(r"[0-9a-f]{7,40}", base_revision):
         raise W06C0Error("W-06C0 scope base revision is invalid")
+    if not re.fullmatch(r"[0-9a-f]{40}", scope_end_revision):
+        raise W06C0Error("W-06C0 scope end revision is invalid")
     try:
+        resolved_base = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--verify", f"{base_revision}^{{commit}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        resolved_end = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--verify", f"{scope_end_revision}^{{commit}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        current = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        for label, value in (("base", resolved_base), ("scope end", resolved_end), ("head", current)):
+            if not re.fullmatch(r"[0-9a-f]{40}", value):
+                raise W06C0Error(f"W-06C0 {label} revision could not be resolved")
+        if subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", resolved_base, resolved_end],
+            check=False,
+            capture_output=True,
+        ).returncode != 0:
+            raise W06C0Error("W-06C0 scope base is not an ancestor of scope end")
+        if subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", resolved_end, current],
+            check=False,
+            capture_output=True,
+        ).returncode != 0:
+            raise W06C0Error("W-06C0 scope end is not an ancestor of current checkout")
         completed = subprocess.run(
             [
                 "git",
@@ -166,19 +203,14 @@ def verify_scope_diff(
                 "diff",
                 "--name-only",
                 "--diff-filter=ACDMRTUXB",
-                base_revision,
+                resolved_base,
+                resolved_end,
                 "--",
             ],
             check=True,
             capture_output=True,
             text=True,
         )
-        current = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as error:
         raise W06C0Error("cannot verify W-06C0 scope diff") from error
     changed = tuple(sorted({line.replace("\\", "/") for line in completed.stdout.splitlines() if line.strip()}))
@@ -193,6 +225,8 @@ def verify_scope_diff(
         raise W06C0Error(f"W-06C0 scope allowlist violation: {list(invalid)}")
     return {
         "base_revision": base_revision,
+        "resolved_base_revision": resolved_base,
+        "scope_end_revision": resolved_end,
         "head_revision": current,
         "changed_paths": list(changed),
         "forbidden_paths": list(forbidden),

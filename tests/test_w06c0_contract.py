@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from evals.w06c0.evaluation import (
+    IMPLEMENTATION_SCOPE_END_REVISION,
     K_VALUES,
     W06C0Error,
     _answerability,
@@ -131,6 +132,14 @@ def test_scope_gate_rejects_forbidden_revision_changes():
     evidence = verify_scope_diff()
     assert evidence["allowlist_status"] == "PASS"
     assert evidence["forbidden_paths"] == []
+    assert evidence["scope_end_revision"] == IMPLEMENTATION_SCOPE_END_REVISION
+
+
+def test_scope_gate_rejects_invalid_or_non_ancestor_end_revision():
+    with pytest.raises(W06C0Error, match="cannot verify"):
+        verify_scope_diff(scope_end_revision="0" * 40)
+    with pytest.raises(W06C0Error, match="base is not an ancestor"):
+        verify_scope_diff(scope_end_revision="3f795f94dde199ba4e970705d37686ee4f50bc5d")
 
 
 def test_core_provider_matrix_has_identical_snapshot_and_zero_safety():
