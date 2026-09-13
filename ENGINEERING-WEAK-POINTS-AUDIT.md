@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `ad8c544`
+**Repository revision:** `c8c39aa`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -136,13 +136,21 @@ writes lack revision/CAS and fsync parity; state references can race memory
 lifecycle changes; and API update paths can bypass typed lifecycle checks.
 These are separate authority packages and are intentionally not mixed with W-01.
 
+**W-08A status:** Independent read-only review at `c8c39aa` returned
+`FIX-FIRST`. The ProjectRegistry implementation, revision/CAS boundary,
+durable atomic write path, backup envelope, rollback stale safety and package
+identity checks passed independent focused and full-suite verification. One
+required evidence item remains open: the rollback test must explicitly compare
+the restored project's `status` and `proactive_capture` fields in addition to
+identity/label. No production behavior change is authorized by this finding.
+
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
-`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. The next bounded implementation
-package is W-08A ProjectRegistry durability/CAS parity; W-08A is not yet
-started.
-**Next package:** W-08A ProjectRegistry durability/CAS parity implementation.
+`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. The W-08A implementation is
+present but remains `FIX-FIRST` pending the focused rollback integrity
+evidence.
+**Next package:** W-08A evidence correction and fresh independent review.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -154,9 +162,9 @@ in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
 `WEAKNESS-W06A-INDEPENDENT-REVIEW.md`; W-07A native continuity read — `SHIP`,
 report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`.
-**Required outcome:** a bounded W-08 persistence consistency contract,
-followed by W-08A evidence-backed focused tests, full regression, critical
-lint/compile checks, and independent read-only review. Broader W-06 retrieval
+**Required outcome:** close the W-08A evidence finding, rerun focused/full
+verification and obtain an independent `SHIP`; then continue with the bounded
+W-08 persistence contract sequence. Broader W-06 retrieval
 and automatic markdown reminder writing remain explicit deferred work rather
 than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
