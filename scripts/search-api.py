@@ -715,6 +715,12 @@ def _apply_api_lifecycle_transition(
     if current not in _API_LIFECYCLE_STATUSES:
         raise _ApiLifecycleError()
 
+    # Deletion has its own HTTP DELETE operation.  A PUT must never create or
+    # repeat the deleted terminal state, even when the record is already
+    # deleted.
+    if requested == "deleted":
+        raise _ApiLifecycleError()
+
     # A repeated terminal operation is an explicit idempotent no-op.  It must
     # not update timestamps, revision, cache, or the derived graph.
     if current in _API_TERMINAL_STATUSES and requested == current:
@@ -727,7 +733,7 @@ def _apply_api_lifecycle_transition(
 
     if requested is None:
         requested = "active"
-    if requested not in _API_LIFECYCLE_STATUSES or requested == "deleted":
+    if requested not in _API_LIFECYCLE_STATUSES:
         raise _ApiLifecycleError()
 
     if requested == "active":
