@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import ast
 import json
+import multiprocessing
+import sys
+import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -86,6 +91,21 @@ def _mutate_valid_source(vault: Path, source: str) -> None:
 def _manifest(archive: Path) -> dict:
     with zipfile.ZipFile(archive) as handle:
         return json.loads(handle.read("manifest.json"))
+
+
+def _create_backup_process(vault: str, archive: str, results) -> None:
+    """Run one creator in a separate process for real sidecar-lock evidence."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from memory_backup import MemoryBackupError, create_backup
+
+    try:
+        create_backup(vault, archive)
+    except MemoryBackupError as exc:
+        results.put(("error", type(exc).__name__, str(exc)))
+    except Exception as exc:  # pragma: no cover - turns child failures into evidence
+        results.put(("unexpected", type(exc).__name__, str(exc)))
+    else:
+        results.put(("success", "", ""))
 
 
 def test_v3_manifest_descriptors_and_digest_match_archived_bytes(tmp_path):
@@ -316,6 +336,111 @@ def test_publication_sync_failure_leaves_no_archive_or_temp_file(tmp_path, monke
 
     monkeypatch.setattr(backup, "_fsync_parent_directory", fail_sync)
     with pytest.raises(MemoryBackupError, match="Cannot create backup archive"):
+        create_backup(vault, output)
+    assert not output.exists()
+    assert not list(tmp_path.glob(".memory-backup-*.zip"))
+
+
+def test_publication_lock_timeout_maps_to_bounded_error(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    output = tmp_path / "backup.zip"
+
+    @contextmanager
+    def timeout_lock(*_args, **_kwargs):
+        raise backup.MemoryStoreLockTimeout("simulated publication timeout")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(backup, "file_lock", timeout_lock)
+    with pytest.raises(MemoryBackupError, match="^archive publication lock timeout$"):
+        create_backup(vault, output)
+    assert not output.exists()
+    assert not list(tmp_path.glob(".memory-backup-*.zip"))
+
+
+def test_two_concurrent_creators_have_one_success_and_no_clobber(tmp_path):
+    vault = _vault(tmp_path)
+    output = tmp_path / "concurrent.zip"
+    context = multiprocessing.get_context("spawn")
+    results = context.Queue()
+
+    # Hold the destination sidecar while both workers finish their reads.  The
+    # workers then contend on the same real publication lock, proving that the
+    # exists check and replace are one no-clobber critical section.
+    with backup.file_lock(output, timeout=backup.ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS):
+        first = context.Process(target=_create_backup_process, args=(str(vault), str(output), results))
+        second = context.Process(target=_create_backup_process, args=(str(vault), str(output), results))
+        first.start()
+        second.start()
+        time.sleep(0.5)
+    first.join(15)
+    second.join(15)
+    assert first.exitcode == 0
+    assert second.exitcode == 0
+    outcomes = [results.get(timeout=2), results.get(timeout=2)]
+    assert [item[0] for item in outcomes].count("success") == 1
+    errors = [item for item in outcomes if item[0] == "error"]
+    assert len(errors) == 1
+    assert errors[0][1] == "MemoryBackupError"
+    assert errors[0][2] == "Backup archive already exists"
+    winner_bytes = output.read_bytes()
+    assert winner_bytes
+    assert not list(tmp_path.glob(".memory-backup-*.zip"))
+
+
+def test_snapshot_reader_has_no_authority_lock_or_nested_lock_path():
+    tree = ast.parse(Path(backup.__file__).read_text(encoding="utf-8"))
+    call_names = [
+        node.func.id
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    ]
+    assert "memory_store_lock" not in call_names
+    assert call_names.count("file_lock") == 1
+    publication = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "_atomic_create_archive"
+    )
+    assert any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "file_lock"
+        for node in ast.walk(publication)
+    )
+
+
+@pytest.mark.parametrize("swap_kind", ["vault", "claude", "source"])
+def test_symlink_swap_between_read_passes_fails_closed(tmp_path, monkeypatch, swap_kind):
+    vault = _vault(tmp_path)
+    output = tmp_path / f"{swap_kind}-swap.zip"
+    real_read = backup._read_source_pass
+    swapped = False
+
+    def swap_after_first_pass(path):
+        nonlocal swapped
+        value = real_read(path)
+        if not swapped:
+            swapped = True
+            try:
+                if swap_kind == "vault":
+                    moved = vault.with_name(vault.name + "-real")
+                    vault.replace(moved)
+                    vault.symlink_to(moved, target_is_directory=True)
+                elif swap_kind == "claude":
+                    moved = vault / ".claude-real"
+                    (vault / ".claude").replace(moved)
+                    (vault / ".claude").symlink_to(moved, target_is_directory=True)
+                else:
+                    source = vault / ".claude" / "settings.json"
+                    moved = source.with_name("settings-real.json")
+                    source.replace(moved)
+                    source.symlink_to(moved)
+            except (OSError, NotImplementedError) as exc:
+                pytest.skip(f"symlink swap unavailable: {exc}")
+        return value
+
+    monkeypatch.setattr(backup, "_read_source_pass", swap_after_first_pass)
+    with pytest.raises(MemoryBackupError, match="symbolic link"):
         create_backup(vault, output)
     assert not output.exists()
     assert not list(tmp_path.glob(".memory-backup-*.zip"))
