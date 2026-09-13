@@ -5,6 +5,7 @@ Complete API server with hybrid search, ML ranking, and memory management
 """
 
 from fastapi import FastAPI, HTTPException, Query, Body, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -286,6 +287,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def bounded_request_validation_error(request: Request, exc: RequestValidationError):
+    """Keep request validation details from reflecting submitted secrets/paths."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": {"code": "INVALID_REQUEST"}},
+    )
 
 # API key gate. BRAIN_ELEVEN_API_KEY unset means auth is OFF - fine for
 # local-only use bound to 127.0.0.1, but this endpoint set has no other
