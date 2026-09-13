@@ -22,6 +22,8 @@ from time import perf_counter
 from typing import Any, Iterable, Mapping, Sequence
 
 from context_compiler_v2.safety import contains_secret
+from context_compiler_v2.tokenizer import ConservativeTokenEstimator
+from brain_eleven.retrieval import EmbeddingStatus, create_embedding_provider, create_reranker
 from evals.authority_provider import AuthorityContextProvider
 from evals.baseline import BaselineContextProvider, TaskAwareV1ContextProvider
 from evals.compiler_v2_provider import CompilerV2ContextProvider
@@ -46,6 +48,23 @@ SOURCE_FILES = (
     "evals/w06c0/__init__.py",
     "evals/w06c0/__main__.py",
     "evals/w06c0/evaluation.py",
+)
+IMPLEMENTATION_BASE_REVISION = "fa5b920"
+ALLOWED_SCOPE_PREFIXES = (
+    "evals/corpus-v3/",
+    "evals/w06c0/",
+    "tests/test_w06c0_",
+)
+ALLOWED_SCOPE_FILES = frozenset({"WEAKNESS-W06C0-PACKAGE-REPORT.md"})
+FORBIDDEN_SCOPE_PREFIXES = (
+    "brain_eleven/",
+    "scripts/",
+    "context_compiler_v2/",
+    "authority/",
+    "context_router/",
+    ".claude/",
+    "evals/w09a/",
+    "evals/corpus-v2/",
 )
 REASONS = frozenset(
     {
@@ -122,6 +141,65 @@ def source_fingerprint(root: Path | str = ROOT) -> str:
     return "sha256:" + digest.hexdigest()
 
 
+def verify_scope_diff(
+    *,
+    base_revision: str = IMPLEMENTATION_BASE_REVISION,
+    root: Path | str = ROOT,
+) -> dict[str, Any]:
+    """Fail closed when the W-06C0 tree leaves its bounded allowlist.
+
+    The check is intentionally based on a full revision range rather than the
+    current working tree.  This gives the package report a reproducible
+    before/after assertion and catches a forbidden tracked-path change before
+    a feasibility report can be accepted.
+    """
+
+    root = Path(root)
+    if not re.fullmatch(r"[0-9a-f]{7,40}", base_revision):
+        raise W06C0Error("W-06C0 scope base revision is invalid")
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "diff",
+                "--name-only",
+                "--diff-filter=ACDMRTUXB",
+                base_revision,
+                "--",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        current = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise W06C0Error("cannot verify W-06C0 scope diff") from error
+    changed = tuple(sorted({line.replace("\\", "/") for line in completed.stdout.splitlines() if line.strip()}))
+    invalid = tuple(
+        path
+        for path in changed
+        if path not in ALLOWED_SCOPE_FILES
+        and not any(path.startswith(prefix) for prefix in ALLOWED_SCOPE_PREFIXES)
+    )
+    forbidden = tuple(path for path in invalid if any(path.startswith(prefix) for prefix in FORBIDDEN_SCOPE_PREFIXES))
+    if invalid:
+        raise W06C0Error(f"W-06C0 scope allowlist violation: {list(invalid)}")
+    return {
+        "base_revision": base_revision,
+        "head_revision": current,
+        "changed_paths": list(changed),
+        "forbidden_paths": list(forbidden),
+        "allowlist_status": "PASS",
+    }
+
+
 def verify_manifest(root: Path | str = CORPUS_ROOT) -> dict[str, Any]:
     """Verify v3 split counts, file hashes, manifest hash, and split hashes."""
 
@@ -170,6 +248,12 @@ def verify_manifest(root: Path | str = CORPUS_ROOT) -> dict[str, Any]:
     return manifest
 
 
+def _base_document(document: Mapping[str, Any]) -> Mapping[str, Any]:
+    value = dict(document)
+    value.pop("answerability", None)
+    return value
+
+
 def _answerability(document: Mapping[str, Any]) -> Mapping[str, Any]:
     value = document.get("answerability")
     if not isinstance(value, Mapping):
@@ -189,12 +273,6 @@ def _answerability(document: Mapping[str, Any]) -> Mapping[str, Any]:
     provenance = value.get("provenance_hash")
     if not isinstance(provenance, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", provenance):
         raise W06C0Error("case answerability provenance is invalid")
-    return value
-
-
-def _base_document(document: Mapping[str, Any]) -> Mapping[str, Any]:
-    value = dict(document)
-    value.pop("answerability", None)
     return value
 
 
@@ -323,6 +401,13 @@ def _metric_rows(selected: Sequence[str], document: Mapping[str, Any], metadata:
         recall = hit / len(relevant) if relevant else 0.0
         mandatory_recall = mandatory / len(required)
         f1 = 0.0 if recall == 0.0 or precision == 0 else 2 * precision * recall / (precision + recall)
+        token_counts = {
+            item: ConservativeTokenEstimator().estimate(str(metadata[item].get("content", ""))).count
+            for item in top
+            if item in metadata
+        }
+        total_tokens = sum(token_counts.values())
+        noise_tokens = sum(token_counts[item] for item in set(top) - relevant)
         rows[str(k)] = {
             "precision": precision,
             "recall": recall,
@@ -330,6 +415,7 @@ def _metric_rows(selected: Sequence[str], document: Mapping[str, Any], metadata:
             "mrr": next((1.0 / (index + 1) for index, item in enumerate(top) if item in relevant), 0.0),
             "mandatory_recall": mandatory_recall,
             "noise_ratio": (count - hit) / max(count, 1),
+            "token_waste": noise_tokens / total_tokens if total_tokens else 0.0,
             "selected_count": count,
         }
     return rows
@@ -374,6 +460,7 @@ def _empty_optional(
         "scored_count": 0,
         "excluded_counts": {name: answer_counts.get(name, 0) for name in sorted(STATUSES)},
         "metrics": {},
+        "quality_state": "NOT_MEASURED",
         "safety": {
             "wrong_project_leakage": 0,
             "forbidden_leakage": 0,
@@ -388,8 +475,197 @@ def _empty_optional(
     }
 
 
+def _optional_candidates(
+    task: GoldenTask,
+    candidate_ids: Sequence[str],
+    metadata: Mapping[str, Mapping[str, Any]],
+) -> list[str]:
+    """Return the fixed, scope-filtered candidate set for optional providers."""
+
+    candidates: list[str] = []
+    for memory_id in candidate_ids:
+        record = metadata[memory_id]
+        if str(record.get("status", "")).lower() != "active":
+            continue
+        project_id = record.get("project_id") or None
+        if task.project_id is None:
+            if project_id is not None:
+                continue
+        elif project_id not in {None, task.project_id}:
+            continue
+        candidates.append(memory_id)
+    return candidates
+
+
+def _optional_result(
+    task: GoldenTask,
+    provider_id: str,
+    revision: int,
+    ranked: Sequence[tuple[str, float]],
+    metadata: Mapping[str, Mapping[str, Any]],
+) -> NormalizedEvaluationResult:
+    items = tuple(
+        SelectedContextItem(
+            id=memory_id,
+            source_type="memory",
+            project_id=metadata[memory_id].get("project_id") or None,
+            memory_type=str(metadata[memory_id].get("type") or "memory"),
+            status=str(metadata[memory_id].get("status") or "active"),
+            content=str(metadata[memory_id].get("content") or ""),
+            score=float(score),
+        )
+        for memory_id, score in ranked
+    )
+    return NormalizedEvaluationResult(
+        task_id=task.task_id,
+        provider_id=provider_id,
+        selected_items=items,
+        source_memory_revision=revision,
+        project_id=task.project_id,
+        retrieval_scope="default",
+        capabilities={
+            "scope_isolation": "supported",
+            "lifecycle_filtering": "supported",
+            "semantic_ranking": "supported",
+        },
+    )
+
+
+def _optional_selection(
+    slot: str,
+    provider: Any,
+    task: GoldenTask,
+    candidate_ids: Sequence[str],
+    metadata: Mapping[str, Mapping[str, Any]],
+    revision: int,
+) -> NormalizedEvaluationResult:
+    candidates = _optional_candidates(task, candidate_ids, metadata)
+    texts = [str(metadata[memory_id].get("content") or "") for memory_id in candidates]
+    if slot == "embedding":
+        embedded = provider.embed([task.prompt, *texts])
+        if embedded.status != EmbeddingStatus.EMBEDDING_AVAILABLE.value:
+            raise W06C0Error(embedded.error_code or "SEMANTIC_UNAVAILABLE")
+        if len(embedded.vectors) != len(candidates) + 1:
+            raise W06C0Error("embedding_response_length_mismatch")
+        query = embedded.vectors[0]
+        ranked = []
+        for memory_id, vector in zip(candidates, embedded.vectors[1:]):
+            if len(query) != len(vector) or not query:
+                raise W06C0Error("embedding_dimensions_mismatch")
+            numerator = sum(float(left) * float(right) for left, right in zip(query, vector))
+            query_norm = math.sqrt(sum(float(value) ** 2 for value in query))
+            value_norm = math.sqrt(sum(float(value) ** 2 for value in vector))
+            score = numerator / (query_norm * value_norm) if query_norm and value_norm else 0.0
+            ranked.append((memory_id, score))
+        ranked.sort(key=lambda item: (-item[1], item[0]))
+        provider_id = str(embedded.provider_id)
+    elif slot == "reranker":
+        reranked = provider.rerank(task.prompt, texts)
+        if reranked.status != EmbeddingStatus.EMBEDDING_AVAILABLE.value:
+            raise W06C0Error(reranked.error_code or "RERANKER_UNAVAILABLE")
+        if len(reranked.scores) != len(candidates):
+            raise W06C0Error("reranker_response_length_mismatch")
+        ranked = list(zip(candidates, (float(score) for score in reranked.scores)))
+        ranked.sort(key=lambda item: (-item[1], item[0]))
+        provider_id = str(reranked.provider_id)
+    else:
+        raise W06C0Error(f"unsupported optional provider: {slot}")
+    return _optional_result(task, provider_id, revision, ranked, metadata)
+
+
+def _run_optional_provider(
+    slot: str,
+    documents: Sequence[Mapping[str, Any]],
+    tasks: Sequence[GoldenTask],
+    fixture: Any,
+) -> dict[str, Any]:
+    provider = create_embedding_provider() if slot == "embedding" else create_reranker()
+    requested_id = slot
+    model = str(getattr(provider, "model", "unavailable"))
+    rows: list[dict[str, Any]] = []
+    source_values: set[tuple[Any, ...]] = set()
+    safety_total = Counter()
+    actual_ids: set[str] = set()
+    error_codes: list[str] = []
+    measured_latencies: list[float] = []
+    with tempfile.TemporaryDirectory(prefix=f"brain-eleven-w06c0-{slot}-") as directory:
+        for document, task in zip(documents, tasks):
+            vault = Path(directory) / task.task_id
+            build_vault(fixture, vault, seed=SEED, noise_count=NOISE_COUNT)
+            revision, candidate_ids, metadata, content_fp, order_fp = _snapshot(vault)
+            source_values.add((revision, content_fp, order_fp))
+            started = perf_counter()
+            selected: list[str] = []
+            status = "COMPLETE"
+            error_code = None
+            try:
+                result = _optional_selection(slot, provider, task, candidate_ids, metadata, revision)
+                selected = _select_ids(result, candidate_ids)
+                actual_ids.add(result.provider_id)
+                measured_latencies.append(round((perf_counter() - started) * 1000, 3))
+            except Exception as error:  # provider failures are bounded evidence
+                status = "NOT_MEASURED" if str(getattr(provider, "provider_id", "")).startswith("unavailable") else "ERROR"
+                error_code = getattr(error, "error_code", None)
+                if not isinstance(error_code, str) or not error_code:
+                    error_code = type(error).__name__
+                error_code = re.sub(r"[^A-Za-z0-9_.-]", "_", error_code)[:64]
+                error_codes.append(error_code)
+                actual_ids.add(str(getattr(provider, "provider_id", "unavailable")))
+            answerability = _answerability(document)
+            safety = _safety(task, selected, metadata)
+            safety_total.update(safety)
+            row: dict[str, Any] = {
+                "task_id": task.task_id,
+                "answerability": answerability["status"],
+                "provider_status": status,
+                "selected_ids": selected,
+                "selected_count": len(selected),
+                "latency_ms": round((perf_counter() - started) * 1000, 3),
+                "safety": safety,
+            }
+            if answerability["status"] == "answerable" and status == "COMPLETE":
+                row["metrics"] = _metric_rows(selected, document, metadata)
+            else:
+                row["metrics"] = None
+            if error_code:
+                row["error_code"] = error_code
+            rows.append(row)
+    if len(source_values) != 1:
+        raise W06C0Error(f"provider {slot} did not receive one candidate snapshot")
+    revision, content_fp, order_fp = next(iter(source_values))
+    answer_counts = Counter(row["answerability"] for row in rows)
+    scored = [row for row in rows if row["metrics"] is not None]
+    actual_provider = sorted(actual_ids)[0] if len(actual_ids) == 1 else requested_id
+    all_unavailable = bool(rows) and all(row["provider_status"] == "NOT_MEASURED" for row in rows)
+    return {
+        "slot": slot,
+        "requested_provider_id": requested_id,
+        "actual_provider_id": actual_provider,
+        "model": model,
+        "availability": "UNAVAILABLE" if all_unavailable else "AVAILABLE",
+        "run_status": "NOT_MEASURED" if all_unavailable else ("ERROR" if error_codes else "COMPLETE"),
+        "fallback": False,
+        "provider_schema_version": 1,
+        "error_code": error_codes[0] if error_codes else None,
+        "case_count": len(rows),
+        "scored_count": len(scored),
+        "excluded_counts": {name: answer_counts.get(name, 0) for name in sorted(STATUSES)},
+        "metrics": _averages(scored),
+        "quality_state": "INSUFFICIENT_ANSWERABLE_CASES" if not scored else "MEASURED",
+        "safety": dict(sorted(safety_total.items())),
+        "latency_ms": {
+            "p50": statistics.median(measured_latencies) if measured_latencies else None,
+            "p95": measured_latencies[max(0, math.ceil(len(measured_latencies) * 0.95) - 1)] if measured_latencies else None,
+        },
+        "source_memory_revision": revision,
+        "candidate_content_fingerprint": content_fp,
+        "candidate_order_fingerprint": order_fp,
+        "rows": rows,
+    }
+
+
 def _averages(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    names = ("precision", "recall", "f1", "mrr", "mandatory_recall", "noise_ratio")
+    names = ("precision", "recall", "f1", "mrr", "mandatory_recall", "noise_ratio", "token_waste")
     output: dict[str, Any] = {}
     for k in K_VALUES:
         values = [row["metrics"][str(k)] for row in rows if row.get("metrics") and str(k) in row["metrics"]]
@@ -475,6 +751,7 @@ def _run_core_provider(
         "scored_count": len(scored),
         "excluded_counts": {name: answer_counts.get(name, 0) for name in sorted(STATUSES)},
         "metrics": _averages(scored),
+        "quality_state": "INSUFFICIENT_ANSWERABLE_CASES" if not scored else "MEASURED",
         "safety": dict(sorted(safety_total.items())),
         "latency_ms": {
             "p50": statistics.median(latencies) if latencies else None,
@@ -512,10 +789,14 @@ def run_matrix(
         snapshot = (revision, content_fp, order_fp)
     for slot in providers:
         if slot in {"embedding", "reranker"}:
-            # Optional model slots are deliberately explicit.  Their real
-            # adapters can be added only by a separately reviewed probe; the
-            # default matrix must never synthesize semantic evidence.
-            results[slot] = _empty_optional(slot, documents, snapshot)
+            # Optional model slots remain offline by default.  An explicit
+            # probe may measure the configured real adapter; unavailable
+            # adapters remain an honest NOT_MEASURED result.
+            results[slot] = (
+                _run_optional_provider(slot, documents, tasks, fixture)
+                if measure_optional
+                else _empty_optional(slot, documents, snapshot)
+            )
             continue
         results[slot] = _run_core_provider(slot, documents, tasks, fixture)
     snapshots = {
@@ -546,6 +827,14 @@ def run_matrix(
             "holdout_included": split == "holdout",
         },
         "providers": results,
+        "quality": {
+            "state": (
+                "INSUFFICIENT_ANSWERABLE_CASES"
+                if not any(_answerability(document)["status"] == "answerable" for document in documents)
+                else "MEASURED"
+            ),
+            "answerable_count": sum(_answerability(document)["status"] == "answerable" for document in documents),
+        },
         "promotion": "blocked",
         "production_mutation": False,
     }
@@ -557,8 +846,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--providers", nargs="+", choices=PROVIDER_SLOTS, default=list(PROVIDER_SLOTS))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--final-holdout", action="store_true")
+    parser.add_argument("--measure-optional", action="store_true")
     args = parser.parse_args(argv)
-    report = run_matrix(split=args.split, providers=args.providers, allow_holdout=args.final_holdout)
+    report = run_matrix(
+        split=args.split,
+        providers=args.providers,
+        allow_holdout=args.final_holdout,
+        measure_optional=args.measure_optional,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({
