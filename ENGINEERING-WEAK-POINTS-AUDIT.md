@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `ecee32b`
+**Repository revision:** `3dce089`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after W-08B: **1018 passed, 2 dependency deprecation
+- Full local suite after W-09: **1062 passed, 2 dependency deprecation
   warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
@@ -25,7 +25,7 @@ the behavior and operational evidence found in the current repository.
 | Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
 | Scope and fail-closed safety | 8.0 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; broader project/session ownership work remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
-| Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
+| Evaluation quality | 8.5 | W-09 independently shipped explicit safety/quality/evidence/measurement/promotion status, source reconciliation, bounded identifiers/errors and tamper checks. Generic reports remain unavailable for verified evidence and retrieval quality remains open. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | Broader task-aware retrieval remains open; W-06A only improves the V1 bootstrap slice. |
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
@@ -183,6 +183,15 @@ measurements remain visible (V1 public precision `0.1800`, V2 public
 precision `0.1472`; V1 holdout `0.1733`, V2 holdout `0.1026`). No retrieval or
 corpus tuning is authorized by this finding.
 
+**W-09 status:** Independently reviewed `SHIP` at exact head `c90a9ca` in
+`WEAKNESS-W09-INDEPENDENT-REVIEW.md` (final review commit `3dce089`). The
+bounded implementation now distinguishes unsupported safety from pass,
+separates quality/evidence/measurement/promotion, reconciles IG01-C/IG01-D
+source and public split identity, fails closed on pair-gate tampering, bounds
+generic identifiers and content-free errors, and records reproducible public
+split/report hashes. Retrieval quality, corpus labels, V2 and Phase 20 were
+unchanged.
+
 **W-07B audit finding:** Native maintenance/reminder delivery remains a P2
 weakness. Native SessionEnd/worker paths do not invoke post-session maintenance,
 and native SessionStart does not consume the derived report. A future bounded
@@ -196,10 +205,12 @@ deferred.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-09 Evaluation Evidence Integrity & Gate Semantics,
-contract `WEAKNESS-W09-EVALUATION-EVIDENCE-CONTRACT.md`, currently review
-pending. Implementation is not authorized until an independent contract
-review returns `SHIP` and the user authorizes the bounded implementation.
+**Next package:** W-09A Retrieval Evaluation Truth Foundation, a new bounded
+read-only contract derived from the retrieval audit. It must freeze the
+task-aware retrieval corpus/metrics and V1/V2 comparison boundary before any
+ranking, embedding or provider change. W-07B native maintenance/reminder
+delivery remains a separate P2 package and is not opened until its trigger,
+freshness, idempotence, scope and privacy contract is independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
@@ -217,11 +228,11 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
-**Required outcome:** W-09 must make evidence status and gate semantics
-machine-readable without changing retrieval behavior, corpus labels, holdout
-inputs, V2 state or Phase 20. Broader W-06 retrieval and W-07B automatic
-reminder delivery remain explicit deferred work rather than being treated as
-complete.
+**Required outcome:** W-09 is complete as a measurement-boundary correction;
+W-09A must make retrieval evaluation truth reproducible without changing
+retrieval behavior, corpus labels, holdout inputs, V2 state or Phase 20.
+Broader W-06 retrieval and W-07B automatic reminder delivery remain explicit
+deferred work rather than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
