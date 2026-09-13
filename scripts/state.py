@@ -18,6 +18,7 @@ from brain_eleven.state import (
     StateError,
     StateProjectArchived,
     StateProjectUnknown,
+    StateReferenceConflict,
     StateSchemaError,
     StateStoreConflict,
     StateTransitionError,
@@ -34,6 +35,8 @@ def _error_code(exc: Exception) -> str:
         return "PROJECT_UNKNOWN"
     if isinstance(exc, StateProjectArchived):
         return "PROJECT_ARCHIVED"
+    if isinstance(exc, StateReferenceConflict):
+        return "MEMORY_REFERENCE_CONFLICT"
     if isinstance(exc, StateStoreConflict):
         return "STATE_CONFLICT"
     if isinstance(exc, StateTransitionError):

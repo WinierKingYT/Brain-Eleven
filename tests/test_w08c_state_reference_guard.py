@@ -299,7 +299,11 @@ def test_reference_guard_does_not_persist_snapshot_or_memory_content(tmp_path):
 
 def test_package_and_legacy_state_service_identity_remains_intact():
     from brain_eleven.state import StateService as package_service
+    from brain_eleven.state import StateReferenceConflict as package_conflict
     from brain_eleven.state.store import StateService as package_store_service
+    from scripts.state import _error_code
 
     assert package_service is StateService
     assert package_store_service is StateService
+    assert package_conflict is StateReferenceConflict
+    assert _error_code(StateReferenceConflict("MEMORY_REFERENCE_LOCK_TIMEOUT")) == "MEMORY_REFERENCE_CONFLICT"
