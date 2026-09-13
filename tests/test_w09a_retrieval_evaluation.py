@@ -68,6 +68,14 @@ def test_holdout_guard_rejects_ambiguous_split_name():
         corpus_fingerprint(split="all")
 
 
+def test_holdout_quality_unavailable_remains_explicit_when_a_provider_is_invalid():
+    report = compare_providers(split="holdout")
+    assert report["evaluation_status"]["evidence"] == "verified"
+    assert report["evaluation_status"]["quality"] == "unavailable"
+    assert report["evaluation_status"]["measurement"] == "incomplete"
+    assert report["evaluation_status"]["promotion"] == "blocked"
+
+
 def test_selection_unknown_candidate_fails_closed():
     task = load_public_tasks()[0]
     with pytest.raises(EvaluationError):

@@ -453,7 +453,7 @@ def compare_providers(
         "evaluation_status": {
             "evidence": "verified" if same_input else "tampered",
             "quality": "measured" if v1["quality"]["state"] == v2["quality"]["state"] == "measured" else "unavailable",
-            "measurement": "complete" if same_input else "incomplete",
+            "measurement": "complete" if same_input and v1["quality"]["state"] == v2["quality"]["state"] == "measured" else "incomplete",
             "promotion": "blocked",
         },
     }
