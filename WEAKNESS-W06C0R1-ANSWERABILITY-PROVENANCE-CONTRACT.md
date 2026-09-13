@@ -5,8 +5,8 @@
 **Package type:** evaluation-only contract successor to W-06C0  
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW  
-**Predecessor:** W-06C0 retrieval feasibility contract, reviewed `FIX-FIRST` at
-`4e6d912`  
+**Predecessor:** W-06C0 contract `SHIP` at `fa5b920`; implementation/evidence
+review `FIX-FIRST` at `60f8e08`  
 
 ## 1. Purpose
 
@@ -226,7 +226,32 @@ u64_be(len(path_utf8)) || path_utf8 || u64_be(len(normalized_file_bytes)) || nor
 The split fingerprint is the SHA-256 of the concatenated frames. The manifest
 hash uses the same canonical JSON rules and does not include itself.
 
-### 4.4 Source fingerprint
+### 4.4 Provider snapshot and task-set fingerprints
+
+The following formulas are normative and use the framing from §4.3. Every
+string is NFC-normalized and LF-normalized before UTF-8 encoding.
+
+- `candidate_content_fingerprint` is the SHA-256 of frames for the sorted
+  candidate rows. Each row is the canonical JSON object
+  `{"candidate_id": ..., "type": ..., "status": ..., "scope": ...,` 
+  `"project_id": ..., "content": ...}` sorted by `candidate_id`; each frame
+  is `u64_be(len(row_utf8)) || row_utf8`.
+- `candidate_order_fingerprint` is the SHA-256 of
+  `u64_be(source_memory_revision) || u64_be(candidate_count)` followed by one
+  `u64_be(len(candidate_id_utf8)) || candidate_id_utf8` frame for each ID in
+  the exact order supplied to the provider.
+- `task_set_fingerprint` is the SHA-256 of
+  `u64_be(len(split_utf8)) || split_utf8 || u64_be(case_count)` followed by
+  length-prefixed public case IDs in their exact corpus order. It is report
+  evidence only; it is never passed to provider code.
+
+All three values use the `sha256:<64 lowercase hex>` form. Reordering
+candidates changes the order fingerprint, changing any normalized candidate
+field changes the content fingerprint, changing the source revision changes
+the order fingerprint, and changing split or ordered case IDs changes the
+task-set fingerprint. The implementation must test each mutation.
+
+### 4.5 Source fingerprint
 
 The exact W-06C0R1 source allowlist is the sorted set of tracked files matching:
 
@@ -268,8 +293,13 @@ and candidate snapshot. Before invoking a provider, the harness computes:
 
 These four values are required in every provider row. Any mismatch between
 provider rows is a hard parity failure, even when candidate counts match.
-Provider code receives no answerability labels, attestation files, case IDs,
-expected IDs, or hidden fixture metadata.
+Provider code receives no answerability labels, attestation files, public case
+IDs, expected IDs, or hidden fixture metadata. The harness creates an opaque
+per-run `task_handle` (`task-000001`, `task-000002`, ...) and passes that value
+through the existing task-id field only so the normalized provider interface
+can correlate a response. The mapping from `task_handle` to public case ID is
+held outside provider input and is applied only after the provider returns.
+Providers must treat the handle as opaque and may not use it to infer labels.
 
 Provider output remains content-free and must include requested slot, actual
 provider ID, model/schema identity, availability, run status, bounded error
@@ -288,9 +318,40 @@ providers are `NOT_MEASURED`, never a pass.
 - Provider caches, model files, generated vaults, and temporary reports exist
   only below an isolated temporary directory and are removed after the probe.
 - DEV/TEST runs must fail if they attempt to read HOLDOUT labels or attestations.
-- The final HOLDOUT probe is a separate command that records its command hash,
-  corpus/manifest/source fingerprints, and report hash. It cannot write a
-  corpus, production file, or provider cache.
+- `evals/corpus-v4/holdout/seal.json` is the machine-checkable seal. It binds
+  `corpus_version`, the manifest/split/attestation fingerprints, the exact
+  DEV/TEST evidence revision and report hashes, and `state="SEALED"`.
+  DEV/TEST code must reject a missing seal, a changed seal, or any unlock
+  marker. Only the explicit final-probe command may consume a one-time
+  unlock token whose hash is recorded in its content-free evidence together
+  with the seal hash, command hash, and final report hash. The final probe
+  cannot rewrite the seal, corpus, production files, or provider cache.
+
+The seal file has this exact content-free shape (the final field is excluded
+from `seal_hash`):
+
+```json
+{
+  "schema_version": 1,
+  "corpus_version": 4,
+  "split": "holdout",
+  "state": "SEALED",
+  "sealed_at_revision": "<40-hex-git-sha>",
+  "dev_test_evidence_revision": "<40-hex-git-sha>",
+  "manifest_hash": "sha256:<64 lowercase hex characters>",
+  "split_fingerprint": "sha256:<64 lowercase hex characters>",
+  "attestation_fingerprint": "sha256:<64 lowercase hex characters>",
+  "dev_test_report_hashes": ["sha256:<64 lowercase hex characters>"],
+  "seal_hash": "sha256:<64 lowercase hex characters>"
+}
+```
+
+The final probe verifies that `dev_test_evidence_revision` is an ancestor of
+`sealed_at_revision`, that all fingerprints match the immutable corpus, and
+that the supplied one-time unlock token hashes to a token recorded only in
+the final evidence. DEV/TEST commands reject any state other than
+`SEALED` and never consume the token. A second final-probe invocation with
+the same token fails closed.
 
 ## 7. Exact implementation allowlist
 
@@ -318,8 +379,9 @@ The focused evaluator tests must cover:
 2. exactly two distinct labeler hashes, disagreement handling, unknown status or
    reason rejection, missing/extra attestation rejection and case-count minima;
 3. explicit corpus/evaluator version selection and v3/v2 immutability;
-4. DEV/TEST inability to read HOLDOUT labels, final-probe unlock only after
-   frozen DEV/TEST evidence, and no private-content output;
+4. DEV/TEST inability to read HOLDOUT labels, seal/unlock chronology and
+   final-probe unlock only after frozen DEV/TEST evidence, and no
+   private-content output;
 5. identical candidate content/order/revision/task fingerprints across all
    provider slots, mismatch hard failure, fallback identity and unavailable
    `NOT_MEASURED` behavior;
