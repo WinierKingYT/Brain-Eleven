@@ -117,6 +117,39 @@ def test_scope_drift_pin_tampering_fails_closed(monkeypatch, tmp_path):
         evaluation.verify_scope_diff()
 
 
+def test_scope_drift_pin_anchor_is_immutable_and_exact():
+    from evals.w06c0r1 import evaluation
+
+    anchor = evaluation._git_pin_anchor_revision(ROOT, evaluation.IMPLEMENTATION_SCOPE_END_REVISION)
+    assert len(anchor) == 40
+    anchored = evaluation._git_changed_paths(
+        ROOT,
+        evaluation.IMPLEMENTATION_SCOPE_END_REVISION,
+        anchor,
+    )
+    assert set(evaluation._post_scope_owned_paths(anchored)) == evaluation.SCOPE_DRIFT_MAINTENANCE_FILES
+
+
+def test_scope_drift_pin_rejects_protected_changes_after_anchor(monkeypatch):
+    from evals.w06c0r1 import evaluation
+
+    current_head = evaluation._resolve_revision(ROOT, "HEAD", "current HEAD")
+    anchor = evaluation._git_pin_anchor_revision(ROOT, evaluation.IMPLEMENTATION_SCOPE_END_REVISION)
+    original = evaluation._git_changed_paths
+
+    def fake_changed_paths(root, *revisions):
+        if revisions == (anchor, current_head):
+            return (
+                "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
+                "evals/w06c0r1/evaluation.py",
+            )
+        return original(root, *revisions)
+
+    monkeypatch.setattr(evaluation, "_git_changed_paths", fake_changed_paths)
+    with pytest.raises(W06C0R1Error, match="changed after maintenance anchor"):
+        evaluation.verify_scope_diff()
+
+
 def test_unpinned_post_end_owned_path_fails_closed(monkeypatch):
     from evals.w06c0r1 import evaluation
 

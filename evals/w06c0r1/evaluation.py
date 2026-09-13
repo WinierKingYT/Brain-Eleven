@@ -42,8 +42,10 @@ HISTORICAL_SCOPE_COMPAT_ID = "W06C0-SCOPE-COMPAT-P1B"
 HISTORICAL_SCOPE_COMPAT_SCOPE_END_REVISION = "f676c91d0e41a7523dc2b96a131814b983401456"
 HISTORICAL_SCOPE_COMPAT_BLOB_SHA256 = "sha256:e375d337a52155d867c12b2f334c56ecf0875d1d153cb99a48980230ae05b3be"
 IMPLEMENTATION_SCOPE_END_REVISION = "0b5a262c437da13813e542c569857a68c2db7a69"
-SCOPE_DRIFT_PIN = ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json"
-SCOPE_DRIFT_PIN_ID = "W06C0R1-SCOPE-DRIFT-P1"
+SCOPE_DRIFT_PIN = ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json"
+SCOPE_DRIFT_PIN_RELATIVE = "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json"
+SCOPE_DRIFT_HISTORICAL_PIN_RELATIVE = "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json"
+SCOPE_DRIFT_PIN_ID = "W06C0R1-SCOPE-DRIFT-P2"
 SCOPE_DRIFT_MAINTENANCE_FILES = frozenset(
     {
         "evals/corpus-v4/manifest.json",
@@ -54,6 +56,7 @@ SCOPE_DRIFT_MAINTENANCE_FILES = frozenset(
         "evals/w06c0r1/evidence/holdout.json",
         "tests/test_w06c0r1_contract.py",
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json",
     }
 )
 SCOPE_DRIFT_DOCUMENTATION_FILES = frozenset(
@@ -267,6 +270,68 @@ def _file_sha(path: Path, error: str) -> str:
         raise W06C0R1Error(error) from exc
 
 
+def _git_pin_anchor_revision(root: Path, scope_end_revision: str) -> str:
+    """Resolve the immutable first commit that introduced the scope pin."""
+
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "log",
+                "--reverse",
+                "--format=%H",
+                f"{scope_end_revision}..HEAD",
+                "--",
+                SCOPE_DRIFT_PIN_RELATIVE,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise W06C0R1Error("cannot resolve scope drift pin anchor") from exc
+    revisions = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+    if not revisions or not re.fullmatch(r"[0-9a-f]{40}", revisions[0]):
+        raise W06C0R1Error("scope drift pin anchor is missing or invalid")
+    return revisions[0]
+
+
+def _git_blob_sha(root: Path, revision: str, relative: str) -> str:
+    """Return a normalized SHA for a tracked blob at an immutable revision."""
+
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "show", f"{revision}:{relative}"],
+            check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise W06C0R1Error(f"scope drift anchor blob is unreadable: {relative}") from exc
+    return _sha(completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
+
+
+def _validate_pin_anchor(root: Path, scope_end_revision: str, head_revision: str) -> str:
+    """Reject renewal of the one-time pin after its immutable Git anchor."""
+
+    anchor = _git_pin_anchor_revision(root, scope_end_revision)
+    _require_ancestor(root, scope_end_revision, anchor, "scope drift pin anchor")
+    anchored_paths = set(_post_scope_owned_paths(_git_changed_paths(root, scope_end_revision, anchor)))
+    if anchored_paths != set(SCOPE_DRIFT_MAINTENANCE_FILES):
+        raise W06C0R1Error("scope drift pin anchor does not contain the exact maintenance set")
+    later_paths = _post_scope_owned_paths(_git_changed_paths(root, anchor, head_revision))
+    if later_paths:
+        raise W06C0R1Error(
+            f"protected scope paths changed after maintenance anchor: {list(later_paths)}"
+        )
+    for relative in SCOPE_DRIFT_MAINTENANCE_FILES:
+        current_path = SCOPE_DRIFT_PIN if relative == SCOPE_DRIFT_PIN_RELATIVE else root / relative
+        if _file_sha(current_path, f"scope drift maintenance path is unreadable: {relative}") != _git_blob_sha(root, anchor, relative):
+            raise W06C0R1Error(f"scope drift maintenance path changed since anchor: {relative}")
+    return anchor
+
+
 def _load_scope_drift_pin(root: Path) -> Mapping[str, Any]:
     """Validate the one-time post-end maintenance evidence pin."""
 
@@ -302,6 +367,8 @@ def _load_scope_drift_pin(root: Path) -> Mapping[str, Any]:
         evidence_path = root / "evals" / "w06c0r1" / "evidence" / f"{split}.json"
         if _file_sha(evidence_path, f"scope drift {split} evidence is unreadable") != expected_evidence[split]:
             raise W06C0R1Error(f"scope drift pin {split} evidence hash mismatch")
+    head = _resolve_revision(root, "HEAD", "current HEAD")
+    _validate_pin_anchor(root, metadata["scope_end_revision"], head)
     return metadata
 
 
@@ -309,7 +376,8 @@ def _post_scope_owned_paths(paths: Sequence[str]) -> tuple[str, ...]:
     return tuple(
         path
         for path in paths
-        if any(path.startswith(prefix) for prefix in POST_SCOPE_PROTECTED_PREFIXES)
+        if path == SCOPE_DRIFT_PIN_RELATIVE
+        or any(path.startswith(prefix) for prefix in POST_SCOPE_PROTECTED_PREFIXES)
     )
 
 
