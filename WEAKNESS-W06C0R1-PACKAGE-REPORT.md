@@ -1,8 +1,9 @@
 # W-06C0R1 Package Report
 
 **PACKAGE:** W-06C0R1 — answerability and provenance correction
-**REVISION:** P1-A implementation/evidence chain `9ff0757` → `27c8ed2` →
+**REVISION:** P1-A/P1-B remediation chain `9ff0757` → `27c8ed2` →
 `57365b8` → `6fdaf7f` → `8203c05` → `6de8474` → `fb82bd8` → `42f45b6`
+→ `ca42787` → `aa44ac6` → `b79846b` → `4e61526` → `4bde156`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -14,7 +15,9 @@ unchanged.
   manifest, and sealed holdout metadata.
 - `evals/w06c0r1/**`: evaluator, CLI entry points, and content-free DEV/TEST/
   HOLDOUT evidence reports.
-- `tests/test_w06c0r1_contract.py`: 16 focused contract tests.
+- `tests/test_w06c0r1_contract.py`: 18 focused contract tests.
+- `evals/w06c0r1/historical_scope_compat.json`: one-time, hash-pinned
+  compatibility metadata for the frozen W-06C0 evaluator.
 - Exact governance/review documents listed in the evaluator scope allowlist.
 
 The exact allowlist check permits only the corpus/evaluator/test prefixes, the
@@ -33,35 +36,35 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 - HOLDOUT labels are sealed and require an explicit final-probe invocation;
   replay of an existing final output, a different output path, or a non-holdout
   split is rejected before provider execution.
+- The historical W-06C0 scope verifier is pinned to its immutable package-end
+  revision and rejects invalid/non-ancestor ends; W-06C0R1 accepts only the
+  exact post-fix evaluator blob hash through the pinned compatibility metadata.
 - Safety leakage is a hard gate, including global-task rejection of
   project-scoped candidates.
 
 ## Tests executed
 
-- Focused: `pytest tests/test_w06c0r1_contract.py -q` → **16 passed** after
+- Focused: `pytest tests/test_w06c0_contract.py tests/test_w06c0r1_contract.py -q`
+  → **31 passed** after
   P1-A evidence refresh.
 - Critical syntax/static checks: critical flake8 (`E9,F63,F7,F82`),
   `compileall`, and `git diff --check` → **PASS**.
-- Full suite at this revision: **1105 passed, 2 failed** on the first run.
-  The cold native SessionStart failure was rerun in isolation and passed.
-  The remaining failure is the pre-existing `tests/test_w06c0_contract.py`
-  scope assertion: the frozen W-06C0 verifier compares from `fa5b920` and
-  now necessarily sees later packages/documentation. No W-06C0 file was
-  changed in this package; this remains an open regression for a separately
-  authorized compatibility fix.
+- Full suite after P1-B: **1112 passed, 2 warnings**.
+- Critical flake8 (`E9,F63,F7,F82`), compileall, and `git diff --check`:
+  **PASS**.
 - Final holdout probe: `python -m evals.w06c0r1 --corpus-version 4 --split
   holdout --providers v1 --final-holdout ...` → **MEASURED**, with replay
   rejection verified.
 
 ## Evidence and metrics
 
-- Manifest: `sha256:b4352aa1814a2be6a3bfb8b73d2a9cf78f579d01052d512a70cefd30c4fe8be7`.
-- Source fingerprint: `sha256:0dbc0ceac9b37e2cd3901de22746701c6e5014c70ec28d04776a7c8cd93a95c1`.
-- Holdout seal: `sha256:bad068ef503cdc45960bd89599c17026cac0cde9ba34c96adc92f3b4987b58dd`.
+- Manifest: `sha256:53050df3a3aee7fdb6b7626c3d7936d322c723b3b050c5cd6653e200add6492f`.
+- Source fingerprint: `sha256:937b3bbcef835c0d6e855f1914383e1b512827d43dd3cc1a1a4805e76584d98c`.
+- Holdout seal: `sha256:fc4dfbe36cc20f24f88362db49a2e40995d6041414af3a3e14b1c5a9f0a74fda`.
 - DEV/TEST/HOLDOUT report hashes:
-  `sha256:408fc00a1b38e0fb7e7df0b792d0b2887f2f72b7961fec45af4451ea08c3d54a`,
-  `sha256:388acceef226e1f0a92cc9dc24052948eae99b58c24157d7210838d5bd7b5d52`,
-  `sha256:9cd0e427faba9ecfda0791c6c6f8fdc317f95ac6cde56baa20e4b75d4375066f`.
+  `sha256:7a654ad9b2124d4bc91884d74d0e1bad7247216e8b1793b1bff2e9501edc0b65`,
+  `sha256:621c90f71ca0bd20d5111bf30ca8a7b2af40f081ef427294aa3fa183e640fd6a`,
+  `sha256:ca1439013d844be73fc47d1fc8c827a19ee6f40907c34282e3eb68b1d50fd787`.
 - DEV/TEST/HOLDOUT each contain the required nine retrieval phenomena and meet
   the answerable minimum (60/60, 60/60, 30/30).
 - V1/V2 and authority metrics are recorded in the evidence reports; optional
@@ -74,17 +77,14 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 - This package measures feasibility; it does not tune ranking, install an
   embedding provider, or change runtime retrieval.
-- The existing W-06C0 historical scope test remains open until the separately
-  authorized P1-B compatibility package is implemented and reviewed.
-- P1-A implementation has not yet received its independent implementation
-  review; this report remains REVIEW PENDING.
+- P1-A is independently SHIP. P1-B implementation still requires its own
+  independent read-only review before the parent package can close.
 
 ## Independent review
 
-**REVIEW PENDING.** The implementation review must independently verify the
-canonical final-holdout path, exact governance allowlist, answerability labels,
-holdout seal chronology, privacy boundary, provider parity, and the stated
-historical regression.
+**REVIEW PENDING.** P1-A is independently SHIP. P1-B requires independent
+verification of the fixed historical range, pinned blob exception, fail-closed
+unpinned edits, and full regression before W-06C0R1 can close.
 
 ## Score
 
