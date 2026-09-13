@@ -1,7 +1,7 @@
 # W-06C0R1 Scope Drift Maintenance — Package Report
 
 **PACKAGE:** W-06C0R1-SCOPE-DRIFT  
-**REVISION:** `8db6b597908da4460a37e8601e5f01e6267db43f`  
+**REVISION:** `b26dd04ba0e1bc871146520c086218e65520a320`  
 **OBJECTIVE:** Bind the W-06C0R1 scope assertion to its immutable historical
 package end and isolate later unrelated packages without weakening the
 allowlist or evaluator safety gates.
