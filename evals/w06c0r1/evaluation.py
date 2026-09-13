@@ -270,7 +270,8 @@ def _file_sha(path: Path, error: str) -> str:
 def _load_scope_drift_pin(root: Path) -> Mapping[str, Any]:
     """Validate the one-time post-end maintenance evidence pin."""
 
-    metadata = _load_json(root / SCOPE_DRIFT_PIN.name, "scope drift pin is unreadable")
+    pin_path = SCOPE_DRIFT_PIN if SCOPE_DRIFT_PIN.parent.resolve() == root else root / SCOPE_DRIFT_PIN.name
+    metadata = _load_json(pin_path, "scope drift pin is unreadable")
     if (
         metadata.get("schema_version") != 1
         or metadata.get("compatibility_id") != SCOPE_DRIFT_PIN_ID
