@@ -149,20 +149,19 @@ remain open.
 the three-attempt/five-second retry and error boundary, destination
 no-clobber publication with durability evidence, read-time no-follow
 symlink/reparse containment and project-identifier privacy assertions. The
-**W-08B implementation status:** `FIX-FIRST` at exact review head `673b39c`
-in `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`. The focused suite (34), full suite
-(1017) and critical static gates pass, but malformed registry validation can
-echo an attacker-controlled project-like value in a backup exception. This
-violates the contract privacy gate; W-08C/W-08D remain blocked until the
-bounded redaction and independent re-review ship.
+**W-08B implementation status:** Independently reviewed `SHIP` at exact head
+`90336ee` in `WEAKNESS-W08B-INDEPENDENT-REVIEW.md` after the bounded privacy
+correction `e4df824`. The focused suite (35), full suite (1018) and critical
+static gates pass; malformed registry validation now emits content-free
+errors. W-08C/W-08D remain separate deferred packages.
 
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`.
-**Next package:** W-08B privacy correction and independent re-review;
-W-08C/W-08D remain blocked until W-08B ships.
+**Next package:** W-08C state-reference TOCTOU bounded contract and
+implementation; W-08D typed API lifecycle remains deferred until W-08C review.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -175,7 +174,9 @@ in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
 report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`; W-08A ProjectRegistry durability/CAS —
 `SHIP`, report in `WEAKNESS-W08A-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`.
+`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
+`SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
+`WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
 **Required outcome:** implement and independently review W-08B under the
 accepted contract before moving to W-08C and W-08D. Broader W-06 retrieval
 and automatic markdown reminder writing remain explicit deferred work rather
