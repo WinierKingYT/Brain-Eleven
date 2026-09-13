@@ -94,7 +94,7 @@ def select(compiler: Any, task: Any, *, budget: int = 1024, human_approval: bool
             selected = trial
         context = compiler._generate_context_block(selected, {}, "", "", state) if selected else ""
         return {"status": "SUCCESS" if context else "EMPTY", "task_need": result.to_dict(), "selected": selected,
-                "selected_ids": [x.get("id", x.get("memory_id")) for x in selected], "context": context,
+                "selected_ids": [x.get("memory_id", x.get("id")) for x in selected], "context": context,
                 "provider": "W06B_TASK_AWARE", "estimated_tokens": estimator.estimate(context).count}
     except Exception:
         return {"status": "UNAVAILABLE", "task_need": result.to_dict(), "selected": [], "context": "", "provider": "V1",
