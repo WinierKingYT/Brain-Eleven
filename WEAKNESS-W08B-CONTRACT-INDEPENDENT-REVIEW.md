@@ -1,141 +1,120 @@
 # W-08B Coordinated Backup Contract Independent Read-Only Review
 
-**PACKAGE:** W-08B Coordinated Backup Snapshot Contract  
-**CONTRACT REVISION:** `8057db7b28dc3cb35d6a1b4ca58fef4753e876a8`  
-**REVIEW TYPE:** Independent read-only contract review  
-**PHASE 20:** FROZEN / LOCKED  
-**V2:** SHADOW  
+**PACKAGE:** W-08B Coordinated Backup Snapshot Contract
+**CONTRACT REVISION:** `17954cc9eae81d269249ce56c44b0d6112939288`
+**SOURCE REVISION AUDITED BY THE CONTRACT:** `a38d1bba81d5d4cdee13a1678aa28ce2b4410eec`
+**REVIEW TYPE:** Fresh independent read-only contract review
+**PHASE 20:** FROZEN / LOCKED
+**V2:** SHADOW
 **PRODUCTION/TEST CHANGES:** None
 
-## Scope
+## Scope and method
 
-I reviewed the contract against the current `scripts/memory_backup.py`,
-`scripts/memory_store.py`, `scripts/state_store.py`,
-`scripts/project_registry.py`, the shared file-lock implementation, runtime
-install/migration lock order, and the existing backup/runtime tests. This is a
-contract review only; no implementation or test files were changed.
+I independently reviewed the amended contract at exact revision
+`17954cc`, the unchanged source surfaces named by the contract, the prior
+FIX-FIRST review at `683130e`, and the amendment diff in `17954cc`. The source
+revision named in the contract remains appropriate: no production or test
+file changed between `a38d1bb` and `17954cc`; the later revisions amend the
+contract and its evidence only. This review changes documentation only. It
+does not authorize implementation and does not inspect an implementation as
+if it already existed.
 
-## What the contract gets right
+## Amendment verification
 
-- The bounded read/validate/retry design is the correct boundary for the
-  current architecture. It does not pretend that independent authorities can
-  be made linearizable by taking locks that existing writers do not honor.
-- The fixed four-source allowlist, explicit absent optional sources, raw-byte
-  comparison, authority revision tokens, settings SHA-256, and aggregate
-  descriptor digest are concrete enough to detect ordinary cross-read churn.
-- The lock rule forbids holding one authority lock while acquiring another and
-  keeps W-08B away from the existing memory→state migration lock order. The
-  W-08C/W-08D, retrieval, V2 and Phase 20 boundaries are explicit.
-- Manifest v3 is additive and the requirement to keep schema-1/schema-2
-  verification and restore compatibility is correctly retained.
-- The scope allowlist, registry/state identity checks, no raw source content in
-  snapshot metadata, corruption visibility, bounded churn, and no-output-on-
-  consistency-failure tests are the right safety surfaces.
+### Retry and terminal error boundary — PASS
 
-## Findings requiring contract correction
+Section 4.2 now freezes `MAX_SNAPSHOT_ATTEMPTS = 3` as three complete
+two-pass attempts and `SNAPSHOT_ATTEMPT_BUDGET_SECONDS = 5.0` as the bounded
+per-attempt budget. It names the public
+`MemoryBackupConsistencyError(MemoryBackupError)`, its exact bounded fields
+(`changed_sources`, `attempts`, `reason`), the allowed attempt range and
+the three reason values. The mapping distinguishes required-source churn,
+optional-source changes, stable validation/corruption errors and the read
+budget. It also explicitly excludes authority-lock waits because the reader
+holds no authority lock. This makes the acceptance tests and failure evidence
+deterministic without allowing unbounded retries or content-bearing errors.
 
-### W08B-C1 — Retry bound and terminal error are not frozen (P1)
+### Concurrent publication and durability — PASS
 
-Section 4.2 says to use a finite constant “such as”
-`MAX_SNAPSHOT_ATTEMPTS = 3`, and names `MemoryBackupConsistencyError` only as
-an example. Sections 7 and 9 then require a typed bounded failure and a bounded
-attempt/timeout budget. Two conforming implementations could therefore choose
-different retry counts, exception classes, and evidence fields while both
-claiming compliance. The acceptance test cannot be exact, and the latency
-bound cannot be audited.
+Section 5.1 closes the prior check-then-replace race with the existing
+`file_lock` sidecar held for exactly five seconds around the destination
+existence check and publication. It freezes the existing-destination error,
+the lock-timeout label, exactly one winner for concurrent creators, unchanged
+winner bytes and temporary-file cleanup. It separately requires temporary ZIP
+flush/fsync and directory sync where supported. The lock is not held while
+reading authorities, so this amendment does not introduce a cross-authority
+lock order or a second persistence authority. The required two-creator and
+fsync fault tests are explicit in Section 7/8.
 
-Before implementation, freeze all of the following in the contract:
+### Read-time path and symlink safety — PASS
 
-- the exact constant value and whether it counts complete attempts or retries;
-- the exact public exception class and its bounded fields, at minimum changed
-  source names and attempt count;
-- the mapping of lock timeout, optional-file disappearance, validation failure,
-  and persistent churn to that class versus the existing
-  `MemoryBackupError` subclasses;
-- the maximum per-attempt lock/read wait and the resulting worst-case budget.
+Section 6.2 now requires vault, `.claude`, and source symlink/reparse-point
+rejection on every read pass, a no-follow open/handle check, platform-specific
+reparse handling on Windows, and fail-closed behavior where the host cannot
+provide that check. A path identity/type change between pre-open and
+post-read is a hard failure, and the required read-time swap tests must leave
+the final archive absent. This closes the prior resolve-once/read-later race
+without expanding the fixed source allowlist.
 
-The exception text/evidence must remain content-free as already required.
+### Privacy assertion — PASS
 
-### W08B-C2 — Archive publication is not no-clobber under concurrency (P1)
+Section 6.3 now requires sentinel tests for settings, memory and project
+identifiers and excludes raw content and project identifiers from metadata,
+result dictionaries, exception messages, retry evidence and logs. The
+contract keeps the explicitly documented raw `settings.json` archive payload
+separate from bounded snapshot metadata and does not broaden that payload
+policy.
 
-The current path is a preflight `output.exists()` check at
-`scripts/memory_backup.py:369-371`, followed by
-`temporary.replace(output)` at `:272`. A second creator can publish the same
-destination after the check and be silently overwritten by the first creator.
-This violates the contract's stated preservation of no-overwrite behavior and
-is not covered by the listed archive-write fault test, which only covers a
-failure after the destination decision.
+## Remaining contract checks
 
-The contract must require an atomic no-replace publication primitive (or an
-explicit destination lock with a frozen ownership protocol), plus a two-creator
-test proving exactly one succeeds and the other returns a bounded typed error
-without changing the winner's bytes. The test must run on the supported Windows
-and POSIX paths or document the platform-specific primitive and its fallback.
-
-The contract should also state whether backup durability is required. The
-current temp ZIP is closed before `replace` but is not explicitly fsynced, and
-the parent directory is not synced. If W-08B claims durable archive publication,
-require temp-file flush/fsync and parent-directory sync where supported; if it
-claims atomicity only, say so explicitly and leave durability as a separate
-package.
-
-### W08B-C3 — Symlink containment needs a read-time race rule (P1)
-
-Section 6.2 requires rejecting a source symlink that resolves outside
-`.claude`, but does not say whether containment is checked for every read or
-only once before the two-pass protocol. A symlink can be swapped after a
-one-time `resolve()` check and before `read_bytes()`, allowing an outside file
-to enter the archive while the ordinary byte comparison still succeeds.
-
-Freeze one safe rule before implementation: either reject all source symlinks,
-or open each source with a no-follow/descriptor-based containment check on every
-pass, including optional sources. Add a deterministic symlink-swap or
-no-follow test and require that the archive is absent on rejection. The vault
-and `.claude` directory themselves need the same documented treatment.
-
-## Non-blocking clarification
-
-The double-read protocol proves a stable, mutually validated source set under
-the contract's defined meaning of coherence; it does not provide an atomic
-cross-authority transaction. The contract correctly avoids claiming that an
-independent registry and memory writer share one linearization point. Keep this
-definition in the implementation report so a stable-but-sequentially-written
-set is not described as transactional.
-
-Semantic validation errors currently include selected project identifiers in
-some paths (for example the existing missing-registry message). The privacy
-test should either include a sentinel project identifier or the implementation
-should bound those errors to fixed labels. This is a clarification of the
-already stated content-free evidence rule, not a request to redesign authority
-validation.
+- The fixed four-source allowlist, explicit absent optional descriptors,
+  raw-byte comparison, logical revision/hash descriptors and aggregate digest
+  define a stable read/validate/retry boundary without claiming a
+  cross-authority transaction.
+- Manifest version 3 is additive. Schema-1 and schema-2 verification and
+  restore compatibility remain explicit, and old archives are not rewritten.
+- Corruption and invalid scope/identity remain visible failures. The contract
+  does not turn malformed data into an empty or successful backup.
+- The contract keeps `MemoryStore`, `ProjectRegistry` and `StateStore` as the
+  only canonical authorities, adds no writer/CAS bypass, and adds no
+  authority-wide lock.
+- W-08C state-reference TOCTOU and W-08D typed API lifecycle remain separate;
+  no implementation may use W-08B to alter their write paths.
+- Retrieval, capture, extraction, graph, context, V2 promotion and Phase 20
+  remain outside the package.
+- The contract explicitly states that a stable sequential read is not an
+  atomic multi-authority transaction. This prevents an implementation report
+  from overstating the guarantee.
 
 ## Gate review
 
 | Gate | Result | Evidence |
 |---|---|---|
+| Exact contract revision | PASS | Amended contract is reviewed at `17954cc`. |
 | Bounded scope | PASS | Sections 1, 6 and 10 exclude authority rewrites, W-08C/D, V2 and Phase 20. |
-| Stable read/validate/retry model | PASS WITH C1 | Two complete reads and descriptor comparison are specified; retry/error constants remain open. |
-| Lock/deadlock boundary | PASS | No multi-authority lock is required; fixed source order and static lock inspection are required. |
-| Manifest v3 / schema 1-2 compatibility | PASS | Additive v3 member and old archive verification/restore are explicit. |
-| Revision/hash provenance | PASS | Memory, registry, state and settings token requirements are listed. |
-| Corruption/scope/privacy | PASS WITH C3 | Fixed paths and metadata bounds are present; read-time symlink race needs an exact rule. |
-| Archive atomicity/no-overwrite | FIX-FIRST | Existing check-then-replace race is not closed or tested. |
-| Test/exit gates | FIX-FIRST | Tests are broad, but C1/C2/C3 need exact acceptance criteria. |
-| W-08C/W-08D/Phase 20 boundaries | PASS | Explicitly deferred and non-authority scope preserved. |
+| Stable read/validate/retry | PASS | Sections 4.1–4.3 freeze source order, two-pass comparison, three attempts, five-second attempt budget and typed error mapping. |
+| Lock/deadlock boundary | PASS | Sections 3, 5.1 and 6.1 prohibit nested/multi-authority locks and bound publication locking. |
+| No-clobber publication/durability | PASS | Section 5.1 and Section 7 require destination locking, fsync evidence and temporary-file cleanup. |
+| Path containment/race safety | PASS | Section 6.2 and Section 7 require no-follow/reparse checks on every pass and read-time swap tests. |
+| Manifest v3 / schema 1–2 compatibility | PASS | Section 5 preserves additive v3 and legacy archive verification/restore. |
+| Revision/hash provenance | PASS | Sections 4.2–5.1 bind descriptors, revisions, raw hashes and aggregate digest. |
+| Corruption/scope/privacy | PASS | Sections 4.2, 6.2–6.3 and 7–8 keep failures visible and require sentinel privacy tests. |
+| W-08C/W-08D/Phase 20 boundaries | PASS | Sections 1, 6 and 10 preserve the deferred boundaries. |
+| Implementation authorization boundary | PASS | The document remains plan-only and requires a separate implementation report and independent code review. |
 
-## Required amendments before implementation authorization
+## Open findings
 
-1. Freeze the exact retry/error/timeout contract (W08B-C1).
-2. Close and test concurrent no-clobber archive publication, and state the
-   durability guarantee (W08B-C2).
-3. Freeze a race-safe symlink/containment rule and test it (W08B-C3).
-4. Add a privacy assertion for sensitive project identifiers or explicitly
-   bound semantic validation errors.
+No contract-level P0/P1 finding remains at this revision. The implementation
+must still prove every listed fault, platform and compatibility case; this
+review does not treat a contract as evidence that the future implementation
+has passed those gates.
 
 ## Verdict
 
-**FIX-FIRST**
+**SHIP**
 
-W-08B is not implementation-authorized at this contract revision. After the
-four amendments above are recorded, a fresh independent review is required;
-W-08C and W-08D remain blocked until W-08B is independently accepted.
+W-08B's bounded contract is accepted for implementation. This is a contract
+verdict only: W-08B implementation remains `REVIEW PENDING` until its exact
+head tests, security/path evidence, compatibility checks and independent
+read-only implementation review pass. W-08C and W-08D remain blocked until
+that package is independently shipped.

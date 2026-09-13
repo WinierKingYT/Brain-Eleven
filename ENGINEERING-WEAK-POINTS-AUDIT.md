@@ -144,21 +144,22 @@ complete identity/status/opt-in rollback integrity are covered. W-08B
 coordinated backup, W-08C state-reference TOCTOU and W-08D typed API lifecycle
 remain open.
 
-**W-08B contract status:** `FIX-FIRST` at `8057db7` after independent
-read-only review in `WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The bounded
-double-read design, authority revision/hash descriptors, v3 manifest boundary,
-legacy archive compatibility and lock-order exclusions are sound. Before
-implementation authorization, the contract must freeze the exact retry/error
-budget, close concurrent archive no-clobber publication, and define a
-read-time race-safe symlink containment rule. W-08C and W-08D remain blocked.
+**W-08B contract status:** Independently reviewed `SHIP` at `17954cc` in
+`WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
+the three-attempt/five-second retry and error boundary, destination
+no-clobber publication with durability evidence, read-time no-follow
+symlink/reparse containment and project-identifier privacy assertions. The
+contract remains implementation-only scope: W-08B code is not yet shipped,
+and W-08C/W-08D remain blocked until its implementation is independently
+reviewed.
 
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`.
-**Next package:** W-08B contract amendment and fresh independent review before
-bounded implementation.
+**Next package:** W-08B bounded implementation and independent implementation
+review; W-08C/W-08D remain blocked until W-08B ships.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -172,9 +173,8 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`; W-08A ProjectRegistry durability/CAS —
 `SHIP`, report in `WEAKNESS-W08A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`.
-**Required outcome:** complete the W-08B contract amendments and independent
-re-review, then implement and independently review W-08B before moving to
-W-08C and W-08D. Broader W-06 retrieval
+**Required outcome:** implement and independently review W-08B under the
+accepted contract before moving to W-08C and W-08D. Broader W-06 retrieval
 and automatic markdown reminder writing remain explicit deferred work rather
 than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
