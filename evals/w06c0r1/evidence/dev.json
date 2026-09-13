@@ -6,7 +6,7 @@
       "review_required": 0,
       "unanswerable": 0
     },
-    "manifest_hash": "sha256:53050df3a3aee7fdb6b7626c3d7936d322c723b3b050c5cd6653e200add6492f",
+    "manifest_hash": "sha256:ce2962d57b096495e53a31797432ad2001f8b7490ed05e6b637390c2bd6d0b4c",
     "split": "dev",
     "split_fingerprint": "sha256:cc5b28edf3a3b32c62aab85613040e00a6f915e1d5373c2ad94cac784e80064b"
   },
@@ -29,8 +29,8 @@
       },
       "fallback": false,
       "latency_ms": {
-        "p50": 25.112499999999997,
-        "p95": 25.355
+        "p50": 32.2505,
+        "p95": 33.729
       },
       "metrics": {
         "1": {
@@ -80,7 +80,7 @@
       "rows": [
         {
           "answerability": "answerable",
-          "latency_ms": 9.458,
+          "latency_ms": 13.527,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -149,7 +149,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 9.701,
+          "latency_ms": 13.265,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -218,7 +218,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 9.775,
+          "latency_ms": 12.471,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -285,7 +285,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 9.658,
+          "latency_ms": 22.487,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -351,7 +351,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 9.715,
+          "latency_ms": 13.478,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -428,7 +428,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 10.088,
+          "latency_ms": 13.809,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -501,7 +501,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 8.816,
+          "latency_ms": 15.218,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -568,7 +568,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 9.236,
+          "latency_ms": 12.263,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -634,7 +634,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.601,
+          "latency_ms": 38.313,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -695,7 +695,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.271,
+          "latency_ms": 76.118,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -758,7 +758,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.659,
+          "latency_ms": 45.02,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -820,7 +820,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.461,
+          "latency_ms": 35.747,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -883,7 +883,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.282,
+          "latency_ms": 35.808,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -946,7 +946,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.179,
+          "latency_ms": 34.697,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1008,7 +1008,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.667,
+          "latency_ms": 33.462,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1073,7 +1073,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.308,
+          "latency_ms": 32.208,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1136,7 +1136,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.149,
+          "latency_ms": 33.283,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1199,7 +1199,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.571,
+          "latency_ms": 32.59,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1262,7 +1262,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 23.661,
+          "latency_ms": 30.425,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -1324,7 +1324,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.776,
+          "latency_ms": 31.733,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1386,7 +1386,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.599,
+          "latency_ms": 32.162,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1447,7 +1447,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.03,
+          "latency_ms": 31.683,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1510,7 +1510,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.319,
+          "latency_ms": 35.253,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1578,7 +1578,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.112,
+          "latency_ms": 34.013,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1643,7 +1643,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.939,
+          "latency_ms": 32.663,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1706,7 +1706,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.86,
+          "latency_ms": 33.004,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1768,7 +1768,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.925,
+          "latency_ms": 38.414,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1837,7 +1837,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.591,
+          "latency_ms": 64.387,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -1900,7 +1900,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.767,
+          "latency_ms": 48.449,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -1967,7 +1967,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.286,
+          "latency_ms": 33.128,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2027,7 +2027,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.536,
+          "latency_ms": 33.155,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2087,7 +2087,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.2,
+          "latency_ms": 33.121,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2150,7 +2150,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.727,
+          "latency_ms": 33.716,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -2216,7 +2216,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.613,
+          "latency_ms": 33.891,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2279,7 +2279,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 75.195,
+          "latency_ms": 32.875,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2342,7 +2342,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 64.355,
+          "latency_ms": 32.3,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2404,7 +2404,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.876,
+          "latency_ms": 30.938,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2467,7 +2467,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 23.606,
+          "latency_ms": 31.199,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -2530,7 +2530,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.016,
+          "latency_ms": 31.642,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2592,7 +2592,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.768,
+          "latency_ms": 32.586,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -2654,7 +2654,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.107,
+          "latency_ms": 30.672,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2717,7 +2717,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.466,
+          "latency_ms": 32.312,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2783,7 +2783,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.674,
+          "latency_ms": 31.769,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2846,7 +2846,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.087,
+          "latency_ms": 31.283,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2909,7 +2909,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.325,
+          "latency_ms": 32.03,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -2970,7 +2970,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.761,
+          "latency_ms": 29.367,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3033,7 +3033,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.693,
+          "latency_ms": 31.276,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -3095,7 +3095,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 24.923,
+          "latency_ms": 30.175,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3158,7 +3158,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 23.969,
+          "latency_ms": 30.355,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3221,7 +3221,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.03,
+          "latency_ms": 30.392,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3283,7 +3283,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.259,
+          "latency_ms": 34.167,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3350,7 +3350,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.025,
+          "latency_ms": 34.38,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -3413,7 +3413,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.154,
+          "latency_ms": 30.747,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3473,7 +3473,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.778,
+          "latency_ms": 30.936,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3534,7 +3534,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.371,
+          "latency_ms": 30.935,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3597,7 +3597,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 26.379,
+          "latency_ms": 32.564,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -3659,7 +3659,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.401,
+          "latency_ms": 33.788,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3722,7 +3722,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.054,
+          "latency_ms": 31.218,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3785,7 +3785,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.683,
+          "latency_ms": 32.407,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3847,7 +3847,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 25.793,
+          "latency_ms": 33.46,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -3940,8 +3940,8 @@
       },
       "fallback": false,
       "latency_ms": {
-        "p50": 0.9359999999999999,
-        "p95": 0.958
+        "p50": 0.942,
+        "p95": 0.811
       },
       "metrics": {
         "1": {
@@ -3991,7 +3991,7 @@
       "rows": [
         {
           "answerability": "answerable",
-          "latency_ms": 1.856,
+          "latency_ms": 1.7,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4054,7 +4054,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.014,
+          "latency_ms": 0.967,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4117,7 +4117,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.802,
+          "latency_ms": 0.968,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4180,7 +4180,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.944,
+          "latency_ms": 0.934,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4243,7 +4243,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.943,
+          "latency_ms": 0.789,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -4306,7 +4306,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.95,
+          "latency_ms": 0.826,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -4369,7 +4369,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.887,
+          "latency_ms": 0.812,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4432,7 +4432,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.776,
+          "latency_ms": 0.987,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4495,7 +4495,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.906,
+          "latency_ms": 1.258,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4558,7 +4558,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.999,
+          "latency_ms": 0.952,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -4621,7 +4621,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.979,
+          "latency_ms": 1.053,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4684,7 +4684,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.98,
+          "latency_ms": 0.991,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4747,7 +4747,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.037,
+          "latency_ms": 0.991,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4810,7 +4810,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.012,
+          "latency_ms": 1.1,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -4873,7 +4873,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.837,
+          "latency_ms": 1.046,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -4936,7 +4936,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.017,
+          "latency_ms": 1.006,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -4999,7 +4999,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.974,
+          "latency_ms": 1.037,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -5062,7 +5062,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.031,
+          "latency_ms": 0.969,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5125,7 +5125,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.964,
+          "latency_ms": 0.888,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5188,7 +5188,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.001,
+          "latency_ms": 0.913,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -5251,7 +5251,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.866,
+          "latency_ms": 1.119,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5314,7 +5314,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.015,
+          "latency_ms": 1.026,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -5377,7 +5377,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.012,
+          "latency_ms": 0.956,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5440,7 +5440,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.923,
+          "latency_ms": 0.844,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5503,7 +5503,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.101,
+          "latency_ms": 1.085,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5566,7 +5566,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.962,
+          "latency_ms": 1.013,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -5629,7 +5629,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.867,
+          "latency_ms": 1.087,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5692,7 +5692,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.927,
+          "latency_ms": 1.037,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5755,7 +5755,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.081,
+          "latency_ms": 0.977,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5818,7 +5818,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.023,
+          "latency_ms": 0.986,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -5881,7 +5881,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.05,
+          "latency_ms": 0.866,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -5944,7 +5944,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.987,
+          "latency_ms": 0.998,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -6007,7 +6007,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.033,
+          "latency_ms": 1.055,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6070,7 +6070,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.001,
+          "latency_ms": 0.964,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6133,7 +6133,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.029,
+          "latency_ms": 1.04,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6196,7 +6196,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.022,
+          "latency_ms": 1.05,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -6259,7 +6259,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.852,
+          "latency_ms": 1.06,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6322,7 +6322,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.957,
+          "latency_ms": 0.903,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6385,7 +6385,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.872,
+          "latency_ms": 0.933,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6448,7 +6448,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.866,
+          "latency_ms": 0.927,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -6511,7 +6511,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.024,
+          "latency_ms": 0.928,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6574,7 +6574,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.995,
+          "latency_ms": 1.223,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6637,7 +6637,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.036,
+          "latency_ms": 1.012,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6700,7 +6700,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.932,
+          "latency_ms": 0.902,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6763,7 +6763,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.012,
+          "latency_ms": 1.064,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6826,7 +6826,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.859,
+          "latency_ms": 0.947,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -6889,7 +6889,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.981,
+          "latency_ms": 1.033,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -6952,7 +6952,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.913,
+          "latency_ms": 0.866,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7015,7 +7015,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.838,
+          "latency_ms": 0.972,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7078,7 +7078,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.949,
+          "latency_ms": 0.955,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -7141,7 +7141,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.906,
+          "latency_ms": 1.052,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7204,7 +7204,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.854,
+          "latency_ms": 0.983,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7267,7 +7267,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.022,
+          "latency_ms": 1.036,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7330,7 +7330,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.007,
+          "latency_ms": 0.917,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7393,7 +7393,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.886,
+          "latency_ms": 0.874,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -7456,7 +7456,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.088,
+          "latency_ms": 1.033,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7519,7 +7519,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.004,
+          "latency_ms": 0.857,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7582,7 +7582,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.863,
+          "latency_ms": 1.064,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7645,7 +7645,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.92,
+          "latency_ms": 1.015,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -7708,7 +7708,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.012,
+          "latency_ms": 1.07,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -7797,8 +7797,8 @@
       },
       "fallback": false,
       "latency_ms": {
-        "p50": 28.698500000000003,
-        "p95": 30.354
+        "p50": 37.751,
+        "p95": 38.145
       },
       "metrics": {
         "1": {
@@ -7848,7 +7848,7 @@
       "rows": [
         {
           "answerability": "answerable",
-          "latency_ms": 16.392,
+          "latency_ms": 19.881,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -7917,7 +7917,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 12.647,
+          "latency_ms": 16.682,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -7986,7 +7986,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 12.282,
+          "latency_ms": 15.434,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8053,7 +8053,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 11.749,
+          "latency_ms": 16.179,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8119,7 +8119,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 13.773,
+          "latency_ms": 16.964,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8196,7 +8196,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 13.254,
+          "latency_ms": 17.749,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8269,7 +8269,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 12.734,
+          "latency_ms": 16.447,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -8336,7 +8336,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 12.297,
+          "latency_ms": 16.537,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -8402,7 +8402,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.868,
+          "latency_ms": 34.385,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8463,7 +8463,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.724,
+          "latency_ms": 34.297,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -8526,7 +8526,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.348,
+          "latency_ms": 33.861,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8588,7 +8588,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.758,
+          "latency_ms": 34.897,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8651,7 +8651,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.979,
+          "latency_ms": 35.025,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8714,7 +8714,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.744,
+          "latency_ms": 35.339,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8776,7 +8776,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.049,
+          "latency_ms": 34.691,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -8841,7 +8841,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.499,
+          "latency_ms": 39.64,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -8904,7 +8904,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.914,
+          "latency_ms": 36.574,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -8967,7 +8967,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.581,
+          "latency_ms": 35.965,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9030,7 +9030,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.577,
+          "latency_ms": 36.305,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9092,7 +9092,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.409,
+          "latency_ms": 55.933,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9154,7 +9154,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.785,
+          "latency_ms": 72.915,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9215,7 +9215,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.457,
+          "latency_ms": 47.14,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -9278,7 +9278,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.35,
+          "latency_ms": 38.62,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9346,7 +9346,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.047,
+          "latency_ms": 36.738,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9411,7 +9411,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.147,
+          "latency_ms": 35.555,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9474,7 +9474,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.616,
+          "latency_ms": 37.159,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9536,7 +9536,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.6,
+          "latency_ms": 41.861,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9605,7 +9605,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.387,
+          "latency_ms": 37.805,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9668,7 +9668,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 31.347,
+          "latency_ms": 39.882,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9735,7 +9735,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.985,
+          "latency_ms": 36.949,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9795,7 +9795,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.064,
+          "latency_ms": 37.852,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9855,7 +9855,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.574,
+          "latency_ms": 39.038,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -9918,7 +9918,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.633,
+          "latency_ms": 39.469,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -9984,7 +9984,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.787,
+          "latency_ms": 36.906,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10047,7 +10047,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.918,
+          "latency_ms": 38.551,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10110,7 +10110,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.862,
+          "latency_ms": 37.309,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10172,7 +10172,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.431,
+          "latency_ms": 36.682,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10235,7 +10235,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.772,
+          "latency_ms": 36.494,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10298,7 +10298,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.417,
+          "latency_ms": 146.996,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -10360,7 +10360,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.025,
+          "latency_ms": 38.564,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -10422,7 +10422,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.5,
+          "latency_ms": 37.82,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10485,7 +10485,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.854,
+          "latency_ms": 40.263,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10551,7 +10551,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.929,
+          "latency_ms": 38.11,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10614,7 +10614,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.393,
+          "latency_ms": 39.011,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10677,7 +10677,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.786,
+          "latency_ms": 39.904,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10738,7 +10738,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.068,
+          "latency_ms": 38.628,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -10801,7 +10801,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.377,
+          "latency_ms": 40.753,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10863,7 +10863,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.122,
+          "latency_ms": 42.635,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10926,7 +10926,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 36.019,
+          "latency_ms": 55.308,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -10989,7 +10989,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.787,
+          "latency_ms": 39.28,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11051,7 +11051,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.685,
+          "latency_ms": 40.497,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11118,7 +11118,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 28.464,
+          "latency_ms": 37.921,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11181,7 +11181,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.833,
+          "latency_ms": 38.36,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11241,7 +11241,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 54.598,
+          "latency_ms": 38.469,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11302,7 +11302,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 37.445,
+          "latency_ms": 38.194,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -11365,7 +11365,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 29.484,
+          "latency_ms": 37.789,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11427,7 +11427,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.403,
+          "latency_ms": 38.206,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11490,7 +11490,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 31.36,
+          "latency_ms": 39.87,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11553,7 +11553,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 27.756,
+          "latency_ms": 37.452,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11615,7 +11615,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 30.041,
+          "latency_ms": 37.199,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11708,8 +11708,8 @@
       },
       "fallback": false,
       "latency_ms": {
-        "p50": 0.9974999999999999,
-        "p95": 1.017
+        "p50": 0.956,
+        "p95": 0.946
       },
       "metrics": {
         "1": {
@@ -11759,7 +11759,7 @@
       "rows": [
         {
           "answerability": "answerable",
-          "latency_ms": 4.663,
+          "latency_ms": 4.951,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11816,7 +11816,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.626,
+          "latency_ms": 0.739,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11873,7 +11873,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.677,
+          "latency_ms": 0.691,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11930,7 +11930,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.731,
+          "latency_ms": 0.703,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -11987,7 +11987,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.604,
+          "latency_ms": 0.734,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -12044,7 +12044,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.591,
+          "latency_ms": 0.705,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -12101,7 +12101,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.908,
+          "latency_ms": 0.68,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -12158,7 +12158,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.686,
+          "latency_ms": 0.619,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -12215,7 +12215,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.164,
+          "latency_ms": 1.001,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12278,7 +12278,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.088,
+          "latency_ms": 1.071,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12341,7 +12341,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.064,
+          "latency_ms": 0.929,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12404,7 +12404,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.134,
+          "latency_ms": 1.123,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12467,7 +12467,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.998,
+          "latency_ms": 0.899,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12530,7 +12530,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.899,
+          "latency_ms": 0.914,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12593,7 +12593,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.921,
+          "latency_ms": 1.073,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12656,7 +12656,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.15,
+          "latency_ms": 0.917,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12719,7 +12719,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.062,
+          "latency_ms": 0.957,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12782,7 +12782,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.093,
+          "latency_ms": 0.932,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12845,7 +12845,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.095,
+          "latency_ms": 0.914,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12908,7 +12908,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.03,
+          "latency_ms": 1.053,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -12971,7 +12971,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.97,
+          "latency_ms": 0.953,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13034,7 +13034,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.918,
+          "latency_ms": 0.951,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13097,7 +13097,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.051,
+          "latency_ms": 1.119,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13160,7 +13160,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.98,
+          "latency_ms": 0.927,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13223,7 +13223,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.339,
+          "latency_ms": 1.044,
           "metrics": {
             "1": {
               "f1": 0.5,
@@ -13286,7 +13286,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.051,
+          "latency_ms": 0.959,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13349,7 +13349,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.917,
+          "latency_ms": 1.002,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13412,7 +13412,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.08,
+          "latency_ms": 1.091,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13475,7 +13475,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.046,
+          "latency_ms": 1.088,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13538,7 +13538,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.95,
+          "latency_ms": 1.008,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -13601,7 +13601,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.024,
+          "latency_ms": 0.927,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13664,7 +13664,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.947,
+          "latency_ms": 0.922,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13727,7 +13727,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.131,
+          "latency_ms": 1.092,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13790,7 +13790,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.067,
+          "latency_ms": 1.147,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13853,7 +13853,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.084,
+          "latency_ms": 0.901,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13916,7 +13916,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.937,
+          "latency_ms": 1.047,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -13979,7 +13979,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.123,
+          "latency_ms": 1.105,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14042,7 +14042,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.01,
+          "latency_ms": 1.103,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14105,7 +14105,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.15,
+          "latency_ms": 0.898,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14168,7 +14168,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.95,
+          "latency_ms": 0.932,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14231,7 +14231,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.114,
+          "latency_ms": 0.915,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14294,7 +14294,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.899,
+          "latency_ms": 0.93,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14357,7 +14357,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.993,
+          "latency_ms": 0.937,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14420,7 +14420,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.078,
+          "latency_ms": 0.949,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14483,7 +14483,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.018,
+          "latency_ms": 1.039,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14546,7 +14546,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.916,
+          "latency_ms": 1.119,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14609,7 +14609,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.056,
+          "latency_ms": 1.124,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14672,7 +14672,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.963,
+          "latency_ms": 1.193,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14735,7 +14735,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.099,
+          "latency_ms": 0.995,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14798,7 +14798,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.084,
+          "latency_ms": 1.083,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14861,7 +14861,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.948,
+          "latency_ms": 1.069,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14924,7 +14924,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.985,
+          "latency_ms": 1.106,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -14987,7 +14987,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.006,
+          "latency_ms": 0.932,
           "metrics": {
             "1": {
               "f1": 0.0,
@@ -15050,7 +15050,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.342,
+          "latency_ms": 1.324,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15113,7 +15113,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 0.923,
+          "latency_ms": 1.058,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15176,7 +15176,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.097,
+          "latency_ms": 1.085,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15239,7 +15239,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.06,
+          "latency_ms": 0.99,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15302,7 +15302,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.168,
+          "latency_ms": 1.113,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15365,7 +15365,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.05,
+          "latency_ms": 1.031,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15428,7 +15428,7 @@
         },
         {
           "answerability": "answerable",
-          "latency_ms": 1.085,
+          "latency_ms": 1.162,
           "metrics": {
             "1": {
               "f1": 0.6666666666666666,
@@ -15520,7 +15520,7 @@
     ],
     "noise_count": 24,
     "seed": 17,
-    "source_fingerprint": "sha256:937b3bbcef835c0d6e855f1914383e1b512827d43dd3cc1a1a4805e76584d98c",
+    "source_fingerprint": "sha256:536644763d9fd7059486d830868774f709315818d185a5ef45b14797749b5e33",
     "task_set_fingerprint": "sha256:2476e5bceb23f7b63839b7d23a878733d168ae5258f66c0e0d5bc2a408193beb"
   }
 }
