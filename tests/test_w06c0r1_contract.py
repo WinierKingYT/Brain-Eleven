@@ -174,6 +174,21 @@ def test_holdout_cli_replay_is_rejected_before_provider_run(tmp_path):
         ])
 
 
+def test_holdout_cli_rejects_noncanonical_output_before_provider_run(monkeypatch, tmp_path):
+    from evals.w06c0r1 import evaluation
+
+    def provider_must_not_run(*args, **kwargs):
+        raise AssertionError("provider execution must not begin for a non-canonical output")
+
+    monkeypatch.setattr(evaluation, "_run_matrix_provider", provider_must_not_run)
+    with pytest.raises(W06C0R1Error, match="canonical evidence path"):
+        evaluation.main([
+            "--corpus-version", "4", "--split", "holdout", "--providers", "v1",
+            "--final-holdout", "--unlock-token", "token",
+            "--output", str(tmp_path / "alternate-holdout.json"),
+        ])
+
+
 def test_safety_hard_gate_cannot_be_masked(monkeypatch):
     from evals.w06c0r1 import evaluation
 
