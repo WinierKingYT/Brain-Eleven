@@ -53,11 +53,10 @@ write files or create another authority.
 - Combined focused verification including
   `test_pre12_memory_state_caller_migration.py`: **108 passed, 2 dependency
   warnings**.
-- Full `pytest tests -q`: first run **1047 passed, 1 transient failure, 2
-  dependency warnings**. The failure was the pre-existing cold native
-  SessionStart timing/shape test `test_ig00_bootstrap.py::test_cold_native_session_start_delivers_v1_within_hook_budget`;
-  its isolated rerun passed (**1 passed**). A clean full-suite rerun remains
-  required before independent acceptance.
+- Full `pytest tests -q`: an initial run exposed one transient cold native
+  SessionStart failure (`test_ig00_bootstrap.py::test_cold_native_session_start_delivers_v1_within_hook_budget`);
+  its isolated rerun passed, and the clean full-suite rerun completed with
+  **1049 passed, 2 dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
@@ -95,8 +94,8 @@ write files or create another authority.
 ## OPEN FAILURES
 
 - Independent read-only implementation review is pending.
-- A clean full-suite run and reviewer verification of the complete transition
-  matrix, concurrent writer behavior, and frozen-file diff are still required.
+- Reviewer verification of the complete transition matrix, concurrent writer
+  behavior, and frozen-file diff is still required.
 
 ## INDEPENDENT REVIEW
 
