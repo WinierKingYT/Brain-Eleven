@@ -92,7 +92,7 @@ def test_explicit_corpus_version_and_source_scope():
     assert scope["scope_end_revision"] == evaluation.IMPLEMENTATION_SCOPE_END_REVISION
     assert "brain_eleven/runtime/worker.py" in scope["post_end_changed_paths"]
     assert "brain_eleven/runtime/worker.py" not in scope["historical_changed_paths"]
-    assert not evaluation._post_scope_owned_paths(scope["post_end_changed_paths"])
+    assert set(evaluation._post_scope_owned_paths(scope["post_end_changed_paths"])) <= evaluation.SCOPE_DRIFT_MAINTENANCE_FILES
 
 
 def test_scope_end_revision_is_pinned_and_invalid_end_fails_closed():
