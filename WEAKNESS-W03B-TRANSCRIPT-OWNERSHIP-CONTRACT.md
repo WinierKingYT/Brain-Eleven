@@ -37,9 +37,37 @@ from raw transcript content or silently relabel a foreign session.
 - Privacy-safe evidence: mismatch diagnostics may contain only codes,
   client, hashed session/path identities, and bounded counts. Raw transcript
   content and full paths are excluded.
+- A stable file-identity check spanning validation and read. The reader must
+  use one opened handle (or an equivalent pre/post identity token) and reject
+  replacement/TOCTOU changes; path re-resolution alone is insufficient.
 - Retry semantics for a temporarily unavailable transcript or metadata must
   remain compatible with W-04: a trusted, not-yet-available locator remains
   retryable, while an ownership mismatch is not endlessly retried.
+
+## Native binding rules
+
+The implementation must freeze these current-format adapters with fixtures
+that contain metadata keys only (fixture output must never print transcript
+content):
+
+- **Claude:** the resolved parent directory must equal the deterministic
+  native project slug for the event's `project_root` (drive marker and path
+  separators encoded exactly as the observed native directory convention),
+  the filename stem must equal the event `session_id`, and at least one native
+  record must contain `sessionId` equal to that same ID. All three checks are
+  required; a missing or conflicting field is `TRANSCRIPT_OWNERSHIP_UNVERIFIED`
+  or `TRANSCRIPT_OWNERSHIP_MISMATCH`.
+- **Codex:** a native `session_meta`/metadata record must contain
+  `payload.session_id` equal to the event `session_id` and a `payload.cwd`
+  resolving exactly to the event's registered `project_root`. The dated
+  filename is not an identity proof by itself. Missing or conflicting fields
+  fail closed with the same bounded codes.
+
+These rules are intentionally stricter than the current synthetic fixtures.
+End-to-end fixtures that currently omit ownership metadata must be enriched
+with the minimal metadata above; direct parser tests may continue to exercise
+message-only documents. No production compatibility exception or test-only
+trust bypass is allowed.
 
 ## Out of scope
 
@@ -96,6 +124,9 @@ from raw transcript content or silently relabel a foreign session.
 - Replay of an ownership rejection produces no effect; accepted replay keeps
   existing evidence idempotence.
 - Diagnostics contain only bounded codes/hashes and no raw content/full path.
+- Replacing a transcript after ownership validation, including a same-size
+  replacement, is detected by the stable file-identity check and produces no
+  evidence.
 
 ### Regression and review gates
 
@@ -121,6 +152,20 @@ from raw transcript content or silently relabel a foreign session.
 - W-03A/W-04/W-05 regression: **0**
 - all focused and full verification gates: **PASS**
 - independent review: **SHIP**
+
+## Queue outcome matrix
+
+| Condition | Error/status | Retry | Canonical/evidence effect |
+|---|---|---:|---:|
+| Trusted locator temporarily missing | `TRANSCRIPT_NOT_FOUND` / existing degraded path | yes, bounded by queue attempts | none until a later successful validation |
+| Root/traversal/symlink violation | existing W-03A provenance code | no; dead-letter | zero |
+| Session or project mismatch | `TRANSCRIPT_OWNERSHIP_MISMATCH` | no; dead-letter | zero |
+| Required identity metadata absent/unknown | `TRANSCRIPT_OWNERSHIP_UNVERIFIED` | no; dead-letter | zero |
+| File replaced/changed during validation/read | `TRANSCRIPT_CHANGED` | yes, bounded by queue attempts | zero for failed attempt |
+
+The exact code and terminal state must be recorded in the queue ledger without
+raw content or full paths. A terminal ownership failure must never be hidden
+as a successful `PROCESSED` receipt.
 
 ## Package report template
 
