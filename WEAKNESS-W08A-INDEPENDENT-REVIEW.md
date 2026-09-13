@@ -1,11 +1,11 @@
 # W-08A Independent Read-Only Review
 
-**PACKAGE:** W-08A — ProjectRegistry durability and CAS parity  
-**AUDITED HEAD:** `c8c39aadd38b4676b24c0082abf72e12ef841a12`  
-**IMPLEMENTATION:** `7fc2860c373a8b39dbc42be58763dd8af2ac3254`  
-**FOCUSED TESTS:** `a2b065d`  
-**REVIEW TYPE:** Independent read-only package review  
-**PHASE 20:** FROZEN / LOCKED  
+**PACKAGE:** W-08A — ProjectRegistry durability and CAS parity
+**AUDITED HEAD:** `05fd7f6532b50af038f44b5422083eee721747b8`
+**IMPLEMENTATION:** `7fc2860c373a8b39dbc42be58763dd8af2ac3254`
+**FOCUSED TESTS:** `05fd7f6` (integrity evidence), `a2b065d` (initial W-08A tests)
+**REVIEW TYPE:** Independent read-only package re-review
+**PHASE 20:** FROZEN / LOCKED
 **V2:** SHADOW
 
 ## Review boundary
@@ -16,8 +16,10 @@ No production file or existing untracked evidence artifact was modified.
 
 ## Evidence independently reproduced
 
-- W-08A focused tests plus registry, scope, package-boundary, caller, backup,
-  capture and remember surfaces: **52 passed**.
+- W-08A focused tests: **10 passed**.
+- Related registry, scope, package-boundary, caller, backup, capture and
+  remember surfaces: **99 passed**.
+- Baseline snapshot guard: **5 passed**.
 - Full `pytest tests -q`: a first run had one transient cold SessionStart
   failure outside the W-08A diff; the same test passed alone immediately and a
   second complete run passed **992 tests, 2 warnings**. The warnings are the
@@ -54,34 +56,28 @@ callers continue using the same object and no MemoryStore, StateStore, graph,
 capture or new authority write path was introduced. W-08B coordinated backup,
 W-08C state-reference TOCTOU and W-08D typed API lifecycle remain deferred.
 
-## FIX-FIRST finding
+## Prior FIX-FIRST finding and closure
 
-The W-08A contract's required backup evidence says the restored prior registry
-must preserve **identity, status and proactive-capture data**. The implementation
-uses a validated deep copy and therefore appears to preserve these fields, but
-the focused test only asserts the prior label and project lookup after rollback;
-it does not explicitly seed and compare the prior `status` and
-`proactive_capture` values before and after rollback. The package report's
-backup claim is therefore not fully evidence-backed at the required field
-level.
-
-Add a focused test that records the complete prior project identity/status/
-opt-in projection, performs a mutation and rollback, and compares that
-projection exactly. Keep the test-only change bounded; no production behavior
-change is authorized by this finding. Re-run the focused and full suites and
-request a fresh independent review afterward.
+The first independent review required explicit backup/rollback comparison of
+the prior `project_id`, label, root, `status` and `proactive_capture` values.
+Commit `05fd7f6` adds that complete projection before rollback and compares it
+with the restored projection afterward. It also preserves the envelope
+revision assertions and repeated-rollback check. The change is test-only and
+does not alter production behavior or package scope.
 
 ## Score and open state
 
-- Persistence/concurrency baseline: **7.0/10**.
-- W-08A sub-surface evidence: implementation behavior is materially improved,
-  but the package score remains **pending** until the missing integrity evidence
-  is closed.
+- Persistence/concurrency: **7.0 → 7.5 provisional**. Registry-local
+  durability, revision/CAS and rollback evidence now pass; coordinated backup,
+  state-reference TOCTOU and typed API lifecycle remain open W-08 packages.
 - No other score is changed by this review.
 - Open P0: **0**.
-- Open W-08A review blocker: **1 focused evidence gap** described above.
+- Open W-08A package blocker: **0**.
 
 ## Verdict
 
-**FIX-FIRST**
+**SHIP**
 
+The bounded W-08A contract is satisfied at exact HEAD `05fd7f6`. The broader
+W-08 persistence weakness remains open through the separately bounded W-08B,
+W-08C and W-08D packages.

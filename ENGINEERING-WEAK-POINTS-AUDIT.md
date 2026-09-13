@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `c8c39aa`
+**Repository revision:** `05fd7f6`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -22,7 +22,7 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 7.0 | Registry durability/revision gap; uncoordinated multi-authority backup; state-memory reference TOCTOU. |
+| Persistence and concurrency | 7.5 | W-08A registry durability/revision/CAS gap is closed; coordinated multi-authority backup and state-memory reference TOCTOU remain open. |
 | Scope and fail-closed safety | 7.0 | Related-note and native transcript path boundaries are independently shipped; project/session ownership proof remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
@@ -136,21 +136,21 @@ writes lack revision/CAS and fsync parity; state references can race memory
 lifecycle changes; and API update paths can bypass typed lifecycle checks.
 These are separate authority packages and are intentionally not mixed with W-01.
 
-**W-08A status:** Independent read-only review at `c8c39aa` returned
-`FIX-FIRST`. The ProjectRegistry implementation, revision/CAS boundary,
-durable atomic write path, backup envelope, rollback stale safety and package
-identity checks passed independent focused and full-suite verification. One
-required evidence item remains open: the rollback test must explicitly compare
-the restored project's `status` and `proactive_capture` fields in addition to
-identity/label. No production behavior change is authorized by this finding.
+**W-08A status:** Independently reviewed `SHIP` at `05fd7f6` (implementation
+`7fc2860`, tests `a2b065d` plus integrity evidence `05fd7f6`, review
+`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`). ProjectRegistry revision/CAS,
+durable atomic writes, backup envelope, stale-safe monotonic rollback and
+complete identity/status/opt-in rollback integrity are covered. W-08B
+coordinated backup, W-08C state-reference TOCTOU and W-08D typed API lifecycle
+remain open.
 
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
-`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. The W-08A implementation is
-present but remains `FIX-FIRST` pending the focused rollback integrity
-evidence.
-**Next package:** W-08A evidence correction and fresh independent review.
+`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
+`SHIP` at `05fd7f6`.
+**Next package:** W-08B coordinated backup snapshot contract and bounded
+implementation.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -161,10 +161,12 @@ prompt event terminal semantics — `SHIP`, report in
 in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
 `WEAKNESS-W06A-INDEPENDENT-REVIEW.md`; W-07A native continuity read — `SHIP`,
 report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W07A-INDEPENDENT-REVIEW.md`.
-**Required outcome:** close the W-08A evidence finding, rerun focused/full
-verification and obtain an independent `SHIP`; then continue with the bounded
-W-08 persistence contract sequence. Broader W-06 retrieval
+`WEAKNESS-W07A-INDEPENDENT-REVIEW.md`; W-08A ProjectRegistry durability/CAS —
+`SHIP`, report in `WEAKNESS-W08A-PACKAGE-REPORT.md` and independent review in
+`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`.
+**Required outcome:** continue the bounded W-08 persistence contract sequence
+with W-08B coordinated backup, followed by independently reviewed W-08C and
+W-08D packages. Broader W-06 retrieval
 and automatic markdown reminder writing remain explicit deferred work rather
 than being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
