@@ -11,11 +11,12 @@ import tempfile
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
-from evals.baseline import BaselineContextProvider
+from evals.baseline import BaselineContextProvider, TaskAwareV1ContextProvider
 from evals.compiler_v2_provider import CompilerV2ContextProvider
 from evals.corpus_v2_builder import check_corpus_v2, check_corpus_v2_public
 from evals.fixture_generator import build_vault
 from evals.schema import GoldenTask, load_fixture, load_tasks
+from context_compiler_v2.tokenizer import ConservativeTokenEstimator
 
 from .metrics import MetricError, metric_summary
 
@@ -34,6 +35,8 @@ SOURCE_GLOBS = (
     "evals/metrics.py", "evals/reporting.py", "evals/run.py", "evals/schema.py",
     "evals/fixtures/phase15-contract.json", "scripts/context-compiler.py",
     "scripts/task_state_context.py", "brain_eleven/memory/**/*.py", "brain_eleven/state/**/*.py",
+    "brain_eleven/runtime/context.py", "brain_eleven/runtime/storage.py",
+    "brain_eleven/runtime/task_aware.py",
     "brain_eleven/projects/**/*.py", "authority/**/*.py", "context_router/**/*.py",
     "context_compiler_v2/**/*.py", "evals/w09a/**/*.py", "tests/test_w09a_retrieval_evaluation.py",
 )
@@ -96,18 +99,23 @@ def _manifest(root: Path) -> Mapping[str, Any]:
 def corpus_fingerprint(root: Path | str = CORPUS_ROOT, *, split: str = "public") -> str:
     """Fingerprint exactly one public or holdout split; reject other names."""
 
-    if split not in {"public", "holdout"}:
-        raise EvaluationError("split must be public or holdout")
+    if split not in {"public", "dev", "test", "holdout"}:
+        raise EvaluationError("split must be public, dev, test or holdout")
     corpus = Path(root).resolve()
     _manifest(corpus)
-    directories = ("dev", "test") if split == "public" else ("holdout",)
+    directories = ("dev", "test") if split == "public" else (split,)
     paths = [corpus / "manifest.json"]
     for directory in directories:
         files = sorted((corpus / directory).glob("*.json"))
         if any(path.is_symlink() for path in files):
             raise EvaluationError("W-09A corpus must not contain symlinks")
         paths.extend(files)
-    expected_count = 1 + (130 if split == "public" else 30)
+    expected_count = 1 + {
+        "public": 130,
+        "dev": 70,
+        "test": 60,
+        "holdout": 30,
+    }[split]
     if len(paths) != expected_count:
         raise EvaluationError("W-09A corpus split is incomplete")
     return _hash_parts(
@@ -118,13 +126,13 @@ def corpus_fingerprint(root: Path | str = CORPUS_ROOT, *, split: str = "public")
 def load_split(
     *, split: str = "public", root: Path = CORPUS_ROOT, fixture_path: Path = FIXTURE
 ) -> tuple[GoldenTask, ...]:
-    if split not in {"public", "holdout"}:
-        raise EvaluationError("split must be public or holdout")
+    if split not in {"public", "dev", "test", "holdout"}:
+        raise EvaluationError("split must be public, dev, test or holdout")
     fixture = load_fixture(fixture_path)
     corpus = root.resolve()
-    if split == "public":
+    if split in {"public", "dev", "test"}:
         check_corpus_v2_public(corpus, fixture)
-        directories = ("dev", "test")
+        directories = ("dev", "test") if split == "public" else (split,)
     else:
         check_corpus_v2(corpus, fixture)
         directories = ("holdout",)
@@ -180,6 +188,7 @@ def _snapshot(vault: Path) -> tuple[int, tuple[str, ...], dict[str, dict[str, An
     if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0 or not isinstance(records, list):
         raise EvaluationError("generated canonical memory snapshot is invalid")
     metadata: dict[str, dict[str, Any]] = {}
+    estimator = ConservativeTokenEstimator()
     ordered: list[str] = []
     content_rows: list[dict[str, Any]] = []
     for record in records:
@@ -192,6 +201,7 @@ def _snapshot(vault: Path) -> tuple[int, tuple[str, ...], dict[str, dict[str, An
             "project_id": project_id,
             "status": record.get("status"),
             "type": record.get("type"),
+            "estimated_tokens": estimator.estimate(record.get("content", "")).count,
         }
         content_rows.append({
             "memory_id": memory_id,
@@ -308,9 +318,11 @@ def evaluate_selection(
 def _provider(provider_id: str):
     if provider_id == "v1":
         return BaselineContextProvider(), "context_compiler_baseline_v1"
+    if provider_id == "w06b":
+        return TaskAwareV1ContextProvider(), "context_compiler_w06b_task_aware_v1"
     if provider_id == "v2":
         return CompilerV2ContextProvider(), "context_compiler_v2"
-    raise EvaluationError("provider must be v1 or v2")
+    raise EvaluationError("provider must be v1, w06b or v2")
 
 
 def run_provider(
@@ -342,6 +354,10 @@ def run_provider(
                     k=k,
                     candidate_ids=candidate_ids,
                     candidate_metadata=metadata,
+                    token_counts={
+                        memory_id: int(details.get("estimated_tokens", 0))
+                        for memory_id, details in metadata.items()
+                    },
                 )
                 row["status"] = "scored"
             except (EvaluationError, MetricError, RuntimeError, ValueError) as error:
@@ -356,9 +372,13 @@ def run_provider(
     scored = [row for row in rows if row["status"] == "scored"]
     invalid = len(rows) - len(scored)
 
-    def average(name: str) -> float | None:
+    def average(name: str) -> float | str | None:
         values = [row["metrics"][name] for row in scored if row["metrics"][name] is not None]
-        return sum(values) / len(values) if values else None
+        if not values:
+            return None
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values):
+            return "unavailable"
+        return sum(values) / len(values)
 
     safety_names = (
         "wrong_project_leakage", "forbidden_leakage", "superseded_leakage", "resolved_leakage"
@@ -406,7 +426,7 @@ def run_provider(
             "mrr": average("mrr"),
             "mandatory_recall": average("mandatory_recall"),
             "noise_ratio": average("noise_ratio"),
-            "token_waste": "unavailable",
+            "token_waste": average("token_waste"),
         },
         "safety": {**safety_totals, "state": safety_state},
         "quality": {"state": quality_state, "excluded_case_count": 0, "answerability_no_count": 0},
@@ -477,8 +497,8 @@ def write_report(path: Path | str, report: Mapping[str, Any]) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the bounded W-09A retrieval evaluation.")
-    parser.add_argument("--provider", choices=("v1", "v2", "both"), default="both")
-    parser.add_argument("--split", choices=("public", "holdout"), default="public")
+    parser.add_argument("--provider", choices=("v1", "w06b", "v2", "both"), default="both")
+    parser.add_argument("--split", choices=("public", "dev", "test", "holdout"), default="public")
     parser.add_argument("--k", type=int, default=K_DEFAULT)
     parser.add_argument("--seed", type=int, default=SEED_DEFAULT)
     parser.add_argument("--noise-count", type=int, default=NOISE_DEFAULT)

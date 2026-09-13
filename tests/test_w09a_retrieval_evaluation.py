@@ -16,6 +16,12 @@ def test_public_loader_reads_only_dev_and_test():
     assert len(tasks) == 130
     assert all(t.task_id for t in tasks)
 
+
+def test_public_subsplits_are_explicit_and_complete():
+    assert len(load_public_tasks(split="dev")) == 70
+    assert len(load_public_tasks(split="test")) == 60
+    assert corpus_fingerprint(split="dev") != corpus_fingerprint(split="test")
+
 def test_holdout_is_explicit_and_fingerprinted_separately():
     assert corpus_fingerprint(split="public") != corpus_fingerprint(split="holdout")
     assert len(load_public_tasks(split="holdout")) == 30
@@ -59,6 +65,15 @@ def test_provider_report_is_content_free_and_hard_safety_counters_are_visible():
                 yield from walk(child)
 
     list(walk(report))
+    assert report["safety"]["wrong_project_leakage"] == 0
+    assert report["safety"]["forbidden_leakage"] == 0
+
+
+def test_w06b_provider_uses_same_public_contract_and_is_content_free():
+    report = run_provider(provider_id="w06b", split="test")
+    assert report["provider"]["id"] == "context_compiler_w06b_task_aware_v1"
+    assert report["corpus"]["task_count"] == 60
+    assert report["metrics"]["case_count"] == 60
     assert report["safety"]["wrong_project_leakage"] == 0
     assert report["safety"]["forbidden_leakage"] == 0
 

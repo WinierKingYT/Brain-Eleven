@@ -13,6 +13,7 @@ import importlib.util
 import io
 import math
 import sys
+from types import SimpleNamespace
 from pathlib import Path
 from typing import Any, Mapping, Type
 
@@ -33,6 +34,16 @@ BASELINE_CAPABILITIES = {
     "task_aware_ranking": "unsupported",
     "authority_resolution": "unsupported",
     "conflict_resolution": "unsupported",
+}
+
+TASK_AWARE_PROVIDER_ID = "context_compiler_w06b_task_aware_v1"
+TASK_AWARE_CAPABILITIES = {
+    "scope_isolation": "supported",
+    "lifecycle_filtering": "supported",
+    "task_aware_ranking": "supported",
+    "authority_resolution": "unsupported",
+    "conflict_resolution": "unsupported",
+    "token_budgeting": "supported",
 }
 
 
@@ -167,3 +178,69 @@ class BaselineContextProvider:
         with contextlib.redirect_stdout(io.StringIO()):
             output = compiler.compile()
         return normalize_context_compiler_output(task, output)
+
+
+class TaskAwareV1ContextProvider:
+    """Measure the bounded W-06B task-aware V1 selector on the same vault."""
+
+    provider_id = TASK_AWARE_PROVIDER_ID
+
+    @staticmethod
+    def _task_input(task: GoldenTask) -> Any:
+        intent = str(task.intent[0]).upper() if task.intent else "GENERAL"
+        entities = tuple(task.domains)
+        needs = tuple(task.intent)
+        return SimpleNamespace(
+            task_id=task.task_id,
+            project=SimpleNamespace(project_id=task.project_id),
+            intent=SimpleNamespace(value=intent),
+            continuation_of=None,
+            entities=entities,
+            context_needs=needs,
+            raw_request=task.prompt,
+        )
+
+    def select(self, task: GoldenTask, vault_path: Path | str) -> NormalizedEvaluationResult:
+        vault = Path(vault_path)
+        if not vault.is_dir():
+            raise BaselineAdapterError(f"evaluation vault must be a directory: {vault}")
+        compiler_class = _load_context_compiler()
+        compiler = compiler_class(
+            str(vault), project_id=task.project_id, retrieval_scope=DEFAULT_RETRIEVAL_SCOPE
+        )
+        document = compiler.memory_store.load()
+        compiler.memories = document.get("validated_memory", [])
+        compiler.source_memory_revision = document.get("revision")
+        from brain_eleven.runtime.task_aware import select as select_task_aware
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = select_task_aware(compiler, self._task_input(task), budget=1024)
+        if result.get("status") in {"NO_NEED", "AMBIGUOUS", "UNAVAILABLE", "INVALID"}:
+            return BaselineContextProvider().select(task, vault)
+        selected = []
+        for item in result.get("selected", []):
+            if not isinstance(item, Mapping):
+                raise BaselineAdapterError("W-06B selected item is invalid")
+            selected.append(
+                SelectedContextItem(
+                    id=_required_string(item.get("memory_id"), "memory_id"),
+                    source_type="memory",
+                    project_id=_project_id(item.get("project_id")),
+                    memory_type=_required_string(item.get("type"), "memory type"),
+                    status=_required_string(item.get("status"), "memory status"),
+                    content=_required_string(item.get("content"), "memory content"),
+                    score=_score(item.get("ranking_score", 0.0)),
+                )
+            )
+        revision = document.get("revision")
+        if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+            raise BaselineAdapterError("W-06B source memory revision is invalid")
+        return NormalizedEvaluationResult(
+            task_id=task.task_id,
+            provider_id=self.provider_id,
+            selected_items=tuple(selected),
+            source_memory_revision=revision,
+            project_id=task.project_id,
+            retrieval_scope=DEFAULT_RETRIEVAL_SCOPE,
+            capabilities=TASK_AWARE_CAPABILITIES,
+        )
