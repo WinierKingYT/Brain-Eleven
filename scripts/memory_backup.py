@@ -7,6 +7,7 @@ prove that those projections can be rebuilt from canonical data.
 """
 
 import argparse
+import ctypes
 import hashlib
 import importlib.util
 import json
@@ -14,6 +15,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -24,6 +26,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.extraction import EntityExtractor
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 from brain_eleven.memory import (
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
@@ -35,19 +38,34 @@ from brain_eleven.projects.registry import (
     REGISTRY_FILENAME,
     ProjectRegistry,
     ProjectRegistryError,
-    registry_path,
 )
 from brain_eleven.state import StateSchemaError, StateStore, validate_state_document
 
 
-BACKUP_SCHEMA_VERSION = 2
-SUPPORTED_BACKUP_SCHEMA_VERSIONS = frozenset({1, BACKUP_SCHEMA_VERSION})
+BACKUP_SCHEMA_VERSION = 3
+SUPPORTED_BACKUP_SCHEMA_VERSIONS = frozenset({1, 2, BACKUP_SCHEMA_VERSION})
 BACKUP_FORMAT = "brain-eleven-memory-backup"
 MANIFEST_PATH = "manifest.json"
 CANONICAL_ARCHIVE_PATH = "canonical/validated-memory.json"
 REGISTRY_ARCHIVE_PATH = "registry/project-registry.json"
 SETTINGS_ARCHIVE_PATH = "config/settings.json"
 STATE_ARCHIVE_PATH = "state/project-state.json"
+SOURCE_ARCHIVE_PATHS = (
+    CANONICAL_ARCHIVE_PATH,
+    REGISTRY_ARCHIVE_PATH,
+    SETTINGS_ARCHIVE_PATH,
+    STATE_ARCHIVE_PATH,
+)
+OPTIONAL_SOURCE_PATHS = frozenset(
+    {REGISTRY_ARCHIVE_PATH, SETTINGS_ARCHIVE_PATH, STATE_ARCHIVE_PATH}
+)
+SNAPSHOT_PROTOCOL = "stable-read-validate-retry-v1"
+MAX_SNAPSHOT_ATTEMPTS = 3
+SNAPSHOT_ATTEMPT_BUDGET_SECONDS = 5.0
+ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS = 5.0
+_WINDOWS_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+_WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
+_WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
 
 RESTORE_PATHS = {
     CANONICAL_ARCHIVE_PATH: Path(".claude") / "validated-memory.json",
@@ -61,6 +79,20 @@ class MemoryBackupError(RuntimeError):
     """Raised when a backup cannot be trusted, created, or safely restored."""
 
 
+class MemoryBackupConsistencyError(MemoryBackupError):
+    """Raised when the bounded source snapshot cannot be made stable."""
+
+    def __init__(self, changed_sources: Tuple[str, ...], attempts: int, reason: str):
+        self.changed_sources = tuple(changed_sources)
+        self.attempts = int(attempts)
+        self.reason = str(reason)
+        safe_sources = ",".join(self.changed_sources) if self.changed_sources else "none"
+        super().__init__(
+            f"Backup source consistency failure: {self.reason}; "
+            f"attempts={self.attempts}; sources={safe_sources}"
+        )
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -69,10 +101,178 @@ def _sha256(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _json_object(payload: bytes, label: str) -> Dict:
+def _lexists(path: Path) -> bool:
+    """Return whether a path exists, including a broken symbolic link."""
+    return os.path.lexists(str(path))
+
+
+def _is_reparse_or_symlink(path: Path) -> bool:
+    """Reject links and Windows reparse points before opening a source."""
     try:
-        value = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        stat_result = path.lstat()
+    except OSError as exc:
+        raise MemoryBackupError("Cannot inspect backup source path") from exc
+    if path.is_symlink():
+        return True
+    attributes = getattr(stat_result, "st_file_attributes", 0)
+    return bool(attributes & _WINDOWS_FILE_ATTRIBUTE_REPARSE_POINT)
+
+
+def _absolute_vault(vault_path: Union[str, Path]) -> Path:
+    candidate = Path(vault_path).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    return candidate
+
+
+def _assert_source_root(vault: Path) -> Path:
+    """Validate the vault and .claude directory without following links."""
+    if not _lexists(vault) or not vault.is_dir():
+        raise MemoryBackupError("Backup vault does not exist")
+    if _is_reparse_or_symlink(vault):
+        raise MemoryBackupError("Backup vault must not be a symbolic link or reparse point")
+    claude = vault / ".claude"
+    if not _lexists(claude) or not claude.is_dir():
+        raise MemoryBackupError("Backup vault is missing its .claude directory")
+    if _is_reparse_or_symlink(claude):
+        raise MemoryBackupError("Backup .claude directory must not be a symbolic link or reparse point")
+    return claude
+
+
+def _read_windows_no_follow(path: Path, containment_root: Path) -> bytes:
+    """Read a regular file through a reparse-point-aware Windows handle."""
+    import msvcrt
+
+    try:
+        if os.path.commonpath((os.path.abspath(str(containment_root)), os.path.abspath(str(path)))) != os.path.abspath(str(containment_root)):
+            raise MemoryBackupError("Backup source escapes the selected .claude directory")
+    except ValueError as exc:
+        raise MemoryBackupError("Backup source escapes the selected .claude directory") from exc
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create_file = kernel32.CreateFileW
+    create_file.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+    ]
+    create_file.restype = ctypes.c_void_p
+    invalid = ctypes.c_void_p(-1).value
+    handle = create_file(
+        str(path),
+        0x80000000,  # GENERIC_READ
+        0x00000001 | 0x00000002 | 0x00000004,  # share read/write/delete
+        None,
+        3,  # OPEN_EXISTING
+        _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT | _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS,
+        None,
+    )
+    if handle in (None, invalid):
+        raise OSError(ctypes.get_last_error(), "Cannot open backup source")
+    raw_handle = handle
+    descriptor = None
+    try:
+        descriptor = msvcrt.open_osfhandle(int(handle), os.O_RDONLY | getattr(os, "O_BINARY", 0))
+        handle = None
+        before = os.fstat(descriptor)
+        chunks = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        after = os.fstat(descriptor)
+        if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+            raise MemoryBackupError("Backup source identity changed while reading")
+        get_final_path = kernel32.GetFinalPathNameByHandleW
+        get_final_path.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32]
+        get_final_path.restype = ctypes.c_uint32
+        final_buffer = ctypes.create_unicode_buffer(32768)
+        final_length = get_final_path(raw_handle, final_buffer, len(final_buffer), 0)
+        if not final_length or final_length >= len(final_buffer):
+            raise MemoryBackupError("Cannot verify backup source containment")
+        final_path = final_buffer.value
+        if final_path.startswith("\\\\?\\"):
+            final_path = final_path[4:]
+        try:
+            if os.path.commonpath((os.path.abspath(str(containment_root)), os.path.abspath(final_path))) != os.path.abspath(str(containment_root)):
+                raise MemoryBackupError("Backup source escapes the selected .claude directory")
+        except ValueError as exc:
+            raise MemoryBackupError("Backup source escapes the selected .claude directory") from exc
+        # FILE_FLAG_OPEN_REPARSE_POINT prevents following the final reparse
+        # point.  The lstat check below remains a defence against a path swap
+        # between the pre-open check and handle creation.
+        if _is_reparse_or_symlink(path):
+            raise MemoryBackupError("Backup source must not be a symbolic link or reparse point")
+        return b"".join(chunks)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        elif handle not in (None, invalid):
+            kernel32.CloseHandle(handle)
+
+
+def _read_source_file(path: Path, containment_root: Path) -> bytes:
+    """Read one source with no-follow and identity checks."""
+    if not _lexists(path):
+        raise FileNotFoundError(path)
+    if _is_reparse_or_symlink(path):
+        raise MemoryBackupError("Backup source must not be a symbolic link or reparse point")
+    if not path.is_file():
+        raise MemoryBackupError("Backup source must be a regular file")
+    before_path = path.lstat()
+    if os.name == "nt":
+        payload = _read_windows_no_follow(path, containment_root)
+    else:
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        if not getattr(os, "O_NOFOLLOW", 0):
+            raise MemoryBackupError("Backup source no-follow support is unavailable")
+        descriptor = None
+        try:
+            descriptor = os.open(str(path), flags)
+            before = os.fstat(descriptor)
+            chunks = []
+            while True:
+                chunk = os.read(descriptor, 1024 * 1024)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            after = os.fstat(descriptor)
+            if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+                raise MemoryBackupError("Backup source identity changed while reading")
+            payload = b"".join(chunks)
+        except FileNotFoundError:
+            raise
+        except OSError as exc:
+            raise MemoryBackupError("Cannot read backup source") from exc
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
+    try:
+        after_path = path.lstat()
+    except OSError as exc:
+        raise MemoryBackupError("Backup source identity changed while reading") from exc
+    if (before_path.st_dev, before_path.st_ino) != (after_path.st_dev, after_path.st_ino):
+        raise MemoryBackupError("Backup source identity changed while reading")
+    return payload
+
+
+def _json_object(payload: bytes, label: str) -> Dict:
+    def _pairs_without_duplicates(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    try:
+        value = json.loads(payload.decode("utf-8"), object_pairs_hook=_pairs_without_duplicates)
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise MemoryBackupError(f"{label} is not valid UTF-8 JSON") from exc
     if not isinstance(value, dict):
         raise MemoryBackupError(f"{label} must be a JSON object")
@@ -135,7 +335,7 @@ def _validate_canonical_document(payload: bytes) -> Tuple[Dict, List[str], List[
         for index, record in enumerate(records):
             memory_id, project_id = _validate_memory_record(record, bucket, index)
             if memory_id in seen_ids:
-                raise MemoryBackupError(f"Canonical memory has duplicate memory_id: {memory_id}")
+                raise MemoryBackupError("Canonical memory has duplicate memory_id")
             seen_ids.add(memory_id)
             if project_id:
                 project_ids.add(project_id)
@@ -154,7 +354,7 @@ def _validate_state_payload(payload: bytes) -> Dict:
     try:
         return validate_state_document(document)
     except StateSchemaError as exc:
-        raise MemoryBackupError(f"Project state is invalid: {exc}") from exc
+        raise MemoryBackupError("Project state is invalid") from exc
 
 
 def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
@@ -179,9 +379,7 @@ def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
         registered_ids = {project["project_id"] for project in registry["projects"]}
         missing = sorted(set(project_ids) - registered_ids)
         if missing:
-            raise MemoryBackupError(
-                "Project registry is missing canonical project identities: " + ", ".join(missing)
-            )
+            raise MemoryBackupError("Project registry is missing canonical project identities")
 
     if project_state is not None:
         if registry is None:
@@ -190,10 +388,7 @@ def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
         state_project_ids = set(project_state["projects"])
         missing_state_projects = sorted(state_project_ids - registered_ids)
         if missing_state_projects:
-            raise MemoryBackupError(
-                "Project registry is missing canonical state identities: "
-                + ", ".join(missing_state_projects)
-            )
+            raise MemoryBackupError("Project registry is missing canonical state identities")
 
     return {
         "canonical": canonical,
@@ -204,27 +399,180 @@ def _validate_snapshot(payloads: Dict[str, bytes]) -> Dict:
     }
 
 
-def _read_source_payloads(vault_path: Union[str, Path]) -> Dict[str, bytes]:
-    vault = Path(vault_path).expanduser()
-    canonical_path = vault / RESTORE_PATHS[CANONICAL_ARCHIVE_PATH]
-    if not canonical_path.is_file():
-        raise MemoryBackupError(f"Canonical memory does not exist: {canonical_path}")
+def _source_descriptors(payloads: Dict[str, bytes]) -> Dict[str, Dict]:
+    """Build privacy-safe descriptors for the fixed source set."""
+    unknown = set(payloads) - set(SOURCE_ARCHIVE_PATHS)
+    if unknown:
+        raise MemoryBackupError("Backup source set contains an unknown path")
 
-    payloads = {CANONICAL_ARCHIVE_PATH: canonical_path.read_bytes()}
-    registry_file = registry_path(vault)
-    if registry_file.exists():
-        payloads[REGISTRY_ARCHIVE_PATH] = registry_file.read_bytes()
-    settings_file = vault / RESTORE_PATHS[SETTINGS_ARCHIVE_PATH]
-    if settings_file.exists():
-        payloads[SETTINGS_ARCHIVE_PATH] = settings_file.read_bytes()
-    state_file = vault / RESTORE_PATHS[STATE_ARCHIVE_PATH]
-    if state_file.exists():
-        payloads[STATE_ARCHIVE_PATH] = state_file.read_bytes()
+    descriptors = {}
+    canonical_payload = payloads.get(CANONICAL_ARCHIVE_PATH)
+    if canonical_payload is None:
+        raise MemoryBackupError("Backup is missing canonical memory")
+    canonical_raw = _json_object(canonical_payload, "canonical memory")
+    canonical_normalized = MemoryStore._normalize(canonical_raw)
+    descriptors[CANONICAL_ARCHIVE_PATH] = {
+        "present": True,
+        "sha256": _sha256(canonical_payload),
+        "bytes": len(canonical_payload),
+        "raw_schema_version": canonical_raw.get("schema_version"),
+        "normalized_schema_version": canonical_normalized.get("schema_version"),
+        "revision": canonical_normalized.get("revision"),
+    }
+
+    registry_payload = payloads.get(REGISTRY_ARCHIVE_PATH)
+    if registry_payload is None:
+        descriptors[REGISTRY_ARCHIVE_PATH] = {
+            "present": False,
+            "sha256": None,
+            "bytes": 0,
+            "raw_schema_version": None,
+            "normalized_schema_version": None,
+            "revision": None,
+            "revision_origin": None,
+        }
+    else:
+        registry_raw = _json_object(registry_payload, "project registry")
+        registry_normalized = ProjectRegistry._normalize(registry_raw)
+        descriptors[REGISTRY_ARCHIVE_PATH] = {
+            "present": True,
+            "sha256": _sha256(registry_payload),
+            "bytes": len(registry_payload),
+            "raw_schema_version": registry_raw.get("schema_version"),
+            "normalized_schema_version": registry_normalized.get("schema_version"),
+            "revision": registry_normalized.get("revision"),
+            "revision_origin": "document" if "revision" in registry_raw else "legacy_default",
+        }
+
+    settings_payload = payloads.get(SETTINGS_ARCHIVE_PATH)
+    descriptors[SETTINGS_ARCHIVE_PATH] = (
+        {
+            "present": False,
+            "sha256": None,
+            "bytes": 0,
+            "revision": None,
+        }
+        if settings_payload is None
+        else {
+            "present": True,
+            "sha256": _sha256(settings_payload),
+            "bytes": len(settings_payload),
+            "revision": None,
+        }
+    )
+
+    state_payload = payloads.get(STATE_ARCHIVE_PATH)
+    if state_payload is None:
+        descriptors[STATE_ARCHIVE_PATH] = {
+            "present": False,
+            "sha256": None,
+            "bytes": 0,
+            "schema_version": None,
+            "store_revision": None,
+        }
+    else:
+        state_raw = _json_object(state_payload, "project state")
+        state_normalized = _validate_state_payload(state_payload)
+        descriptors[STATE_ARCHIVE_PATH] = {
+            "present": True,
+            "sha256": _sha256(state_payload),
+            "bytes": len(state_payload),
+            "schema_version": state_raw.get("schema_version"),
+            "store_revision": state_normalized.get("store_revision"),
+        }
+    return {path: descriptors[path] for path in SOURCE_ARCHIVE_PATHS}
+
+
+def _source_snapshot_digest(descriptors: Dict[str, Dict]) -> str:
+    ordered = {path: descriptors[path] for path in SOURCE_ARCHIVE_PATHS}
+    encoded = json.dumps(
+        ordered,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return _sha256(encoded)
+
+
+def _read_source_payloads(vault_path: Union[str, Path]) -> Dict[str, bytes]:
+    vault = _absolute_vault(vault_path)
+    claude = _assert_source_root(vault)
+    paths = {
+        archive_path: vault / RESTORE_PATHS[archive_path]
+        for archive_path in SOURCE_ARCHIVE_PATHS
+    }
+    canonical_path = paths[CANONICAL_ARCHIVE_PATH]
+    if not _lexists(canonical_path):
+        raise MemoryBackupError("Canonical memory does not exist")
+
+    payloads: Dict[str, bytes] = {}
+    for archive_path in SOURCE_ARCHIVE_PATHS:
+        path = paths[archive_path]
+        if not _lexists(path):
+            if archive_path == CANONICAL_ARCHIVE_PATH:
+                raise MemoryBackupError("Canonical memory does not exist")
+            continue
+        try:
+            payloads[archive_path] = _read_source_file(path, claude)
+        except FileNotFoundError:
+            if archive_path == CANONICAL_ARCHIVE_PATH:
+                raise MemoryBackupError("Canonical memory does not exist") from None
+            # An optional source disappearing during this pass is represented
+            # as absent; the second pass will detect a change if it reappears.
+            continue
     _validate_snapshot(payloads)
     return payloads
 
 
-def _manifest_for(payloads: Dict[str, bytes], snapshot: Dict) -> Dict:
+def _read_source_pass(vault_path: Union[str, Path]) -> Tuple[Dict[str, bytes], Dict, Dict[str, Dict]]:
+    payloads = _read_source_payloads(vault_path)
+    snapshot = _validate_snapshot(payloads)
+    descriptors = _source_descriptors(payloads)
+    return payloads, snapshot, descriptors
+
+
+def _changed_source_paths(first: Dict[str, bytes], second: Dict[str, bytes], first_descriptors: Dict, second_descriptors: Dict) -> Tuple[str, ...]:
+    changed = []
+    for archive_path in SOURCE_ARCHIVE_PATHS:
+        if first.get(archive_path) != second.get(archive_path) or first_descriptors.get(archive_path) != second_descriptors.get(archive_path):
+            changed.append(archive_path)
+    return tuple(changed)
+
+
+def _stable_source_snapshot(vault_path: Union[str, Path]) -> Tuple[Dict[str, bytes], Dict, Dict[str, Dict], int]:
+    """Read and validate all sources twice, retrying bounded source churn."""
+    last_changed: Tuple[str, ...] = tuple()
+    last_reason = "source_churn"
+    vault = _absolute_vault(vault_path)
+    for attempt in range(1, MAX_SNAPSHOT_ATTEMPTS + 1):
+        started = time.monotonic()
+        first_payloads, _first_snapshot, first_descriptors = _read_source_pass(vault)
+        if time.monotonic() - started > SNAPSHOT_ATTEMPT_BUDGET_SECONDS:
+            raise MemoryBackupConsistencyError(last_changed, attempt, "read_budget_exceeded")
+        second_payloads, second_snapshot, second_descriptors = _read_source_pass(vault)
+        elapsed = time.monotonic() - started
+        if elapsed > SNAPSHOT_ATTEMPT_BUDGET_SECONDS:
+            raise MemoryBackupConsistencyError(last_changed, attempt, "read_budget_exceeded")
+        changed = _changed_source_paths(
+            first_payloads,
+            second_payloads,
+            first_descriptors,
+            second_descriptors,
+        )
+        if not changed:
+            return second_payloads, second_snapshot, second_descriptors, attempt
+        last_changed = changed
+        required_changed = CANONICAL_ARCHIVE_PATH in changed
+        last_reason = "source_churn" if required_changed else "optional_source_changed"
+    raise MemoryBackupConsistencyError(last_changed, MAX_SNAPSHOT_ATTEMPTS, last_reason)
+
+
+def _manifest_for(
+    payloads: Dict[str, bytes],
+    snapshot: Dict,
+    descriptors: Dict[str, Dict],
+    attempts: int,
+) -> Dict:
     files = [
         {
             "path": archive_path,
@@ -254,6 +602,13 @@ def _manifest_for(payloads: Dict[str, bytes], snapshot: Dict) -> Dict:
             "scope_metadata": "embedded_in_canonical_records",
         },
         "files": files,
+        "snapshot": {
+            "protocol": SNAPSHOT_PROTOCOL,
+            "attempts": attempts,
+            "verified_at": _utc_now(),
+            "source_snapshot_sha256": _source_snapshot_digest(descriptors),
+            "sources": descriptors,
+        },
     }
 
 
@@ -264,17 +619,46 @@ def _atomic_create_archive(output_path: Path, manifest: Dict, payloads: Dict[str
     )
     os.close(descriptor)
     temporary = Path(temporary_name)
+    published = False
     try:
         with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr(MANIFEST_PATH, json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
             for archive_path, payload in sorted(payloads.items()):
                 archive.writestr(archive_path, payload)
-        temporary.replace(output_path)
+        with temporary.open("r+b") as handle:
+            os.fsync(handle.fileno())
+        try:
+            with file_lock(output_path, timeout=ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS):
+                if output_path.exists():
+                    raise MemoryBackupError("Backup archive already exists")
+                temporary.replace(output_path)
+                published = True
+                _fsync_parent_directory(output_path)
+        except (MemoryStoreLockTimeout, TimeoutError) as exc:
+            raise MemoryBackupError("archive publication lock timeout") from exc
+    except MemoryBackupError:
+        raise
     except (OSError, zipfile.BadZipFile) as exc:
-        raise MemoryBackupError(f"Cannot create backup archive: {output_path}") from exc
+        if published and output_path.exists():
+            try:
+                output_path.unlink()
+            except OSError:
+                pass
+        raise MemoryBackupError("Cannot create backup archive") from exc
     finally:
         if temporary.exists():
             temporary.unlink()
+
+
+def _fsync_parent_directory(path: Path) -> None:
+    """Persist an archive directory entry where directory fsync is supported."""
+    if os.name == "nt":
+        return
+    descriptor = os.open(str(path.parent), os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _expected_archive_path(path: str) -> bool:
@@ -285,6 +669,40 @@ def _expected_archive_path(path: str) -> bool:
         and ".." not in pure.parts
         and "\\" not in path
     )
+
+
+def _verify_schema3_snapshot(manifest: Dict, payloads: Dict[str, bytes]) -> None:
+    snapshot = manifest.get("snapshot")
+    if not isinstance(snapshot, dict):
+        raise MemoryBackupError("Backup manifest has no snapshot metadata")
+    if snapshot.get("protocol") != SNAPSHOT_PROTOCOL:
+        raise MemoryBackupError("Backup manifest has an unsupported snapshot protocol")
+    attempts = snapshot.get("attempts")
+    if isinstance(attempts, bool) or not isinstance(attempts, int) or not 1 <= attempts <= MAX_SNAPSHOT_ATTEMPTS:
+        raise MemoryBackupError("Backup manifest has invalid snapshot attempts")
+    if not isinstance(snapshot.get("verified_at"), str) or not snapshot["verified_at"]:
+        raise MemoryBackupError("Backup manifest has invalid snapshot verification time")
+    digest = snapshot.get("source_snapshot_sha256")
+    if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+        raise MemoryBackupError("Backup manifest has invalid snapshot digest")
+    sources = snapshot.get("sources")
+    if not isinstance(sources, dict) or set(sources) != set(SOURCE_ARCHIVE_PATHS):
+        raise MemoryBackupError("Backup manifest has an invalid source descriptor set")
+    expected_descriptors = _source_descriptors(payloads)
+    if sources != expected_descriptors:
+        raise MemoryBackupError("Backup manifest source descriptors do not match archived bytes")
+    if digest != _source_snapshot_digest(expected_descriptors):
+        raise MemoryBackupError("Backup manifest source snapshot digest mismatch")
+    listed_paths = {
+        entry.get("path")
+        for entry in manifest.get("files", [])
+        if isinstance(entry, dict)
+    }
+    present_paths = {
+        path for path, descriptor in sources.items() if descriptor.get("present") is True
+    }
+    if listed_paths != present_paths:
+        raise MemoryBackupError("Backup manifest source presence does not match archive files")
 
 
 def _read_and_verify_archive(archive_path: Union[str, Path]) -> Tuple[Dict, Dict[str, bytes], Dict]:
@@ -359,17 +777,18 @@ def _read_and_verify_archive(archive_path: Union[str, Path]) -> Tuple[Dict, Dict
             or state_meta.get("project_count") != (len(state["projects"]) if state else 0)
         ):
             raise MemoryBackupError("Backup manifest does not match canonical project state")
+    if manifest["schema_version"] >= 3:
+        _verify_schema3_snapshot(manifest, payloads)
     return manifest, payloads, snapshot
 
 
 def create_backup(vault_path: Union[str, Path], archive_path: Union[str, Path]) -> Dict:
     """Write a verified backup of canonical authorities, excluding projections."""
-    payloads = _read_source_payloads(vault_path)
-    snapshot = _validate_snapshot(payloads)
+    payloads, snapshot, descriptors, attempts = _stable_source_snapshot(vault_path)
     output = Path(archive_path).expanduser()
     if output.exists():
         raise MemoryBackupError(f"Refusing to overwrite an existing backup: {output}")
-    _atomic_create_archive(output, _manifest_for(payloads, snapshot), payloads)
+    _atomic_create_archive(output, _manifest_for(payloads, snapshot, descriptors, attempts), payloads)
     manifest, _verified_payloads, _verified_snapshot = _read_and_verify_archive(output)
     return {
         "status": "created",
