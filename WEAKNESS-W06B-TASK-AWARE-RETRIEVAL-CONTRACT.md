@@ -59,9 +59,35 @@ The initial implementation uses deterministic lexical/task-feature signals avail
 
 The following are frozen for one W-06B revision: provider ID and availability, source revision, task-need model version, feature weights, K, scope/history options, token/latency budgets, normalization, missing-field policy and final tie-break. Any change requires a new package revision and a new DEV baseline.
 
-### 4.2 Task-need model
+### 4.2 Task-need input/output contract
 
-A bounded task-need extractor may use the already resolved task fields: intent/profile, project identity, entities/artifacts, current-state needs and continuation marker. It must not let raw task text widen project scope or history. `resolve_profile`, `resolve_history_mode` and `resolve_scope` semantics in `context_router/policy.py:29–70` are the reference safety rules. The task-need model must output a finite, inspectable need set and a status (`RESOLVED`, `AMBIGUOUS`, or `UNAVAILABLE`). Ambiguous or unavailable task identity must degrade safely to the documented V1 baseline path; it must not guess a project or broaden history.
+The task-aware entrypoint receives a finite `TaskNeedInput` containing only:
+
+```text
+task_id: bounded non-empty identifier
+project_id: string|null (already resolved by trusted task/project resolution)
+intent: one of IMPLEMENT, MIGRATE, TEST, DEBUG, REVIEW, PLAN, DESIGN, RESEARCH, GENERAL
+continuation: boolean
+entities: sorted unique bounded strings (max 32)
+needs: sorted unique bounded enum values (max 16)
+raw_prompt: not retained; optional transient input only for deterministic extraction
+schema_version: 1
+```
+
+The output is `TaskNeedResult`:
+
+```text
+status: READY | NO_NEED | AMBIGUOUS | UNAVAILABLE | INVALID
+profile: bounded profile enum or null
+needs: sorted unique bounded enum values
+project_id: resolved project ID or null
+error_code: content-free bounded code or null
+schema_version: 1
+```
+
+Only `READY` may add task relevance signals. `NO_NEED` deterministically uses legacy ranking with no task signal. `AMBIGUOUS`, `UNAVAILABLE` and `INVALID` deterministically use legacy ranking, preserve the trusted caller scope/history, and expose only their bounded status/error code. They never guess a project, widen history, or select a broader retrieval scope. Unknown fields, overlong arrays, invalid enums or invalid identifiers produce `INVALID`.
+
+The task-need extractor may consume the already resolved task model and bounded entity/intent fields. It must not persist raw prompts or candidate content. The existing trusted policy remains authoritative: `resolve_profile`, `resolve_history_mode` and `resolve_scope` in `context_router/policy.py:29–70` are reference rules.
 
 ### 4.3 Candidate eligibility and safety hard gates
 
@@ -79,13 +105,15 @@ Before scoring, every candidate must pass the existing scope filter and lifecycl
 
 A single safety failure is a hard package failure and cannot be masked by aggregate precision/recall.
 
-### 4.4 Ranking and minimum sufficient context
+### 4.4 Ranking, minimum sufficient context and overflow
 
 Ranking must expose separate signals, at minimum: task-need relevance, claim/content relevance, project relevance, authority/criticality, freshness, lifecycle eligibility, dependency/continuity relevance, redundancy penalty and deterministic identity/content tie-break. Freshness is one signal only; an old canonical decision may outrank a newer irrelevant note.
 
-The result must select at most frozen K candidates and stop at minimum sufficient context. It must not select everything to improve recall. Required/must-include items from W-09A remain mandatory when eligible; if mandatory context exceeds budget, the result is an explicit bounded status rather than silent truncation. Duplicate or near-duplicate context must be penalized deterministically.
+The result is bounded by **at most 5 memory items**, **at most 1,024 estimated output tokens**, and **at most 8,192 UTF-8 bytes** for the selected context payload. The 5-item bound preserves the current V1 bootstrap limit (`scripts/context-compiler.py:666`); the token/byte limits leave room for the task envelope and hook framing while preventing context growth from becoming a hidden budget sink. Measurement uses the same deterministic estimator and rendered UTF-8 byte count used by the selected provider; if the estimator is unavailable, status is `TOKEN_UNAVAILABLE` and the result is not promoted or scored as a successful budget pass.
 
-The final ordering must be independent of input/file order. The tie-break is frozen as `(descending final score, source/type policy, memory_id, canonical content fingerprint)` or a more specific documented equivalent, and is covered by a fixed fixture test.
+The result must stop at minimum sufficient context. It must not select everything to improve recall. Required/must-include items from W-09A remain mandatory when eligible. If mandatory items alone exceed any frozen bound, return `INSUFFICIENT_BUDGET` with fields `{status, required_ids, omitted_ids, item_count, estimated_tokens, byte_count, budget_version}`; do not silently truncate or substitute forbidden/ineligible items. If optional items cannot fit, omit them deterministically with `OPTIONAL_BUDGET_EXHAUSTED`. An empty eligible set returns `EMPTY` with no error. Any scope/lifecycle safety failure returns `SAFETY_REJECTED` and no selected context.
+
+The final ordering must be independent of input/file order. The tie-break is frozen as `(descending final score, source/type policy, memory_id, canonical content fingerprint)` and is covered by a fixed fixture test.
 
 ### 4.5 Rollback and runtime gate
 
@@ -120,9 +148,10 @@ The stronger graduation target (precision >=0.75, mandatory recall >=0.90) is no
 
 - every W-09A safety leakage counter = 0 on DEV, TEST and final HOLDOUT audit;
 - deterministic repeated run and shuffled-input outputs are identical;
-- p95 selection latency stays within the frozen pre-change budget and does not exceed the agreed budget by more than 10%;
-- selected context stays within frozen K and token/byte budgets;
-- unavailable provider and malformed optional fields produce explicit bounded statuses;
+- p95 task-aware selection latency is **<=250 ms** on the frozen evaluation harness hardware/profile, measured over at least 30 repeated runs per public split with warm and cold-start values reported separately; exceeding the limit is a visible operational failure;
+- selected context stays within **5 items, 1,024 estimated tokens and 8,192 UTF-8 bytes**;
+- unavailable provider/estimator, malformed optional fields and invalid gate configuration produce explicit bounded statuses (`SEMANTIC_UNAVAILABLE`, `TOKEN_UNAVAILABLE`, `INVALID`, `RETRIEVAL_MODE_UNAVAILABLE`) and never silently count as a quality success;
+- mandatory overflow returns `INSUFFICIENT_BUDGET` with no unsafe fallback; optional overflow is deterministic omission;
 - rollback succeeds and legacy output remains available;
 - no canonical writes, authority changes, or telemetry content leakage.
 
