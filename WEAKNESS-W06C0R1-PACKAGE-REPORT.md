@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-06C0R1 — answerability and provenance correction
 **REVISION:** P1-A implementation/evidence chain `9ff0757` → `27c8ed2` →
-`bbc2711` → `d70699a`
+`57365b8` → `6fdaf7f` → `c887e15` → `fb82bd8`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -14,7 +14,7 @@ unchanged.
   manifest, and sealed holdout metadata.
 - `evals/w06c0r1/**`: evaluator, CLI entry points, and content-free DEV/TEST/
   HOLDOUT evidence reports.
-- `tests/test_w06c0r1_contract.py`: 14 focused contract tests.
+- `tests/test_w06c0r1_contract.py`: 15 focused contract tests.
 - Exact governance/review documents listed in the evaluator scope allowlist.
 
 The exact allowlist check permits only the corpus/evaluator/test prefixes, the
@@ -31,14 +31,14 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 - Provider inputs use opaque per-run task handles; public IDs and labels remain
   outside the provider boundary.
 - HOLDOUT labels are sealed and require an explicit final-probe invocation;
-  replay of an existing final output or a different output path is rejected
-  before provider execution.
+  replay of an existing final output, a different output path, or a non-holdout
+  split is rejected before provider execution.
 - Safety leakage is a hard gate, including global-task rejection of
   project-scoped candidates.
 
 ## Tests executed
 
-- Focused: `pytest tests/test_w06c0r1_contract.py -q` → **14 passed** after
+- Focused: `pytest tests/test_w06c0r1_contract.py -q` → **15 passed** after
   P1-A evidence refresh.
 - Critical syntax/static checks: critical flake8 (`E9,F63,F7,F82`),
   `compileall`, and `git diff --check` → **PASS**.
@@ -55,13 +55,13 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 ## Evidence and metrics
 
-- Manifest: `sha256:dc289344e6c2f2f90eeab06c6c4052bae129b9fb0c3135b311c2330d717306fd`.
-- Source fingerprint: `sha256:8530deb30881aac3430e875552d910df8133f28120a3cac54a42a359d74dfa06`.
-- Holdout seal: `sha256:d5803bb6f6b4b41099597487dfa8301f72267c5d935a202ba430571ad51fc81f`.
+- Manifest: `sha256:44c479541db5d4ebecc38ddb7d817b9cfd3ad625aa6db45c1dad3bd941060325`.
+- Source fingerprint: `sha256:30aa8496316216af88b80bd9f1f8bc84e36a106fae094b18a725234e51ed7633`.
+- Holdout seal: `sha256:c27c38190f4610b6c9c4b5537abce495efe34fea1249368f1c9415d24e658916`.
 - DEV/TEST/HOLDOUT report hashes:
-  `sha256:b8b691ac263bdfb61c2cb66dc79412882d4870f8b08e88f5cf11a02a25d2c954`,
-  `sha256:f2a7c00b7fe77aea186698c6149091641c6ef3ff57836a9ad9f56474a6bde983`,
-  `sha256:99cb95dad04f93c7c237624ab1ffd8d99b84c052613ee1ed86a45dd2c7555266`.
+  `sha256:3f42b652e21ed772102d39851c45e1878a15d5a68459b05ea9fdf3b640bf3e69`,
+  `sha256:95582d8430790af1a898902718a2529adb1257ba7c797edff7ecaef19ae6b992`,
+  `sha256:90ea24dbcf987e0adebf50858cc5163586f209d809ee084f85d586e77006c72b`.
 - DEV/TEST/HOLDOUT each contain the required nine retrieval phenomena and meet
   the answerable minimum (60/60, 60/60, 30/30).
 - V1/V2 and authority metrics are recorded in the evidence reports; optional
