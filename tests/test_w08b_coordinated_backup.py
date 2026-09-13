@@ -195,6 +195,32 @@ def test_each_source_revision_or_hash_churn_is_retried(tmp_path, monkeypatch, so
     assert _manifest(archive)["snapshot"]["attempts"] == 2
 
 
+def test_memory_store_writer_revision_churn_is_retried(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    archive = tmp_path / "canonical-writer.zip"
+    real_read = backup._read_source_pass
+    calls = 0
+
+    def mutate_with_authority(path):
+        nonlocal calls
+        value = real_read(path)
+        calls += 1
+        if calls == 1:
+            from brain_eleven.memory import MemoryStore
+
+            store = MemoryStore(vault)
+            current = store.load()
+            current["summary"] = {"writer": "normal-authority"}
+            store.replace(current, expected_revision=current["revision"])
+        return value
+
+    monkeypatch.setattr(backup, "_read_source_pass", mutate_with_authority)
+    create_backup(vault, archive)
+    manifest = _manifest(archive)
+    assert manifest["snapshot"]["attempts"] == 2
+    assert manifest["snapshot"]["sources"][CANONICAL_ARCHIVE_PATH]["revision"] == 5
+
+
 def test_optional_source_appearance_and_disappearance_are_bounded_changes(tmp_path, monkeypatch):
     real_read = backup._read_source_pass
     vault = _vault(tmp_path, settings=False)
@@ -335,6 +361,20 @@ def test_publication_sync_failure_leaves_no_archive_or_temp_file(tmp_path, monke
         raise OSError("simulated directory sync failure")
 
     monkeypatch.setattr(backup, "_fsync_parent_directory", fail_sync)
+    with pytest.raises(MemoryBackupError, match="Cannot create backup archive"):
+        create_backup(vault, output)
+    assert not output.exists()
+    assert not list(tmp_path.glob(".memory-backup-*.zip"))
+
+
+def test_archive_temp_fsync_failure_cannot_report_success(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    output = tmp_path / "backup.zip"
+
+    def fail_fsync(_descriptor):
+        raise OSError("simulated archive fsync failure")
+
+    monkeypatch.setattr(backup.os, "fsync", fail_fsync)
     with pytest.raises(MemoryBackupError, match="Cannot create backup archive"):
         create_backup(vault, output)
     assert not output.exists()
