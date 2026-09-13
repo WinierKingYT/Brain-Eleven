@@ -67,13 +67,23 @@ The evaluator must distinguish:
 
 ### 4.2 Public split
 
-Public measurement uses `DEV + TEST` only. `HOLDOUT` is never read for public
-metrics, threshold selection, provider tuning, or fixture repair. Every report
-must carry ordered case IDs, split identity and a source/corpus fingerprint.
+The current repository has exactly three directories: `dev`, `test` and
+`holdout`. In this contract `DEV` means iteration data, `TEST` is the public
+validation/architecture-decision split, and `HOLDOUT` is the final read-only
+split. There is no fourth `validation` directory and no alias may be inferred.
 
-The holdout labels are immutable for a corpus version. Any changed case,
-label, required/acceptable/forbidden set, or answerability decision requires a
-new corpus version; `ig-eval-v1` and later versions are never silently edited.
+Public measurement may read `DEV + TEST`; it may not read `HOLDOUT` for metric
+calculation, parameter/threshold selection, provider tuning, fixture repair or
+promotion. A separate final holdout audit may read HOLDOUT only after all
+implementation decisions are frozen, and its report is never fed back into
+code or public thresholds. Public and holdout commands, roots and report paths
+must be distinct and recorded.
+
+Every report must carry the split name, ordered case IDs and separate source
+and corpus fingerprints. The holdout labels are immutable for a corpus
+version. Any changed case, label, required/acceptable/forbidden set, or
+answerability decision requires a new corpus version; `ig-eval-v1` and later
+versions are never silently edited.
 
 ### 4.3 Answerability
 
@@ -102,15 +112,49 @@ Selection-everything and selection-none controls are mandatory. A provider
 must not obtain a good result by selecting every candidate: precision, noise
 and token waste are required metrics alongside recall.
 
+### 5.1 Set and ordering invariants
+
+All ID arrays are sorted, unique, bounded identifiers. `required_ids`,
+`acceptable_ids`, `forbidden_ids` and `mandatory_ids` are subsets of
+`candidate_ids`; `mandatory_ids` is a subset of `required_ids`; forbidden IDs
+are disjoint from required and acceptable IDs. Candidate content metadata has
+one stable ID per case. A case violating these invariants is invalid and is
+excluded from quality aggregates with an explicit invalid status; it is never
+silently repaired by the evaluator.
+
+`answerability.status=NO` cases are excluded from quality aggregates because
+they do not have a determinable expected selection. Their schema, privacy and
+available safety checks still run. If a required safety label is unavailable,
+the case records `unsupported` or `not_applicable` explicitly; it is not
+converted to a passing or zero quality result.
+
 ## 6. Metrics and hard gates
 
-For a fixed `K` and the same candidate pool, report at least:
+For a fixed `K` and the same candidate pool, report at least. The definitions
+below are frozen for this contract:
 
 - Precision@K, Recall@K and F1;
 - MRR/rank quality;
 - mandatory-context recall;
 - noise ratio and token waste;
 - selected count and context size/latency where available.
+
+Let `R = required_ids ∪ acceptable_ids`, `S` be the selected IDs after
+normalization, and `N = |S|`. Precision@K is `|S ∩ R| / N`, with `0` when
+`N=0` and `|R|>0`, and `1` when both are empty. Recall@K is
+`|S ∩ required_ids| / |required_ids|`; if `required_ids` is empty the case is
+not applicable for recall. F1 is the harmonic mean of the defined precision
+and recall, and is `0` when either required component is zero. MRR is the
+reciprocal rank of the first item in `R` (zero when no relevant item is
+selected). Mandatory recall is `|S ∩ mandatory_ids| / |mandatory_ids|`, or
+not-applicable when the mandatory set is empty. Noise ratio is
+`|S - R| / max(N, 1)`. Token waste is the number of selected tokens belonging
+to `S - R` divided by total selected tokens; when token counts are unavailable
+it is `unavailable`, never an invented zero. Aggregates must state whether
+they are macro averages over applicable cases or micro counts; W-09A uses
+macro averages for per-case rates and a separately reported micro numerator /
+denominator. Fewer than `K` selected items and abstention use the actual `N`
+and do not receive padding items.
 
 Safety gates are evaluated per case and cannot be hidden by aggregate averages:
 
@@ -133,7 +177,10 @@ implementation.
 ## 7. V1/V2 comparison boundary
 
 V1 and V2 must run against the identical versioned cases, candidate IDs,
-labels, project scope and `K`. The report must show both sides for precision,
+labels, project scope and `K`. “Identical” additionally requires equal
+candidate content fingerprints, candidate ordering fingerprint, query/task
+fingerprint, split/corpus version, deterministic seed, provider configuration
+ID/version, selection normalization and tie-breaking policy. The report must show both sides for precision,
 mandatory recall, noise and context size. V2 may be declared better only when:
 
 - V2 precision is strictly greater than V1;
@@ -147,10 +194,17 @@ of W-09A.
 ## 8. Provider and anti-gaming rules
 
 Provider IDs and roles are bounded identifiers. A missing semantic/embedding
-provider must report `SEMANTIC_UNAVAILABLE` (or the existing bounded
-unavailable code) with `quality=unavailable`, `measurement=incomplete` and
-`promotion=blocked`. Random vectors, fabricated confidence or lexical output
-must not be labelled semantic evidence.
+provider has one exact provider state: `available`, `unsupported`, or
+`unavailable`. A missing semantic/embedding provider reports provider state
+`unavailable` and reason code `SEMANTIC_UNAVAILABLE`; a provider that cannot
+prove a required capability reports `unsupported` and reason code
+`PROVIDER_UNSUPPORTED`. Source/corpus problems use W-09 evidence states
+`stale`, `tampered`, `invalid` or `unavailable` with bounded reason codes
+`SOURCE_STALE`, `SOURCE_TAMPERED`, `SOURCE_INVALID` or
+`SOURCE_UNAVAILABLE`. All such states produce `quality=unavailable` or
+`invalid`, `measurement=incomplete` and `promotion=blocked`. Random vectors,
+fabricated confidence or lexical output must not be labelled semantic
+evidence.
 
 Weight tuning, embedding-provider migration, corpus relabeling and threshold
 tuning against HOLDOUT are forbidden. Any parameter selection uses DEV only;
@@ -169,6 +223,24 @@ selection-all and selection-none controls
 HOLDOUT read guard
 source/corpus fingerprint reconciliation
 ```
+
+The source fingerprint allowlist is frozen for W-09A and is separate from the
+corpus fingerprint. Source input is the evaluator code, metric/schema code,
+provider adapter/configuration and the exact W-09A test files named in the
+contract. Corpus input is `manifest.json` plus every JSON file in the selected
+split directories, including candidate content, labels, ordering metadata and
+answerability. Both use normalized LF bytes, sorted relative POSIX paths,
+length-framed SHA-256 input. Generated reports, HOLDOUT files during public
+runs, model weights and arbitrary unlisted files are excluded. A report must
+record both fingerprints and the provider configuration/version, seed, `K`,
+normalization and tie-breaking codes.
+
+Generated reports are content-free: case rows may contain bounded IDs,
+counts, status codes and metric values only. Queries, rationale, transcript,
+memory text, secrets and arbitrary candidate content stay in fixtures or
+private local inputs and never appear in report JSON, package reports or
+telemetry. Unknown fields, unbounded IDs and forbidden content keys are
+rejected with bounded errors.
 
 The package report records exact revision, commands, public split fingerprint,
 report hashes, case counts, before/after metrics, safety status, unavailable
