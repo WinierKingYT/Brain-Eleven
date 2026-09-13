@@ -20,8 +20,21 @@ Implementation may change only the explicitly selected V1 ranking/retrieval surf
 - `scripts/memory-retriever.py` `MemoryRetriever.search`/`get_by_type` (lines 110–213), only if the contract-selected V1 query path uses them;
 - `scripts/hybrid-search.py` `HybridSearchEngine.search`/`_merge_results` (lines 52–199), only if the contract-selected path uses it;
 - the existing V1 evaluation adapter and W-09A evaluation-only reporting/tests, without changing corpus labels or holdout data.
+- `brain_eleven/runtime/storage.py` `RuntimeConfig.load` additive
+  `retrieval_mode` resolution and bounded telemetry;
+- `brain_eleven/runtime/context.py` UserPromptSubmit gate and bounded
+  `TaskNeedInput` handoff, plus SessionStart legacy parity;
+- `brain_eleven/runtime/service.py` `/api/context` and
+  `brain_eleven/runtime/launcher.py` parity/rollback tests;
+- native hook/install template surfaces only for wiring and parity evidence.
 
 Before implementation, the package report must identify the exact active production caller path and may narrow this list. Unused legacy search modules must not be modified merely because they are in the inventory.
+
+The direct legacy SessionStart templates remain a V1-only path and are not
+converted to W-06B in this package. W-06B applies only to the native
+UserPromptSubmit `/api/context` path described in §3; the runtime files above
+are therefore an authorized part of the gate/handoff implementation, not an
+unbounded architecture rewrite.
 
 No changes are authorized to `context_router`, `context_compiler_v2`, V2 provider behavior, embedding providers, capture/worker paths, MemoryStore/StateStore/ProjectRegistry authority, lifecycle mutation, Phase 20, or unrelated architecture consolidation.
 
