@@ -178,3 +178,28 @@ checks the committed artifact's embedded seal and report hash against the
 canonical seal. The one-time holdout boundary must remain intact.
 
 **Follow-up verdict: FIX-FIRST.** A-01 is closed; A-02 remains open.
+
+## P1-A final seal-binding re-review — exact HEAD `6b2f4fe`
+
+The final follow-up closes A-02. Independent verification found:
+
+- Focused W-06C0R1 suite: **16 passed**.
+- `verify_manifest()`, `source_fingerprint()`, and `verify_seal()`: **PASS**.
+- Committed DEV/TEST/HOLDOUT report hashes match the package report.
+- Committed `holdout.json` embeds the current canonical seal
+  `sha256:bad068ef...`.
+- The new binding test checks the committed holdout artifact against the
+  canonical seal.
+- Scope verification passes, and the W-06C0R1 revision contains no production
+  or forbidden runtime paths.
+- Critical flake8, compileall, and diff checks pass.
+
+The combined W-06C0/W-06C0R1 focused run remains **28 passed, 1 failed** only
+because the historical W-06C0 scope test still compares against its old
+predecessor boundary; that is the separately authorized P1-B compatibility
+package and is explicitly retained as an open failure in the W-06C0R1 report.
+It is not a P1-A implementation regression.
+
+**Final P1-A verdict: SHIP.** The P1-A replay guard, canonical path, split
+guard, evidence provenance, seal binding, and exact governance scope are
+accepted. P1-B remains unimplemented and independently gated.
