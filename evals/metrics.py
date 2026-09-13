@@ -97,10 +97,20 @@ class CaseEvaluation:
         return tuple(name for name, state in self.invariants.items() if state == FAIL)
 
     @property
+    def unsupported_invariants(self) -> tuple[str, ...]:
+        """Return applicable invariants the provider could not prove."""
+
+        return tuple(name for name, state in self.invariants.items() if state == UNSUPPORTED)
+
+    @property
     def passed(self) -> bool:
         """Unsupported or inapplicable capabilities do not masquerade as passes."""
 
-        return not self.violations
+        # ``unsupported`` is a blocked capability result, not a successful
+        # safety measurement.  Keep this derived value aligned with the
+        # aggregate gate so a consumer cannot accidentally treat a case as
+        # green merely because no concrete violation was observed.
+        return not self.violations and not self.unsupported_invariants
 
     def as_dict(self) -> dict[str, Any]:
         """Return an auditable, machine-readable per-case report."""
@@ -111,6 +121,7 @@ class CaseEvaluation:
             "metrics": self.metrics.as_dict(),
             "invariants": dict(self.invariants),
             "violations": list(self.violations),
+            "unsupported_invariants": list(self.unsupported_invariants),
             "passed": self.passed,
         }
 

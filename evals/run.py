@@ -152,7 +152,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         "case_count": report["metrics"]["case_count"],
         "context_precision": report["metrics"]["context_precision"],
         "context_recall": report["metrics"]["context_recall"],
-        "gate": "fail" if _gate_failed(report) else "pass",
+        # Keep the compatibility gate explicitly safety-only.  Quality,
+        # evidence, measurement and promotion are separate machine-readable
+        # statuses and must not be inferred from this field.
+        "safety_gate": "fail" if _gate_failed(report) else "pass",
+        "quality": report["evaluation_status"]["quality"]["state"],
+        "evidence": report["evaluation_status"]["evidence"]["state"],
+        "measurement": report["evaluation_status"]["measurement"],
+        "promotion": report["evaluation_status"]["promotion"],
         "report": str(args.report) if args.report is not None else None,
     }
     print(json.dumps(output, sort_keys=True))

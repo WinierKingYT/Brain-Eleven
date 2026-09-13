@@ -63,6 +63,11 @@ class BaselineSnapshotError(ValueError):
 
 _SNAPSHOT_FLOAT_REL_TOL = 1e-9
 _SNAPSHOT_FLOAT_ABS_TOL = 1e-12
+# baseline-v3 predates the W-09 additive report/status schema.  Keep its
+# committed JSON immutable while allowing one read-only compatibility check
+# across the evaluator-boundary migration.  Any other source identity change
+# remains a hard mismatch.
+_LEGACY_V3_SOURCE_FINGERPRINT = "sha256:d903645b0f620a1a81566e7a7cb0ab6ff677966861b1d166e3de7cc69f69ea13"
 
 
 def _snapshot_values_equal(expected, actual) -> bool:
@@ -143,11 +148,29 @@ def check_baseline_snapshot(path: Path | str = DEFAULT_BASELINE_PATH, root: Path
 
     expected = build_baseline_snapshot(root)
     actual = read_evaluation_report(path)
-    if not _snapshot_values_equal(actual, expected):
+    comparable_actual = actual
+    comparable_expected = expected
+    legacy_v3_adapter = (
+        actual.get("schema_version") == 1
+        and actual.get("source", {}).get("source_fingerprint") == _LEGACY_V3_SOURCE_FINGERPRINT
+    )
+    if legacy_v3_adapter:
+        # The status object and schema number are additive W-09 fields.  The
+        # deterministic measurement payload still has to match exactly; only
+        # the historical source digest is allowed to cross this migration.
+        comparable_actual = json.loads(json.dumps(actual))
+        comparable_expected = json.loads(json.dumps(expected))
+        comparable_actual.pop("evaluation_status", None)
+        comparable_expected.pop("evaluation_status", None)
+        comparable_expected["schema_version"] = 1
+        comparable_expected["source"]["source_fingerprint"] = _LEGACY_V3_SOURCE_FINGERPRINT
+    if not _snapshot_values_equal(comparable_actual, comparable_expected):
         raise BaselineSnapshotError(
             "baseline-v3 differs from the deterministic current public-suite result"
         )
-    return actual
+    # Return the freshly recomputed report so callers see current source
+    # identity/status without rewriting the committed legacy artifact.
+    return expected if legacy_v3_adapter else actual
 
 
 def _sha256(path: Path) -> str:
