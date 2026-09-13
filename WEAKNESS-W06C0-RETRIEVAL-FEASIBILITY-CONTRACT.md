@@ -35,11 +35,17 @@ retriever.
      `review_required`), aligned with the existing IG01-C evaluator vocabulary,
    - a bounded, content-free `answerability.reason`,
    - immutable split/provenance metadata.
-2. Produce a new corpus version (`corpus-v3`) only from reviewed cases. The
+2. Produce a new corpus version at the exact path
+   `evals/corpus-v3/`, with `dev/`, `test/`, and `holdout/` directories and a
+   `manifest.json`. It contains all 70 DEV, 60 TEST, and 30 HOLDOUT cases from
+   the reviewed v3 set; every case receives an answerability label. The
    existing `corpus-v2` files, manifest, labels, and reports remain immutable.
-3. Remove or mark `NO` cases whose required result cannot be inferred from the
-   query plus the available candidate metadata. Do not repair them by adding
-   hidden scenario labels to production inputs.
+3. Retain every reviewed case in its original split and mark cases whose
+   required result cannot be inferred from the query plus available candidate
+   metadata as `unanswerable` or `review_required`. Do not repair them by
+   adding hidden scenario labels to production inputs. A case may be removed
+   only in a later corpus version with a manifest entry and a bounded removal
+   reason.
 4. Build an evaluation-only feasibility harness that runs the same exact
    candidate snapshot and split inputs through:
    - V1 baseline,
@@ -83,21 +89,57 @@ useful, forbidden, lifecycle, project, and safety fields and add:
 
 ```json
 "answerability": {
-  "status": "YES",
+  "status": "answerable",
   "reason": "query_and_candidate_metadata_support_target",
-  "review_version": "w06c0-v1"
+  "review_version": "w06c0-v1",
+  "provenance_hash": "sha256:<64 lowercase hex characters>"
 }
 ```
 
-Allowed reasons are a finite, versioned vocabulary. Reasons must not contain
-raw prompts, memory content, secrets, filesystem paths, or private project
-identifiers beyond the existing public case ID boundary.
+The exact reason enum for `w06c0-v1` is:
+
+| Reason | Meaning |
+|---|---|
+| `query_and_candidate_metadata_support_target` | The target is inferable from the query and allowed candidate metadata. |
+| `query_lacks_target_discriminator` | The query does not distinguish the labeled target from alternatives. |
+| `gold_label_depends_on_hidden_fixture_metadata` | The label depends on an opaque scenario/fixture value unavailable to a provider. |
+| `candidate_snapshot_incomplete` | Required evidence is absent from the candidate snapshot supplied to the provider. |
+| `annotation_disagreement` | Independent reviewers disagree; the case is `review_required`. |
+| `privacy_or_schema_review` | The case needs review before it can enter a scored split. |
+
+Reasons must not contain raw prompts, memory content, secrets, filesystem
+paths, or private project identifiers beyond the existing public case ID
+boundary. Every public label is reviewed by two independent labelers. Any
+disagreement becomes `review_required`; a single implementer cannot resolve a
+disagreement by changing the label. The label set, reason enum, reviewer
+roles, and `review_version` are frozen in the v3 manifest. HOLDOUT labels are
+created before provider tuning, stored in the sealed HOLDOUT directory, and
+are not read by implementation or DEV/TEST report code until the final probe.
 
 `unanswerable` and `review_required` cases are retained for audit visibility but
 excluded from quality aggregates. They remain visible in counts and cannot
 silently become scored by provider selection.
 
-### 3.2 Splits and immutability
+### 3.2 Splits, manifest, fingerprints, and immutability
+
+The v3 manifest is fixed before implementation:
+
+```text
+path: evals/corpus-v3/manifest.json
+schema_version: 1
+corpus_version: 3
+suite_counts: {"dev": 70, "test": 60, "holdout": 30}
+split_directories: ["dev", "test", "holdout"]
+answerability_reason_version: "w06c0-v1"
+```
+
+Each split contains exactly the stated number of JSON case files. The manifest
+stores a SHA-256 for every normalized UTF-8 file (CRLF and CR normalized to
+LF), plus a split fingerprint formed by sorting relative POSIX paths and
+hashing length-prefixed `(relative_path, normalized_bytes)` frames. Reports
+must copy the manifest hash, split fingerprint, source fingerprint, case count,
+scored count, and excluded counts. Missing, extra, duplicate, or symlinked
+case files fail closed.
 
 - `DEV` is for implementation/evaluator iteration.
 - `TEST` is the public acceptance comparison and is not used to tune provider
@@ -133,20 +175,44 @@ providers run only when explicitly selected by the probe command. A missing
 provider is a measured result, never a synthetic vector and never a pass.
 
 Provider reports must include provider ID, model, revision/schema identity,
-status, bounded error code, latency, candidate count, selected count, and
-content-free evidence hashes. They must not include raw prompt, memory content,
-transcript, token, credential, or API response text.
+requested slot, actual provider ID, availability (`AVAILABLE` or `UNAVAILABLE`),
+run status (`COMPLETE`, `NOT_MEASURED`, or `ERROR`), bounded error code,
+latency, candidate count, selected count, and content-free evidence hashes.
+They must not include raw prompt, memory content, transcript, token,
+credential, or API response text. A fallback must identify its actual provider
+and set `availability=AVAILABLE`, `run_status=COMPLETE`, and `fallback=true`;
+it may not be reported as the requested provider. An unavailable configured
+provider produces `availability=UNAVAILABLE`, `run_status=NOT_MEASURED`, and a
+finite error code; it is never a synthetic vector and never a quality pass.
+
+### 4.1 Normalized answerability mapping
+
+The v3 adapter maps only `answerable` to a scored quality case. Both
+`unanswerable` and `review_required` remain visible and run safety checks but
+are excluded from quality aggregates with separate counts. Any other status
+literal is invalid and aborts the report. Existing W-09A `corpus-v2` parsing,
+the legacy `status == "NO"` behavior, and all existing W-09A reports remain
+byte-stable; the v3 adapter does not silently reinterpret v2 values.
 
 ## 5. Metrics and hard gates
 
-For `YES` cases only, report:
+For `answerable` cases only, report:
 
-- Precision@K and variable-K precision,
+- Precision@K for `K=1`, `K=3`, `K=5`, and `K=10`, using the provider's
+  ordered IDs truncated to the first K after stable duplicate removal (first
+  occurrence wins; duplicate IDs are invalid in the provider result, not
+  silently collapsed),
 - mandatory recall and recall,
 - F1 and MRR,
 - noise ratio and token waste,
 - selected-count/abstention rate,
 - p50/p95 latency and provider availability.
+
+Metrics are macro-averages over answerable cases in the split. Empty selection
+has precision, recall, F1, MRR, and mandatory recall equal to `0`; an
+answerable case with no required labels is invalid. The evaluator must expose
+both the fixed-K and variable-K rows and must count truncation/duplicate
+violations as evidence failures.
 
 Safety gates apply to every scored and excluded case and remain hard zero:
 
@@ -174,10 +240,23 @@ split identity, or safety evidence is missing. A provider being unavailable is
 
 ## 6. Implementation boundaries
 
-Expected changes are limited to evaluation code, versioned public corpus
-artifacts, and tests/reports under the evaluation boundary. Production runtime
-modules must have zero diff. The implementation must include a machine-checkable
-allowlist that fails if a production retrieval/canonical file is changed.
+Expected changes are limited to this exact allowlist:
+
+```text
+evals/corpus-v3/**
+evals/w06c0/**
+tests/test_w06c0_*.py
+WEAKNESS-W06C0-PACKAGE-REPORT.md
+```
+
+Any other tracked file change is a scope failure. In particular,
+`brain_eleven/**`, `scripts/**`, `context_compiler_v2/**`, `authority/**`,
+`context_router/**`, `.claude/**`, `evals/w09a/**`, and `evals/corpus-v2/**`
+must have zero diff. A machine-checkable allowlist must fail before a report
+is accepted, and the package must record an exact before/after tree assertion
+for these forbidden paths. Temporary vault/provider/cache artifacts may exist
+only below an isolated temporary directory and must be deleted or excluded
+from the commit.
 
 The package may add a new evaluation provider adapter, but it must consume the
 existing normalized `NormalizedEvaluationResult` boundary and must not write a
@@ -191,13 +270,17 @@ The package cannot close until all gates pass:
 1. **Corpus gate:** `corpus-v3` answerability labels, manifest, split hashes,
    and provenance are reviewed; `corpus-v2` is unchanged.
 2. **Evaluator gate:** metric unit tests cover perfect/select-all/select-none,
-   answerability exclusion, malformed reports, hard safety failures, and
-   provider-unavailable behavior.
-3. **Parity/privacy gate:** V1, W-06B, and V2 run on identical inputs; reports
-   contain no raw content; existing W-09A report validation remains green.
+   answerability exclusion, malformed reports, hard safety failures, duplicate
+   IDs, empty selections, all four K values, and provider-unavailable behavior.
+3. **Parity/privacy gate:** V1, W-06B, V2, and `authority_lexical` run on
+   identical inputs; configured embedding and reranker slots are also run when
+   available and otherwise emit explicit `NOT_MEASURED` rows. Reports contain
+   no raw content; existing W-09A report validation remains green.
 4. **Feasibility gate:** DEV and TEST provider matrix is reproducible, with
-   explicit `NOT MEASURED` rows for unavailable providers and no hidden-label
-   tuning. HOLDOUT is run only after the first three gates are frozen.
+   one row for every six provider slots, explicit `NOT_MEASURED` rows for
+   unavailable optional providers, and no hidden-label tuning. HOLDOUT is run
+   only after the first three gates are frozen and its label directory remains
+   sealed until that probe.
 5. **Full verification:** focused evaluation suite, full `pytest tests -q`,
    critical flake8 (`E9,F63,F7,F82`), compile/import sanity, and
    `git diff --check` pass. Production retrieval files are unchanged.
