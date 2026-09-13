@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:88f338a5051261d91047dc783a0d1938eb4c9774b1a43e2fef21ac5cd553d54c",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the reliable persistence rule for promtgen relevance scenario 23."
+  },
+  "task_id": "p15_relevance_023"
+}

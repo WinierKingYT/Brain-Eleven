@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:19889d438b52ff90a5069d4186305336644f7326479e66cf86b143a28f6cdf7d",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "supersession",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde supersession decision'ını değerlendir; foreign context kullanma."
+  },
+  "task_id": "p15_v2_supersession_021"
+}

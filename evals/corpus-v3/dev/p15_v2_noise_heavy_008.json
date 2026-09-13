@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:10d14aded9c8a1ff29182b3eb69dbc81da3c0f1a3aedd291769792f3bcaf30d7",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_event_stream",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_indexeddb_backup"
+    ],
+    "useful": [
+      "mem_backup_canonical"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise_heavy",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select only active promtgen context for the noise heavy evaluation case."
+  },
+  "task_id": "p15_v2_noise_heavy_008"
+}

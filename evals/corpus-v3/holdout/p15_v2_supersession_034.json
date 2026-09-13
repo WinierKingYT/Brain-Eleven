@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:4dec6767b51a36743d5b057127a787031d7cacd706b8b29acb11ae15926cc2c0",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "supersession",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "eleven_capture için supersession bağlamında güvenli aktif kararı seç."
+  },
+  "task_id": "p15_v2_supersession_034"
+}

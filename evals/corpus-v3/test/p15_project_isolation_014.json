@@ -1,0 +1,41 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:cef2299c1110532d868876f69f31593c69baf337d968892de3a3819c0b65f967",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_legacy_export",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Retrieve only promtgen context for isolation scenario 14."
+  },
+  "task_id": "p15_project_isolation_014"
+}

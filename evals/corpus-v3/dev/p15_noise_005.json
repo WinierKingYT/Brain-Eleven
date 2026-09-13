@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:7971803ed33126fbaaded27e7279d2f2dd46b6a3458540f96f7d141bfb2dee82",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_redis_cache",
+      "mem_backup_canonical"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise",
+      "ranking"
+    ],
+    "intent": [
+      "relevance"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Find essential context from a noise-heavy promtgen vault scenario 5."
+  },
+  "task_id": "p15_noise_005"
+}

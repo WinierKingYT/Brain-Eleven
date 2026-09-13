@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:79da2e4bf7791735d57b78277d248669dbc04c4d23c36c71424506e9ba8fedfe",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_command_policy",
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_utf8_paths"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select only active promtgen context for the resolved lifecycle evaluation case."
+  },
+  "task_id": "p15_v2_resolved_lifecycle_035"
+}

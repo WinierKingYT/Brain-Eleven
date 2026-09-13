@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:5518f40ce639d24ad84398b7af4dff943e2e4fecbfabf1e06a7e8147c5ce9172",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup"
+    ],
+    "useful": [
+      "mem_secret_redaction"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "resolved_lifecycle",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde resolved lifecycle decision'ını değerlendir; foreign context kullanma."
+  },
+  "task_id": "p15_v2_resolved_lifecycle_006"
+}

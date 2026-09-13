@@ -1,0 +1,41 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:e0d48829b233286976090912b62e607109def22d7984c9c584f18c9a3b0f13d1",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_legacy_export",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Retrieve only eleven_capture context for isolation scenario 10."
+  },
+  "task_id": "p15_project_isolation_010"
+}

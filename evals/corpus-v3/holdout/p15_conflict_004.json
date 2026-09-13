@@ -1,0 +1,45 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:702dcb90bf09b192da73e1dc7f5a8ad4f0293782be1f52ef1867aaeeffdba1a7",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_resolved_cdn",
+      "mem_mc_event_stream"
+    ],
+    "required": [
+      "mem_pg_template_contract"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "decision"
+    ],
+    "intent": [
+      "conflict"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Select the non-conflicting current decision for promtgen scenario 4."
+  },
+  "task_id": "p15_conflict_004"
+}

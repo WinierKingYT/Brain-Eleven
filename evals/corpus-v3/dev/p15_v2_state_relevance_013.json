@@ -1,0 +1,46 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:f5f74c896b6f52c692dfce56f7d2c58fe15f71386c024e00a6c91be187524783",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_no_network",
+      "mem_ec_vault_manifest"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "state_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "eleven_capture için state relevance bağlamında güvenli aktif kararı seç."
+  },
+  "task_id": "p15_v2_state_relevance_013"
+}

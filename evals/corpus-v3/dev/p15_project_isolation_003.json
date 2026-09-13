@@ -1,0 +1,41 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:238f3ce61b5df2d1c62651a718469fa8984ad1a3d4514346e841467b409a2cca",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_legacy_export",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_default_scope"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "project-isolation"
+    ],
+    "intent": [
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Retrieve only minecraft_mcp context for isolation scenario 3."
+  },
+  "task_id": "p15_project_isolation_003"
+}

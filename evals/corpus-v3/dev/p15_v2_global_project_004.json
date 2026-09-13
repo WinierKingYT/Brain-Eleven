@@ -1,0 +1,46 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:a978befa51b4c248e0ce03263e054d44d022b4755852ec918b3696dfdb56fd32",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_template_contract",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_restore_rebuild",
+      "mem_ec_local_cache"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global_project",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "eleven_capture için global project bağlamında güvenli aktif kararı seç."
+  },
+  "task_id": "p15_v2_global_project_004"
+}

@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:bf358617c845993c01887c223f58604d12423bc22b7ff57519841092d2c28928",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_resolved_json_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_ec_local_cache"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Use active eleven_capture state while excluding completed lifecycle records 4."
+  },
+  "task_id": "p15_lifecycle_004"
+}

@@ -1,0 +1,45 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:621941c75ae49235e89dc72d42da0766a739cc087de38db0feb59188e20f783f",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_superseded_save_rule",
+      "mem_promtgen_storage"
+    ],
+    "required": [
+      "mem_markdown_before_sqlite"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "decision"
+    ],
+    "intent": [
+      "conflict"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Select the non-conflicting current decision for eleven_capture scenario 1."
+  },
+  "task_id": "p15_conflict_001"
+}

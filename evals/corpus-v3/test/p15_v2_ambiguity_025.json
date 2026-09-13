@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:3e466d54c74e478069adb09f92e3b24ada55b6dfd43fee36b13288ad39ec64ff",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_context_budget"
+    ],
+    "useful": [
+      "mem_schema_version"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": null,
+    "prompt": "global için ambiguity bağlamında güvenli aktif kararı seç."
+  },
+  "task_id": "p15_v2_ambiguity_025"
+}

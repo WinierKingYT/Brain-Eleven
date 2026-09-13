@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:3e70781ff32d6d99cd03bf837b8ff4b3abf64fe3b8b10f10e7fa1f061355eef2",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_command_policy"
+    ],
+    "useful": [
+      "mem_no_network"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "contradiction",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde contradiction decision'ını değerlendir; foreign context kullanma."
+  },
+  "task_id": "p15_v2_contradiction_027"
+}

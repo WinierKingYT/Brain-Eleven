@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:e431aec12f6bcaf23f25fa996b0534f20c507c48fb9ed09ab613ac334f01f7d8",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_indexeddb_backup",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_vault_manifest"
+    ],
+    "useful": [
+      "mem_windows_target"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority_traps",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "eleven_capture için authority traps bağlamında güvenli aktif kararı seç."
+  },
+  "task_id": "p15_v2_authority_traps_028"
+}

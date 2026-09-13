@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:cfea2fcb04f6e2ce0b5cbc9e3f8da2fa449ff2c4b465154e3808764db9559569",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_redis_cache",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_explicit_decision",
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Combine global engineering rules with eleven_capture decisions for scenario 10."
+  },
+  "task_id": "p15_global_project_010"
+}

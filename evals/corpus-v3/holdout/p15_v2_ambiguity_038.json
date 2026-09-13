@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:f218e0f94c6ae552fd0ab2535c9ba215b21205d9ee8b9d22ca54feaf6c3870d4",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_world_backup",
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_explicit_decision"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": null,
+    "prompt": "Select only active global context for the ambiguity evaluation case."
+  },
+  "task_id": "p15_v2_ambiguity_038"
+}

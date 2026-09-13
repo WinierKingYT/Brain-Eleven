@@ -1,0 +1,46 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:0de356ee4d19bc2820f6fbac070254d6f7d0ca7efb59e67d801820e1d9c30613",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_mc_protocol_version"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "future-capability"
+    ],
+    "intent": [
+      "authority"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Record the future authority decision case for promtgen scenario 5."
+  },
+  "task_id": "p15_authority_future_005"
+}

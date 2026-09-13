@@ -1,0 +1,46 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:ef34709262e9c1b5d8bbd77175d01e9032d3bbf3cd81762c9c64272c3c713e5d",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_sqlite_index",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_windows_target",
+      "mem_mc_world_backup"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "state_relevance",
+      "reliability"
+    ],
+    "intent": [
+      "review"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "minecraft_mcp scope içinde state relevance decision'ını değerlendir; foreign context kullanma."
+  },
+  "task_id": "p15_v2_state_relevance_042"
+}

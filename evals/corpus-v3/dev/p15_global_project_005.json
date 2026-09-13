@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:ad62f9bc2326cd30255102e74c3cc75c6df3c2c7374963d053caeded4e6c720f",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_protocol_version",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_default_scope",
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Combine global engineering rules with promtgen decisions for scenario 5."
+  },
+  "task_id": "p15_global_project_005"
+}

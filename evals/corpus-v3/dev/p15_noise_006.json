@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:57e6535b47f4a40a852092489eea3b10a99217e88114c6b073d089c7d5c8e880",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_markdown_before_sqlite",
+      "mem_mc_resolved_polling"
+    ],
+    "required": [
+      "mem_mc_world_backup",
+      "mem_stale_projection"
+    ],
+    "useful": []
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "noise",
+      "ranking"
+    ],
+    "intent": [
+      "relevance"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Find essential context from a noise-heavy minecraft_mcp vault scenario 6."
+  },
+  "task_id": "p15_noise_006"
+}

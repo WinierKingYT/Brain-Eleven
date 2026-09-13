@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:58d9a8cd67a1076b7849ca623d93cca837200497207f4a869e2df933f506e4bb",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage"
+    ],
+    "required": [
+      "mem_pg_prompt_versioning"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Resolve the authoritative replacement rule for promtgen scenario 9."
+  },
+  "task_id": "p15_supersession_009"
+}

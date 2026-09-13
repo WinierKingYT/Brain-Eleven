@@ -1,0 +1,42 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:a45bbee74135354c08c9c031fe0f53f932ed66ee20490f6f26c0eebc15cb827a",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_vault_manifest",
+      "mem_pg_indexeddb_backup",
+      "mem_mc_command_policy",
+      "mem_legacy_export"
+    ],
+    "required": [
+      "mem_file_lock"
+    ],
+    "useful": [
+      "mem_restore_rebuild"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "scope"
+    ],
+    "intent": [
+      "ambiguity"
+    ],
+    "project_id": null,
+    "prompt": "Answer only from global policy while current project is ambiguous 3."
+  },
+  "task_id": "p15_ambiguity_003"
+}

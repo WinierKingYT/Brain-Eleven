@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:fb47c3b3328c4295d33566da9eb79957b65af9ce8e617b1301608a026de94fd7",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_mc_resolved_polling",
+      "mem_mc_old_websocket"
+    ],
+    "required": [
+      "mem_mc_event_stream"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Use active minecraft_mcp state while excluding completed lifecycle records 12."
+  },
+  "task_id": "p15_lifecycle_012"
+}

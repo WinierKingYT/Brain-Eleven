@@ -1,0 +1,47 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:75c1fcab9bd3c0e85f1aa7192041b2a41144903d1ac7a764e239eda1af28e01d",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expectations": {
+    "abstain": false,
+    "ask_user": false,
+    "authority_resolution": "future",
+    "conflict_resolution": "future"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_superseded_save_rule"
+    ],
+    "required": [
+      "mem_stale_projection"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "ambiguity",
+      "reliability"
+    ],
+    "intent": [
+      "architecture"
+    ],
+    "project_id": null,
+    "prompt": "global scope içinde ambiguity decision'ını değerlendir; foreign context kullanma."
+  },
+  "task_id": "p15_v2_ambiguity_009"
+}

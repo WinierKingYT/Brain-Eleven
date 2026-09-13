@@ -1,0 +1,39 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:634316e93d4ee6f03ccd34bf50810509e352ea85ba7f29bd42cbddf68df00bcd",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_resolved_json_cache"
+    ],
+    "required": [
+      "mem_ec_atomic_rename"
+    ],
+    "useful": [
+      "mem_explicit_decision"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "authority"
+    ],
+    "intent": [
+      "supersession"
+    ],
+    "project_id": "eleven_capture",
+    "prompt": "Resolve the authoritative replacement rule for eleven_capture scenario 8."
+  },
+  "task_id": "p15_supersession_008"
+}

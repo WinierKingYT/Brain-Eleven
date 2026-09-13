@@ -1,0 +1,40 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:7f24b9f8a686efcc1d232ca3eca473b09657dd388e51613aa8dd1aa9431bcfb4",
+    "reason": "query_lacks_target_discriminator",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_pg_old_localstorage",
+      "mem_pg_resolved_cdn"
+    ],
+    "required": [
+      "mem_pg_redis_cache"
+    ],
+    "useful": [
+      "mem_stale_projection"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "memory-lifecycle"
+    ],
+    "intent": [
+      "lifecycle"
+    ],
+    "project_id": "promtgen",
+    "prompt": "Use active promtgen state while excluding completed lifecycle records 5."
+  },
+  "task_id": "p15_lifecycle_005"
+}

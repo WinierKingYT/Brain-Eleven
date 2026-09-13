@@ -1,0 +1,43 @@
+{
+  "answerability": {
+    "provenance_hash": "sha256:ea4422f47ad142a1aa1044f96ab2f6ee87a941e53a13205a26031f3f91861e84",
+    "reason": "gold_label_depends_on_hidden_fixture_metadata",
+    "review_version": "w06c0-v1",
+    "reviewers": [
+      "labeler_a",
+      "labeler_b"
+    ],
+    "status": "unanswerable"
+  },
+  "expected_behavior": {
+    "inactive_allowed": false,
+    "wrong_project_allowed": false
+  },
+  "expected_context": {
+    "forbidden": [
+      "mem_ec_local_cache",
+      "mem_legacy_import"
+    ],
+    "required": [
+      "mem_stale_projection",
+      "mem_mc_protocol_version"
+    ],
+    "useful": [
+      "mem_context_budget"
+    ]
+  },
+  "schema_version": 1,
+  "task": {
+    "domains": [
+      "global",
+      "project"
+    ],
+    "intent": [
+      "architecture",
+      "scope"
+    ],
+    "project_id": "minecraft_mcp",
+    "prompt": "Combine global engineering rules with minecraft_mcp decisions for scenario 9."
+  },
+  "task_id": "p15_global_project_009"
+}
