@@ -156,3 +156,25 @@ must remain intact; the fix must not silently rerun or unlock HOLDOUT.
 
 Until A-01 and A-02 are closed and independently rechecked, P1-A cannot be
 accepted as SHIP.
+
+## P1-A follow-up re-review — exact HEAD `fb82bd8`
+
+The split guard is now correct: `main()` rejects every non-`holdout` split
+before `run_matrix`, and the new focused test is present. The focused suite is
+**15 passed**; critical flake8, compileall, and diff checks pass. Current
+manifest, source, and seal verification also pass:
+
+- manifest: `sha256:44c479...`
+- source: `sha256:30aa849...`
+- seal: `sha256:c27c3819...`
+
+However, the committed final holdout artifact still embeds
+`holdout_evidence.seal_hash = sha256:2c5cad...`, while the current canonical
+seal is `sha256:c27c3819...`. The package report's raw DEV/TEST/HOLDOUT hashes
+now match the current files, but the holdout artifact's internal seal binding
+does not match the current seal. The final holdout evidence must be refreshed
+or otherwise corrected under the bounded evidence allowlist, with a test that
+checks the committed artifact's embedded seal and report hash against the
+canonical seal. The one-time holdout boundary must remain intact.
+
+**Follow-up verdict: FIX-FIRST.** A-01 is closed; A-02 remains open.
