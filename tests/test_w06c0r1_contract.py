@@ -87,6 +87,22 @@ def test_explicit_corpus_version_and_source_scope():
     scope = verify_scope_diff()
     assert scope["status"] == "PASS"
     assert scope["forbidden_paths"] == []
+    from evals.w06c0r1 import evaluation
+
+    assert scope["scope_end_revision"] == evaluation.IMPLEMENTATION_SCOPE_END_REVISION
+    assert "brain_eleven/runtime/worker.py" in scope["post_end_changed_paths"]
+    assert "brain_eleven/runtime/worker.py" not in scope["historical_changed_paths"]
+    assert not evaluation._post_scope_owned_paths(scope["post_end_changed_paths"])
+
+
+def test_scope_end_revision_is_pinned_and_invalid_end_fails_closed():
+    from evals.w06c0r1 import evaluation
+
+    with pytest.raises(W06C0R1Error, match="scope end revision"):
+        evaluation.verify_scope_diff(scope_end_revision="0" * 40)
+    assert evaluation._post_scope_owned_paths(
+        ["evals/w06c0r1/evidence/dev.json", "brain_eleven/runtime/worker.py"]
+    ) == ("evals/w06c0r1/evidence/dev.json",)
 
 
 def test_historical_scope_compatibility_is_pinned_and_unpinned_hash_fails(monkeypatch, tmp_path):
