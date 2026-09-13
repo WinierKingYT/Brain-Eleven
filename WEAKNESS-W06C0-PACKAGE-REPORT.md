@@ -64,11 +64,52 @@ DEV, TEST, and HOLDOUT runs reported zero wrong-project, forbidden, superseded, 
 
 ## INDEPENDENT REVIEW
 
-The initial implementation review identified the limitations above as FIX-FIRST. A fresh read-only review of revision `62b8aea` and this report is required; self-review is not accepted.
+Fresh read-only review of implementation/test revision
+`62b8aea7c0e56ac595b09dba7b01d54e8e4597d9` was performed at documentation
+HEAD `f676c91d0e41a7523dc2b96a131814b983401456`. The reviewer did not change
+production paths.
+
+Evidence rechecked:
+
+- `tests/test_w06c0_contract.py`: 13 passed in the repository `.venv`.
+- Critical flake8 (`E9,F63,F7,F82`), compileall and `git diff --check`: pass.
+- Full suite evidence at the exact implementation revision: 1094 passed, 2
+  warnings; the follow-up `f676c91` changes this report only.
+- DEV matrix reproduced with one answerable case and zero hard safety leakage.
+- TEST matrix reproduced with zero answerable cases and explicit
+  `INSUFFICIENT_ANSWERABLE_CASES` for every provider.
+- HOLDOUT requires `--final-holdout`, then reproduces zero answerable cases and
+  the same non-passing quality state.
+- Optional provider path is explicit: unavailable providers remain
+  `UNAVAILABLE / NOT_MEASURED`; the injected adapter test reaches `COMPLETE`.
+- Manifest, per-file hashes, split fingerprints, source allowlist and scope
+  gate pass. No production, retrieval, canonical, or Phase 20 path changed.
+
+### Findings
+
+1. **P1 — TEST and HOLDOUT have no answerable quality cases.** The evaluator
+   correctly reports `INSUFFICIENT_ANSWERABLE_CASES`, so this is not a hidden
+   quality pass. However, only one DEV case is scored; there is no public
+   acceptance or sealed holdout evidence from which to choose or reject a
+   successor provider. W-06C1 feasibility selection must remain blocked until a
+   separately reviewed corpus version supplies answerable TEST/HOLDOUT cases.
+
+2. **P1 — answerability provenance is syntactic only.** `_answerability()`
+   validates the `sha256:<64 hex>` shape, while `verify_manifest()` proves the
+   immutable bytes of each case file. Those two checks preserve file integrity,
+   but the evaluator cannot recompute or verify that `provenance_hash` was
+   derived from the claimed review decision and two-person labeling process.
+   The report correctly leaves this as an open limitation; the next corpus
+   version must preserve or replace that derivation recipe.
+
+The safety, privacy, optional-provider, scope and quality-state behavior is
+otherwise consistent with the contract. These P1 evidence gaps prevent package
+closure even though the harness fails closed and the implementation makes no
+production changes.
 
 ## SCORE BEFORE / AFTER
 
 - Evaluation quality before W-06C0: `6.5/10`.
 - Evaluation quality after W-06C0: pending independent review; evidence integrity improved, but quality feasibility is intentionally not graduated.
 
-VERDICT: REVIEW PENDING
+VERDICT: FIX-FIRST
