@@ -345,7 +345,13 @@ def _validate_canonical_document(payload: bytes) -> Tuple[Dict, List[str], List[
 def _validate_registry_payload(payload: bytes) -> Dict:
     document = _json_object(payload, "project registry")
     # Reuse the canonical registry validator without writing a second copy.
-    ProjectRegistry._validate(document)
+    try:
+        ProjectRegistry._validate(document)
+    except ProjectRegistryError as exc:
+        # Registry validation messages can contain user-controlled status or
+        # identity values.  Backup errors are bounded evidence and must not
+        # echo those values.
+        raise MemoryBackupError("Project registry is invalid") from exc
     return document
 
 

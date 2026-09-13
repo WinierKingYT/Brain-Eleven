@@ -335,6 +335,30 @@ def test_validation_error_does_not_echo_project_identity(tmp_path):
     assert "project-secret-identifier" not in str(raised.value)
 
 
+def test_registry_validation_error_does_not_echo_project_identity(tmp_path):
+    vault = _vault(tmp_path, settings=False)
+    _write_json(
+        vault / ".claude" / "project-registry.json",
+        {
+            "schema_version": 1,
+            "revision": 0,
+            "updated_at": "2026-09-13T00:00:00Z",
+            "projects": [
+                {
+                    "project_id": "project-secret-identifier",
+                    "root": str(tmp_path / "project-secret-root"),
+                    "status": "project-secret-identifier",
+                    "proactive_capture": False,
+                }
+            ],
+        },
+    )
+
+    with pytest.raises(MemoryBackupError) as raised:
+        create_backup(vault, tmp_path / "backup.zip")
+    assert "project-secret-identifier" not in str(raised.value)
+
+
 def test_schema2_archive_still_verifies_without_snapshot_metadata(tmp_path):
     vault = _vault(tmp_path)
     source = tmp_path / "v3.zip"
