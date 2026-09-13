@@ -14,7 +14,7 @@
   "evaluator_version": "w06c0r1-v1",
   "holdout_evidence": {
     "command_hash": "sha256:b60a8a5eb4f91c49f7be117346604b4ead1fb3c64b4c7fb658e85e3ab4e8942f",
-    "seal_hash": "sha256:d5803bb6f6b4b41099597487dfa8301f72267c5d935a202ba430571ad51fc81f",
+    "seal_hash": "sha256:2c5cad5bd795b7d38d8eac301861e3d633518b6bd305d2e2efe0de1962f83e0f",
     "unlock_token_hash": "sha256:c1fcb94bf91b7d24aa81295c01296107e4f110dfc53aca19a37a78e16a367849"
   },
   "production_mutation": false,
@@ -2004,7 +2004,7 @@
     ],
     "noise_count": 24,
     "seed": 17,
-    "source_fingerprint": "sha256:42c2a576866f975b04e0e35dc05993d3799955004f8bca6a0a7c4016261b9697",
+    "source_fingerprint": "sha256:30aa8496316216af88b80bd9f1f8bc84e36a106fae094b18a725234e51ed7633",
     "task_set_fingerprint": "sha256:ed2e65489500c5084c69869b0e506ba608eca72d2443f17102643d2a484e3628"
   }
 }
