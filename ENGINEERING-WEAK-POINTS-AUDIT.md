@@ -137,6 +137,13 @@ recomputed from repository evidence. No W-06C1 provider selection, retrieval
 tuning, V2 promotion, or Phase 20 work is authorized until a separately
 reviewed corpus/provenance remediation contract closes these gaps.
 
+**W-06C0R1 contract status:** The corpus/provenance remediation contract is
+independently reviewed `SHIP` at `f391dd6` (contract revision `946b5cd`). It
+freezes an immutable corpus-v4 target, exact candidate/order/task fingerprints,
+opaque provider task handles, and machine-checkable HOLDOUT sealing. Its
+evaluation-only implementation is now authorized within the allowlist; no
+runtime retrieval work is authorized until that package independently ships.
+
 ### W-07 — Reminder/continuity is not an automatic product path (P2)
 
 Session end queues an event, but continuity files are still updated through
