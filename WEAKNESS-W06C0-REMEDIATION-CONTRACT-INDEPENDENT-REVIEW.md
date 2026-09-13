@@ -243,3 +243,27 @@ path rejection test should remain as well.
 
 Until B-02 is closed and independently rechecked, P1-B cannot be accepted as
 SHIP.
+
+## P1-B immutable-pin final re-review — exact HEAD `0b5a262`
+
+The immutable-pin fix closes B-02. The evaluator now compares metadata against
+hard-coded compatibility ID, full W-06C0 scope-end revision, and exact old
+evaluator content hash. The added test mutates both the expected blob hash and
+scope-end revision and proves each mutation fails closed.
+
+Independent verification:
+
+- Focused W-06C0 + W-06C0R1 suites: **31 passed**.
+- Full suite: **1112 passed, 2 warnings**.
+- Full historical scope end resolves to
+  `f676c91d0e41a7523dc2b96a131814b983401456` and is an ancestor of HEAD.
+- Invalid/non-ancestor revisions fail closed.
+- W06C0R1 manifest/source/seal/holdout artifact and package-report hashes
+  agree; the embedded holdout seal matches the canonical seal.
+- W06C0R1 scope gate reports PASS with the exact compatibility exception and
+  no forbidden runtime paths.
+- Critical flake8, compileall, and diff checks pass.
+
+**Final P1-B verdict: SHIP.** The historical W-06C0 scope compatibility fix
+and the bounded W-06C0R1 exception are independently accepted. Phase 20 and
+runtime intelligence promotion remain unchanged.
