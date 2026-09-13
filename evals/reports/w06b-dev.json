@@ -1,0 +1,2083 @@
+{
+  "cases": [
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:f7c8f274a358aee16b70af8310df5ac1d0b85ca0861c890e4c322b903f5d0b32",
+      "task_id": "p15_authority_future_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.79
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:711537f359b79cdd836f51509f24251f7eb1fa9b7a93507299234e5cd35c99d6",
+      "task_id": "p15_authority_future_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:6ef81ccc0b2c685b9b75fe1982bb3544941099552b5598224492aabe561e49ad",
+      "task_id": "p15_authority_future_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:945dd05a98abdfea472383d5a253b2e220178e6f2968f7b3e9b2b65a6939a9a4",
+      "task_id": "p15_global_project_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.79
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:c05a505f65ce9279d9ba259ba1aa79d3cd67d6f6760aa743143aef353a29f488",
+      "task_id": "p15_global_project_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:99923af30b9031d0ba585c3129370560dabefb785aac3d29cb68088b1d05b1c7",
+      "task_id": "p15_global_project_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.8181818181818182
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "noise_17_0004"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:d1eac8ca395b7d7dbd10e58529c385981cc96a9d9f513eb8dfa4aef089fcecf4",
+      "task_id": "p15_global_project_004"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.81
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:0bd16bf81c9e66aeba0471e06b21b7046e85f0a725a5cf8d334e7c7fe44707e1",
+      "task_id": "p15_global_project_005"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:d946abd8d5e9c6d695a007c9ad0bd0fa4d2ca41d71bd9945bd9cecebfa3e9330",
+      "task_id": "p15_global_project_006"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7610619469026548
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:56b887e87dc108d0b05fa4d822c48deab510f9f111ca64586d66deb978a7a908",
+      "task_id": "p15_global_project_007"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.77
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:30277f30caf79f7dea9992719c868f907e71118f0c49cd81ba0a427a42dfd2f1",
+      "task_id": "p15_global_project_008"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 5,
+        "token_waste": 1.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "noise_17_0020"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:081df5152f9862d850ef88bd7809ea8b32f614b7d06ab726942e0870d4fdd47f",
+      "task_id": "p15_noise_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7835051546391752
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:ead8cd7e7755b3575fbcae0b95e439ac16b69e8afedc108403c1a1299d9eea0c",
+      "task_id": "p15_noise_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:fe95513d37d2d361e44881a5688217240fdf5f6cbaae1196f7c163e825c65c1e",
+      "task_id": "p15_noise_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.8181818181818182
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "noise_17_0004"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:42cbb55e8b684626239f4ba4cc5626d7bc8ccaebc6b856e8efa6e980182c69df",
+      "task_id": "p15_noise_004"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 5,
+        "token_waste": 1.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_template_contract",
+        "mem_pg_prompt_versioning",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:d8a3f452d7ca05b95ecbd55fbca71a26838331c0ca8d2ee06ec2550308755616",
+      "task_id": "p15_noise_005"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:3eed5b55fb7b91a210331bdce682415e75355fb783b90b812b118cb8b9afbe4c",
+      "task_id": "p15_noise_006"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_markdown_before_sqlite",
+        "mem_ec_sqlite_index",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:c38502ba65a51305e0834a91285feb6f47ab633871b15d8738ab6095ac5a7d93",
+      "task_id": "p15_persistence_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:d232ff73a40f11f844388711833e1abdfc3c7d411baab6b7b3eabf7768b1eb61",
+      "task_id": "p15_project_isolation_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.79
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:e5007350b696821dd5bbde05c03cca87ed2cdc3805ef3a8146dc521c6a60bf8c",
+      "task_id": "p15_project_isolation_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:0e9c3fe26041cc8c029704790480049caa902e10394342a40d724f81ff5fda7e",
+      "task_id": "p15_project_isolation_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8181818181818182
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "noise_17_0004"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:71a554c6fb0581b2512ebbe907da7f1717b056d559945f63db006d9569c35abe",
+      "task_id": "p15_project_isolation_004"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.81
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:21e84893c72822b0bada4262c31271b568673251ad9e16ef660ff1eddfa2b1c4",
+      "task_id": "p15_project_isolation_005"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:851e4739845f10e11c46a39e06fa0816c53a4535c7a4d136ddc8a9d4614ba033",
+      "task_id": "p15_project_isolation_006"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7610619469026548
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:631161189d290a4618c86836d78065a26e48ce736328ad43e685e3d4310a6883",
+      "task_id": "p15_project_isolation_007"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.77
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:01969b3df8dafdc0c63937fac7aaf8c22a1bb14bd70a4e0958e6a2d0569d3446",
+      "task_id": "p15_project_isolation_008"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7669902912621359
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:ea5dc1e267c8330e836f4d2576aff5b0a54f22091a2ebebc76bad567dfe71c31",
+      "task_id": "p15_project_isolation_009"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8053097345132744
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:564342525acfc462b73053b8c8415f6868ea35a25255bf3e14558ef034657da0",
+      "task_id": "p15_project_isolation_010"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8247422680412371
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0011"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:5b3eec2c15ce26bd61103a1f8c995921c8bde819d1a7665b39243e1484ffc06e",
+      "task_id": "p15_project_isolation_011"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8058252427184466
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:9900a232f35ce386c1e59fe8653efa7b52e2bbb03df5d1fe5abed69f4d530821",
+      "task_id": "p15_project_isolation_012"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:a6b76515aaa96dc7c908693f5506ca445f51ce6ba3cc5f8b72ac282b884e9c64",
+      "task_id": "p15_relevance_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.79
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:48f5c9b801a9e342568b6f1907202130d25c605ceeb5295ba9ff9cf8b2183f57",
+      "task_id": "p15_relevance_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:ee69419fa3068f94d54b5afec064d52c53081820b7041c081dd5f03abb7aa3ce",
+      "task_id": "p15_relevance_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8230088495575221
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:b65e2290b4674168f2cac9f91bca4c4fd4c68aeea11fa9bf19eebd96de1052f8",
+      "task_id": "p15_relevance_004"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.81
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:6e1b1a0142f82fa6a98650a71f1421f9d3caf55efccf6d88d56eb72e20879553",
+      "task_id": "p15_relevance_005"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:54a11e0f83320477e036a6ee9d93ad2589713d842671b295495f6652f20c470d",
+      "task_id": "p15_relevance_006"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7610619469026548
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:14d77a3b06d9de96717a42b586536be438bd046eccbff17a7b223efac72ce457",
+      "task_id": "p15_relevance_007"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.77
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:5d0f316c084ce668a522a1a48be83f4bd8ecdff7161ff14315707846ea007d82",
+      "task_id": "p15_relevance_008"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7669902912621359
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:b280499e61d360ebcdbf95cdbb0f744898b4b9845c829147847a9aed48b410f7",
+      "task_id": "p15_relevance_009"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8053097345132744
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:ee2ddd0ae54be37bc6c968c5fb5780d50084e774614fd1a4c1bf1859802f1315",
+      "task_id": "p15_relevance_010"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8247422680412371
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0011"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:b2a9affe92e2ca9838e98e13073eacff2fa0a3721e6c3b6ad4c54c188a1ccd34",
+      "task_id": "p15_relevance_011"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8058252427184466
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:e4336bd6673d263c289b4e1b4922c0d5dd6cf01b14164a3fcbd3e23609506461",
+      "task_id": "p15_relevance_012"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7787610619469026
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:2362f98905845a4f9ed41345797267785c002486b7ea6a9443b1fcdfb1b8fc30",
+      "task_id": "p15_relevance_013"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:592915d392e9c2e2223bcd349019ac7399399dbc8ab1ed3cdbf3b3550856cc62",
+      "task_id": "p15_relevance_014"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:7356723ebdc28bc0ae8c1c75f56f343a075134e5d9c6528c3671bd912e1b216c",
+      "task_id": "p15_relevance_015"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:bf35d9924b77f288bde38894ec91ee15cd84fe8e7ae7cd5fdc94fdd642239146",
+      "task_id": "p15_relevance_016"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7835051546391752
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:eca1f5d05dbedde1bd68924f4833e0fdb8d94d5dbef0923dffda670fd581abfb",
+      "task_id": "p15_relevance_017"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:ada1c3a13deec6282eabbdb0a1b51666aa43d43b071e645c48e22a3e1795eb4f",
+      "task_id": "p15_relevance_018"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8230088495575221
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:477836dec983f6e608f5a381593d0456c12a6d59ac8bae23e4fab345ba7d7e3a",
+      "task_id": "p15_relevance_019"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.81
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "mem_pg_redis_cache"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:6da851f7eeabcf82ae92683b5270a5a5af5f1ddd99d7eeb5be6dc99723fbb6db",
+      "task_id": "p15_relevance_020"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7669902912621359
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:bad69177226110d5874e3a4ab789076e079e0efaa95b479fc6d8e93c4f93c1d2",
+      "task_id": "p15_relevance_021"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7610619469026548
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_sqlite_index",
+        "mem_ec_vault_manifest",
+        "mem_ec_atomic_rename",
+        "mem_ec_local_cache",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:35911256985a5d33330b6799f26965cfeac3bd33a950ec904940b96dcf227282",
+      "task_id": "p15_relevance_022"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7628865979381443
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0023"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:3f5fd926c2ba58b44edac3148c98e24451bfbc6c86cf2420c32c4291c16ee45f",
+      "task_id": "p15_relevance_023"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8058252427184466
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_protocol_version",
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:df167b8aec8bfa4192e510a9fc51d0fe11e6478c8181a995af4b6038596cd9b0",
+      "task_id": "p15_relevance_024"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 0,
+        "token_waste": 0.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [],
+      "status": "scored",
+      "task_fingerprint": "sha256:4deff87e15018d91b8e9c900c537dfd05ba494a56ee6865aa9da13b9612a4b15",
+      "task_id": "p15_v2_ambiguity_009"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7610619469026548
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:b9512833e142d18e382756f20692400c1db1b2fa4a6e63cdd9f73289ceff42ff",
+      "task_id": "p15_v2_archived_project_007"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8058252427184466
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:cdb93c46aa812bbfcf05272a7ce69b9e836fa4d2a7a56d84514b45ff9526aed6",
+      "task_id": "p15_v2_authority_traps_012"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:16d989822f63f25de28eead4f4a60d81acd88273d05210c7cedb4bc2d475253e",
+      "task_id": "p15_v2_basic_relevance_001"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8247422680412371
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:6288e5bd1538cfe78857bc19ca138dc335cf2790bf48873f1bfdba77eba46b89",
+      "task_id": "p15_v2_contradiction_011"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7938144329896907
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:e8240819015d6d4e87425481df3e318fad96600e2e25df95331d83a111a38269",
+      "task_id": "p15_v2_cross_phase_traps_014"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.8053097345132744
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:0149fcfbceceff965780fde8fa9d3eb8148a8eee17929a35822f14aa6f77de08",
+      "task_id": "p15_v2_duplicate_semantics_010"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.3333333333333333,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.8230088495575221
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:4edd71b4fd39ee43271347be874826c0f3e6513572e6f8e7525d620b580fb647",
+      "task_id": "p15_v2_global_project_004"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7835051546391752
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:1292e2377cff6c112a2389b7fdd1cb38b5ab0e1689ad8a59987713d537af30d2",
+      "task_id": "p15_v2_lexical_traps_002"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.2,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.831858407079646
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:c68da30a7ff56311558208ca332fd4a76368cb679633eff1d3f89e469648bbb9",
+      "task_id": "p15_v2_malicious_input_016"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 5,
+        "token_waste": 1.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "noise_17_0007",
+        "noise_17_0023",
+        "noise_17_0019",
+        "noise_17_0011",
+        "mem_pg_prompt_versioning"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:5f0d10a85c4786b53e07a5c92641659ed20940352c765ca752d487769c7c59f2",
+      "task_id": "p15_v2_noise_heavy_008"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 1.0,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7961165048543689
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:fd5be52d50bb29f2569569ca465fa5023aa05e4af9374bfdcc1d266b3d80e079",
+      "task_id": "p15_v2_resolved_lifecycle_006"
+    },
+    {
+      "metrics": {
+        "f1": 0.33333333333333337,
+        "mandatory_recall": 1.0,
+        "mrr": 0.5,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 1.0,
+        "selected_count": 5,
+        "token_waste": 0.7864077669902912
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:7a3817c7ca9d9e14d570b74a305cd3af7aa0cfed1a226ae265cb71901ffa7027",
+      "task_id": "p15_v2_same_domain_wrong_project_003"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 5,
+        "token_waste": 1.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_mc_world_backup",
+        "mem_mc_command_policy",
+        "mem_mc_protocol_version",
+        "mem_mc_event_stream",
+        "noise_17_0010"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:d0b75b4137bc01086e4d942c15ca65d1ea8eb0140f56100054fad9735fa8af5d",
+      "task_id": "p15_v2_secret_forbidden_015"
+    },
+    {
+      "metrics": {
+        "f1": 0.28571428571428575,
+        "mandatory_recall": 0.5,
+        "mrr": 0.25,
+        "noise_ratio": 0.8,
+        "precision": 0.2,
+        "recall": 0.5,
+        "selected_count": 5,
+        "token_waste": 0.7787610619469026
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_ec_atomic_rename",
+        "mem_ec_sqlite_index",
+        "mem_ec_local_cache",
+        "mem_ec_vault_manifest",
+        "mem_markdown_before_sqlite"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:19b0dc959b46022f41be1cff61ca13180e1de13bad652d8335d0a21ad7f78c3d",
+      "task_id": "p15_v2_state_relevance_013"
+    },
+    {
+      "metrics": {
+        "f1": 0.0,
+        "mandatory_recall": 0.0,
+        "mrr": 0.0,
+        "noise_ratio": 1.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "selected_count": 5,
+        "token_waste": 1.0
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "selected_ids": [
+        "mem_pg_prompt_versioning",
+        "mem_pg_template_contract",
+        "mem_promtgen_storage",
+        "mem_pg_indexeddb_backup",
+        "noise_17_0007"
+      ],
+      "status": "scored",
+      "task_fingerprint": "sha256:db2ed2e6820144e31caaad22a0d994fb8ee12ee56f4cec15c48e150cc010e825",
+      "task_id": "p15_v2_supersession_005"
+    }
+  ],
+  "corpus": {
+    "fingerprint": "sha256:97913b5e78d2c00eae0aa4823bc1281aa0631ff923e5b320544289fea564d8bd",
+    "split": "dev",
+    "task_count": 70,
+    "task_ids": [
+      "p15_authority_future_001",
+      "p15_authority_future_002",
+      "p15_authority_future_003",
+      "p15_global_project_001",
+      "p15_global_project_002",
+      "p15_global_project_003",
+      "p15_global_project_004",
+      "p15_global_project_005",
+      "p15_global_project_006",
+      "p15_global_project_007",
+      "p15_global_project_008",
+      "p15_noise_001",
+      "p15_noise_002",
+      "p15_noise_003",
+      "p15_noise_004",
+      "p15_noise_005",
+      "p15_noise_006",
+      "p15_persistence_001",
+      "p15_project_isolation_001",
+      "p15_project_isolation_002",
+      "p15_project_isolation_003",
+      "p15_project_isolation_004",
+      "p15_project_isolation_005",
+      "p15_project_isolation_006",
+      "p15_project_isolation_007",
+      "p15_project_isolation_008",
+      "p15_project_isolation_009",
+      "p15_project_isolation_010",
+      "p15_project_isolation_011",
+      "p15_project_isolation_012",
+      "p15_relevance_001",
+      "p15_relevance_002",
+      "p15_relevance_003",
+      "p15_relevance_004",
+      "p15_relevance_005",
+      "p15_relevance_006",
+      "p15_relevance_007",
+      "p15_relevance_008",
+      "p15_relevance_009",
+      "p15_relevance_010",
+      "p15_relevance_011",
+      "p15_relevance_012",
+      "p15_relevance_013",
+      "p15_relevance_014",
+      "p15_relevance_015",
+      "p15_relevance_016",
+      "p15_relevance_017",
+      "p15_relevance_018",
+      "p15_relevance_019",
+      "p15_relevance_020",
+      "p15_relevance_021",
+      "p15_relevance_022",
+      "p15_relevance_023",
+      "p15_relevance_024",
+      "p15_v2_ambiguity_009",
+      "p15_v2_archived_project_007",
+      "p15_v2_authority_traps_012",
+      "p15_v2_basic_relevance_001",
+      "p15_v2_contradiction_011",
+      "p15_v2_cross_phase_traps_014",
+      "p15_v2_duplicate_semantics_010",
+      "p15_v2_global_project_004",
+      "p15_v2_lexical_traps_002",
+      "p15_v2_malicious_input_016",
+      "p15_v2_noise_heavy_008",
+      "p15_v2_resolved_lifecycle_006",
+      "p15_v2_same_domain_wrong_project_003",
+      "p15_v2_secret_forbidden_015",
+      "p15_v2_state_relevance_013",
+      "p15_v2_supersession_005"
+    ],
+    "version": 2
+  },
+  "measurement": {
+    "state": "complete"
+  },
+  "metrics": {
+    "case_count": 70,
+    "f1": 0.2938775510204082,
+    "invalid_case_count": 0,
+    "mandatory_recall": 0.8,
+    "mrr": 0.4480952380952381,
+    "noise_ratio": 0.8028571428571429,
+    "precision_at_k": 0.18285714285714286,
+    "recall_at_k": 0.8,
+    "token_waste": 0.8007781266212801
+  },
+  "promotion": "blocked",
+  "provider": {
+    "configuration_id": "phase15-offline-v1",
+    "id": "context_compiler_w06b_task_aware_v1",
+    "role": "w06b",
+    "state": "available"
+  },
+  "quality": {
+    "answerability_no_count": 0,
+    "excluded_case_count": 0,
+    "state": "measured"
+  },
+  "report_type": "brain_eleven_w09a_provider",
+  "safety": {
+    "forbidden_leakage": 0,
+    "resolved_leakage": 0,
+    "state": "pass",
+    "superseded_leakage": 0,
+    "wrong_project_leakage": 0
+  },
+  "schema_version": 1,
+  "source": {
+    "candidate_content_fingerprint": "sha256:2b1ac7d450eb2d8b9660a719ba4d77627edf3730e08339c5d693959f3b3b219f",
+    "candidate_order_fingerprint": "sha256:e6773f8158138c9f7fb37c1720adb4ad47eb459312a77cb9e69ac1d9d40f72b3",
+    "fixture_seed": 17,
+    "git_sha": "da356bd14a4bb8fbc70f10be8f7ba59504f16fe6",
+    "noise_count": 24,
+    "normalization": "first_k_provider_order",
+    "retrieval_k": 10,
+    "source_fingerprint": "sha256:600e18308f0a86c72f66dd4782ef323ecd82e2f934c12996d999331da20020b6",
+    "source_memory_revision": 0,
+    "tie_break": "provider_order"
+  }
+}
