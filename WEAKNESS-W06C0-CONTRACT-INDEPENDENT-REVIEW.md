@@ -1,7 +1,7 @@
 # W-06C0 Contract Independent Review
 
 **Contract reviewed:** `WEAKNESS-W06C0-RETRIEVAL-FEASIBILITY-CONTRACT.md`
-**Revision reviewed:** `4e6d912540a418218126c3f0ed29637c4941708e`
+**Revision reviewed:** `5c296912953e32dc60988cdc270ef4c3b268db9f`
 **Review type:** read-only contract re-review
 **Production changes:** none
 **Predecessor evidence:** W-06B independent `RETHINK` at `a26912c`; W-09A evaluation boundary independently `SHIP` at `31a436c` / review commit `c6dc3bb`.
@@ -183,3 +183,24 @@ not promote a provider, change active retrieval, open Phase 20, or authorize
 W-06C1; those remain behind the contract's evidence and independent-review
 gates. Unavailable providers must remain `NOT MEASURED`, and any quality
 failure must remain visible.
+
+## Amendment re-review at `5c29691`
+
+The two precision amendments were checked at the exact requested revision:
+
+- `manifest_sha256` now has a deterministic self-excluding canonical JSON
+  recipe, including encoding, separators, key ordering and newline behavior.
+- The evaluator source fingerprint has an exact file allowlist, sorted
+  path/content framing, LF normalization and required `sha256:` format; missing,
+  extra, duplicate, symlinked or untracked allowlist entries fail closed.
+- Every provider row now carries the source revision plus content and order
+  fingerprints for the same isolated candidate snapshot. Their input fields,
+  canonical encoding, required prefix and cross-row equality check are explicit.
+- The amendments preserve the content-free report boundary and do not expand
+  the implementation allowlist or touch production retrieval paths.
+
+The amendment diff is documentation-only. No new contract blocker was found;
+the duplicated privacy sentence in §4 is editorial redundancy and does not
+change the enforced boundary.
+
+**Final verdict at `5c29691`: SHIP**
