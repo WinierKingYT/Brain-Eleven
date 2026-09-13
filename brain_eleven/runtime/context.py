@@ -73,6 +73,12 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     task = TaskStateComposer(vault, project_root).compose(request)
     if config.get('retrieval_mode') == 'W06B_TASK_AWARE' and event == 'UserPromptSubmit':
         result = compile_task_w06b(vault, task, budget=min(budget, 1024), human_approval=config.get('b1_human_approval', False))
+        task_need = result.get('task_need', {})
+        if task_need.get('status') in {'NO_NEED', 'AMBIGUOUS', 'UNAVAILABLE', 'INVALID'}:
+            legacy = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+            legacy['task_need_status'] = task_need.get('status')
+            legacy['task_need_error_code'] = task_need.get('error_code')
+            result = legacy
     else:
         result = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
     result['project_id'] = project['project_id']

@@ -62,6 +62,25 @@ def test_invalid_gate_fails_closed_and_rollback_restores_v1(runtime):
     assert rollback.get("provider") != "W06B_TASK_AWARE"
 
 
+def test_non_string_retrieval_modes_fail_closed(runtime):
+    vault, _ = runtime
+    for invalid in (None, [], {}, 3):
+        value = RuntimeConfig(vault).load()
+        value["retrieval_mode"] = invalid
+        write_json(RuntimeConfig(vault).path, value)
+        loaded = RuntimeConfig(vault).load()
+        assert loaded["retrieval_mode"] == "V1_LEGACY"
+        assert loaded["retrieval_mode_telemetry"] == "RETRIEVAL_MODE_INVALID"
+
+
+def test_no_need_uses_legacy_selection_with_bounded_task_status(runtime):
+    vault, _ = runtime
+    _set_retrieval_mode(vault, "W06B_TASK_AWARE")
+    result = compile_context(vault, vault, "hello", event="UserPromptSubmit")
+    assert result.get("task_need_status") == "NO_NEED"
+    assert result.get("provider") != "W06B_TASK_AWARE"
+
+
 def test_non_user_prompt_event_keeps_legacy_provider(runtime):
     vault, project = runtime
     _set_retrieval_mode(vault, "W06B_TASK_AWARE")

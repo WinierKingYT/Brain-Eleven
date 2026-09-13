@@ -54,8 +54,9 @@ class RuntimeConfig:
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
-        value['retrieval_mode'] = retrieval_mode if retrieval_mode in {'V1_LEGACY', 'W06B_TASK_AWARE'} else 'V1_LEGACY'
-        value['retrieval_mode_telemetry'] = None if retrieval_mode in {'V1_LEGACY', 'W06B_TASK_AWARE'} else 'RETRIEVAL_MODE_INVALID'
+        valid_retrieval = isinstance(retrieval_mode, str) and retrieval_mode in {'V1_LEGACY', 'W06B_TASK_AWARE'}
+        value['retrieval_mode'] = retrieval_mode if valid_retrieval else 'V1_LEGACY'
+        value['retrieval_mode_telemetry'] = None if valid_retrieval else 'RETRIEVAL_MODE_INVALID'
         if not isinstance(value['b1_human_approval'], bool):
             raise ValueError('Invalid B1 human approval configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
