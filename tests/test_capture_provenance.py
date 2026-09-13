@@ -152,7 +152,7 @@ def test_worker_revalidates_root_before_evidence_read(tmp_path):
 
     result = Worker(vault).once()
 
-    assert result["status"] == "QUEUED"
+    assert result["status"] == "DEAD_LETTER"
     assert result["error"] == "TRANSCRIPT_PROVENANCE_SCOPE"
     assert receipt["job_id"]
     assert not MemoryStore(vault).load()["validated_memory"]

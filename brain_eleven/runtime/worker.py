@@ -635,7 +635,7 @@ class Worker:
                 terminal = code in {
                     'TRANSCRIPT_OWNERSHIP_MISMATCH',
                     'TRANSCRIPT_OWNERSHIP_UNVERIFIED',
-                }
+                } or (code.startswith('TRANSCRIPT_PROVENANCE_') and code != 'TRANSCRIPT_PROVENANCE_MISSING')
                 receipt = self.queue.retry_or_dead_letter(job['job_id'], error_code=code, terminal=terminal)
                 result = {'status': receipt.status, 'error': code, 'job_id': job['job_id']}
                 write_json(self.config.root / 'last-worker.json', {'at': now(), **result})
