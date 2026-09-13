@@ -37,6 +37,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CORPUS_ROOT = ROOT / "evals" / "corpus-v4"
 FIXTURE_PATH = ROOT / "evals" / "fixtures" / "phase15-contract.json"
 FINAL_HOLDOUT_OUTPUT = ROOT / "evals" / "w06c0r1" / "evidence" / "holdout.json"
+HISTORICAL_SCOPE_COMPAT_METADATA = ROOT / "evals" / "w06c0r1" / "historical_scope_compat.json"
 EVALUATOR_VERSION = "w06c0r1-v1"
 CORPUS_VERSION = 4
 PROVENANCE_VERSION = "w06c0r1-provenance-v1"
@@ -234,6 +235,36 @@ def source_fingerprint(root: Path | str = ROOT) -> str:
     return _sha(bytes(digest))
 
 
+def _historical_scope_compatibility(root: Path, changed: Sequence[str]) -> dict[str, Any] | None:
+    path = HISTORICAL_SCOPE_COMPAT_METADATA
+    if not path.is_file() or path.is_symlink():
+        return None
+    metadata = _load_json(path, "historical scope compatibility metadata is unreadable")
+    if metadata.get("schema_version") != 1 or metadata.get("compatibility_id") != "W06C0-SCOPE-COMPAT-P1B":
+        raise W06C0R1Error("historical scope compatibility metadata is invalid")
+    compat_path = metadata.get("path")
+    scope_end = metadata.get("scope_end_revision")
+    expected = metadata.get("expected_blob_sha256")
+    if compat_path != "evals/w06c0/evaluation.py" or not isinstance(scope_end, str) or not re.fullmatch(r"[0-9a-f]{40}", scope_end):
+        raise W06C0R1Error("historical scope compatibility metadata is invalid")
+    if not isinstance(expected, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", expected):
+        raise W06C0R1Error("historical scope compatibility blob hash is invalid")
+    if compat_path not in changed:
+        raise W06C0R1Error("historical scope compatibility path is missing from scope diff")
+    target = root / compat_path
+    if not target.is_file() or target.is_symlink() or _sha(_normalized_bytes(target)) != expected:
+        raise W06C0R1Error("historical scope compatibility blob hash mismatch")
+    try:
+        head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        resolved_end = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", f"{scope_end}^{{commit}}"], check=True, capture_output=True, text=True).stdout.strip()
+        chronology = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", resolved_end, head], check=False, capture_output=True)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise W06C0R1Error("cannot verify historical scope compatibility revision") from exc
+    if chronology.returncode != 0:
+        raise W06C0R1Error("historical scope compatibility revision is not an ancestor")
+    return {"path": compat_path, "scope_end_revision": resolved_end, "expected_blob_sha256": expected}
+
+
 def verify_scope_diff(*, base_revision: str = IMPLEMENTATION_BASE_REVISION, root: Path | str = ROOT) -> dict[str, Any]:
     root = Path(root).resolve()
     if not re.fullmatch(r"[0-9a-f]{7,40}", base_revision):
@@ -257,11 +288,13 @@ def verify_scope_diff(*, base_revision: str = IMPLEMENTATION_BASE_REVISION, root
     except (OSError, subprocess.CalledProcessError) as exc:
         raise W06C0R1Error("cannot verify exact implementation scope") from exc
     changed = tuple(sorted({line.replace("\\", "/") for line in diff.stdout.splitlines() if line.strip()}))
+    compatibility = _historical_scope_compatibility(root, changed)
     invalid = tuple(
         path
         for path in changed
         if path not in ALLOWED_SCOPE_FILES
         and not any(path.startswith(prefix) for prefix in ALLOWED_SCOPE_PREFIXES)
+        and not (compatibility and path == compatibility["path"])
     )
     forbidden = tuple(path for path in invalid if any(path.startswith(prefix) for prefix in FORBIDDEN_SCOPE_PREFIXES))
     if invalid:
@@ -271,6 +304,7 @@ def verify_scope_diff(*, base_revision: str = IMPLEMENTATION_BASE_REVISION, root
         "head_revision": head,
         "changed_paths": list(changed),
         "forbidden_paths": list(forbidden),
+        "historical_scope_compatibility": compatibility,
         "status": "PASS",
     }
 

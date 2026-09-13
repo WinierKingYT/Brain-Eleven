@@ -1,0 +1,7 @@
+{
+  "compatibility_id": "W06C0-SCOPE-COMPAT-P1B",
+  "expected_blob_sha256": "sha256:e375d337a52155d867c12b2f334c56ecf0875d1d153cb99a48980230ae05b3be",
+  "path": "evals/w06c0/evaluation.py",
+  "schema_version": 1,
+  "scope_end_revision": "f676c91d0e41a7523dc2b96a131814b983401456"
+}

@@ -89,6 +89,31 @@ def test_explicit_corpus_version_and_source_scope():
     assert scope["forbidden_paths"] == []
 
 
+def test_historical_scope_compatibility_is_pinned_and_unpinned_hash_fails(monkeypatch, tmp_path):
+    from evals.w06c0r1 import evaluation
+
+    scope = evaluation.verify_scope_diff()
+    assert scope["historical_scope_compatibility"]["path"] == "evals/w06c0/evaluation.py"
+    metadata = json.loads(evaluation.HISTORICAL_SCOPE_COMPAT_METADATA.read_text(encoding="utf-8"))
+    metadata["expected_blob_sha256"] = "sha256:" + ("0" * 64)
+    replacement = tmp_path / "historical_scope_compat.json"
+    replacement.write_text(json.dumps(metadata), encoding="utf-8")
+    monkeypatch.setattr(evaluation, "HISTORICAL_SCOPE_COMPAT_METADATA", replacement)
+    with pytest.raises(W06C0R1Error, match="scope compatibility blob hash mismatch"):
+        evaluation.verify_scope_diff()
+
+
+def test_historical_w06c0_scope_end_is_pinned_and_fail_closed():
+    from evals.w06c0 import evaluation as historical
+
+    evidence = historical.verify_scope_diff()
+    assert evidence["scope_end_revision"] == historical.IMPLEMENTATION_SCOPE_END_REVISION
+    with pytest.raises(historical.W06C0Error, match="cannot verify"):
+        historical.verify_scope_diff(scope_end_revision="0" * 40)
+    with pytest.raises(historical.W06C0Error, match="base is not an ancestor"):
+        historical.verify_scope_diff(scope_end_revision="5c296912953e32dc60988cdc270ef4c3b268db9f")
+
+
 def test_snapshot_fingerprints_change_on_each_identity_mutation():
     rows = [{"candidate_id": "a", "type": "decision", "status": "active", "scope": "global", "project_id": None, "content": "one"}]
     original = candidate_content_fingerprint(rows)
