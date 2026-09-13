@@ -25,6 +25,16 @@ Before implementation, the package report must identify the exact active product
 
 No changes are authorized to `context_router`, `context_compiler_v2`, V2 provider behavior, embedding providers, capture/worker paths, MemoryStore/StateStore/ProjectRegistry authority, lifecycle mutation, Phase 20, or unrelated architecture consolidation.
 
+## 3. Runtime handoff and gate ownership
+
+The installed SessionStart template invokes `scripts/context-compiler.py` directly (`templates/claude/hooks/brain-eleven-session-start:20`); the local legacy hook likewise invokes the compiler (`.claude/hooks/session-start.sh:52–65`). The native runtime path is separate and is the only bounded handoff for W-06B: `brain_eleven/runtime/service.py:213–218` calls `compile_context`, and `brain_eleven/runtime/context.py:60–65` routes `event=SessionStart` to `compile_bootstrap`. `compile_bootstrap` currently loads the legacy `ContextCompiler` (`context.py:19–40`) and is therefore V1. For `UserPromptSubmit`, `compile_context` validates mode/project, composes `TaskStateComposer(vault, project_root).compose(request)` (`context.py:66–75`), then calls `compile_task`; the task-aware input handoff must begin from these trusted fields, not from an untrusted scope override.
+
+The W-06B gate is owned by the vault runtime configuration at `.brain-eleven/runtime/config.json`, loaded through `RuntimeConfig` (`brain_eleven/runtime/storage.py:40–61`). The additive key is `retrieval_mode`. Its only allowed values are `V1_LEGACY` (default; always used for SessionStart) and `W06B_TASK_AWARE` (permitted only for the bounded UserPromptSubmit task-aware entrypoint). Missing, malformed, unknown or unreadable `retrieval_mode` resolves fail-closed to `V1_LEGACY` and emits only bounded telemetry code `RETRIEVAL_MODE_INVALID`; it must never widen scope or throw raw configuration contents into telemetry. The existing rollout `mode` (`OFF`, `SHADOW`, `CANARY`, `ACTIVE`) is not this gate and must not be repurposed.
+
+The exact handoff is: trusted `project_root` + request/session/turn from the native payload -> `allowed(vault, project_root)` -> `TaskStateComposer(vault, project_root).compose(request)` -> bounded `TaskNeedInput` -> W-06B ranking. The task input carries only the task ID, resolved project ID, bounded intent, continuation flag, sorted bounded entities and needs, and schema version defined in §4.2. Existing `ContextRouter`, `AuthorityResolver`, lifecycle policy and canonical source revisions remain authoritative. `compile_bootstrap`/SessionStart remains V1 regardless of the W-06B key.
+
+Rollback is one atomic config write of `retrieval_mode=V1_LEGACY`; it must be verified through the same `/api/context` path (`service.py:213–218`) with `event=UserPromptSubmit`, and must show legacy provider identity plus no W-06B selection.
+
 ## 3. Current implementation evidence
 
 ### 3.1 V1 SessionStart compiler
