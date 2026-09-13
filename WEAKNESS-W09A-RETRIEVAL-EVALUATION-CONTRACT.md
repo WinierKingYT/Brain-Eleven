@@ -67,15 +67,16 @@ The evaluator must distinguish:
 
 ### 4.2 Public split
 
-W-09A freezes one exact corpus root and version:
-`evals/ig01b/public/ig-eval-v2/`, manifest `corpus_version=ig-eval-v2`.
-That root has exactly `dev.jsonl`, `validation.jsonl`, `holdout.jsonl` and
-`abstention.jsonl`. `DEV` is iteration data, `VALIDATION` is the public
-architecture-decision split, and `HOLDOUT` is the final read-only split. The
-older `evals/corpus-v2/` directory is a different Phase-15 corpus and is not a
-W-09A input. No `TEST` alias is used by this contract.
+W-09A freezes one exact retrieval corpus root and version:
+`evals/corpus-v2/`, manifest `schema_version=1`, `corpus_version=2`.
+That root has exactly `dev/*.json`, `test/*.json` and `holdout/*.json` task
+files. `DEV` is iteration data, `TEST` is the public architecture-decision
+split, and `HOLDOUT` is the final read-only split. `TEST` is the literal
+directory name in this corpus; it is not an alias for a missing
+`validation/` directory. The separate IG01-B extraction corpus under
+`evals/ig01b/` is not a W-09A input.
 
-Public measurement may read `DEV + VALIDATION`; it may not read `HOLDOUT` for
+Public measurement may read `DEV + TEST`; it may not read `HOLDOUT` for
 metric calculation, parameter/threshold selection, provider tuning, fixture
 repair or promotion. A separate final holdout audit may read HOLDOUT only
 after all implementation decisions are frozen, and its report is never fed
@@ -85,7 +86,7 @@ report paths must be distinct and recorded.
 Every report must carry the split name, ordered case IDs and separate source
 and corpus fingerprints. The holdout labels are immutable for a corpus
 version. Any changed case, label, required/acceptable/forbidden set, or
-answerability decision requires a new corpus version; `ig-eval-v1` and later
+answerability decision requires a new corpus version; corpus-v2 and later
 versions are never silently edited.
 
 ### 4.3 Answerability
@@ -115,7 +116,20 @@ Selection-everything and selection-none controls are mandatory. A provider
 must not obtain a good result by selecting every candidate: precision, noise
 and token waste are required metrics alongside recall.
 
-### 5.1 Set and ordering invariants
+### 5.1 Existing corpus normalization
+
+The frozen corpus task files provide `task.prompt`, `task.project_id` and
+`expected_context.required`, `expected_context.useful` and
+`expected_context.forbidden`. W-09A maps these fields to
+`required_ids`, `acceptable_ids` and `forbidden_ids`; `mandatory_ids` defaults
+to `required_ids` unless a versioned task explicitly declares a narrower
+mandatory set. The deterministic fixture builder supplies the actual
+candidate memory records referenced by those IDs, so the evaluator fingerprints
+real candidate content from the generated canonical `validated_memory` rather
+than treating IDs as documents. A task whose expected ID is absent from the
+generated candidate snapshot is invalid and cannot be scored.
+
+### 5.2 Set and ordering invariants
 
 Set-like label arrays (`required_ids`, `acceptable_ids`, `forbidden_ids` and
 `mandatory_ids`) are sorted, unique, bounded identifiers. Ranked arrays
@@ -217,8 +231,7 @@ evidence.
 
 Weight tuning, embedding-provider migration, corpus relabeling and threshold
 tuning against HOLDOUT are forbidden. Any parameter selection uses DEV only;
-VALIDATION is for architecture decisions, and HOLDOUT is final read-only
-evidence.
+TEST is for architecture decisions, and HOLDOUT is final read-only evidence.
 
 ## 9. Reproducible evidence
 
@@ -234,32 +247,54 @@ source/corpus fingerprint reconciliation
 ```
 
 The source fingerprint allowlist is frozen for W-09A and is separate from the
-corpus fingerprint. The exact source paths are:
+corpus fingerprint. The following exact files and deterministic directory
+globs are included (POSIX-relative, sorted, regular `.py` files only; no
+symlinks or `__pycache__`):
 
 ```text
-evals/w09a/contracts.py
-evals/w09a/metrics.py
-evals/w09a/engine.py
-evals/w09a/reporting.py
+evals/baseline.py
+evals/compiler_v2_provider.py
+evals/fixture_generator.py
+evals/metrics.py
+evals/reporting.py
+evals/run.py
+evals/schema.py
+evals/fixtures/phase15-contract.json
+scripts/context-compiler.py
+scripts/task_state_context.py
+brain_eleven/memory/**/*.py
+brain_eleven/state/**/*.py
+brain_eleven/projects/**/*.py
+authority/**/*.py
+context_router/**/*.py
+context_compiler_v2/**/*.py
+evals/w09a/**/*.py
 tests/test_w09a_retrieval_evaluation.py
 ```
 
-An implementation that needs another source path must amend this contract
-before coding. Corpus input is exactly:
+These paths include both V1 (`scripts/context-compiler.py`) and V2
+(`context_router`, `authority`, `context_compiler_v2`) executable surfaces and
+their canonical memory/state/project dependencies. An implementation that
+needs another source path must amend this contract before coding. Corpus input
+is exactly:
 
 ```text
-evals/ig01b/public/ig-eval-v2/manifest.json
-evals/ig01b/public/ig-eval-v2/dev.jsonl
-evals/ig01b/public/ig-eval-v2/validation.jsonl
-evals/ig01b/public/ig-eval-v2/abstention.jsonl
+evals/corpus-v2/manifest.json
+evals/corpus-v2/dev/*.json
+evals/corpus-v2/test/*.json
 ```
 
-The final holdout audit additionally hashes `holdout.jsonl` and
-`holdout.sha256`, but public runs must not read either file. Both fingerprints
-use normalized LF bytes, sorted relative POSIX paths and length-framed SHA-256
-input. Generated reports, model weights and arbitrary unlisted files are
-excluded. A report must record both fingerprints and the provider
-configuration/version, seed, `K`, normalization and tie-breaking codes.
+The final holdout audit additionally hashes `evals/corpus-v2/holdout/*.json`,
+but public runs must not read that directory. For each fixed seed/noise
+configuration, the evaluator deterministically builds the fixture vault and
+hashes the canonical `validated_memory` candidate records sorted by
+`memory_id`, including `memory_id`, content, type, status, project scope and
+source revision. This derived candidate-content fingerprint is required in
+addition to the task/corpus fingerprint. All fingerprints use normalized LF
+bytes, sorted relative POSIX paths and length-framed SHA-256 input. Generated
+reports, model weights and arbitrary unlisted files are excluded. A report
+must record both fingerprints and the provider configuration/version, seed,
+`K`, normalization and tie-breaking codes.
 
 Generated reports are content-free: case rows may contain bounded IDs,
 counts, status codes and metric values only. Queries, rationale, transcript,
