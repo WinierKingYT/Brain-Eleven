@@ -38,6 +38,9 @@ CORPUS_ROOT = ROOT / "evals" / "corpus-v4"
 FIXTURE_PATH = ROOT / "evals" / "fixtures" / "phase15-contract.json"
 FINAL_HOLDOUT_OUTPUT = ROOT / "evals" / "w06c0r1" / "evidence" / "holdout.json"
 HISTORICAL_SCOPE_COMPAT_METADATA = ROOT / "evals" / "w06c0r1" / "historical_scope_compat.json"
+HISTORICAL_SCOPE_COMPAT_ID = "W06C0-SCOPE-COMPAT-P1B"
+HISTORICAL_SCOPE_COMPAT_SCOPE_END_REVISION = "f676c91d0e41a7523dc2b96a131814b983401456"
+HISTORICAL_SCOPE_COMPAT_BLOB_SHA256 = "sha256:e375d337a52155d867c12b2f334c56ecf0875d1d153cb99a48980230ae05b3be"
 EVALUATOR_VERSION = "w06c0r1-v1"
 CORPUS_VERSION = 4
 PROVENANCE_VERSION = "w06c0r1-provenance-v1"
@@ -240,19 +243,21 @@ def _historical_scope_compatibility(root: Path, changed: Sequence[str]) -> dict[
     if not path.is_file() or path.is_symlink():
         return None
     metadata = _load_json(path, "historical scope compatibility metadata is unreadable")
-    if metadata.get("schema_version") != 1 or metadata.get("compatibility_id") != "W06C0-SCOPE-COMPAT-P1B":
+    if metadata.get("schema_version") != 1 or metadata.get("compatibility_id") != HISTORICAL_SCOPE_COMPAT_ID:
         raise W06C0R1Error("historical scope compatibility metadata is invalid")
     compat_path = metadata.get("path")
     scope_end = metadata.get("scope_end_revision")
     expected = metadata.get("expected_blob_sha256")
-    if compat_path != "evals/w06c0/evaluation.py" or not isinstance(scope_end, str) or not re.fullmatch(r"[0-9a-f]{40}", scope_end):
-        raise W06C0R1Error("historical scope compatibility metadata is invalid")
-    if not isinstance(expected, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", expected):
-        raise W06C0R1Error("historical scope compatibility blob hash is invalid")
+    if (
+        compat_path != "evals/w06c0/evaluation.py"
+        or scope_end != HISTORICAL_SCOPE_COMPAT_SCOPE_END_REVISION
+        or expected != HISTORICAL_SCOPE_COMPAT_BLOB_SHA256
+    ):
+        raise W06C0R1Error("historical scope compatibility metadata is not pinned")
     if compat_path not in changed:
         raise W06C0R1Error("historical scope compatibility path is missing from scope diff")
     target = root / compat_path
-    if not target.is_file() or target.is_symlink() or _sha(_normalized_bytes(target)) != expected:
+    if not target.is_file() or target.is_symlink() or _sha(_normalized_bytes(target)) != HISTORICAL_SCOPE_COMPAT_BLOB_SHA256:
         raise W06C0R1Error("historical scope compatibility blob hash mismatch")
     try:
         head = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()

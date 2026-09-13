@@ -99,7 +99,13 @@ def test_historical_scope_compatibility_is_pinned_and_unpinned_hash_fails(monkey
     replacement = tmp_path / "historical_scope_compat.json"
     replacement.write_text(json.dumps(metadata), encoding="utf-8")
     monkeypatch.setattr(evaluation, "HISTORICAL_SCOPE_COMPAT_METADATA", replacement)
-    with pytest.raises(W06C0R1Error, match="scope compatibility blob hash mismatch"):
+    with pytest.raises(W06C0R1Error, match="metadata is not pinned"):
+        evaluation.verify_scope_diff()
+
+    metadata["expected_blob_sha256"] = evaluation.HISTORICAL_SCOPE_COMPAT_BLOB_SHA256
+    metadata["scope_end_revision"] = "0" * 40
+    replacement.write_text(json.dumps(metadata), encoding="utf-8")
+    with pytest.raises(W06C0R1Error, match="metadata is not pinned"):
         evaluation.verify_scope_diff()
 
 
