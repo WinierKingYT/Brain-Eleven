@@ -139,7 +139,7 @@ def test_scope_gate_rejects_invalid_or_non_ancestor_end_revision():
     with pytest.raises(W06C0Error, match="cannot verify"):
         verify_scope_diff(scope_end_revision="0" * 40)
     with pytest.raises(W06C0Error, match="base is not an ancestor"):
-        verify_scope_diff(scope_end_revision="3f795f94dde199ba4e970705d37686ee4f50bc5d")
+        verify_scope_diff(scope_end_revision="5c296912953e32dc60988cdc270ef4c3b268db9f")
 
 
 def test_core_provider_matrix_has_identical_snapshot_and_zero_safety():
