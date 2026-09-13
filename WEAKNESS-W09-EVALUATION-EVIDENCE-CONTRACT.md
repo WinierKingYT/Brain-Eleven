@@ -70,8 +70,10 @@ as current evidence until its source is reconciled.
 
 ## 2. Objective
 
-Make evaluation evidence explicit, revision-bound, and non-misleading while
-preserving current measurement behavior and historical artifacts.
+Make the supported evaluation evidence explicit, revision-bound, and
+non-misleading while preserving current measurement behavior and historical
+artifacts. Generic Phase 15 reports receive strict status/privacy semantics,
+but they do not acquire a source-reconciliation claim in W-09.
 
 After this package, a reviewer must be able to distinguish, from the report
 itself:
@@ -80,7 +82,8 @@ itself:
 - whether quality was measured, unavailable, or not applicable;
 - whether the provider capability required by a safety invariant was supported;
 - whether the report was reconciled against the exact fixture, corpus split,
-  evaluator source, revision, and run parameters that it claims; and
+  evaluator source, revision, and run parameters that it claims, where the
+  provider-specific W-09 allowlist exists; and
 - whether the result is suitable for measurement only or can satisfy a future
   promotion gate.
 
@@ -96,8 +99,10 @@ The implementation agent may change only the evaluation boundary and its
 tests, limited to:
 
 - `evals/metrics.py` — case-level safety/capability semantics;
-- `evals/reporting.py` — explicit status fields, report validation, and
-  comparison status;
+- `evals/reporting.py` — explicit status fields, strict report validation, and
+  comparison status. Generic reports may expose quality/safety/capability
+  status and privacy validation, but remain legacy/unavailable for source
+  reconciliation under this contract;
 - `evals/run.py` — separate safety/quality/evidence gate reporting and exit
   semantics;
 - `evals/baseline_snapshot.py` — only if needed to expose the existing
@@ -279,11 +284,21 @@ regenerated and reconciled. The exact new schema version and adapter name must
 be recorded in the implementation report. Historical baseline files are not
 silently rewritten.
 
+Generic `evals/reporting.py` reports are an explicit exception to source
+verification in this package. They may carry `evaluation_status` and strict
+privacy/unknown-field validation, but because W-09 does not define a
+provider-specific source allowlist for them, their evidence state is always
+`legacy` (existing report) or `unavailable` (new report without a bound
+allowlist). They are never `verified`, never included in the W-09 verified
+exit gate, and never usable as promotion evidence. A future provider-specific
+contract may define an allowlist and a new schema/version; W-09 must not infer
+one from the generic `source` scalar map.
+
 ## 5. Source and tamper reconciliation
 
 ### 5.1 Canonical source identity
 
-For every newly generated evidence report, bind:
+For IG01-C, IG01-D, and the existing baseline snapshot path only, bind:
 
 - exact repository revision (`git_sha`);
 - evaluator version;
@@ -350,6 +365,11 @@ whose SHA or fingerprint merely matches another field in the same JSON is not
 `verified` until the declared root/corpus recomputation agrees. A caller may
 inject a revision only in an explicitly marked test fixture; production
 evidence must obtain it from the checked-out source.
+
+Generic Phase 15 reports are excluded from this source-reconciliation claim.
+Their `source` map remains descriptive metadata until a future versioned
+provider contract supplies an allowlist; a matching-looking scalar SHA is not
+enough to make them current evidence.
 
 On mismatch, fail closed with the bounded status and a content-free reason
 code. Do not include prompts, transcripts, memory text, paths containing user
@@ -455,16 +475,18 @@ failure, even if the resulting aggregate score improves.
   rewritten by W-09.
 - Existing schema-version-1 generic reports remain readable when structurally
   valid, but a report without explicit reconciliation/status evidence is
-  `legacy`/`unverified` and cannot satisfy a graduation or promotion claim.
+  `legacy` and cannot satisfy a graduation or promotion claim.
 - Existing callers that use `compare_evaluation_reports()` retain the current
   quality delta and invariant-change fields. New status fields may be additive;
   if a closed schema disallows that, use a new schema version and provide a
   deterministic migration/adapter for read-only comparison.
-- Existing CLI exit behavior must remain backward compatible for a completed,
-  safety-clean measurement. Its machine-readable output must additionally
-  distinguish safety, quality, evidence, and promotion status; a single
-  ambiguous `gate: pass` must not conceal `quality: unavailable` or
-  `evidence: stale`.
+- Existing CLI process exit behavior may remain backward compatible for a
+  completed, safety-clean measurement, but its machine-readable output must
+  additionally distinguish safety, quality, evidence, and promotion status.
+  A bare or ambiguous `gate: pass` is not an acceptable W-09 output: retain it
+  only as an explicitly named safety-only compatibility field alongside
+  `measurement`, `quality`, `evidence`, and `promotion`, and never when
+  `evidence` is `stale`, `legacy`, `tampered`, or `unavailable`.
 - No committed baseline JSON is regenerated as part of the contract-only
   change. Any generated evidence in implementation must be bound to the exact
   implementation SHA and reported separately.
@@ -554,8 +576,11 @@ W-09 cannot close until all of these are true:
 - `unsupported` cannot serialize or aggregate as a passing applicable case;
 - safety, quality, capability, evidence, measurement, and promotion statuses
   are distinct and machine-readable;
-- source/corpus/revision reconciliation detects self-consistent stale or
-  tampered reports;
+- IG01-C (exact three-file allowlist), IG01-D (exact `_CODE_PATHS` plus public
+  corpus), and baseline-v3 (existing snapshot source path) reconciliation
+  detect self-consistent stale or tampered reports;
+- generic Phase 15 reports remain explicitly `legacy`/`unavailable` and are
+  excluded from the verified exit gate and all promotion evidence;
 - public/HOLDOUT boundaries are tested by observable read guards;
 - baseline-v3, baseline-v1, and baseline-v2 invariants remain intact;
 - no quality threshold, corpus label, retrieval algorithm, or V2/Phase 20
@@ -585,7 +610,7 @@ TESTS EXECUTED: <exact commands and results>
 QUALITY METRICS BEFORE: <measurement only; no goalpost changes>
 QUALITY METRICS AFTER: <measurement/status deltas>
 SAFETY METRICS: <all invariant states and unsupported counts>
-EVIDENCE RECONCILIATION: <source/corpus/revision status and hashes>
+EVIDENCE RECONCILIATION: <IG01-C/IG01-D/baseline status and hashes; generic reports explicitly legacy/unavailable>
 HOLDOUT BOUNDARY: <public and dedicated holdout evidence>
 KNOWN LIMITATIONS: <unavailable providers or deferred gates>
 OPEN FAILURES: <none or exact bounded failures>
