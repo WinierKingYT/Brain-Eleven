@@ -1,7 +1,7 @@
 # W-08B Coordinated Backup Snapshot Package Report
 
 **PACKAGE:** W-08B  
-**REVISION:** `d27a4b9e5f94af6c9a0a92bd2578407dc34f4f1c`  
+**REVISION:** `f5766b5ca955957ab7c06e679d7acff728ecdad2`  
 **OBJECTIVE:** Make newly created backups prove a stable, mutually validated
 source set across canonical memory, project registry, optional settings and
 optional project state.
@@ -45,7 +45,7 @@ Phase 20/V2 path was changed.
 
 ## Tests added
 
-`tests/test_w08b_coordinated_backup.py` contains 23 focused tests covering:
+`tests/test_w08b_coordinated_backup.py` contains 25 focused tests covering:
 
 - schema-3 descriptor and digest recomputation;
 - explicit absent optional sources;
@@ -61,14 +61,16 @@ Phase 20/V2 path was changed.
 - publication lock-timeout mapping;
 - static no-authority-lock inspection;
 - vault, `.claude` and source symlink swaps between read passes.
+- normal MemoryStore writer revision churn;
+- temporary archive fsync failure cleanup.
 
 ## Tests executed
 
-At exact revision `d27a4b9` (implementation `9627f4e`, focused tests
-`47cb48b` and `98f4edd`):
+At exact revision `f5766b5` (implementation `9627f4e`, focused tests
+`47cb48b`, `98f4edd` and `f5766b5`):
 
-- `python -m pytest tests/test_w08b_coordinated_backup.py tests/test_memory_backup.py tests/test_pre13_runtime.py::test_backup_restore_preserves_runtime_receipts -q` — **32 passed**
-- `python -m pytest tests -q` — **1015 passed, 2 warnings**
+- `python -m pytest tests/test_w08b_coordinated_backup.py tests/test_memory_backup.py tests/test_pre13_runtime.py::test_backup_restore_preserves_runtime_receipts -q` — **34 passed**
+- `python -m pytest tests -q` — **1017 passed, 2 warnings**
 - `flake8 --select=E9,F63,F7,F82 scripts/memory_backup.py tests/test_w08b_coordinated_backup.py` — **passed**
 - `python -m compileall -q scripts/memory_backup.py tests/test_w08b_coordinated_backup.py` — **passed**
 - `git diff --check` — **passed**
