@@ -1,7 +1,7 @@
 # W-08B Coordinated Backup Snapshot Package Report
 
 **PACKAGE:** W-08B  
-**REVISION:** `4ea565ecee03ea98f812beb26e8b2e313215044b`  
+**REVISION:** `98f4edd5ab16d2adc7d5fc18f15f686a5686ded3`  
 **OBJECTIVE:** Make newly created backups prove a stable, mutually validated
 source set across canonical memory, project registry, optional settings and
 optional project state.
@@ -45,7 +45,7 @@ Phase 20/V2 path was changed.
 
 ## Tests added
 
-`tests/test_w08b_coordinated_backup.py` contains 17 focused tests covering:
+`tests/test_w08b_coordinated_backup.py` contains 23 focused tests covering:
 
 - schema-3 descriptor and digest recomputation;
 - explicit absent optional sources;
@@ -56,15 +56,19 @@ Phase 20/V2 path was changed.
 - stable corruption and privacy-safe error text;
 - schema-2 compatibility;
 - archive sync failure cleanup;
-- vault, `.claude` and source symlink rejection.
+- vault, `.claude` and source symlink rejection;
+- two-creator destination no-clobber publication;
+- publication lock-timeout mapping;
+- static no-authority-lock inspection;
+- vault, `.claude` and source symlink swaps between read passes.
 
 ## Tests executed
 
-At exact revision `4ea565e` (implementation `9627f4e`, focused tests
-`47cb48b`):
+At exact revision `98f4edd` (implementation `9627f4e`, focused tests
+`47cb48b` and `98f4edd`):
 
-- `python -m pytest tests/test_w08b_coordinated_backup.py tests/test_memory_backup.py tests/test_pre13_runtime.py::test_backup_restore_preserves_runtime_receipts -q` — **26 passed**
-- `python -m pytest tests -q` — **1009 passed, 2 warnings**
+- `python -m pytest tests/test_w08b_coordinated_backup.py tests/test_memory_backup.py tests/test_pre13_runtime.py::test_backup_restore_preserves_runtime_receipts -q` — **32 passed**
+- `python -m pytest tests -q` — **1015 passed, 2 warnings**
 - `flake8 --select=E9,F63,F7,F82 scripts/memory_backup.py tests/test_w08b_coordinated_backup.py` — **passed**
 - `python -m compileall -q scripts/memory_backup.py tests/test_w08b_coordinated_backup.py` — **passed**
 - `git diff --check` — **passed**
