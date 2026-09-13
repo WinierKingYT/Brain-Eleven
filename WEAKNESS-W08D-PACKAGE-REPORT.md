@@ -1,7 +1,7 @@
 # W-08D Typed API Lifecycle Package Report
 
 PACKAGE: W-08D
-REVISION: `d4fcc0e250a4d673ebde4d27cc70b89c6f5cce73` (implementation `0c6c6dce957935d0fac8489c7aab1167c5cf1cb6`)
+REVISION: `6c6cd853e4876b5cba442f159d33dd4ae891b779` (implementation `3e7571f38f09963ccb0987ffe69bd90e5b0f2dd5`)
 OBJECTIVE: Close the typed, fail-closed lifecycle boundary for the existing
 `PUT /memories/{memory_id}` and `DELETE /memories/{memory_id}` API mutations
 without adding a canonical authority or changing the lifecycle manager.
@@ -33,7 +33,7 @@ write files or create another authority.
 
 ## TESTS ADDED
 
-`tests/test_w08d_search_api_lifecycle.py` adds 11 focused tests covering:
+`tests/test_w08d_search_api_lifecycle.py` adds 12 focused tests covering:
 
 - unknown/illegal status rejection without revision or graph effects;
 - resolve metadata and terminal no-op behavior;
@@ -46,12 +46,12 @@ write files or create another authority.
 
 ## TESTS EXECUTED
 
-- W-08D focused tests: **11 passed, 2 dependency warnings**.
+- W-08D focused tests: **12 passed, 2 dependency warnings**.
 - Existing API/lifecycle suites (`test_search_api.py`,
   `test_memory_lifecycle.py`, `test_lifecycle_dedupe.py`,
   `test_authority_resolver.py`): **74 passed, 2 dependency warnings**.
 - Combined focused verification including
-  `test_pre12_memory_state_caller_migration.py`: **107 passed, 2 dependency
+  `test_pre12_memory_state_caller_migration.py`: **108 passed, 2 dependency
   warnings**.
 - Full `pytest tests -q`: first run **1047 passed, 1 transient failure, 2
   dependency warnings**. The failure was the pre-existing cold native
@@ -110,4 +110,3 @@ write files or create another authority.
   assigned before review**
 
 VERDICT: **REVIEW PENDING — implementation complete, independent acceptance not performed**
-
