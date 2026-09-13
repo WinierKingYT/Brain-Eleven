@@ -1,0 +1,113 @@
+{
+  "corpus": {
+    "fingerprint": "sha256:bb57fde3b626026fd1ae3ced7c61ac7440a0b2a992c0ebe4e0da85087b98da88",
+    "split": "holdout",
+    "task_count": 30,
+    "task_ids": [
+      "p15_ambiguity_005",
+      "p15_ambiguity_006",
+      "p15_ambiguity_007",
+      "p15_ambiguity_008",
+      "p15_authority_future_006",
+      "p15_conflict_004",
+      "p15_conflict_005",
+      "p15_conflict_006",
+      "p15_v2_ambiguity_038",
+      "p15_v2_archived_project_036",
+      "p15_v2_authority_traps_041",
+      "p15_v2_basic_relevance_030",
+      "p15_v2_basic_relevance_046",
+      "p15_v2_contradiction_040",
+      "p15_v2_cross_phase_traps_043",
+      "p15_v2_duplicate_semantics_039",
+      "p15_v2_global_project_033",
+      "p15_v2_global_project_049",
+      "p15_v2_lexical_traps_031",
+      "p15_v2_lexical_traps_047",
+      "p15_v2_malicious_input_045",
+      "p15_v2_noise_heavy_037",
+      "p15_v2_resolved_lifecycle_035",
+      "p15_v2_resolved_lifecycle_051",
+      "p15_v2_same_domain_wrong_project_032",
+      "p15_v2_same_domain_wrong_project_048",
+      "p15_v2_secret_forbidden_044",
+      "p15_v2_state_relevance_042",
+      "p15_v2_supersession_034",
+      "p15_v2_supersession_050"
+    ],
+    "version": 2
+  },
+  "evaluation_status": {
+    "evidence": "verified",
+    "measurement": "incomplete",
+    "promotion": "blocked",
+    "quality": "unavailable"
+  },
+  "providers": {
+    "v1": {
+      "id": "context_compiler_baseline_v1",
+      "metrics": {
+        "case_count": 30,
+        "f1": 0.23809523809523814,
+        "invalid_case_count": 0,
+        "mandatory_recall": 0.6666666666666666,
+        "mrr": 0.49,
+        "noise_ratio": 0.8400000000000001,
+        "precision_at_k": 0.16000000000000003,
+        "recall_at_k": 0.6666666666666666,
+        "token_waste": "unavailable"
+      },
+      "quality": {
+        "answerability_no_count": 0,
+        "excluded_case_count": 0,
+        "state": "measured"
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "state": "pass",
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      }
+    },
+    "v2": {
+      "id": "context_compiler_v2",
+      "metrics": {
+        "case_count": 29,
+        "f1": 0.1113847837985769,
+        "invalid_case_count": 1,
+        "mandatory_recall": 0.3275862068965517,
+        "mrr": 0.2810344827586207,
+        "noise_ratio": 0.7585933223864259,
+        "precision_at_k": 0.10347564313081554,
+        "recall_at_k": 0.3275862068965517,
+        "token_waste": "unavailable"
+      },
+      "quality": {
+        "answerability_no_count": 0,
+        "excluded_case_count": 0,
+        "state": "invalid"
+      },
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "state": "unsupported",
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      }
+    }
+  },
+  "report_type": "brain_eleven_w09a_pair",
+  "same_input": true,
+  "schema_version": 1,
+  "source": {
+    "candidate_content_fingerprint": "sha256:2b1ac7d450eb2d8b9660a719ba4d77627edf3730e08339c5d693959f3b3b219f",
+    "candidate_order_fingerprint": "sha256:e6773f8158138c9f7fb37c1720adb4ad47eb459312a77cb9e69ac1d9d40f72b3",
+    "git_sha": "7482dd9b5c8c6b471d913a6f3f771eb78f167136",
+    "normalization": "first_k_provider_order",
+    "retrieval_k": 10,
+    "seed": 17,
+    "source_fingerprint": "sha256:11b7deadee8c332233e53595d205ea308d52432bb4680cc5c49fb90919b395fa",
+    "tie_break": "provider_order"
+  }
+}
