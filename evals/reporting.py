@@ -73,7 +73,7 @@ _CASE_METRIC_KEYS = frozenset({
 _SOURCE_KEYS = frozenset({
     "fixture_seed", "noise_count", "runner", "baseline_id", "source_fingerprint",
     "git_sha", "corpus_version", "evaluator_version", "evaluation_source_fingerprint",
-    "seed", "provider_role", "suite", "split", "task_count", "task_ids",
+    "seed", "provider_role", "ig01d_role", "suite", "split", "task_count", "task_ids",
     "split_fingerprint",
 })
 _STATUS_REASON_RE = re.compile(r"^[A-Z0-9][A-Z0-9_.-]{0,63}$")
@@ -737,7 +737,9 @@ def compare_evaluation_reports(
     )
 
     return {
-        "schema_version": EVALUATION_REPORT_SCHEMA_VERSION,
+        # Comparison metadata has its own frozen schema; report status version
+        # migration must not reinterpret the existing V1/V2 comparison shape.
+        "schema_version": 1,
         "comparison_type": REGRESSION_COMPARISON_TYPE,
         "baseline": {"provider_id": baseline["provider"]["id"]},
         "candidate": {"provider_id": candidate["provider"]["id"]},
