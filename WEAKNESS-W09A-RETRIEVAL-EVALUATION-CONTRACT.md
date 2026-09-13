@@ -67,17 +67,20 @@ The evaluator must distinguish:
 
 ### 4.2 Public split
 
-The current repository has exactly three directories: `dev`, `test` and
-`holdout`. In this contract `DEV` means iteration data, `TEST` is the public
-validation/architecture-decision split, and `HOLDOUT` is the final read-only
-split. There is no fourth `validation` directory and no alias may be inferred.
+W-09A freezes one exact corpus root and version:
+`evals/ig01b/public/ig-eval-v2/`, manifest `corpus_version=ig-eval-v2`.
+That root has exactly `dev.jsonl`, `validation.jsonl`, `holdout.jsonl` and
+`abstention.jsonl`. `DEV` is iteration data, `VALIDATION` is the public
+architecture-decision split, and `HOLDOUT` is the final read-only split. The
+older `evals/corpus-v2/` directory is a different Phase-15 corpus and is not a
+W-09A input. No `TEST` alias is used by this contract.
 
-Public measurement may read `DEV + TEST`; it may not read `HOLDOUT` for metric
-calculation, parameter/threshold selection, provider tuning, fixture repair or
-promotion. A separate final holdout audit may read HOLDOUT only after all
-implementation decisions are frozen, and its report is never fed back into
-code or public thresholds. Public and holdout commands, roots and report paths
-must be distinct and recorded.
+Public measurement may read `DEV + VALIDATION`; it may not read `HOLDOUT` for
+metric calculation, parameter/threshold selection, provider tuning, fixture
+repair or promotion. A separate final holdout audit may read HOLDOUT only
+after all implementation decisions are frozen, and its report is never fed
+back into code or public thresholds. Public and holdout commands, roots and
+report paths must be distinct and recorded.
 
 Every report must carry the split name, ordered case IDs and separate source
 and corpus fingerprints. The holdout labels are immutable for a corpus
@@ -114,11 +117,15 @@ and token waste are required metrics alongside recall.
 
 ### 5.1 Set and ordering invariants
 
-All ID arrays are sorted, unique, bounded identifiers. `required_ids`,
-`acceptable_ids`, `forbidden_ids` and `mandatory_ids` are subsets of
-`candidate_ids`; `mandatory_ids` is a subset of `required_ids`; forbidden IDs
-are disjoint from required and acceptable IDs. Candidate content metadata has
-one stable ID per case. A case violating these invariants is invalid and is
+Set-like label arrays (`required_ids`, `acceptable_ids`, `forbidden_ids` and
+`mandatory_ids`) are sorted, unique, bounded identifiers. Ranked arrays
+(`candidate_ids` and a provider's `selected_ids`) preserve meaningful order;
+they are unique bounded identifiers but are not sorted. Their ordered values
+are fingerprinted separately. `required_ids`, `acceptable_ids`,
+`forbidden_ids` and `mandatory_ids` are subsets of the candidate set;
+`mandatory_ids` is a subset of `required_ids`; forbidden IDs are disjoint from
+required and acceptable IDs. Candidate content metadata has one stable ID per
+case. A case violating these invariants is invalid and is
 excluded from quality aggregates with an explicit invalid status; it is never
 silently repaired by the evaluator.
 
@@ -140,7 +147,9 @@ below are frozen for this contract:
 - selected count and context size/latency where available.
 
 Let `R = required_ids ∪ acceptable_ids`, `S` be the selected IDs after
-normalization, and `N = |S|`. Precision@K is `|S ∩ R| / N`, with `0` when
+normalization and first-`K` truncation, and `N = |S|`. A provider output with
+more than `K` ranked IDs is rejected as invalid rather than silently allowing
+select-all behavior. Precision@K is `|S ∩ R| / N`, with `0` when
 `N=0` and `|R|>0`, and `1` when both are empty. Recall@K is
 `|S ∩ required_ids| / |required_ids|`; if `required_ids` is empty the case is
 not applicable for recall. F1 is the harmonic mean of the defined precision
@@ -225,15 +234,32 @@ source/corpus fingerprint reconciliation
 ```
 
 The source fingerprint allowlist is frozen for W-09A and is separate from the
-corpus fingerprint. Source input is the evaluator code, metric/schema code,
-provider adapter/configuration and the exact W-09A test files named in the
-contract. Corpus input is `manifest.json` plus every JSON file in the selected
-split directories, including candidate content, labels, ordering metadata and
-answerability. Both use normalized LF bytes, sorted relative POSIX paths,
-length-framed SHA-256 input. Generated reports, HOLDOUT files during public
-runs, model weights and arbitrary unlisted files are excluded. A report must
-record both fingerprints and the provider configuration/version, seed, `K`,
-normalization and tie-breaking codes.
+corpus fingerprint. The exact source paths are:
+
+```text
+evals/w09a/contracts.py
+evals/w09a/metrics.py
+evals/w09a/engine.py
+evals/w09a/reporting.py
+tests/test_w09a_retrieval_evaluation.py
+```
+
+An implementation that needs another source path must amend this contract
+before coding. Corpus input is exactly:
+
+```text
+evals/ig01b/public/ig-eval-v2/manifest.json
+evals/ig01b/public/ig-eval-v2/dev.jsonl
+evals/ig01b/public/ig-eval-v2/validation.jsonl
+evals/ig01b/public/ig-eval-v2/abstention.jsonl
+```
+
+The final holdout audit additionally hashes `holdout.jsonl` and
+`holdout.sha256`, but public runs must not read either file. Both fingerprints
+use normalized LF bytes, sorted relative POSIX paths and length-framed SHA-256
+input. Generated reports, model weights and arbitrary unlisted files are
+excluded. A report must record both fingerprints and the provider
+configuration/version, seed, `K`, normalization and tie-breaking codes.
 
 Generated reports are content-free: case rows may contain bounded IDs,
 counts, status codes and metric values only. Queries, rationale, transcript,
