@@ -1,5 +1,5 @@
 PACKAGE: W-09A — Retrieval Evaluation Truth Foundation
-REVISION: e4ae9427110d5c5487f3a5927fac4dd348ff01ba
+REVISION: 8ffab642c871d5b64fe215a73fb5969b6e33e8a5
 OBJECTIVE: Establish a reproducible, content-free retrieval measurement boundary without changing retrieval behavior.
 FILES CHANGED: evals/w09a/, tests/test_w09a_retrieval_evaluation.py, evals/reports/w09a/
 ROOT CAUSES ADDRESSED: Frozen public/holdout split loading, same-input V1/V2 execution, candidate-content/source/corpus fingerprints, explicit quality/evidence/measurement/promotion states, hard safety counters, fail-closed candidate validation, and anti-select-all metrics.
