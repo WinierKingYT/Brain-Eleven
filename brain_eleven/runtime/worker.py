@@ -20,6 +20,7 @@ from scripts.memory_truth import MemoryTruthEngine, TruthCandidate
 from scripts.state_boundary import StateBoundary
 from .storage import RuntimeConfig, read_json, write_json, identity, now
 from .evidence import read_increment
+from .ownership import TranscriptOwnershipError, verify_transcript_ownership
 from .review import ReviewStore
 from .model import propose
 
@@ -631,7 +632,11 @@ class Worker:
                     else 'EVIDENCE_INVALID' if isinstance(exc, (ValueError, UnicodeError))
                     else 'WORKER_FAILED'
                 )
-                receipt = self.queue.retry_or_dead_letter(job['job_id'], error_code=code)
+                terminal = code in {
+                    'TRANSCRIPT_OWNERSHIP_MISMATCH',
+                    'TRANSCRIPT_OWNERSHIP_UNVERIFIED',
+                }
+                receipt = self.queue.retry_or_dead_letter(job['job_id'], error_code=code, terminal=terminal)
                 result = {'status': receipt.status, 'error': code, 'job_id': job['job_id']}
                 write_json(self.config.root / 'last-worker.json', {'at': now(), **result})
                 return result
@@ -679,13 +684,25 @@ class Worker:
         except TranscriptProvenanceError as exc:
             code = 'TRANSCRIPT_NOT_FOUND' if exc.code == 'TRANSCRIPT_PROVENANCE_MISSING' else exc.code
             raise WorkerProcessingError(code) from exc
+        try:
+            binding = verify_transcript_ownership(
+                self.vault,
+                transcript_path,
+                client,
+                session,
+                project['project_id'],
+                event['project_root'],
+            )
+        except TranscriptOwnershipError as exc:
+            raise WorkerProcessingError(exc.code) from exc
         checkpoint = self._checkpoint_for(job)
         stored_cursor = read_json(checkpoint) if cursor_override is None else cursor_override
         if stored_cursor is not None:
             stored_cursor = _validate_cursor(stored_cursor)
         try:
             batch, cursor = read_increment(self.vault, transcript_path, client, session,
-                                           project['project_id'], event['event_at'], stored_cursor)
+                                           project['project_id'], event['event_at'], stored_cursor,
+                                           binding=binding)
         except FileNotFoundError as exc:
             raise WorkerProcessingError('TRANSCRIPT_NOT_FOUND') from exc
         except OSError as exc:

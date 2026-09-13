@@ -1,22 +1,35 @@
 """Bounded native transcript adapters. Unknown message shapes fail visibly."""
 import json
 import hashlib
+import os
 from pathlib import Path
 from dataclasses import replace
 from scripts.evidence import EvidenceBatch, EvidenceMessage, EvidenceTime, EvidenceStore, _record, _safe_source_path
 from .storage import identity
+from .ownership import TranscriptBinding
 
 
-def read_increment(vault, path, client, session, project, captured_at, cursor=None):
+def read_increment(vault, path, client, session, project, captured_at, cursor=None, *, binding: TranscriptBinding | None = None):
     path = _safe_source_path(path)
     before = path.stat()
     if before.st_size > 128 * 1024 * 1024:
         raise ValueError('TRANSCRIPT_TOO_LARGE')
+    if binding is not None:
+        if path != binding.path:
+            raise ValueError('TRANSCRIPT_CHANGED')
+        if (int(getattr(before, 'st_dev', 0)), int(getattr(before, 'st_ino', 0)),
+                int(before.st_size), int(getattr(before, 'st_mtime_ns', 0))) != binding.file_identity:
+            raise ValueError('TRANSCRIPT_CHANGED')
     offset = (cursor or {}).get('offset', 0)
     if not isinstance(offset, int) or offset < 0 or offset > before.st_size:
         raise ValueError('TRANSCRIPT_REWRITTEN')
     digest = hashlib.sha256()
     with path.open('rb') as stream:
+        opened = os.fstat(stream.fileno())
+        opened_identity = (int(getattr(opened, 'st_dev', 0)), int(getattr(opened, 'st_ino', 0)),
+                           int(opened.st_size), int(getattr(opened, 'st_mtime_ns', 0)))
+        if binding is not None and opened_identity != binding.file_identity:
+            raise ValueError('TRANSCRIPT_CHANGED')
         remaining = offset
         while remaining:
             chunk = stream.read(min(65536, remaining))
@@ -27,6 +40,26 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
         if cursor and digest.hexdigest() != cursor['prefix_hash']:
             raise ValueError('TRANSCRIPT_REWRITTEN')
         raw = stream.read(2 * 1024 * 1024)
+        if binding is not None:
+            # Hash the complete opened handle so an in-place, same-size
+            # replacement cannot pass a path/stat-only check.
+            # ``digest`` already contains the cursor prefix.  Hashing the
+            # bytes after the prefix and comparing the full source below is
+            # intentionally performed from this same handle.
+            full_digest = hashlib.sha256()
+            stream.seek(0)
+            while True:
+                chunk = stream.read(65536)
+                if not chunk:
+                    break
+                full_digest.update(chunk)
+            if full_digest.hexdigest() != binding.content_sha256:
+                raise ValueError('TRANSCRIPT_CHANGED')
+    after = path.stat()
+    after_identity = (int(getattr(after, 'st_dev', 0)), int(getattr(after, 'st_ino', 0)),
+                      int(after.st_size), int(getattr(after, 'st_mtime_ns', 0)))
+    if binding is not None and after_identity != binding.file_identity:
+        raise ValueError('TRANSCRIPT_CHANGED')
     if path.stat().st_size < before.st_size:
         raise ValueError('TRANSCRIPT_CHANGED')
     # A writer may append while we read; process complete lines only.

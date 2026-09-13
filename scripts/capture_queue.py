@@ -445,7 +445,7 @@ class CaptureQueue:
         except MemoryStoreLockTimeout as exc:
             raise CaptureQueueLockError("capture queue lock timed out") from exc
 
-    def retry_or_dead_letter(self, job_id: str, *, error_code: str) -> QueueReceipt:
+    def retry_or_dead_letter(self, job_id: str, *, error_code: str, terminal: bool = False) -> QueueReceipt:
         """Return a failed future worker job to delivery or retain it for review."""
         if not isinstance(error_code, str) or not error_code:
             raise CaptureQueueStateError("capture job retry requires an error code")
@@ -459,7 +459,7 @@ class CaptureQueue:
                 if job["status"] not in {CLAIMED, PROCESSING}:
                     raise CaptureQueueStateError("capture job cannot be retried")
                 job["last_error_code"] = error_code
-                if job["attempt"] >= self.config.max_attempts:
+                if terminal or job["attempt"] >= self.config.max_attempts:
                     destination = self._job_path(DEAD_LETTER, job_id)
                     job["status"] = DEAD_LETTER
                     job["dead_lettered_at"] = _utc_now()
