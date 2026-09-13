@@ -7,6 +7,7 @@ from brain_eleven.runtime.context import compile_context
 from brain_eleven.runtime.storage import RuntimeConfig, identity, read_json, write_json
 from brain_eleven.runtime.worker import apply_candidate
 from brain_eleven.runtime.task_aware import select
+from brain_eleven.memory import MemoryStore
 
 
 def _set_retrieval_mode(vault, mode):
@@ -71,6 +72,10 @@ def test_non_user_prompt_event_keeps_legacy_provider(runtime):
 def test_b1_approval_filter_excludes_unapproved_records(runtime):
     vault, project = runtime
     apply_candidate(vault, candidate(project), op_id=identity("op_", "approval"))
+    store = MemoryStore(vault)
+    document = store.load()
+    document["validated_memory"][0]["is_approved"] = False
+    store.replace(document, expected_revision=document["revision"])
     _set_retrieval_mode(vault, "W06B_TASK_AWARE")
     value = RuntimeConfig(vault).load()
     value["b1_human_approval"] = True
