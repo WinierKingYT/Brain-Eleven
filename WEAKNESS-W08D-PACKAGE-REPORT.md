@@ -1,7 +1,7 @@
 # W-08D Typed API Lifecycle Package Report
 
 PACKAGE: W-08D
-REVISION: `6c6cd853e4876b5cba442f159d33dd4ae891b779` (implementation `3e7571f38f09963ccb0987ffe69bd90e5b0f2dd5`)
+REVISION: `fa9825b` (implementation `3e7571f`, tests `6c6cd85`)
 OBJECTIVE: Close the typed, fail-closed lifecycle boundary for the existing
 `PUT /memories/{memory_id}` and `DELETE /memories/{memory_id}` API mutations
 without adding a canonical authority or changing the lifecycle manager.
@@ -55,8 +55,8 @@ write files or create another authority.
   warnings**.
 - Full `pytest tests -q`: an initial run exposed one transient cold native
   SessionStart failure (`test_ig00_bootstrap.py::test_cold_native_session_start_delivers_v1_within_hook_budget`);
-  its isolated rerun passed, and the clean full-suite rerun completed with
-  **1049 passed, 2 dependency warnings**.
+  its isolated rerun passed, and the clean full-suite rerun at the final
+  evidence revision completed with **1049 passed, 2 dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
@@ -87,8 +87,8 @@ write files or create another authority.
 
 - The API remains a legacy script surface; migrating `scripts/search-api.py`
   into a package is explicitly deferred to a later architecture slice.
-- Full-suite acceptance needs a clean rerun after the transient IG-00 cold
-  native test failure.
+- The first full-suite attempt showed a transient native cold-start failure;
+  the clean rerun passed and the isolated test was also green.
 - The implementation report does not claim independent review or SHIP.
 
 ## OPEN FAILURES
