@@ -22,8 +22,8 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 7.5 | W-08A registry durability/revision/CAS gap, W-08B coordinated backup, and W-08C state-reference TOCTOU are independently shipped; the W-08D typed API lifecycle contract is accepted, while implementation remains pending. |
-| Scope and fail-closed safety | 7.0 | Related-note and native transcript path boundaries are independently shipped; project/session ownership proof remains open. |
+| Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
+| Scope and fail-closed safety | 8.0 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; broader project/session ownership work remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -143,8 +143,9 @@ durable atomic writes, backup envelope, stale-safe monotonic rollback and
 complete identity/status/opt-in rollback integrity are covered. W-08B
 coordinated backup and W-08C state-reference TOCTOU are independently shipped;
 W-08D typed API lifecycle contract is independently `SHIP` at exact revision
-`f4d83b1` in `WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation
-remains `REVIEW PENDING — implementation not authorized`.
+`f4d83b1` in `WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is
+independently `SHIP` at exact head `a9c64cf` in
+`WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 **W-08B contract status:** Independently reviewed `SHIP` at `17954cc` in
 `WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
@@ -170,8 +171,8 @@ holdout-preserving evidence requirements. The contract was accepted
 `ecee32b`; the bounded memory-lock/state-lock guard, lifecycle policy, CLI
 mapping, privacy evidence, and frozen evaluation boundary all passed review.
 W-08D typed API lifecycle contract is independently `SHIP` at `f4d83b1` in
-`WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation remains
-deferred and unauthorized.
+`WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is independently
+`SHIP` at `a9c64cf` in `WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 ## Current package selection
 
@@ -179,9 +180,10 @@ deferred and unauthorized.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-08D typed API lifecycle implementation, after the
-independently shipped W-08C state-reference guard and accepted W-08D contract.
-No W-08D implementation is included in W-08C or in the contract review.
+**Next package:** select the next explicitly prioritized weakness package after
+the independently shipped W-08D typed API lifecycle implementation. W-08D is
+closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed mutation
+safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
