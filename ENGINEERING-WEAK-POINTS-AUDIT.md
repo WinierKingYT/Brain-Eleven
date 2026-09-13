@@ -25,7 +25,7 @@ the behavior and operational evidence found in the current repository.
 | Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
 | Scope and fail-closed safety | 8.0 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; broader project/session ownership work remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
-| Evaluation quality | 8.5 | W-09 independently shipped explicit safety/quality/evidence/measurement/promotion status, source reconciliation, bounded identifiers/errors and tamper checks. Generic reports remain unavailable for verified evidence and retrieval quality remains open. |
+| Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | Broader task-aware retrieval remains open; W-06A only improves the V1 bootstrap slice. |
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
@@ -199,18 +199,27 @@ contract must define trigger, revision/freshness, idempotence, project scope and
 privacy-safe signals before implementation; automatic markdown writes remain
 deferred.
 
+**W-09A status:** Independently reviewed `SHIP` at exact review head
+`31a436c` in `WEAKNESS-W09A-INDEPENDENT-REVIEW.md` (review commit
+`c6dc3bb`). The evaluation-only boundary now runs V1 and V2 on identical
+`evals/corpus-v2` DEV+TEST inputs, fingerprints source/corpus/candidate
+snapshots, enforces K/label/safety gates, and keeps HOLDOUT separate. Public
+quality is measured but weak (V1 precision 0.1723, V2 0.1472; V2 remains
+below V1), so no retrieval tuning or V2 promotion is implied.
+
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-09A Retrieval Evaluation Truth Foundation, a new bounded
-read-only contract derived from the retrieval audit. It must freeze the
-task-aware retrieval corpus/metrics and V1/V2 comparison boundary before any
-ranking, embedding or provider change. W-07B native maintenance/reminder
-delivery remains a separate P2 package and is not opened until its trigger,
-freshness, idempotence, scope and privacy contract is independently reviewed.
+**Next package:** W-06B Task-Aware Retrieval Quality, a new bounded contract
+derived from the now-shipped W-09A evidence. It may change ranking/retrieval
+only after a contract freezes provider, K, task-need, scope/lifecycle safety,
+DEV/TEST/HOLDOUT tuning discipline, rollback and V1 comparison. W-07B native
+maintenance/reminder delivery remains a separate P2 package and is not opened
+until its trigger, freshness, idempotence, scope and privacy contract is
+independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
@@ -228,11 +237,11 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
-**Required outcome:** W-09 is complete as a measurement-boundary correction;
-W-09A must make retrieval evaluation truth reproducible without changing
-retrieval behavior, corpus labels, holdout inputs, V2 state or Phase 20.
-Broader W-06 retrieval and W-07B automatic reminder delivery remain explicit
-deferred work rather than being treated as complete.
+**Required outcome:** W-09 and W-09A are complete as measurement-boundary
+corrections. W-06B must improve retrieval against the frozen W-09A evidence
+without tuning HOLDOUT, leaking scope, promoting V2, or opening Phase 20.
+W-07B automatic reminder delivery remains explicit deferred work rather than
+being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
