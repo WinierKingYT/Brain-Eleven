@@ -23,8 +23,8 @@ the behavior and operational evidence found in the current repository.
 | Area | Score | Evidence / status |
 |---|---:|---|
 | Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
-| Scope and fail-closed safety | 8.0 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; broader project/session ownership work remains open. |
-| Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
+| Scope and fail-closed safety | 7.5 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; transcript session/project ownership is still unverified. |
+| Capture runtime | 7.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; a completed-folder commit crash window and transcript ownership gap remain. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | Broader task-aware retrieval remains open; W-06A only improves the V1 bootstrap slice. |
@@ -77,6 +77,17 @@ separate capture-safety contract.
 boundaries now enforce configured/native client roots, traversal and symlink
 containment. Project-slug ownership, Codex project association, session
 ownership and stable replacement identity remain explicit follow-up work.
+
+**W-03B audit status:** A read-only native smoke reproduced a P1 ownership
+gap: a transcript file inside a trusted Claude root, but belonging to an
+unrelated session, was accepted when the hook supplied a different session
+identifier. `capture_provenance.py` proves path containment only;
+`worker.py` passes the claimed session/project into `read_increment`, and
+`evidence.py` records those claims without matching them to transcript
+metadata or the native path identity. The bounded successor contract must
+define session/project ownership evidence, fail closed on mismatch, preserve
+late-file retry behavior, and add content-free cross-session/cross-project
+tests. No implementation or automatic project inference is authorized yet.
 
 ### W-04 — Late transcript loss (P1)
 
@@ -159,6 +170,13 @@ shipped at `ad8c544` (implementation `a83f93d`, baseline evidence refresh
 renders bounded, deterministic, project-scoped work items, requirements,
 blockers, constraints and risks. Automatic markdown reminder writing remains
 open and is not implied by this package.
+
+**W-07B audit status:** Read-only runtime audit keeps this package at
+`FIX-FIRST / NOT ACCEPTED`. Native SessionEnd currently queues capture and
+the worker does not invoke maintenance; native SessionStart does not consume
+the legacy maintenance report. The report also lacks revision/project
+freshness binding, durable idempotence and content-free privacy boundaries.
+These are P2 follow-ups and remain separate from W-03B capture ownership.
 
 ### W-08 — Persistence consistency gaps (P1/P2)
 
@@ -244,12 +262,16 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-06C0R1 is closed. The next bounded work may be a successor
-W-06 retrieval contract, designed against the now-shipped corpus-v4 evidence;
-it must not tune HOLDOUT, promote V2, or open Phase 20. W-07B native
-maintenance/reminder delivery remains a separate P2 package and is not opened
-until its trigger, freshness, idempotence, scope and privacy contract is
-independently reviewed.
+**Next package:** W-06C0R1 is closed. The next safety-priority bounded work is
+the successor W-03B transcript ownership/provenance contract, based on the
+read-only native smoke finding above. It must preserve W-03A path confinement
+and W-04 late-locator retry behavior, and must not infer project identity from
+untrusted content. A separate successor W-02 queue-terminal-state contract
+may follow for the completed-folder crash window. The W-06 retrieval
+successor remains evaluation-only and must not tune HOLDOUT, promote V2, or
+open Phase 20. W-07B native maintenance/reminder delivery remains a separate
+P2 package and is not opened until its trigger, freshness, idempotence, scope
+and privacy contract is independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
