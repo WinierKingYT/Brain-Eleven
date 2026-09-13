@@ -31,6 +31,10 @@ Allowed files:
 - `evals/w06c0r1/evidence/test.json`
 - `evals/w06c0r1/evidence/holdout.json`
 - `evals/corpus-v4/holdout/seal.json`
+- `WEAKNESS-W06C0R1-CONTRACT-INDEPENDENT-REVIEW.md`
+- `WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md`
+- `WEAKNESS-W06C0-SCOPE-COMPAT-CONTRACT.md`
+- `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`
 - `WEAKNESS-W06C0R1-PACKAGE-REPORT.md`
 
 The evaluator must define one canonical final evidence path under the existing
@@ -38,6 +42,11 @@ W-06C0R1 evidence directory. When `--final-holdout` is supplied, the CLI must
 reject any output path whose resolved path differs from that canonical path,
 before `run_matrix` or a provider is called. It must continue to reject a
 second invocation when the canonical output already exists.
+
+The W-06C0R1 scope verifier may allow only these four exact governance files
+as `ALLOWED_SCOPE_FILES`; it must not broaden this to a directory, wildcard, or
+arbitrary Markdown. They are review/contract evidence for this package and its
+bounded remediation, not evaluator inputs.
 
 The public `run_matrix(..., allow_holdout=True, unlock_token=...)` API remains
 an evaluation primitive and does not claim to provide one-time global token
