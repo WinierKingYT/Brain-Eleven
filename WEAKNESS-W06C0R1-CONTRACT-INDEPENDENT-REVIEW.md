@@ -1,8 +1,8 @@
 # W-06C0R1 Contract Independent Review
 
 **Contract reviewed:** `WEAKNESS-W06C0R1-ANSWERABILITY-PROVENANCE-CONTRACT.md`
-**Revision reviewed:** `cde76db5cdb7af90711cb4bdcc2039dfaddc27f8`
-**Review type:** independent read-only contract review
+**Revision reviewed:** `946b5cd0fddf8727215d25d0aa4babd817632886`
+**Review type:** independent read-only contract re-review
 **Production changes:** none
 **Predecessor:** W-06C0 implementation independently `FIX-FIRST` at `60f8e08`
 
@@ -98,3 +98,30 @@ The contract is a strong correction to W-06C0, but the snapshot/task identity
 rules and HOLDOUT chronology must be made machine-exact before implementation.
 No W-06C0R1 implementation, provider tuning, W-06C1 runtime work, V2
 promotion, or Phase 20 work is authorized by this review.
+
+## Re-review at `946b5cd`
+
+The amended contract was re-read at the exact requested revision. The previous
+findings are resolved:
+
+| Finding | Verification | Result |
+|---|---|---|
+| F1 — snapshot/task fingerprint ambiguity | §4.4 now fixes row fields, candidate sort key, u64 framing, source-revision binding, ordered IDs, split binding, digest format and mutation tests. | RESOLVED |
+| F2 — provider case-ID boundary | §5 defines an opaque per-run `task_handle`, uses it only through the existing task-id field, keeps the public case-ID mapping outside provider input, and forbids label inference. | RESOLVED |
+| F3 — HOLDOUT chronology/seal | §6 defines the sealed record, bound DEV/TEST revision and report hashes, explicit final-probe unlock, evidence hashes and one-time replay failure. | RESOLVED |
+| F4 — predecessor audit reference | The header now distinguishes W-06C0 contract `SHIP` at `fa5b920` from implementation/evidence `FIX-FIRST` at `60f8e08`. | RESOLVED |
+
+The exact amendment diff is documentation-only. Corpus-v3 immutability,
+corpus-v4 minimum answerable counts, two-labeler attestation, privacy and
+allowlist boundaries, provider parity, split/version discipline and the
+independent exit gate remain intact. No new blocker was found in this
+re-review.
+
+## Final verdict at `946b5cd`
+
+**SHIP**
+
+The W-06C0R1 contract is sufficiently precise to authorize its bounded,
+evaluation-only implementation. This verdict does not authorize W-06C1,
+provider promotion, retrieval changes, V2 promotion or Phase 20 work; each
+remains behind the contract's evidence and independent-review gates.
