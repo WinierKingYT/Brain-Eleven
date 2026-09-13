@@ -1,7 +1,8 @@
 # W-06C0R1 Package Report
 
 **PACKAGE:** W-06C0R1 — answerability and provenance correction
-**REVISION:** `09f6f7eac59ca3d4c8f28346606ffd3ad8ca8471`
+**REVISION:** P1-A implementation/evidence chain `9ff0757` → `27c8ed2` →
+`bbc2711` → `d70699a`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -13,9 +14,11 @@ unchanged.
   manifest, and sealed holdout metadata.
 - `evals/w06c0r1/**`: evaluator, CLI entry points, and content-free DEV/TEST/
   HOLDOUT evidence reports.
-- `tests/test_w06c0r1_contract.py`: 13 focused contract tests.
+- `tests/test_w06c0r1_contract.py`: 14 focused contract tests.
+- Exact governance/review documents listed in the evaluator scope allowlist.
 
-The exact allowlist check reports only these three prefixes; no production,
+The exact allowlist check permits only the corpus/evaluator/test prefixes, the
+package report, and the four named governance documents; no production,
 retrieval, predecessor corpus, or Phase 20 file changed.
 
 ## Root causes addressed
@@ -28,13 +31,15 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 - Provider inputs use opaque per-run task handles; public IDs and labels remain
   outside the provider boundary.
 - HOLDOUT labels are sealed and require an explicit final-probe invocation;
-  replay of an existing final output is rejected before provider execution.
+  replay of an existing final output or a different output path is rejected
+  before provider execution.
 - Safety leakage is a hard gate, including global-task rejection of
   project-scoped candidates.
 
 ## Tests executed
 
-- Focused: `pytest tests/test_w06c0r1_contract.py -q` → **13 passed**.
+- Focused: `pytest tests/test_w06c0r1_contract.py -q` → **14 passed** after
+  P1-A evidence refresh.
 - Critical syntax/static checks: critical flake8 (`E9,F63,F7,F82`),
   `compileall`, and `git diff --check` → **PASS**.
 - Full suite at this revision: **1105 passed, 2 failed** on the first run.
@@ -50,12 +55,12 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 ## Evidence and metrics
 
-- Manifest: `sha256:2402edeea32d08b8b5fc342dcaa7051de8d5744033a56900f04d04da17b6e295`.
-- Source fingerprint: `sha256:c967074ac969999e48c97101c878d5896539416e9893675923b0fd306ef3d510`.
-- Holdout seal: `sha256:9d9fcc4324802d0bc2c9c4271598a9888c2c28e8e9f27b7ec77fb9ba440f940c`.
+- Manifest: `sha256:dc289344e6c2f2f90eeab06c6c4052bae129b9fb0c3135b311c2330d717306fd`.
+- Source fingerprint: `sha256:8530deb30881aac3430e875552d910df8133f28120a3cac54a42a359d74dfa06`.
+- Holdout seal: `sha256:d5803bb6f6b4b41099597487dfa8301f72267c5d935a202ba430571ad51fc81f`.
 - DEV/TEST/HOLDOUT report hashes:
-  `sha256:c2078cf5c7b3c02f6051638d37f83abc26e52c5a42935219c33c29fc0e0d57be`,
-  `sha256:d29965f7affaa1c01a60a98f5e6d43569f75239fe4792dd1089fc2b0e5f2de9c`,
+  `sha256:b8b691ac263bdfb61c2cb66dc79412882d4870f8b08e88f5cf11a02a25d2c954`,
+  `sha256:f2a7c00b7fe77aea186698c6149091641c6ef3ff57836a9ad9f56474a6bde983`,
   `sha256:99cb95dad04f93c7c237624ab1ffd8d99b84c052613ee1ed86a45dd2c7555266`.
 - DEV/TEST/HOLDOUT each contain the required nine retrieval phenomena and meet
   the answerable minimum (60/60, 60/60, 30/30).
@@ -69,23 +74,25 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 - This package measures feasibility; it does not tune ranking, install an
   embedding provider, or change runtime retrieval.
-- The existing W-06C0 historical scope test fails on the accumulated master
-  history and needs its own bounded compatibility decision.
-- Independent read-only review has not yet been completed.
+- The existing W-06C0 historical scope test remains open until the separately
+  authorized P1-B compatibility package is implemented and reviewed.
+- P1-A implementation has not yet received its independent implementation
+  review; this report remains REVIEW PENDING.
 
 ## Independent review
 
 **REVIEW PENDING.** The implementation review must independently verify the
-allowlist, answerability labels, holdout seal chronology, privacy boundary,
-provider parity, and the stated historical regression.
+canonical final-holdout path, exact governance allowlist, answerability labels,
+holdout seal chronology, privacy boundary, provider parity, and the stated
+historical regression.
 
 ## Score
 
 **Before:** Evaluation quality 6.5/10 (W-06C0R1 blocker: no measurable
 TEST/HOLDOUT quality).
-**After:** Measurement infrastructure is evidence-complete for DEV/TEST/
-HOLDOUT, but no retrieval-quality score increase is claimed until an
-independent reviewer accepts the corpus and the historical full-suite failure
-is dispositioned.
+**After:** P1-A closes the alternate-path replay defect in the evaluator, but
+no retrieval-quality score increase is claimed until an independent reviewer
+accepts the implementation and the historical full-suite failure is
+dispositioned by P1-B.
 
 **VERDICT: REVIEW PENDING**
