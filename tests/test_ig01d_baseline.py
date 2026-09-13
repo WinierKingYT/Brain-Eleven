@@ -174,6 +174,17 @@ def test_pair_report_accepts_same_inputs():
     assert validate_pair_report(_pair_report())["report_type"] == "brain_eleven_ig01d_pair"
 
 
+def test_timing_is_bounded_telemetry_not_identity():
+    report = _pair_report()
+    report["measurement"]["v1_elapsed_ms"] = 999.0
+    report["measurement"]["v2_elapsed_ms"] = 1.0
+    assert validate_pair_report(report)["report_type"] == "brain_eleven_ig01d_pair"
+
+    report["measurement"]["v1_elapsed_ms"] = -1.0
+    with pytest.raises(BaselineContractError):
+        validate_pair_report(report)
+
+
 def test_pair_report_rejects_provider_task_mismatch():
     report = _pair_report()
     report["providers"]["v2"]["corpus"]["task_ids"] = ["p15_v2_basic_relevance_002"]

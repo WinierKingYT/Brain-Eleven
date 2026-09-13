@@ -11,6 +11,7 @@ from evals.baseline_snapshot import DEFAULT_BASELINE_PATH
 from evals.metrics import CaseEvaluation, CaseMetrics
 from evals.reporting import EvaluationReportError, read_evaluation_report
 from evals.run import run_evaluation
+from evals.ig01c.engine import reconcile_report, source_fingerprint_for_root
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,3 +93,36 @@ def test_existing_schema_one_baseline_is_explicitly_legacy():
     assert report["schema_version"] == 1
     assert report["evaluation_status"]["evidence"]["state"] == "legacy"
     assert report["evaluation_status"]["promotion"] == "blocked"
+
+
+def test_ig01c_reconciliation_requires_root_and_detects_false_fingerprint():
+    from evals.ig01c.engine import evaluate_corpus
+
+    case = {
+        "case_id": "retrieval-1",
+        "family": "retrieval",
+        "candidate_ids": ["required"],
+        "required_ids": ["required"],
+        "acceptable_ids": [],
+        "forbidden_ids": [],
+        "project_id": "project-a",
+        "candidate_metadata": [{"id": "required", "project_id": "project-a"}],
+    }
+    report = evaluate_corpus(
+        [case], {"retrieval-1": {"retrieved_ids": ["required"]}},
+        corpus_version="ig-eval-v2", split="dev", enforce_benchmark=False,
+        source_root=ROOT,
+    )
+    assert report["evaluation_status"]["evidence"]["state"] == "verified"
+    assert reconcile_report(report, ROOT)["evaluation_status"]["evidence"]["state"] == "verified"
+
+    tampered = copy.deepcopy(report)
+    tampered["source"]["source_fingerprint"] = "sha256:" + "f" * 64
+    # The report remains structurally valid but its declared digest cannot be
+    # reconciled with the frozen three-file allowlist.
+    reconciled = reconcile_report(tampered, ROOT)
+    assert reconciled["evaluation_status"]["evidence"]["state"] == "tampered"
+
+    unbound = reconcile_report(report, None)
+    assert unbound["evaluation_status"]["evidence"]["state"] == "unavailable"
+    assert source_fingerprint_for_root(ROOT).startswith("sha256:")

@@ -14,7 +14,10 @@ from typing import Any
 
 
 EVALUATOR_VERSION = "1.0.0"
-REPORT_SCHEMA_VERSION = 1
+# Version 1 remains readable as a legacy report. New reports carry the
+# explicit W-09 status object under version 2.
+REPORT_SCHEMA_VERSION = 2
+LEGACY_REPORT_SCHEMA_VERSION = 1
 
 # The seven absolute-zero gates are fixed by IG01-A.  The two near-zero gates
 # require an explicit review record for every positive event.

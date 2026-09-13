@@ -24,6 +24,8 @@ from .contracts import (
     PAIR_REPORT_TYPE,
     REPORT_TYPE,
     BaselineContractError,
+    _status_for_pair_report,
+    _status_for_provider_report,
     validate_baseline_report,
     validate_pair_report,
 )
@@ -37,6 +39,7 @@ NOISE_COUNT = 24
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FIXTURE_PATH = DEFAULT_ROOT / "evals" / "fixtures" / "phase15-contract.json"
 DEFAULT_CORPUS_ROOT = DEFAULT_ROOT / "evals" / "corpus-v2"
+_TIMING_KEYS = frozenset({"elapsed_ms", "v1_elapsed_ms", "v2_elapsed_ms", "p50_ms", "p95_ms", "per_case_mean_ms"})
 
 
 def _check_public_corpus_only(corpus_root: Path, fixture) -> None:
@@ -94,6 +97,116 @@ def _safe_case(case: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
+def _without_timing(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {
+            key: _without_timing(child)
+            for key, child in value.items()
+            if key not in _TIMING_KEYS
+        }
+    if isinstance(value, list):
+        return [_without_timing(child) for child in value]
+    return value
+
+
+def _evidence_adjusted(report: Mapping[str, Any], state: str, reason: str) -> dict[str, Any]:
+    normalized = dict(report)
+    status = dict(normalized["evaluation_status"])
+    status["evidence"] = {"state": state, "reason_code": reason}
+    if state != "verified":
+        status["measurement"] = "incomplete"
+        status["promotion"] = "blocked"
+    normalized["evaluation_status"] = status
+    return normalized
+
+
+def reconcile_baseline_report(
+    report: Mapping[str, Any],
+    *,
+    root: Path | str | None,
+    corpus_root: Path | str | None,
+    fixture_path: Path | str | None = None,
+) -> dict[str, Any]:
+    """Verify an IG01-D provider report against the exact public inputs.
+
+    This is read-only.  Timing telemetry is deliberately removed from the
+    deterministic payload comparison, while cases, metrics, source identity,
+    and split identity remain exact.
+    """
+
+    normalized = validate_baseline_report(report)
+    if normalized.get("schema_version") == 1:
+        return normalized
+    if root is None or corpus_root is None:
+        return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_ROOT_UNBOUND")
+    source_root = Path(root).resolve()
+    corpus = Path(corpus_root).resolve()
+    fixture = Path(fixture_path).resolve() if fixture_path is not None else DEFAULT_FIXTURE_PATH
+    try:
+        current_sha = _git_sha(source_root)
+        current_source = evaluation_source_fingerprint(source_root, corpus)
+        current_split = corpus_split_fingerprint(corpus)
+    except (OSError, ValueError, BaselineContractError, subprocess.CalledProcessError):
+        return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_UNAVAILABLE")
+    declared_source = normalized["source"]
+    declared_corpus = normalized["corpus"]
+    if declared_source.get("evaluation_source_fingerprint") != current_source:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_SOURCE_FINGERPRINT_MISMATCH")
+    if declared_corpus.get("split_fingerprint") != current_split:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_SPLIT_FINGERPRINT_MISMATCH")
+    if declared_source.get("git_sha") != current_sha:
+        return _evidence_adjusted(normalized, "stale", "IG01D_SOURCE_REVISION_STALE")
+    provider = normalized["provider"]["role"]
+    fresh_legacy = run_evaluation(
+        suite="public",
+        provider="baseline" if provider == "v1" else "compiler-v2",
+        fixture_path=fixture,
+        corpus_root=corpus,
+        seed=SEED,
+        noise_count=NOISE_COUNT,
+        source={"ig01d_role": provider},
+        public_only=True,
+    )
+    fresh = _wrap_report(
+        fresh_legacy,
+        provider=provider,
+        git_sha=current_sha,
+        root=source_root,
+        corpus_root=corpus,
+        elapsed_ms=0.0,
+    )
+    if _without_timing(normalized) != _without_timing(fresh):
+        return _evidence_adjusted(normalized, "tampered", "IG01D_PAYLOAD_MISMATCH")
+    return _evidence_adjusted(normalized, "verified", "IG01D_SOURCE_RECONCILED")
+
+
+def reconcile_pair_report(
+    report: Mapping[str, Any],
+    *,
+    root: Path | str | None,
+    corpus_root: Path | str | None,
+    fixture_path: Path | str | None = None,
+) -> dict[str, Any]:
+    """Verify both provider reports and pair identity without using timing."""
+
+    normalized = validate_pair_report(report)
+    if normalized.get("schema_version") == 1:
+        return normalized
+    if root is None or corpus_root is None:
+        return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_ROOT_UNBOUND")
+    providers = normalized["providers"]
+    for label in ("v1", "v2"):
+        checked = reconcile_baseline_report(
+            providers[label], root=root, corpus_root=corpus_root, fixture_path=fixture_path
+        )
+        state = checked["evaluation_status"]["evidence"]["state"]
+        if state != "verified":
+            return _evidence_adjusted(normalized, state, checked["evaluation_status"]["evidence"]["reason_code"])
+    if normalized["feasibility"]["status"] == "SEMANTIC_UNAVAILABLE":
+        return _evidence_adjusted(normalized, "unavailable", "SEMANTIC_PROVIDER_UNAVAILABLE")
+    return _evidence_adjusted(normalized, "verified", "IG01D_SOURCE_RECONCILED")
+
+
 def _wrap_report(
     legacy: Mapping[str, Any],
     *,
@@ -147,6 +260,9 @@ def _wrap_report(
         },
         "cases": [_safe_case(case) for case in legacy["cases"]],
     }
+    report["evaluation_status"] = _status_for_provider_report(
+        report, evidence_state="verified", reason_code="IG01D_SOURCE_RECONCILED"
+    )
     return validate_baseline_report(report)
 
 
@@ -271,6 +387,9 @@ def build_pair_report(
         "feasibility": feasibility,
         "target_derivation": _derive_targets(v1, feasibility),
     }
+    report["evaluation_status"] = _status_for_pair_report(
+        report, evidence_state="verified", reason_code="IG01D_SOURCE_RECONCILED"
+    )
     return validate_pair_report(report)
 
 

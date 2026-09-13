@@ -8,7 +8,8 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 
-IG01D_SCHEMA_VERSION = 1
+IG01D_SCHEMA_VERSION = 2
+LEGACY_IG01D_SCHEMA_VERSION = 1
 EVALUATOR_VERSION = "ig01c-1.0.0"
 REPORT_TYPE = "brain_eleven_ig01d_baseline"
 PAIR_REPORT_TYPE = "brain_eleven_ig01d_pair"
@@ -18,7 +19,7 @@ _FINGERPRINT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$")
 
 _BASELINE_KEYS = frozenset(
-    {"schema_version", "report_type", "evaluator_version", "provider", "corpus", "source", "metrics", "invariants", "measurement", "cases"}
+    {"schema_version", "report_type", "evaluator_version", "provider", "corpus", "source", "metrics", "invariants", "measurement", "cases", "evaluation_status"}
 )
 _PROVIDER_KEYS = frozenset({"id", "role", "capabilities"})
 _CAPABILITY_KEYS = frozenset({"selection", "production_mutation"})
@@ -46,7 +47,7 @@ _CASE_METRIC_KEYS = frozenset(
         "resolved_leakage_count", "unlabeled_selection_count",
     }
 )
-_COMPARISON_KEYS = frozenset({"schema_version", "comparison_type", "baseline", "candidate", "corpus", "metric_deltas", "invariant_changes", "candidate_gate", "outcome"})
+_COMPARISON_KEYS = frozenset({"schema_version", "comparison_type", "baseline", "candidate", "corpus", "metric_deltas", "invariant_changes", "candidate_gate", "evaluation_status", "quality_status", "evidence_status", "promotion_status", "outcome"})
 _COMPARISON_CORPUS_KEYS = frozenset({"fixture_id", "suite", "task_count"})
 _METRIC_DELTA_KEYS = frozenset({"baseline", "candidate", "delta"})
 _GATE_KEYS = frozenset({"passed", "failed_invariants", "unsupported_invariants"})
@@ -54,6 +55,11 @@ _FEASIBILITY_KEYS = frozenset({"status", "provider_id", "reason", "case_count", 
 _TARGET_KEYS = frozenset({"formula", "margin", "realistic_gain", "program_floor", "targets", "quality_visibility"})
 _TARGET_METRIC_KEYS = frozenset({"value", "status", "baseline"})
 _QUALITY_VISIBILITY_KEYS = frozenset({"v2_must_exceed_v1", "promotion_allowed", "spike_status"})
+_STATUS_KEYS = frozenset({"schema_version", "safety", "quality", "capabilities", "evidence", "measurement", "promotion"})
+_STATUS_SAFETY_KEYS = frozenset({"state", "failed_invariant_codes", "unsupported_capability_codes"})
+_STATUS_QUALITY_KEYS = frozenset({"state", "metric_codes"})
+_STATUS_CAPABILITIES = frozenset({"scope_isolation", "lifecycle_filtering"})
+_STATUS_EVIDENCE_KEYS = frozenset({"state", "reason_code"})
 _BUDGET_MEASUREMENT = "token counts unavailable in normalized provider contract"
 _PAIR_BUDGET_MEASUREMENT = _BUDGET_MEASUREMENT
 _UNAVAILABLE_FEASIBILITY_REASONS = frozenset(
@@ -83,6 +89,105 @@ _BANNED_KEYS = frozenset(
 
 class BaselineContractError(ValueError):
     """Raised when baseline evidence is malformed or unsafe to persist."""
+
+
+def _validate_evaluation_status(value: Any, field: str) -> None:
+    status = _closed_mapping(value, field, _STATUS_KEYS)
+    if status.get("schema_version") != 1:
+        raise BaselineContractError(f"{field}.schema_version is invalid")
+    safety = _closed_mapping(status.get("safety"), f"{field}.safety", _STATUS_SAFETY_KEYS)
+    if safety.get("state") not in {"pass", "fail", "unsupported", "not_applicable"}:
+        raise BaselineContractError(f"{field}.safety.state is invalid")
+    quality = _closed_mapping(status.get("quality"), f"{field}.quality", _STATUS_QUALITY_KEYS)
+    if quality.get("state") not in {"measured", "unavailable", "not_applicable", "invalid"}:
+        raise BaselineContractError(f"{field}.quality.state is invalid")
+    for key in ("failed_invariant_codes", "unsupported_capability_codes"):
+        values = safety.get(key)
+        if not isinstance(values, list) or values != sorted(set(values)) or any(
+            not isinstance(item, str) or not _ID_RE.fullmatch(item) for item in values
+        ):
+            raise BaselineContractError(f"{field}.safety.{key} is invalid")
+    metric_codes = quality.get("metric_codes")
+    if not isinstance(metric_codes, list) or metric_codes != sorted(set(metric_codes)) or any(
+        not isinstance(item, str) or not _ID_RE.fullmatch(item) for item in metric_codes
+    ):
+        raise BaselineContractError(f"{field}.quality.metric_codes is invalid")
+    capabilities = _closed_mapping(status.get("capabilities"), f"{field}.capabilities", _STATUS_CAPABILITIES)
+    if set(capabilities) != _STATUS_CAPABILITIES or any(
+        value not in {"supported", "unsupported", "not_applicable"} for value in capabilities.values()
+    ):
+        raise BaselineContractError(f"{field}.capabilities is invalid")
+    evidence = _closed_mapping(status.get("evidence"), f"{field}.evidence", _STATUS_EVIDENCE_KEYS)
+    if evidence.get("state") not in {"verified", "stale", "tampered", "invalid", "unavailable", "legacy"}:
+        raise BaselineContractError(f"{field}.evidence.state is invalid")
+    reason = evidence.get("reason_code")
+    if not isinstance(reason, str) or not re.fullmatch(r"[A-Z0-9][A-Z0-9_.-]{0,63}", reason):
+        raise BaselineContractError(f"{field}.evidence.reason_code is invalid")
+    if status.get("measurement") not in {"complete", "incomplete", "blocked"}:
+        raise BaselineContractError(f"{field}.measurement is invalid")
+    if status.get("promotion") not in {"eligible", "blocked"}:
+        raise BaselineContractError(f"{field}.promotion is invalid")
+
+
+def _status_for_provider_report(report: Mapping[str, Any], *, evidence_state: str = "unavailable", reason_code: str = "IG01D_SOURCE_UNBOUND") -> dict[str, Any]:
+    failed = sorted(
+        name for name, summary in report.get("invariants", {}).items()
+        if summary.get("state") == "fail"
+    )
+    unsupported = sorted(
+        name for name, summary in report.get("invariants", {}).items()
+        if summary.get("state") == "unsupported"
+    )
+    safety = "fail" if failed else "unsupported" if unsupported else "pass"
+    quality = "measured" if report.get("metrics", {}).get("context_precision") is not None else "unavailable"
+    metric_codes = [] if quality == "measured" else ["context_precision"]
+    measurement = "complete" if evidence_state == "verified" and safety == "pass" and quality == "measured" else "incomplete"
+    return {
+        "schema_version": 1,
+        "safety": {
+            "state": safety,
+            "failed_invariant_codes": failed,
+            "unsupported_capability_codes": unsupported,
+        },
+        "quality": {"state": quality, "metric_codes": metric_codes},
+        "capabilities": {
+            "scope_isolation": "unsupported" if "wrong_project_leakage" in unsupported else "supported",
+            "lifecycle_filtering": "unsupported" if any(name in unsupported for name in ("superseded_lifecycle_leakage", "resolved_lifecycle_leakage")) else "supported",
+        },
+        "evidence": {"state": evidence_state, "reason_code": reason_code},
+        "measurement": measurement,
+        "promotion": "eligible" if measurement == "complete" else "blocked",
+    }
+
+
+def _status_for_pair_report(report: Mapping[str, Any], *, evidence_state: str = "unavailable", reason_code: str = "IG01D_SOURCE_UNBOUND") -> dict[str, Any]:
+    comparison = report.get("comparison", {})
+    gate = comparison.get("candidate_gate", {})
+    failed = sorted(gate.get("failed_invariants", {}))
+    unsupported = sorted(gate.get("unsupported_invariants", {}))
+    safety = "fail" if failed else "unsupported" if unsupported else "pass"
+    feasibility = report.get("feasibility", {})
+    quality = "unavailable" if feasibility.get("status") == "SEMANTIC_UNAVAILABLE" else "measured"
+    metric_codes = ["semantic_feasibility"] if quality == "unavailable" else []
+    if quality == "unavailable" and evidence_state == "verified":
+        evidence_state, reason_code = "unavailable", "SEMANTIC_PROVIDER_UNAVAILABLE"
+    measurement = "complete" if evidence_state == "verified" and safety == "pass" and quality == "measured" else "incomplete"
+    return {
+        "schema_version": 1,
+        "safety": {
+            "state": safety,
+            "failed_invariant_codes": failed,
+            "unsupported_capability_codes": unsupported,
+        },
+        "quality": {"state": quality, "metric_codes": metric_codes},
+        "capabilities": {
+            "scope_isolation": "unsupported" if "wrong_project_leakage" in unsupported else "supported",
+            "lifecycle_filtering": "unsupported" if any(name in unsupported for name in ("superseded_lifecycle_leakage", "resolved_lifecycle_leakage")) else "supported",
+        },
+        "evidence": {"state": evidence_state, "reason_code": reason_code},
+        "measurement": measurement,
+        "promotion": "eligible" if measurement == "complete" else "blocked",
+    }
 
 
 def _mapping(value: Any, field: str) -> Mapping[str, Any]:
@@ -128,7 +233,7 @@ def _fingerprint(value: Any, field: str) -> str:
     return value
 
 
-def _number(value: Any, field: str, *, nullable: bool = False) -> float | None:
+def _number(value: Any, field: str, *, nullable: bool = False, nonnegative: bool = False) -> float | None:
     if value is None and nullable:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -136,6 +241,8 @@ def _number(value: Any, field: str, *, nullable: bool = False) -> float | None:
     value = float(value)
     if not math.isfinite(value):
         raise BaselineContractError(f"{field} must be finite")
+    if nonnegative and value < 0:
+        raise BaselineContractError(f"{field} must be non-negative")
     return value
 
 
@@ -263,7 +370,8 @@ def validate_baseline_report(report: Mapping[str, Any]) -> dict[str, Any]:
 
     _safe_tree(report)
     report = _closed_mapping(report, "report", _BASELINE_KEYS)
-    if report.get("schema_version") != IG01D_SCHEMA_VERSION:
+    schema_version = report.get("schema_version")
+    if schema_version not in {LEGACY_IG01D_SCHEMA_VERSION, IG01D_SCHEMA_VERSION}:
         raise BaselineContractError("unsupported IG01-D report schema")
     if report.get("report_type") != REPORT_TYPE:
         raise BaselineContractError("unsupported IG01-D report type")
@@ -307,10 +415,10 @@ def validate_baseline_report(report: Mapping[str, Any]) -> dict[str, Any]:
     measurement = _closed_mapping(report.get("measurement"), "report.measurement", _MEASUREMENT_KEYS)
     if set(measurement) != _MEASUREMENT_KEYS:
         raise BaselineContractError("report.measurement must contain the complete measurement set")
-    _number(measurement.get("elapsed_ms"), "report.measurement.elapsed_ms")
-    _number(measurement.get("per_case_mean_ms"), "report.measurement.per_case_mean_ms")
-    _number(measurement.get("p50_ms"), "report.measurement.p50_ms", nullable=True)
-    _number(measurement.get("p95_ms"), "report.measurement.p95_ms", nullable=True)
+    _number(measurement.get("elapsed_ms"), "report.measurement.elapsed_ms", nonnegative=True)
+    _number(measurement.get("per_case_mean_ms"), "report.measurement.per_case_mean_ms", nonnegative=True)
+    _number(measurement.get("p50_ms"), "report.measurement.p50_ms", nullable=True, nonnegative=True)
+    _number(measurement.get("p95_ms"), "report.measurement.p95_ms", nullable=True, nonnegative=True)
     if measurement.get("budget_measurement") != _BUDGET_MEASUREMENT:
         raise BaselineContractError("report.measurement.budget_measurement is not a bounded code")
     if measurement.get("case_count") != len(task_ids):
@@ -323,15 +431,23 @@ def validate_baseline_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise BaselineContractError("report.cases must be ordered by task_id")
     for index, (case, task_id) in enumerate(zip(cases, task_ids)):
         _validate_case(case, f"report.cases[{index}]", expected_task_id=task_id)
-    return dict(report)
+    normalized = dict(report)
+    if schema_version == IG01D_SCHEMA_VERSION:
+        _validate_evaluation_status(report.get("evaluation_status"), "report.evaluation_status")
+    else:
+        normalized["evaluation_status"] = _status_for_provider_report(
+            report, evidence_state="legacy", reason_code="LEGACY_REPORT_SCHEMA"
+        )
+    return normalized
 
 
 def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
     """Validate paired V1/V2 evidence and all same-input guarantees."""
 
     _safe_tree(report)
-    report = _closed_mapping(report, "pair report", frozenset({"schema_version", "report_type", "evaluator_version", "corpus", "source", "providers", "comparison", "measurement", "feasibility", "target_derivation"}))
-    if report.get("schema_version") != IG01D_SCHEMA_VERSION:
+    report = _closed_mapping(report, "pair report", frozenset({"schema_version", "report_type", "evaluator_version", "corpus", "source", "providers", "comparison", "measurement", "feasibility", "target_derivation", "evaluation_status"}))
+    schema_version = report.get("schema_version")
+    if schema_version not in {LEGACY_IG01D_SCHEMA_VERSION, IG01D_SCHEMA_VERSION}:
         raise BaselineContractError("unsupported IG01-D pair schema")
     if report.get("report_type") != PAIR_REPORT_TYPE:
         raise BaselineContractError("unsupported IG01-D pair report type")
@@ -412,11 +528,28 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise BaselineContractError("candidate_gate.passed cannot hide failed or unsupported invariants")
     if comparison.get("outcome") not in {"improved", "degraded", "unchanged", "inconclusive"}:
         raise BaselineContractError("comparison outcome is invalid")
+    if schema_version == IG01D_SCHEMA_VERSION:
+        for key in ("quality_status", "evidence_status", "promotion_status"):
+            if not isinstance(comparison.get(key), str) or not comparison[key]:
+                raise BaselineContractError(f"comparison.{key} is invalid")
+        comparison_status = _closed_mapping(
+            comparison.get("evaluation_status"),
+            "pair report.comparison.evaluation_status",
+            frozenset({"baseline", "candidate"}),
+        )
+        for label in ("baseline", "candidate"):
+            row = _closed_mapping(
+                comparison_status.get(label),
+                f"pair report.comparison.evaluation_status.{label}",
+                frozenset({"quality", "evidence", "promotion"}),
+            )
+            if any(not isinstance(row.get(key), str) or not row[key] for key in ("quality", "evidence", "promotion")):
+                raise BaselineContractError(f"comparison.evaluation_status.{label} is invalid")
     measurement = _closed_mapping(report.get("measurement"), "pair report.measurement", frozenset({"v1_elapsed_ms", "v2_elapsed_ms", "budget_measurement"}))
     if set(measurement) != {"v1_elapsed_ms", "v2_elapsed_ms", "budget_measurement"}:
         raise BaselineContractError("pair report.measurement must contain the complete measurement set")
     for name in ("v1_elapsed_ms", "v2_elapsed_ms"):
-        _number(measurement.get(name), f"pair report.measurement.{name}")
+        _number(measurement.get(name), f"pair report.measurement.{name}", nonnegative=True)
     if measurement.get("budget_measurement") != _PAIR_BUDGET_MEASUREMENT:
         raise BaselineContractError("pair report.measurement.budget_measurement is not a bounded code")
     feasibility = _closed_mapping(report.get("feasibility"), "pair report.feasibility", _FEASIBILITY_KEYS)
@@ -435,7 +568,7 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise BaselineContractError("feasibility probe must explicitly exclude HOLDOUT")
     precision = _number(feasibility.get("precision"), "pair report.feasibility.precision", nullable=True)
     empirical_ceiling = _number(feasibility.get("empirical_ceiling"), "pair report.feasibility.empirical_ceiling", nullable=True)
-    _number(feasibility.get("elapsed_ms"), "pair report.feasibility.elapsed_ms")
+    _number(feasibility.get("elapsed_ms"), "pair report.feasibility.elapsed_ms", nonnegative=True)
     measurement_text = _nonempty(feasibility.get("measurement"), "pair report.feasibility.measurement")
     if status == "SEMANTIC_UNAVAILABLE":
         if reason not in _UNAVAILABLE_FEASIBILITY_REASONS or measurement_text not in _UNAVAILABLE_FEASIBILITY_MEASUREMENTS:
@@ -502,4 +635,11 @@ def validate_pair_report(report: Mapping[str, Any]) -> dict[str, Any]:
         recorded = float(target_values[name]["value"])
         if abs(recorded - expected) > 1e-6:
             raise BaselineContractError(f"targets.{name}.value does not match the frozen derivation formula")
-    return dict(report)
+    normalized = dict(report)
+    if schema_version == IG01D_SCHEMA_VERSION:
+        _validate_evaluation_status(report.get("evaluation_status"), "pair report.evaluation_status")
+    else:
+        normalized["evaluation_status"] = _status_for_pair_report(
+            report, evidence_state="legacy", reason_code="LEGACY_REPORT_SCHEMA"
+        )
+    return normalized

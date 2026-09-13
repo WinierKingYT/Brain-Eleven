@@ -4,18 +4,23 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import re
 import tempfile
+import subprocess
 from typing import Any
+
+from ..reporting import _status_object, _validate_evaluation_status
 
 from .contracts import (
     ALL_GATES,
     EVALUATOR_VERSION,
     HARD_ZERO_GATES,
+    LEGACY_REPORT_SCHEMA_VERSION,
     NEAR_ZERO_GATES,
     REPORT_SCHEMA_VERSION,
     EvaluationContractError,
@@ -54,7 +59,7 @@ _SOURCE_KEYS = frozenset({"git_sha", "seed", "retrieval_k", "source_fingerprint"
 _HEX_RE = re.compile(r"^[0-9a-fA-F]{6,128}$")
 _REPORT_TOP_LEVEL_KEYS = frozenset({
     "schema_version", "report_type", "evaluator_version", "corpus", "source",
-    "metrics", "safety_gates", "cases", "controls",
+    "metrics", "safety_gates", "cases", "controls", "evaluation_status",
 })
 _CASE_ROW_KEYS = frozenset({
     "case_id", "family", "metrics", "violations", "passed", "selected_ids",
@@ -62,11 +67,59 @@ _CASE_ROW_KEYS = frozenset({
 })
 _CORPUS_KEYS = frozenset({
     "corpus_version", "split", "case_count", "scored_case_count",
-    "excluded_case_count", "case_ids",
+    "excluded_case_count", "case_ids", "split_fingerprint",
 })
 _METRIC_KEYS = frozenset({"value", "numerator", "denominator", "not_applicable", "empty_selection"})
 _SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$")
+_FINGERPRINT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 _SAFETY_EVENT_KEYS = frozenset({"gate", "case_id", "detail_code", "review_required"})
+_IG01C_SOURCE_PATHS = (
+    "evals/ig01c/engine.py",
+    "evals/ig01c/contracts.py",
+    "evals/ig01c/metrics.py",
+)
+
+
+def _framed_source_fingerprint(root: Path) -> str:
+    """Hash only the frozen IG01-C evaluator allowlist."""
+
+    digest = hashlib.sha256()
+    paths = [root / relative for relative in _IG01C_SOURCE_PATHS]
+    if not all(path.is_file() for path in paths):
+        raise EvaluatorError("IG01-C source allowlist is unavailable")
+    for path in sorted(paths, key=lambda item: item.relative_to(root).as_posix()):
+        relative = path.relative_to(root).as_posix().encode("utf-8")
+        content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        digest.update(len(relative).to_bytes(4, "big"))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, "big"))
+        digest.update(content)
+    return f"sha256:{digest.hexdigest()}"
+
+
+def source_fingerprint_for_root(root: Path | str) -> str:
+    """Return the exact three-file IG01-C source fingerprint."""
+
+    return _framed_source_fingerprint(Path(root).resolve())
+
+
+def _case_set_fingerprint(case_ids: Sequence[str], corpus_version: str, split: str) -> str:
+    payload = "\n".join((corpus_version, split, *sorted(case_ids))).encode("utf-8")
+    return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def _git_sha_for_root(root: Path) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    value = result.stdout.strip().lower()
+    return value if re.fullmatch(r"[0-9a-f]{40}", value) else None
 
 
 def _safe_scalar(value: Any, field: str) -> Any:
@@ -96,9 +149,12 @@ def _safe_source(source: Mapping[str, Any] | None) -> dict[str, Any]:
             marker in lowered for marker in ("secret", "password", "credential", "api_key")
         ):
             raise EvaluatorError(f"source.{key} cannot contain raw content")
-        if lowered in {"git_sha", "source_fingerprint"} and value is not None:
+        if lowered == "git_sha" and value is not None:
             if not isinstance(value, str) or not _HEX_RE.fullmatch(value):
                 raise EvaluatorError(f"source.{key} must be a hexadecimal hash")
+        if lowered == "source_fingerprint" and value is not None:
+            if not isinstance(value, str) or not _FINGERPRINT_RE.fullmatch(value):
+                raise EvaluatorError(f"source.{key} must be a hexadecimal hash / sha256 fingerprint")
         if lowered in {"seed", "retrieval_k"} and value is not None:
             _nonnegative_int(value, f"source.{key}")
         normalized[lowered] = _safe_scalar(value, f"source.{key}")
@@ -341,6 +397,35 @@ def _validate_benchmark_population(
         )
 
 
+def _ig01c_status(report: Mapping[str, Any], *, source_bound: bool = False) -> dict[str, Any]:
+    gates = report["safety_gates"]
+    failed = sorted(name for name, row in gates.items() if not row.get("passed"))
+    safety_state = "fail" if failed else "pass"
+    metric_codes: list[str] = []
+    for family, values in report.get("metrics", {}).items():
+        for name, value in values.items():
+            if value.get("not_applicable") or value.get("value") is None:
+                metric_codes.append(f"{family}.{name}")
+    quality_state = "unavailable" if metric_codes else "measured"
+    source = report.get("source", {})
+    evidence_state = "verified" if source_bound and source.get("source_fingerprint") and source.get("git_sha") else "unavailable"
+    reason = "SOURCE_ROOT_RECONCILED" if evidence_state == "verified" else "IG01C_SOURCE_ROOT_UNBOUND"
+    measurement = "complete" if evidence_state == "verified" and quality_state == "measured" and safety_state == "pass" else "incomplete"
+    promotion = "eligible" if measurement == "complete" else "blocked"
+    return _status_object(
+        safety_state=safety_state,
+        failed_codes=failed,
+        unsupported_codes=[],
+        quality_state=quality_state,
+        metric_codes=metric_codes,
+        capabilities={"scope_isolation": "supported", "lifecycle_filtering": "supported"},
+        evidence_state=evidence_state,
+        evidence_reason=reason,
+        measurement=measurement,
+        promotion=promotion,
+    )
+
+
 def evaluate_corpus(
     cases: Sequence[Mapping[str, Any]],
     outputs: Mapping[str, Any],
@@ -353,6 +438,7 @@ def evaluate_corpus(
     git_sha: str = "",
     include_controls: bool = True,
     enforce_benchmark: bool = True,
+    source_root: Path | str | None = None,
 ) -> dict[str, Any]:
     """Evaluate a fixed collection and return a content-free report.
 
@@ -409,6 +495,18 @@ def evaluate_corpus(
         for gate, denominator in result.get("gate_denominators", {}).items():
             gate_denominators[gate] += _nonnegative_int(denominator, f"gate_denominators.{gate}")
     gate_rows = gate_summary(events, len(results) - excluded, attempt_denominators=gate_denominators)
+    source_root_path = Path(source_root).resolve() if source_root is not None else None
+    computed_source_fingerprint = (
+        source_fingerprint_for_root(source_root_path) if source_root_path is not None else None
+    )
+    supplied_source_fingerprint = source_fingerprint or None
+    if computed_source_fingerprint is not None and supplied_source_fingerprint not in {
+        None, computed_source_fingerprint
+    }:
+        raise EvaluatorError("source_fingerprint does not match the frozen IG01-C allowlist")
+    actual_git_sha = _git_sha_for_root(source_root_path) if source_root_path is not None else None
+    if source_root_path is not None and actual_git_sha is None:
+        raise EvaluatorError("IG01-C source revision is unavailable")
     report = {
         "schema_version": REPORT_SCHEMA_VERSION,
         "report_type": "brain_eleven_ig01c_evaluation",
@@ -420,12 +518,13 @@ def evaluate_corpus(
             "scored_case_count": len(case_ids) - excluded,
             "excluded_case_count": excluded,
             "case_ids": sorted(case_ids),
+            "split_fingerprint": _case_set_fingerprint(case_ids, corpus_version, split),
         },
         "source": _safe_source({
-            "git_sha": git_sha or None,
+            "git_sha": actual_git_sha or git_sha or None,
             "seed": seed,
             "retrieval_k": retrieval_k,
-            "source_fingerprint": source_fingerprint or None,
+            "source_fingerprint": computed_source_fingerprint or supplied_source_fingerprint,
         }),
         "metrics": _aggregate_metrics(results),
         "safety_gates": gate_rows,
@@ -448,6 +547,7 @@ def evaluate_corpus(
         ],
         "controls": controls,
     }
+    report["evaluation_status"] = _ig01c_status(report, source_bound=source_root_path is not None)
     validate_report(report)
     return report
 
@@ -511,7 +611,8 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise EvaluatorError(
             "report contains unknown top-level fields: " + ", ".join(sorted(map(str, unknown_top_level)))
         )
-    if report.get("schema_version") != REPORT_SCHEMA_VERSION:
+    schema_version = report.get("schema_version")
+    if schema_version not in {LEGACY_REPORT_SCHEMA_VERSION, REPORT_SCHEMA_VERSION}:
         raise EvaluatorError("unsupported report schema version")
     if report.get("report_type") != "brain_eleven_ig01c_evaluation":
         raise EvaluatorError("invalid IG01-C report type")
@@ -545,6 +646,10 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
         raise EvaluatorError("report.corpus.case_count mismatch")
     if corpus.get("scored_case_count", -1) + corpus.get("excluded_case_count", -1) != len(ids):
         raise EvaluatorError("report corpus counts do not add up")
+    if schema_version == REPORT_SCHEMA_VERSION:
+        split_fingerprint = corpus.get("split_fingerprint")
+        if not isinstance(split_fingerprint, str) or not _FINGERPRINT_RE.fullmatch(split_fingerprint):
+            raise EvaluatorError("report.corpus.split_fingerprint is invalid")
     _validate_family_metric_map(report.get("metrics"), "report.metrics")
     gates = report.get("safety_gates")
     if not isinstance(gates, Mapping) or set(gates) != set(ALL_GATES):
@@ -677,7 +782,82 @@ def validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
                 if set(selected) != set(parent_candidates) or len(selected) != len(parent_candidates):
                     raise EvaluatorError(f"report.controls[{case_id}].select_all must cover candidate_ids")
             _validate_metric_map(row["metrics"], f"report.controls[{case_id}].{name}.metrics")
-    return dict(report)
+    normalized = dict(report)
+    if schema_version == REPORT_SCHEMA_VERSION:
+        try:
+            _validate_evaluation_status(report.get("evaluation_status"))
+        except Exception as error:
+            raise EvaluatorError(str(error)) from error
+    else:
+        # Legacy reports remain readable but are explicitly historical and
+        # cannot satisfy a current evidence or promotion gate.
+        normalized["evaluation_status"] = _status_object(
+            safety_state="fail" if any(not row.get("passed") for row in gates.values()) else "pass",
+            failed_codes=[name for name, row in gates.items() if not row.get("passed")],
+            unsupported_codes=[],
+            quality_state="measured",
+            metric_codes=[],
+            capabilities={"scope_isolation": "supported", "lifecycle_filtering": "supported"},
+            evidence_state="legacy",
+            evidence_reason="LEGACY_REPORT_SCHEMA",
+            measurement="blocked",
+            promotion="blocked",
+        )
+    return normalized
+
+
+def reconcile_report(report: Mapping[str, Any], root: Path | str | None) -> dict[str, Any]:
+    """Reconcile IG01-C source identity against an explicit checkout root.
+
+    The verifier is read-only and hashes exactly the three evaluator files
+    named by the W-09 contract.  Without a root, evidence remains explicitly
+    unavailable; a self-consistent SHA in the report is never sufficient.
+    """
+
+    normalized = validate_report(report)
+    if normalized.get("schema_version") == LEGACY_REPORT_SCHEMA_VERSION:
+        return normalized
+    if root is None:
+        status = normalized["evaluation_status"]
+        status = dict(status)
+        status["evidence"] = {"state": "unavailable", "reason_code": "IG01C_SOURCE_ROOT_UNBOUND"}
+        status["measurement"] = "incomplete"
+        status["promotion"] = "blocked"
+        normalized["evaluation_status"] = status
+        return normalized
+    source_root = Path(root).resolve()
+    try:
+        current_fingerprint = source_fingerprint_for_root(source_root)
+    except (OSError, ValueError, EvaluatorError):
+        status = dict(normalized["evaluation_status"])
+        status["evidence"] = {"state": "unavailable", "reason_code": "IG01C_SOURCE_UNAVAILABLE"}
+        status["measurement"] = "incomplete"
+        status["promotion"] = "blocked"
+        normalized["evaluation_status"] = status
+        return normalized
+    declared = normalized.get("source", {})
+    current_sha = _git_sha_for_root(source_root)
+    if declared.get("source_fingerprint") != current_fingerprint:
+        evidence_state, reason = "tampered", "IG01C_SOURCE_FINGERPRINT_MISMATCH"
+    elif current_sha is None:
+        evidence_state, reason = "unavailable", "IG01C_SOURCE_REVISION_UNAVAILABLE"
+    elif declared.get("git_sha") != current_sha:
+        evidence_state, reason = "stale", "IG01C_SOURCE_REVISION_STALE"
+    elif normalized["corpus"].get("split_fingerprint") != _case_set_fingerprint(
+        normalized["corpus"]["case_ids"],
+        normalized["corpus"]["corpus_version"],
+        normalized["corpus"]["split"],
+    ):
+        evidence_state, reason = "tampered", "IG01C_SPLIT_FINGERPRINT_MISMATCH"
+    else:
+        evidence_state, reason = "verified", "IG01C_SOURCE_RECONCILED"
+    status = dict(normalized["evaluation_status"])
+    status["evidence"] = {"state": evidence_state, "reason_code": reason}
+    if evidence_state != "verified":
+        status["measurement"] = "incomplete"
+        status["promotion"] = "blocked"
+    normalized["evaluation_status"] = status
+    return normalized
 
 
 def write_report(path: Path | str, report: Mapping[str, Any]) -> None:
