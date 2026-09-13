@@ -120,6 +120,41 @@ def _evidence_adjusted(report: Mapping[str, Any], state: str, reason: str) -> di
     return normalized
 
 
+def _fresh_pair_inputs(
+    *,
+    source_root: Path,
+    corpus: Path,
+    fixture: Path,
+    git_sha: str,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Recompute both provider payloads and their comparison from public inputs."""
+
+    legacy_reports: dict[str, Mapping[str, Any]] = {}
+    wrapped_reports: dict[str, dict[str, Any]] = {}
+    for provider, role in (("baseline", "v1"), ("compiler-v2", "v2")):
+        legacy = run_evaluation(
+            suite="public",
+            provider=provider,
+            fixture_path=fixture,
+            corpus_root=corpus,
+            seed=SEED,
+            noise_count=NOISE_COUNT,
+            source={"ig01d_role": role},
+            public_only=True,
+        )
+        legacy_reports[role] = legacy
+        wrapped_reports[role] = _wrap_report(
+            legacy,
+            provider=role,
+            git_sha=git_sha,
+            root=source_root,
+            corpus_root=corpus,
+            elapsed_ms=0.0,
+        )
+    comparison = compare_evaluation_reports(legacy_reports["v1"], legacy_reports["v2"])
+    return wrapped_reports, comparison, dict(legacy_reports)
+
+
 def reconcile_baseline_report(
     report: Mapping[str, Any],
     *,
@@ -192,18 +227,66 @@ def reconcile_pair_report(
     normalized = validate_pair_report(report)
     if normalized.get("schema_version") == 1:
         return normalized
+    # A pair with a failed candidate gate is never current verified evidence.
+    # Check this before source access so a persisted gate edit fails closed even
+    # when the caller cannot provide a checkout for a full recomputation.
+    persisted_gate = normalized["comparison"]["candidate_gate"]
+    if persisted_gate.get("passed") is False:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_CANDIDATE_GATE_FAILED")
     if root is None or corpus_root is None:
         return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_ROOT_UNBOUND")
+    source_root = Path(root).resolve()
+    corpus = Path(corpus_root).resolve()
+    fixture = Path(fixture_path).resolve() if fixture_path is not None else DEFAULT_FIXTURE_PATH
+    try:
+        current_sha = _git_sha(source_root)
+        current_source = evaluation_source_fingerprint(source_root, corpus)
+        current_split = corpus_split_fingerprint(corpus)
+    except (OSError, ValueError, BaselineContractError, subprocess.CalledProcessError):
+        return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_UNAVAILABLE")
+
+    declared_source = normalized["source"]
+    declared_corpus = normalized["corpus"]
+    if declared_source.get("evaluation_source_fingerprint") != current_source:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_SOURCE_FINGERPRINT_MISMATCH")
+    if declared_corpus.get("split_fingerprint") != current_split:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_SPLIT_FINGERPRINT_MISMATCH")
+    if declared_source.get("git_sha") != current_sha:
+        return _evidence_adjusted(normalized, "stale", "IG01D_SOURCE_REVISION_STALE")
+
+    try:
+        fresh_providers, fresh_comparison, _ = _fresh_pair_inputs(
+            source_root=source_root,
+            corpus=corpus,
+            fixture=fixture,
+            git_sha=current_sha,
+        )
+    except (OSError, ValueError, BaselineContractError, subprocess.CalledProcessError):
+        return _evidence_adjusted(normalized, "unavailable", "IG01D_SOURCE_UNAVAILABLE")
+
     providers = normalized["providers"]
     for label in ("v1", "v2"):
-        checked = reconcile_baseline_report(
-            providers[label], root=root, corpus_root=corpus_root, fixture_path=fixture_path
-        )
-        state = checked["evaluation_status"]["evidence"]["state"]
-        if state != "verified":
-            return _evidence_adjusted(normalized, state, checked["evaluation_status"]["evidence"]["reason_code"])
-    if normalized["feasibility"]["status"] == "SEMANTIC_UNAVAILABLE":
-        return _evidence_adjusted(normalized, "unavailable", "SEMANTIC_PROVIDER_UNAVAILABLE")
+        if _without_timing(providers[label]) != _without_timing(fresh_providers[label]):
+            return _evidence_adjusted(normalized, "tampered", "IG01D_PROVIDER_PAYLOAD_MISMATCH")
+    if _without_timing(normalized["comparison"]) != _without_timing(fresh_comparison):
+        return _evidence_adjusted(normalized, "tampered", "IG01D_COMPARISON_PAYLOAD_MISMATCH")
+
+    # Pair status is part of the persisted evidence boundary.  Re-derive it
+    # from the fresh comparison and declared feasibility before accepting the
+    # pair as verified; an edited status cannot certify an unchanged payload.
+    status_input = dict(normalized)
+    status_input["comparison"] = fresh_comparison
+    expected_status = _status_for_pair_report(
+        status_input,
+        evidence_state="verified",
+        reason_code="IG01D_SOURCE_RECONCILED",
+    )
+    if normalized["evaluation_status"] != expected_status:
+        return _evidence_adjusted(normalized, "tampered", "IG01D_STATUS_PAYLOAD_MISMATCH")
+    if expected_status["evidence"]["state"] == "unavailable":
+        return _evidence_adjusted(normalized, "unavailable", expected_status["evidence"]["reason_code"])
+    if expected_status["evidence"]["state"] != "verified":
+        return _evidence_adjusted(normalized, expected_status["evidence"]["state"], expected_status["evidence"]["reason_code"])
     return _evidence_adjusted(normalized, "verified", "IG01D_SOURCE_RECONCILED")
 
 

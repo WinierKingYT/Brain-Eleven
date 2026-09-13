@@ -165,11 +165,19 @@ def _status_for_pair_report(report: Mapping[str, Any], *, evidence_state: str = 
     gate = comparison.get("candidate_gate", {})
     failed = sorted(gate.get("failed_invariants", {}))
     unsupported = sorted(gate.get("unsupported_invariants", {}))
-    safety = "fail" if failed else "unsupported" if unsupported else "pass"
+    gate_failed = gate.get("passed") is False
+    if gate_failed and not failed and not unsupported:
+        # An empty failed/unsupported map alongside a false gate is not a
+        # meaningful safety result.  Preserve the fail-closed signal in the
+        # status so a persisted gate edit cannot look promotion-ready.
+        failed = ["candidate_gate"]
+    safety = "fail" if failed or gate_failed else "unsupported" if unsupported else "pass"
     feasibility = report.get("feasibility", {})
     quality = "unavailable" if feasibility.get("status") == "SEMANTIC_UNAVAILABLE" else "measured"
     metric_codes = ["semantic_feasibility"] if quality == "unavailable" else []
-    if quality == "unavailable" and evidence_state == "verified":
+    if gate_failed and evidence_state == "verified":
+        evidence_state, reason_code = "tampered", "IG01D_CANDIDATE_GATE_FAILED"
+    elif quality == "unavailable" and evidence_state == "verified":
         evidence_state, reason_code = "unavailable", "SEMANTIC_PROVIDER_UNAVAILABLE"
     measurement = "complete" if evidence_state == "verified" and safety == "pass" and quality == "measured" else "incomplete"
     return {

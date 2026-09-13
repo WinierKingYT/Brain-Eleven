@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 
 from evals.ig01d.contracts import BaselineContractError, validate_baseline_report, validate_pair_report
+from evals.ig01d import baseline as ig01d_baseline
+from evals.ig01d.baseline import reconcile_pair_report
 from evals.ig01d.fingerprint import corpus_split_fingerprint
 from evals.ig01d.spike import run_feasibility_probe, run_real_feasibility_probe
 from evals.corpus_v2_builder import check_corpus_v2_public
@@ -170,8 +172,91 @@ def _pair_report() -> dict:
     }
 
 
+def _schema_two_pair_report() -> dict:
+    """Promote the compact fixture to the additive status schema for reconciliation tests."""
+
+    report = _pair_report()
+    provider_status = {
+        "schema_version": 1,
+        "safety": {"state": "pass", "failed_invariant_codes": [], "unsupported_capability_codes": []},
+        "quality": {"state": "measured", "metric_codes": []},
+        "capabilities": {"scope_isolation": "supported", "lifecycle_filtering": "supported"},
+        "evidence": {"state": "unavailable", "reason_code": "IG01D_SOURCE_ROOT_UNBOUND"},
+        "measurement": "incomplete",
+        "promotion": "blocked",
+    }
+    for provider in report["providers"].values():
+        provider["schema_version"] = 2
+        provider["evaluation_status"] = deepcopy(provider_status)
+    report["schema_version"] = 2
+    report["comparison"].update(
+        {
+            "quality_status": "measured",
+            "evidence_status": "unavailable",
+            "promotion_status": "blocked",
+            "evaluation_status": {
+                "baseline": {"quality": "measured", "evidence": "unavailable", "promotion": "blocked"},
+                "candidate": {"quality": "measured", "evidence": "unavailable", "promotion": "blocked"},
+            },
+        }
+    )
+    report["evaluation_status"] = {
+        "schema_version": 1,
+        "safety": {"state": "pass", "failed_invariant_codes": [], "unsupported_capability_codes": []},
+        "quality": {"state": "unavailable", "metric_codes": ["semantic_feasibility"]},
+        "capabilities": {"scope_isolation": "supported", "lifecycle_filtering": "supported"},
+        "evidence": {"state": "unavailable", "reason_code": "SEMANTIC_PROVIDER_UNAVAILABLE"},
+        "measurement": "incomplete",
+        "promotion": "blocked",
+    }
+    return report
+
+
 def test_pair_report_accepts_same_inputs():
     assert validate_pair_report(_pair_report())["report_type"] == "brain_eleven_ig01d_pair"
+
+
+def test_pair_reconciliation_fails_closed_for_false_candidate_gate():
+    report = _schema_two_pair_report()
+    report["comparison"]["candidate_gate"] = {
+        "passed": False,
+        "failed_invariants": {},
+        "unsupported_invariants": {},
+    }
+    checked = reconcile_pair_report(report, root=None, corpus_root=None)
+    assert checked["evaluation_status"]["evidence"] == {
+        "state": "tampered",
+        "reason_code": "IG01D_CANDIDATE_GATE_FAILED",
+    }
+    assert checked["evaluation_status"]["measurement"] == "incomplete"
+    assert checked["evaluation_status"]["promotion"] == "blocked"
+
+
+def test_pair_reconciliation_compares_fresh_comparison_payload(monkeypatch, tmp_path):
+    report = _schema_two_pair_report()
+    expected_comparison = deepcopy(report["comparison"])
+    monkeypatch.setattr(ig01d_baseline, "_git_sha", lambda root: "a" * 40)
+    monkeypatch.setattr(
+        ig01d_baseline,
+        "evaluation_source_fingerprint",
+        lambda root, corpus: "sha256:" + "b" * 64,
+    )
+    monkeypatch.setattr(
+        ig01d_baseline,
+        "corpus_split_fingerprint",
+        lambda corpus: "sha256:" + "a" * 64,
+    )
+    monkeypatch.setattr(
+        ig01d_baseline,
+        "_fresh_pair_inputs",
+        lambda **kwargs: (report["providers"], expected_comparison, {}),
+    )
+    report["comparison"]["outcome"] = "degraded"
+    checked = reconcile_pair_report(report, root=tmp_path, corpus_root=tmp_path)
+    assert checked["evaluation_status"]["evidence"] == {
+        "state": "tampered",
+        "reason_code": "IG01D_COMPARISON_PAYLOAD_MISMATCH",
+    }
 
 
 def test_timing_is_bounded_telemetry_not_identity():

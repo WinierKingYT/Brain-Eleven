@@ -140,3 +140,28 @@ def test_report_writer_refuses_invalid_case_invariant_state(fixture, task, tmp_p
 
     with pytest.raises(EvaluationReportError, match="invalid invariant state"):
         write_evaluation_report(tmp_path / "invalid.json", report)
+
+
+def test_report_bounds_identifiers_and_identifier_arrays(fixture, task, tmp_path):
+    report = build_evaluation_report(fixture, [task], [_perfect_result(fixture, task)], suite="dev")
+    oversized = "a" * 129
+    report["corpus"]["task_ids"] = [oversized]
+    report["cases"][0]["task_id"] = oversized
+    report["cases"][0]["metrics"]["task_id"] = oversized
+    with pytest.raises(EvaluationReportError, match="bounded identifiers"):
+        write_evaluation_report(tmp_path / "oversized.json", report)
+
+    report = build_evaluation_report(fixture, [task], [_perfect_result(fixture, task)], suite="dev")
+    report["cases"][0]["selected_ids"] = [oversized]
+    with pytest.raises(EvaluationReportError, match="bounded code"):
+        write_evaluation_report(tmp_path / "untrusted-id.json", report)
+
+
+def test_report_read_errors_are_content_free(tmp_path):
+    report_path = tmp_path / "private-report-name.json"
+    report_path.write_text("{not-json", encoding="utf-8")
+    with pytest.raises(EvaluationReportError) as error:
+        read_evaluation_report(report_path)
+    message = str(error.value)
+    assert message == "evaluation report read failed"
+    assert str(report_path) not in message

@@ -78,6 +78,7 @@ _SOURCE_KEYS = frozenset({
 })
 _STATUS_REASON_RE = re.compile(r"^[A-Z0-9][A-Z0-9_.-]{0,63}$")
 _SAFE_CODE_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,127}$")
+_MAX_IDENTIFIER_ARRAY_LENGTH = 4096
 _RAW_KEY_MARKERS = (
     "prompt", "query", "text", "content", "transcript", "message", "raw",
     "secret", "token", "password", "credential", "api_key", "api_secret",
@@ -90,12 +91,25 @@ class EvaluationReportError(ValueError):
 
 def _safe_code(value: Any, field: str) -> str:
     if not isinstance(value, str) or not _SAFE_CODE_RE.fullmatch(value):
-        raise EvaluationReportError(f"{field} must be a bounded code")
+        raise EvaluationReportError("report identifier is not a bounded code")
     return value
 
 
 def _status_codes(values: Iterable[str], field: str) -> list[str]:
     normalized = sorted(set(_safe_code(value, field) for value in values))
+    return normalized
+
+
+def _identifier_array(value: Any, field: str, *, sorted_unique: bool = False) -> list[str]:
+    """Validate a bounded list of content-free identifiers."""
+
+    if not isinstance(value, list):
+        raise EvaluationReportError("report identifier array is invalid")
+    if len(value) > _MAX_IDENTIFIER_ARRAY_LENGTH:
+        raise EvaluationReportError("report identifier array is oversized")
+    normalized = [_safe_code(item, field) for item in value]
+    if sorted_unique and (len(normalized) != len(set(normalized)) or normalized != sorted(normalized)):
+        raise EvaluationReportError("report identifier array must be sorted and unique")
     return normalized
 
 
@@ -227,15 +241,9 @@ def _validate_evaluation_status(value: Any, field: str = "evaluation_status") ->
         raise EvaluationReportError(f"{field}.quality is invalid")
     for key in ("failed_invariant_codes", "unsupported_capability_codes"):
         values = safety.get(key)
-        if not isinstance(values, list) or values != sorted(set(values)):
-            raise EvaluationReportError(f"{field}.safety.{key} is invalid")
-        for code in values:
-            _safe_code(code, f"{field}.safety.{key}")
+        _identifier_array(values, f"{field}.safety.{key}", sorted_unique=True)
     values = quality.get("metric_codes")
-    if not isinstance(values, list) or values != sorted(set(values)):
-        raise EvaluationReportError(f"{field}.quality.metric_codes is invalid")
-    for code in values:
-        _safe_code(code, f"{field}.quality.metric_codes")
+    _identifier_array(values, f"{field}.quality.metric_codes", sorted_unique=True)
     capabilities = _mapping(status.get("capabilities"), f"{field}.capabilities")
     if set(capabilities) != _CAPABILITY_KEYS or any(value not in _CAPABILITY_STATES for value in capabilities.values()):
         raise EvaluationReportError(f"{field}.capabilities is invalid")
@@ -254,14 +262,14 @@ def _walk_content_free(value: Any, path: str = "report") -> None:
     if isinstance(value, Mapping):
         for key, child in value.items():
             if not isinstance(key, str) or not key.strip():
-                raise EvaluationReportError(f"{path} has an invalid key")
+                raise EvaluationReportError("report contains an invalid key")
             lowered = key.strip().lower()
             if (
                 lowered in _RAW_KEY_MARKERS
                 or lowered.startswith(("raw", "secret", "token", "password", "credential"))
                 or any(marker in lowered for marker in ("prompt", "transcript", "api_key", "api_secret"))
             ):
-                raise EvaluationReportError(f"{path}.{key} is not content-free")
+                raise EvaluationReportError("report contains forbidden content")
             _walk_content_free(child, f"{path}.{key}")
     elif isinstance(value, list):
         for index, child in enumerate(value):
@@ -274,13 +282,13 @@ def _capability_is_supported(result: NormalizedEvaluationResult, capability: str
 
 def _nonempty_string(value: Any, field_name: str) -> str:
     if not isinstance(value, str) or not value.strip():
-        raise EvaluationReportError(f"{field_name} must be a non-empty string")
+        raise EvaluationReportError("report field must be a non-empty string")
     return value.strip()
 
 
 def _mapping(value: Any, field_name: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
-        raise EvaluationReportError(f"{field_name} must be an object")
+        raise EvaluationReportError("report field must be an object")
     return value
 
 
@@ -288,15 +296,15 @@ def _finite_number(value: Any, field_name: str, *, nullable: bool = False) -> fl
     if value is None and nullable:
         return None
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise EvaluationReportError(f"{field_name} must be numeric")
+        raise EvaluationReportError("report field must be numeric")
     result = float(value)
     if not math.isfinite(result):
-        raise EvaluationReportError(f"{field_name} must be finite")
+        raise EvaluationReportError("report field must be finite")
     return result
 
 
 def _sorted_task_ids(tasks: Iterable[GoldenTask]) -> tuple[str, ...]:
-    task_ids = tuple(sorted(task.task_id for task in tasks))
+    task_ids = tuple(sorted(_safe_code(task.task_id, "task_id") for task in tasks))
     if not task_ids:
         raise EvaluationReportError("a report requires at least one task")
     if len(task_ids) != len(set(task_ids)):
@@ -312,11 +320,11 @@ def _safe_source(source: Mapping[str, Any] | None) -> dict[str, Any]:
     for key, value in source.items():
         normalized_key = _nonempty_string(key, "source key")
         if normalized_key not in _SOURCE_KEYS:
-            raise EvaluationReportError(f"source.{normalized_key} is not an allowed field")
+            raise EvaluationReportError("report source contains an unknown field")
         if not isinstance(value, (str, int, float, bool)) and value is not None:
-            raise EvaluationReportError(f"source.{normalized_key} must be a JSON scalar")
+            raise EvaluationReportError("report source field must be a JSON scalar")
         if isinstance(value, float) and not math.isfinite(value):
-            raise EvaluationReportError(f"source.{normalized_key} must be finite")
+            raise EvaluationReportError("report source field must be finite")
         normalized[normalized_key] = value
     return dict(sorted(normalized.items()))
 
@@ -436,7 +444,7 @@ def build_evaluation_report(
     if set(result_by_id) != set(task_by_id):
         missing = sorted(set(task_by_id) - set(result_by_id))
         unexpected = sorted(set(result_by_id) - set(task_by_id))
-        raise EvaluationReportError(f"results do not match tasks; missing={missing}, unexpected={unexpected}")
+        raise EvaluationReportError("results do not match the requested task set")
     provider_ids = {result.provider_id for result in results}
     if len(provider_ids) != 1:
         raise EvaluationReportError("one report must contain exactly one provider")
@@ -479,23 +487,25 @@ def _validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     allowed_top_level = _REPORT_TOP_LEVEL_KEYS - ({"evaluation_status"} if legacy else set())
     unknown = sorted(set(report) - allowed_top_level)
     if unknown:
-        raise EvaluationReportError(f"report contains unknown fields: {', '.join(unknown)}")
+        raise EvaluationReportError("report contains unknown fields")
     if report.get("report_type") != EVALUATION_REPORT_TYPE:
         raise EvaluationReportError("unsupported report_type")
     provider = _mapping(report.get("provider"), "report.provider")
     if set(provider) != _PROVIDER_KEYS:
         raise EvaluationReportError("report.provider contains unknown fields")
-    _nonempty_string(provider.get("id"), "report.provider.id")
+    _safe_code(provider.get("id"), "report.provider.id")
     corpus = _mapping(report.get("corpus"), "report.corpus")
     if set(corpus) != _CORPUS_KEYS:
         raise EvaluationReportError("report.corpus contains unknown fields")
-    _nonempty_string(corpus.get("fixture_id"), "report.corpus.fixture_id")
-    _nonempty_string(corpus.get("suite"), "report.corpus.suite")
+    _safe_code(corpus.get("fixture_id"), "report.corpus.fixture_id")
+    _safe_code(corpus.get("suite"), "report.corpus.suite")
     task_ids = corpus.get("task_ids")
     if not isinstance(task_ids, list) or not task_ids:
         raise EvaluationReportError("report.corpus.task_ids must be a non-empty array")
-    if any(not isinstance(task_id, str) or not task_id for task_id in task_ids):
-        raise EvaluationReportError("report.corpus.task_ids must contain non-empty strings")
+    if len(task_ids) > _MAX_IDENTIFIER_ARRAY_LENGTH:
+        raise EvaluationReportError("report.corpus.task_ids is oversized")
+    if any(not isinstance(task_id, str) or not _SAFE_CODE_RE.fullmatch(task_id) for task_id in task_ids):
+        raise EvaluationReportError("report.corpus.task_ids must contain bounded identifiers")
     if len(task_ids) != len(set(task_ids)) or task_ids != sorted(task_ids):
         raise EvaluationReportError("report.corpus.task_ids must be unique and sorted")
     if corpus.get("task_count") != len(task_ids):
@@ -516,19 +526,18 @@ def _validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     invariants = _mapping(report.get("invariants"), "report.invariants")
     if not invariants:
         raise EvaluationReportError("report.invariants must not be empty")
+    if len(invariants) > _MAX_IDENTIFIER_ARRAY_LENGTH:
+        raise EvaluationReportError("report.invariants is oversized")
     for name, summary_value in invariants.items():
-        _nonempty_string(name, "invariant name")
+        _safe_code(name, "invariant name")
         summary = _mapping(summary_value, f"report.invariants.{name}")
         if set(summary) != {"state", "failed_case_ids", "unsupported_case_ids", "not_applicable_case_ids"}:
-            raise EvaluationReportError(f"report.invariants.{name} contains unknown or missing fields")
+            raise EvaluationReportError("report invariant contains unknown or missing fields")
         if summary.get("state") not in _INVARIANT_STATES:
-            raise EvaluationReportError(f"report.invariants.{name}.state is invalid")
+            raise EvaluationReportError("report invariant state is invalid")
         for key in ("failed_case_ids", "unsupported_case_ids", "not_applicable_case_ids"):
             values = summary.get(key)
-            if not isinstance(values, list) or values != sorted(set(values)) or any(
-                not isinstance(value, str) or not value for value in values
-            ):
-                raise EvaluationReportError(f"report.invariants.{name}.{key} must be sorted")
+            _identifier_array(values, "invariant case IDs", sorted_unique=True)
 
     cases = report.get("cases")
     if not isinstance(cases, list) or len(cases) != len(task_ids):
@@ -539,50 +548,49 @@ def _validate_report(report: Mapping[str, Any]) -> dict[str, Any]:
     for case in cases:
         task_id = case.get("task_id") if isinstance(case, Mapping) else "unknown"
         if not isinstance(case, Mapping) or set(case) != _CASE_KEYS:
-            raise EvaluationReportError(f"report case {task_id} contains unknown or missing fields")
-        if not isinstance(case.get("project_id"), (str, type(None))):
-            raise EvaluationReportError(f"report case {task_id}.project_id is invalid")
+            raise EvaluationReportError("report case contains unknown or missing fields")
+        _safe_code(task_id, "case task_id")
+        if case.get("project_id") is not None:
+            _safe_code(case.get("project_id"), "case project_id")
         for key in ("expected",):
             nested = _mapping(case.get(key), f"report case {task_id}.{key}")
             if set(nested) != _EXPECTED_KEYS:
-                raise EvaluationReportError(f"report case {task_id}.{key} contains unknown fields")
+                raise EvaluationReportError("report expected identifiers contain unknown fields")
             for value in nested.values():
-                if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
-                    raise EvaluationReportError(f"report case {task_id}.{key} must contain identifier arrays")
+                _identifier_array(value, "expected identifier array")
         for key in ("selected_ids", "missing_required_ids", "unexpected_selected_ids", "forbidden_selected_ids"):
             values = case.get(key)
-            if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
-                raise EvaluationReportError(f"report case {task_id}.{key} must contain identifiers")
+            _identifier_array(values, "case identifier array")
         case_metrics = _mapping(case.get("metrics"), f"report case {task_id}.metrics")
         if set(case_metrics) != _CASE_METRIC_KEYS:
-            raise EvaluationReportError(f"report case {task_id}.metrics contains unknown or missing fields")
+            raise EvaluationReportError("report case metrics contain unknown or missing fields")
         for name, value in case_metrics.items():
             if name == "task_id":
+                _safe_code(value, "case metrics task_id")
                 if value != task_id:
-                    raise EvaluationReportError(f"report case {task_id}.metrics.task_id does not match")
+                    raise EvaluationReportError("report case metrics task_id does not match")
             elif name == "context_recall":
                 _finite_number(value, f"report case {task_id}.metrics.{name}", nullable=True)
             elif name == "context_precision":
                 _finite_number(value, f"report case {task_id}.metrics.{name}")
             elif isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                raise EvaluationReportError(f"report case {task_id}.metrics.{name} must be non-negative integer")
+                raise EvaluationReportError("report case metric must be a non-negative integer")
         case_invariants = _mapping(case.get("invariants"), f"report case {task_id} invariants")
         if set(case_invariants) != invariant_names:
-            raise EvaluationReportError(
-                f"report case {task_id} invariants must match report invariants"
-            )
+            raise EvaluationReportError("report case invariants must match report invariants")
+        for name in case_invariants:
+            _safe_code(name, "case invariant name")
         if any(state not in _INVARIANT_STATES for state in case_invariants.values()):
-            raise EvaluationReportError(f"report case {task_id} has an invalid invariant state")
+            raise EvaluationReportError("report case has an invalid invariant state")
         violations = case.get("violations")
-        if not isinstance(violations, list) or violations != sorted(set(violations)) or any(
-            name not in invariant_names for name in violations
-        ):
-            raise EvaluationReportError(f"report case {task_id}.violations is invalid")
+        _identifier_array(violations, "case violation codes", sorted_unique=True)
+        if any(name not in invariant_names for name in violations):
+            raise EvaluationReportError("report case violation code is unknown")
         if not isinstance(case.get("passed"), bool):
-            raise EvaluationReportError(f"report case {task_id}.passed must be boolean")
+            raise EvaluationReportError("report case passed must be boolean")
         expected_passed = not any(state in {"fail", "unsupported"} for state in case_invariants.values())
         if case.get("passed") != expected_passed:
-            raise EvaluationReportError(f"report case {task_id}.passed hides a safety state")
+            raise EvaluationReportError("report case passed hides a safety state")
     normalized = dict(report)
     if legacy:
         # Do not rewrite historical JSON on disk, but expose its status through
@@ -628,7 +636,9 @@ def read_evaluation_report(path: Path | str) -> dict[str, Any]:
     try:
         loaded = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
-        raise EvaluationReportError(f"cannot read evaluation report {report_path}: {error}") from error
+        # Do not disclose filesystem paths or parser details from a report
+        # boundary that may be called on untrusted input.
+        raise EvaluationReportError("evaluation report read failed") from error
     return _validate_report(loaded)
 
 
