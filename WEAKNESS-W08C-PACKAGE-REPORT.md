@@ -43,6 +43,7 @@ At exact revision `02548c5`:
 - Full suite: **1037 passed, 2 pre-existing dependency warnings** in 217.44s.
 - `tests/test_evaluation_baseline_snapshot.py`: **5 passed**.
 - Task-state smoke/public/holdout reports: **byte-identical** to the frozen `evals/reports/ig07-slice2e/before-*.json` reports. Each suite exited 0.
+  SHA-256 pairs: smoke `223D9DD9C48561E1CCE69F5B9A92B65C981C88E669549FE152AB1CAAFF80BCE1`, public `7BCCC76E47670225B78D19BC7B0D99C4031D46E306C85FE18F802D2B182D68D9`, holdout `FBAB2B90FF6C7EEB74F99B35DDC3AE1A26BE0A03312270889A41DB5D441ABF5C`.
 - Critical flake8 (`E9,F63,F7,F82`): **0**.
 - `compileall`: **0**.
 - `git diff --check`: **0**.
