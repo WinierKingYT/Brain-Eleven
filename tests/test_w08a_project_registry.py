@@ -87,20 +87,36 @@ def test_mutation_writes_fixed_backup_envelope_and_rollback_is_monotonic(tmp_pat
     registry = legacy_registry.ProjectRegistry(tmp_path / "vault")
     root = tmp_path / "project"
     root.mkdir()
-    registry.register(root, project_id="proj-a", project_label="Original")
+    registry.register(
+        root,
+        project_id="proj-a",
+        project_label="Original",
+        status="active",
+        proactive_capture=False,
+    )
+    registry.set_proactive_capture("proj-a", True)
+    registry.set_status("proj-a", "archived")
+    before_rollback_projection = {
+        key: registry.get("proj-a")[key]
+        for key in ("project_id", "project_label", "root", "status", "proactive_capture")
+    }
     registry.rename("proj-a", "Changed")
 
     envelope = json.loads(registry.backup_path.read_text(encoding="utf-8"))
     assert envelope["backup_schema_version"] == 1
-    assert envelope["source_revision"] == 1
+    assert envelope["source_revision"] == 3
     assert envelope["registry"]["projects"][0]["project_label"] == "Original"
-    assert envelope["registry"]["revision"] == 1
+    assert envelope["registry"]["revision"] == 3
 
     current_revision = registry.load()["revision"]
     result = registry.rollback(expected_revision=current_revision)
     assert result["status"] == "rolled_back"
     assert result["revision"] == current_revision + 1
-    assert registry.get("proj-a")["project_label"] == "Original"
+    restored = registry.get("proj-a")
+    assert {
+        key: restored[key]
+        for key in ("project_id", "project_label", "root", "status", "proactive_capture")
+    } == before_rollback_projection
     assert registry.load()["revision"] == current_revision + 1
 
     repeated = registry.rollback(expected_revision=result["revision"])
