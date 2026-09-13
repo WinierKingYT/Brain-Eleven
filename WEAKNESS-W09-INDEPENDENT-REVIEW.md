@@ -1,85 +1,77 @@
 # W-09 — Independent Read-Only Implementation Review
 
-PACKAGE: W-09 — Evaluation Evidence Integrity & Gate Semantics  
-REVIEW REVISION: `9a635541eb3c20ffb80e77e5969d03299f1f15c5`  
-CONTRACT BASELINE: `02a41b53c3ecfe2a92543aa4a9475b20234f9fdc`  
-REVIEW TYPE: independent read-only implementation review  
+PACKAGE: W-09 — Evaluation Evidence Integrity & Gate Semantics
+REVIEW REVISION: `c90a9ca06a9fc6661e224ea23490f9e2e5e7346e`
+CONTRACT BASELINE: `02a41b53c3ecfe2a92543aa4a9475b20234f9fdc`
+PRIOR FIX-FIRST REVIEW: `f1820fe`
+FIX REVISION: `f9c8f44`
+REVIEW TYPE: independent read-only final implementation review
 
 ## Scope and evidence
 
-I reviewed `WEAKNESS-W09-EVALUATION-EVIDENCE-CONTRACT.md`,
-`WEAKNESS-W09-PACKAGE-REPORT.md`, the implementation diff from the approved
-baseline through `9a63554`, the focused evaluation tests, and the IG01-C and
-IG01-D source/reconciliation paths. The focused contract command passed 41
-tests; critical flake8, `compileall`, and `git diff --check` also passed. The
-full regression result recorded by the package report is 1057 passed with two
-pre-existing dependency warnings.
+I reviewed the frozen W-09 contract, the package report at the exact review
+revision, the prior FIX-FIRST findings, and the corrective diff. I inspected
+the IG01-D pair reconciliation and generic report-validation paths and ran the
+focused W-09 tests only:
 
-## Findings
+```text
+.venv\Scripts\python.exe -m pytest -q tests/test_evaluation_metrics.py tests/test_evaluation_reporting.py tests/test_evaluation_runner.py tests/test_evaluation_baseline_snapshot.py tests/test_ig01c_evaluator.py tests/test_ig01d_baseline.py tests/test_w09_evaluation_evidence.py
+66 passed in 1.54s
+```
 
-### P0 — IG01-D pair reconciliation can certify a failed safety comparison
+`git diff --check` passed.
 
-`evals/ig01d/contracts.py:522-547` permits a versioned pair report whose
-`comparison.candidate_gate.passed` is `false` while both invariant maps are
-empty, and validates the pair status fields without relating them to that
-gate. `evals/ig01d/baseline.py:183-207` reconciles only the nested provider
-reports and feasibility. It does not reject a false candidate gate or
-recompute/compare the pair comparison before returning the pair status.
+I independently recomputed the evidence identifiers recorded in the package
+report:
 
-I reproduced this against the exact review revision by building a fresh pair,
-changing `candidate_gate.passed` to `false`, marking feasibility as measured,
-and setting the persisted pair status to complete/eligible. The report passed
-`validate_pair_report()` and `reconcile_pair_report(root='.',
-corpus_root='evals/corpus-v2')` returned `evidence.state: verified`,
-`measurement: complete`, and `promotion: eligible`.
+- Public DEV+TEST split fingerprint (HOLDOUT excluded):
+  `sha256:28f18f9f01c59db148842052b4d26046f3a1517f081b2cb34a4cbdee0bda186c`.
+- `evals/reports/w09/before-public.json` SHA-256:
+  `404c28efed0ba419581d6a58eafac402994e9501dd5ac8753d11dfa2f8fd642a`.
+- `evals/reports/w09/before-holdout.json` SHA-256:
+  `3b058224712e9ad9545658c19ada2d02532e627dd8d57a8c22173f4b243d6ef2`.
 
-This violates the contract's pair rule that a pair cannot be verified when
-`comparison.candidate_gate.passed` is false, and the tamper matrix requiring
-gate/payload mismatches to block measurement and promotion. A persisted safety
-comparison can therefore remain promotion-eligible after its gate is changed.
-The verifier must fail closed and bind the pair status to a freshly recomputed
-comparison before it can certify the pair.
+## Prior findings
 
-### P1 — Generic report identifiers are not bounded
+### Closed — IG01-D pair tamper handling
 
-`evals/reporting.py:495-500`, `:519-523`, and `:549-555` validate task IDs,
-invariant names, and identifier arrays only as non-empty strings. The module
-defines `_SAFE_CODE_RE`, but the generic validator does not apply a bounded
-identifier rule to these evidence fields. I confirmed that a 1000-character
-task ID and a 1000-character invariant name are accepted by
-`_validate_report()` after the corresponding case/summary fields are updated.
+`reconcile_pair_report()` now fails closed for a persisted false candidate
+gate before source access. With bound inputs, it freshly recomputes both
+provider payloads and the comparison, compares them without timing telemetry,
+and re-derives the pair status before returning verified evidence. Focused
+tests cover both the false-gate case and comparison-payload tampering.
 
-This does not meet the generic strictness requirement for bounded identifiers
-and leaves the content-free report boundary weaker than the IG01-C/IG01-D
-contracts. Apply the bounded identifier grammar consistently to evidence keys
-and identifier values, with bounded errors.
+### Closed — generic bounded identifiers
 
-### P1 — Generic read/validation errors can disclose paths and untrusted keys
+Generic reports now enforce the bounded identifier grammar for provider,
+fixture, suite, task, project, invariant, expected, selected, missing,
+unexpected, forbidden, violation, and status-code identifiers. Identifier
+arrays are length-bounded, and fields that require sorted uniqueness retain
+that constraint. Focused tests reject oversized task and selected identifiers.
 
-`evals/reporting.py:624-632` includes the filesystem path and parser exception
-in `EvaluationReportError` when reading a report. Several generic validation
-errors also interpolate untrusted field names (for example unknown fields and
-source keys). The contract requires bounded, content-free error codes and
-explicitly excludes filesystem paths and rejected untrusted content from
-validation errors. The read and validation boundary should normalize failures
-to bounded field/reason codes before this package can claim the privacy gate.
+### Closed — content-free errors
 
-### Evidence documentation gap
+Generic read failures now return the fixed message `evaluation report read
+failed`, without a filesystem path or parser content. Validation errors no
+longer interpolate rejected unknown keys, identifier values, task IDs, or
+source values. Focused tests verify that a private report path is absent from
+the error.
 
-The package report records test counts and the semantic-unavailable outcome,
-but does not list the required public split fingerprints or generated report
-hashes from the regression evidence plan. Add those exact hashes/fingerprints
-when the implementation is corrected so the package evidence is independently
-reproducible.
+### Closed — package evidence documentation
 
-## Compatibility and boundary review
+The package report separately records the public split fingerprint and the
+SHA-256 hashes of the public and HOLDOUT evidence reports. Independent
+recomputation matched all three values.
 
-The unsupported case semantics are correctly non-passing. Generic reports are
-marked unavailable/legacy, schema-one historical reports remain readable, and
-baseline-v1/v2 manifests are not rewritten. The IG01-C digest uses the exact
-three-file allowlist, IG01-D fingerprints exclude HOLDOUT, the 50-DEV probe
-keeps seed 17/noise 24 with `holdout_included: false`, and the observable
-public HOLDOUT read guard passes. These passing areas do not clear the pair
-certification defect or the strict generic-boundary gaps above.
+## Boundary and compatibility
 
-VERDICT: FIX-FIRST
+The correction remains inside the W-09 evaluation boundary. It does not change
+production memory, capture, retrieval, routing, authority, compiler behavior,
+corpus labels, thresholds, historical baseline artifacts, V2 promotion, or
+Phase 20. Generic evidence remains legacy/unavailable without a provider
+allowlist, and IG01-D promotion remains blocked when semantic feasibility is
+unavailable.
+
+No blocking findings remain at `c90a9ca06a9fc6661e224ea23490f9e2e5e7346e`.
+
+VERDICT: SHIP
