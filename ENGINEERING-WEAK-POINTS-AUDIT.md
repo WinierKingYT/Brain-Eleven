@@ -22,7 +22,7 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 7.5 | W-08A registry durability/revision/CAS gap, W-08B coordinated backup, and W-08C state-reference TOCTOU are independently shipped; typed API lifecycle remains open in W-08D. |
+| Persistence and concurrency | 7.5 | W-08A registry durability/revision/CAS gap, W-08B coordinated backup, and W-08C state-reference TOCTOU are independently shipped; the W-08D typed API lifecycle contract is accepted, while implementation remains pending. |
 | Scope and fail-closed safety | 7.0 | Related-note and native transcript path boundaries are independently shipped; project/session ownership proof remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; prompt-event semantics remain. |
 | Evaluation quality | 6.5 | Harness is versioned and tested, but D0 retrieval thresholds are below the measured oracle ceiling and the hybrid control is mislabeled. |
@@ -142,7 +142,9 @@ These are separate authority packages and are intentionally not mixed with W-01.
 durable atomic writes, backup envelope, stale-safe monotonic rollback and
 complete identity/status/opt-in rollback integrity are covered. W-08B
 coordinated backup and W-08C state-reference TOCTOU are independently shipped;
-W-08D typed API lifecycle remains open.
+W-08D typed API lifecycle contract is independently `SHIP` at exact revision
+`f4d83b1` in `WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation
+remains `REVIEW PENDING — implementation not authorized`.
 
 **W-08B contract status:** Independently reviewed `SHIP` at `17954cc` in
 `WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
@@ -155,7 +157,8 @@ correction `e4df824`. The focused suite (35), full suite (1018) and critical
 static gates pass; malformed registry validation now emits content-free
 errors. W-08C implementation is independently shipped at exact review
  revision `ecee32b` in `WEAKNESS-W08C-INDEPENDENT-REVIEW.md`. W-08D typed API
- lifecycle remains separate and deferred.
+ lifecycle remains a separate implementation package; its contract is accepted,
+ but implementation remains deferred and unauthorized.
 
 **W-08C contract status:** Independently reviewed `SHIP` at `7f175b3` in
 `WEAKNESS-W08C-CONTRACT-INDEPENDENT-REVIEW.md`. The contract freezes the
@@ -166,7 +169,9 @@ holdout-preserving evidence requirements. The contract was accepted
 **W-08C implementation status:** Independently reviewed `SHIP` at exact head
 `ecee32b`; the bounded memory-lock/state-lock guard, lifecycle policy, CLI
 mapping, privacy evidence, and frozen evaluation boundary all passed review.
-W-08D typed API lifecycle remains deferred.
+W-08D typed API lifecycle contract is independently `SHIP` at `f4d83b1` in
+`WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation remains
+deferred and unauthorized.
 
 ## Current package selection
 
@@ -174,8 +179,9 @@ W-08D typed API lifecycle remains deferred.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-08D typed API lifecycle, after the independently shipped
-W-08C state-reference guard. No W-08D implementation is included in W-08C.
+**Next package:** W-08D typed API lifecycle implementation, after the
+independently shipped W-08C state-reference guard and accepted W-08D contract.
+No W-08D implementation is included in W-08C or in the contract review.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -192,8 +198,9 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-08C is independently shipped under its accepted
-contract. W-08D now requires its own bounded contract, implementation, focused
-evidence, and independent review. Broader W-06 retrieval and automatic
+contract. W-08D has an accepted bounded contract and still requires its own
+implementation, focused evidence, and independent implementation review.
+Broader W-06 retrieval and automatic
 markdown reminder writing remain explicit deferred work rather than being
 treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
