@@ -125,3 +125,42 @@ The W-06C0R1 contract is sufficiently precise to authorize its bounded,
 evaluation-only implementation. This verdict does not authorize W-06C1,
 provider promotion, retrieval changes, V2 promotion or Phase 20 work; each
 remains behind the contract's evidence and independent-review gates.
+
+## Implementation re-review at `8bea776`
+
+The implementation at `09f6f7eac59ca3d4c8f28346606ffd3ad8ca8471` and evidence
+through `8bea776ba9d2497d2cb27c9ea5941d87e3c76bdb` were independently checked.
+The v4 manifest, 60/60/30 split counts, answerable minima, case and attestation
+hashes, source fingerprint, provider snapshot fingerprints, opaque task handles,
+privacy-safe reports, zero safety counters, scope allowlist, and sealed
+HOLDOUT evidence all validate. The focused W-06C0R1 suite passed 13/13; the
+reported cold SessionStart failure passed on isolated rerun.
+
+### Findings
+
+1. **P1 — HOLDOUT unlock replay is not actually one-time.** The CLI rejects a
+   second run only when the same output path already exists. A second final
+   probe with the same unlock token and a different output path succeeds and
+   runs the provider; this was reproduced with two temporary output files.
+   `run_matrix()` has no token-consumption state or seal-bound token
+   commitment. The focused replay test covers only same-path output reuse, so
+   it does not prove the contract's one-time-token invariant.
+
+2. **P1 — full regression is still red.**
+   `tests/test_w06c0_contract.py::test_scope_gate_rejects_forbidden_revision_changes`
+   fails at the current master because the frozen W-06C0 verifier compares from
+   `fa5b920` and sees later W-06C0R1 and documentation paths. The package report
+   accurately identifies this as a historical compatibility failure outside
+   W-06C0R1, but the contract's full-regression exit gate is not green and the
+   failure remains unexplained to the full suite until separately dispositioned.
+
+The remaining implementation evidence is consistent with the contract and no
+production or retrieval path changed. These bounded P1 failures prevent
+package closure.
+
+## Final implementation verdict
+
+**FIX-FIRST**
+
+Fix token replay with durable, seal-bound one-time consumption and disposition
+the historical W-06C0 scope-test failure before declaring W-06C0R1 `SHIP`.
