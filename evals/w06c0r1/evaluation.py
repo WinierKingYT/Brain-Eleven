@@ -36,6 +36,7 @@ from evals.schema import GoldenTask, load_fixture, parse_task
 ROOT = Path(__file__).resolve().parents[2]
 CORPUS_ROOT = ROOT / "evals" / "corpus-v4"
 FIXTURE_PATH = ROOT / "evals" / "fixtures" / "phase15-contract.json"
+FINAL_HOLDOUT_OUTPUT = ROOT / "evals" / "w06c0r1" / "evidence" / "holdout.json"
 EVALUATOR_VERSION = "w06c0r1-v1"
 CORPUS_VERSION = 4
 PROVENANCE_VERSION = "w06c0r1-provenance-v1"
@@ -79,7 +80,15 @@ ALLOWED_SCOPE_PREFIXES = (
     "evals/w06c0r1/",
     "tests/test_w06c0r1_",
 )
-ALLOWED_SCOPE_FILES = frozenset({"WEAKNESS-W06C0R1-PACKAGE-REPORT.md"})
+ALLOWED_SCOPE_FILES = frozenset(
+    {
+        "WEAKNESS-W06C0R1-CONTRACT-INDEPENDENT-REVIEW.md",
+        "WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md",
+        "WEAKNESS-W06C0R1-PACKAGE-REPORT.md",
+        "WEAKNESS-W06C0-SCOPE-COMPAT-CONTRACT.md",
+        "WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md",
+    }
+)
 FORBIDDEN_SCOPE_PREFIXES = (
     "brain_eleven/",
     "scripts/",
@@ -746,6 +755,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.output.exists() and args.final_holdout:
         raise W06C0R1Error("holdout output already exists; unlock token cannot be replayed")
+    if args.final_holdout and args.output.resolve() != FINAL_HOLDOUT_OUTPUT.resolve():
+        raise W06C0R1Error("final holdout output must use the canonical evidence path")
     report = run_matrix(split=args.split, corpus_version=args.corpus_version, providers=args.providers, measure_optional=args.measure_optional, allow_holdout=args.final_holdout, unlock_token=args.unlock_token)
     if args.final_holdout:
         report["holdout_evidence"]["command_hash"] = _sha(_canonical(list(argv if argv is not None else sys.argv[1:])))
