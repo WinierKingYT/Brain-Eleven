@@ -1,7 +1,7 @@
 # W-09 — Evaluation Evidence Integrity & Gate Semantics
 
 PACKAGE: W-09 — Evaluation Evidence Integrity & Gate Semantics
-REVISION: 2fbfac5 (implementation), follow-up report commit records reporting compatibility key
+REVISION: 4d3133f
 OBJECTIVE: Make evaluation safety, quality, capability, evidence, measurement and promotion states explicit without changing retrieval, corpus labels, thresholds, holdout inputs, V2, or Phase 20.
 
 FILES CHANGED: evals/metrics.py, evals/reporting.py, evals/run.py, evals/baseline_snapshot.py, evals/ig01c/engine.py, evals/ig01c/contracts.py, evals/ig01d/baseline.py, evals/ig01d/contracts.py, focused evaluation tests, and the W-09 before-evidence JSON reports.
