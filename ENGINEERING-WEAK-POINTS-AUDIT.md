@@ -153,15 +153,24 @@ symlink/reparse containment and project-identifier privacy assertions. The
 `90336ee` in `WEAKNESS-W08B-INDEPENDENT-REVIEW.md` after the bounded privacy
 correction `e4df824`. The focused suite (35), full suite (1018) and critical
 static gates pass; malformed registry validation now emits content-free
-errors. W-08C/W-08D remain separate deferred packages.
+errors. W-08C implementation and W-08D remain separate deferred packages.
+
+**W-08C contract status:** Independently reviewed `SHIP` at `7f175b3` in
+`WEAKNESS-W08C-CONTRACT-INDEPENDENT-REVIEW.md`. The contract freezes the
+memory-lock-then-state-lock linearization guard, lifecycle/status policy,
+scope isolation, stale-CAS/replay/audit behavior, privacy boundary and
+holdout-preserving evidence requirements. This is contract acceptance only;
+implementation has not started.
 
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
-`SHIP` at `05fd7f6`.
-**Next package:** W-08C state-reference TOCTOU bounded contract and
-implementation; W-08D typed API lifecycle remains deferred until W-08C review.
+`SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
+`7f175b3`.
+**Next package:** W-08C state-reference TOCTOU implementation under the
+accepted contract; W-08D typed API lifecycle remains deferred until W-08C
+implementation review.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -177,8 +186,8 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
-**Required outcome:** define, implement and independently review W-08C under
-its bounded contract before considering W-08D. Broader W-06 retrieval and
+**Required outcome:** implement and independently review W-08C under its
+accepted contract before considering W-08D. Broader W-06 retrieval and
 automatic markdown reminder writing remain explicit deferred work rather than
 being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
