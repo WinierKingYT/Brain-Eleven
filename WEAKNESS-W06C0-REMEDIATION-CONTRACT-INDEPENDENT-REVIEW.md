@@ -92,3 +92,22 @@ range is pinned to its package end, while the current HEAD remains diagnostic.
 
 **Amended P1-B verdict: SHIP.** Implementation remains subject to the
 contract's independent package review and all listed evidence gates.
+
+## P1-A governance-scope amendment re-review — `06923f8`
+
+The amendment addresses the confirmed documentation-only scope failure with
+four exact governance paths: the W-06C0R1 independent review, the P1-A
+contract, the W-06C0 scope contract, and the remediation review. It explicitly
+forbids directory, wildcard, and arbitrary-Markdown expansion. The existing
+W-06C0R1 package report remains separately listed as an allowed package report;
+the implementation must retain it while adding only these four exact paths.
+No evaluator, provider, corpus, label, evidence, or runtime behavior is
+changed by this amendment.
+
+The amendment is narrow enough to let the known governance documents pass the
+scope gate while preserving fail-closed behavior for any other documentation
+or path. The required implementation tests must assert both that all named
+exact files pass and that an unlisted Markdown file, directory, or wildcard
+match fails.
+
+**Amended P1-A verdict: SHIP.**
