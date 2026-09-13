@@ -152,6 +152,18 @@ def test_delete_is_typed_and_repeated_delete_is_noop(api, monkeypatch):
     assert calls == []
 
 
+def test_put_deleted_is_rejected_even_when_record_is_already_deleted(api):
+    _module, client, vault = api
+    assert client.delete("/memories/source").status_code == 200
+    before = _document(vault)["revision"]
+
+    response = client.put("/memories/source", json={"status": "deleted"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "LIFECYCLE_TRANSITION_INVALID"
+    assert _document(vault)["revision"] == before
+
+
 def test_project_scope_is_required_and_exact_but_global_ignores_request(api):
     module, client, vault = api
     _write(
