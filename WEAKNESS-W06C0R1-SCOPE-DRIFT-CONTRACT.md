@@ -24,7 +24,7 @@ Later unrelated packages must not invalidate an already closed evaluator.
 
 ## Bounded change
 
-Allowed files:
+Allowed files for the implementation/evidence change:
 
 - `evals/w06c0r1/evaluation.py`
 - `tests/test_w06c0r1_contract.py`
@@ -58,12 +58,20 @@ retrieval, capture, canonical store, or Phase 20 file may change.
    `evals/w06c0r1/evaluation.py`, `evals/w06c0r1/__init__.py`,
    `evals/w06c0r1/__main__.py`, `evals/corpus-v4/**`,
    `evals/w06c0/**`, and `tests/test_w06c0r1_*.py`.
-6. `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and the named governance/review
-   documents are documentation-only paths already present in the allowlist.
-   Their post-end closure edits do not change evaluator scope and are allowed;
-   they must never be used to permit an evaluator, corpus, evidence, or test
-   edit. Commits in unrelated packages (including W-03B runtime and docs) are
-   ignored by this historical assertion.
+6. The historical `ALLOWED_SCOPE_FILES` constant remains unchanged. It is
+   evaluated only against the frozen 3f795f9→0b5a262 package diff. For the
+   current worktree and post-end diagnostic, the only documentation-only
+   exception paths owned by this maintenance package are exactly:
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md`,
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PACKAGE-REPORT.md`,
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`, and
+   `ENGINEERING-WEAK-POINTS-AUDIT.md`. Their edits do not change evaluator
+   scope and are allowed; they must never be used to permit an evaluator,
+   corpus, evidence, or test edit. The existing
+   `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and named historical governance files
+   remain allowed only by the original historical allowlist. Commits in
+   unrelated packages (including W-03B runtime and docs) are ignored by this
+   historical assertion.
 7. Returned evidence must expose `base_revision`, `scope_end_revision`,
    `head_revision`, `historical_changed_paths`, `post_end_changed_paths`,
    `worktree_changed_paths`, and a clear PASS status. No provider, corpus,
@@ -77,7 +85,9 @@ retrieval, capture, canonical store, or Phase 20 file may change.
 - Prove a staged/unstaged forbidden path fails closed.
 - Prove a post-end change to evaluator/source/corpus/test paths fails closed.
 - Prove a post-end change to `evals/w06c0r1/evidence/**` fails closed while a
-  package-report-only closure edit remains allowed.
+  package-report-only closure edit remains allowed. The four exact
+  maintenance-document paths above are the only additional worktree exception;
+  no arbitrary documentation path is accepted.
 - Prove the old compatibility blob/hash and metadata tampering checks still
   fail closed.
 - Run W-06C0 and W-06C0R1 focused suites, critical flake8 (`E9,F63,F7,F82`),
