@@ -1,7 +1,7 @@
 # W-03B Package Report — Transcript Ownership and Session Provenance
 
 **PACKAGE:** W-03B
-**REVISION:** `e7a07833a32edcee0a8ecf0422ec4b507d11201d`
+**REVISION:** `42f573728de5f711fd982fda9bfc079735d0aae6`
 **OBJECTIVE:** Prevent a transcript inside a trusted client root from being
   attributed to the wrong native session or project before evidence/canonical
   processing.
@@ -31,11 +31,12 @@
 - Unknown metadata fail-closed and content-free diagnostics.
 - Same-size transcript replacement detection using stable identity/content
   binding.
+- Worker-level `TRANSCRIPT_CHANGED` preservation and zero-effect retry.
 - Native fixture metadata/path binding for existing capture closure tests.
 
 ## TESTS EXECUTED
 
-- Focused W-03B/capture/runtime suite: **126 passed, 2 warnings**.
+- Focused W-03B/capture/runtime suite: **132 passed, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`): **PASS**.
 - `compileall` on changed production modules: **PASS**.
 - `git diff --check`: **PASS**.
