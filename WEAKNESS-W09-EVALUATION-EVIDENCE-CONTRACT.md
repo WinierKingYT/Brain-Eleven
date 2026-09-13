@@ -53,6 +53,15 @@ The current code establishes the following facts:
    50 DEV cases with `holdout_included: false`
    (`evals/ig01d/spike.py:265-369`). These are valuable boundaries that this
    package must preserve and make visible in evidence.
+7. The independent IG01-C engine is a separate evidence surface and is part of
+   this finding. `evals/ig01c/engine.py:503-684` rejects unknown top-level,
+   corpus, gate, case, control, and raw-content fields and derives its nine
+   safety gates, but its `source_fingerprint` is currently only validated as a
+   hexadecimal value by `:82-106`; it is not reconciled to the exact allowlist
+   that produced the report. Its case `passed` field at `:424-451` and its
+   gate rows at `:549-607` are separate concepts and must not be collapsed by
+   a later status change. Existing anti-gaming controls (`select_all` and
+   `select_none`) at `:624-682` must remain mandatory.
 
 The weakness is evidence ambiguity and provenance trust, not a claim that the
 underlying evaluator is mathematically wrong. A green safety result must not
@@ -96,6 +105,11 @@ tests, limited to:
 - `evals/ig01d/contracts.py`, `evals/ig01d/baseline.py`, and
   `evals/ig01d/spike.py` — only for revision/source reconciliation or bounded
   status propagation;
+- `evals/ig01d/fingerprint.py` — only to freeze and expose the exact source
+  allowlist already used by `evaluation_source_fingerprint()`;
+- `evals/ig01c/engine.py` and its focused tests — report-status and source
+  reconciliation only; the existing IG01-C family metrics, hard/near-zero
+  gates, anti-gaming controls, and corpus labels remain unchanged;
 - focused evaluation tests and a package report/evidence document.
 
 No production memory, capture, retrieval, router, authority, compiler, graph,
@@ -191,6 +205,8 @@ Evidence reconciliation must expose one of:
   reconciled with the declared inputs;
 - `invalid` — the report fails schema/privacy/structural validation; or
 - `unavailable` — the source needed for reconciliation cannot be read.
+- `legacy` — the report predates this status/reconciliation contract and has
+  not been regenerated; it may be read for history but is not current evidence.
 
 An overall **measurement** result may be `complete` only when evidence is
 `verified`, safety has no `fail` or `unsupported` applicable invariant, and all
@@ -202,6 +218,66 @@ An overall **promotion** result is `blocked` whenever evidence is not
 is `unavailable`/`invalid`, or the future V2-specific comparison contract is
 not satisfied. W-09 does not authorize promotion; it only prevents a
 measurement-only result from being mistaken for promotion evidence.
+
+### 4.5 Exact report location and schema
+
+For newly generated reports, the status object is a top-level field named
+`evaluation_status`. It is present in the generic report produced by
+`evals/reporting.build_evaluation_report()`, in the IG01-C report produced by
+`evals/ig01c/engine.evaluate_corpus()`, and in the IG01-D provider/pair report
+produced by `evals/ig01d/baseline.py`. Its exact shape is:
+
+```json
+{
+  "evaluation_status": {
+    "schema_version": 1,
+    "safety": {
+      "state": "pass|fail|unsupported|not_applicable",
+      "failed_invariant_codes": [],
+      "unsupported_capability_codes": []
+    },
+    "quality": {
+      "state": "measured|unavailable|not_applicable|invalid",
+      "metric_codes": []
+    },
+    "capabilities": {
+      "scope_isolation": "supported|unsupported|not_applicable",
+      "lifecycle_filtering": "supported|unsupported|not_applicable"
+    },
+    "evidence": {
+      "state": "verified|stale|tampered|invalid|unavailable|legacy",
+      "reason_code": "bounded_identifier"
+    },
+    "measurement": "complete|incomplete|blocked",
+    "promotion": "eligible|blocked"
+  }
+}
+```
+
+`failed_invariant_codes`, `unsupported_capability_codes`, and `metric_codes`
+are sorted unique safe identifiers. `reason_code` is one bounded identifier,
+never free text. A report may include additional capability keys only when the
+corresponding evaluator contract declares them; arbitrary capability names are
+rejected. For IG01-C, the existing `safety_gates` rows remain the detailed
+gate evidence and `evaluation_status.safety` is derived from them. For IG01-D,
+the existing `comparison.candidate_gate`, `feasibility.status`, and
+`target_derivation.quality_visibility` remain detailed evidence and the new
+status object is derived from them.
+
+For an IG01-D pair, the pair-level `evaluation_status` is at the pair report
+root and each nested `providers.v1`/`providers.v2` report carries its own
+provider-level status. The pair status cannot be `verified` when either
+provider is not reconciled, when `comparison.candidate_gate.passed` is false,
+or when feasibility is `SEMANTIC_UNAVAILABLE`; that condition is an honest
+measurement with `quality: unavailable` and `promotion: blocked`.
+
+The status object is additive only in a new report schema version. Existing
+schema-version-1 reports are read through a legacy adapter and are marked
+`evidence.state: legacy`,
+never `verified`; they cannot satisfy a graduation/promotion claim until
+regenerated and reconciled. The exact new schema version and adapter name must
+be recorded in the implementation report. Historical baseline files are not
+silently rewritten.
 
 ## 5. Source and tamper reconciliation
 
@@ -221,6 +297,18 @@ For every newly generated evidence report, bind:
 The existing `baseline_snapshot._FINGERPRINT_PATHS` boundary remains the
 allowlist for baseline-v3. Optional provider files must not silently change a
 baseline that does not execute them.
+
+For IG01-D, the allowlist is exactly the normalized path set returned by
+`evals/ig01d/fingerprint.py:_CODE_PATHS` plus `manifest.json`, every JSON file
+under `dev/`, and every JSON file under `test/` returned by `_public_paths()`.
+It excludes `holdout/`, ignored/private corpora, generated reports, provider
+models, and every path not named by `_CODE_PATHS`. The framing algorithm,
+newline normalization, relative-name prefixes (`corpus/<path>` for corpus
+inputs), and deterministic sort order in `fingerprint.py` are part of the
+identity contract. A public-source reconciliation must use this exact set,
+not a broader recursive glob. Any change to this allowlist requires a new
+versioned evidence contract and a fresh baseline; it cannot be hidden in a
+refactor.
 
 ### 5.2 Reconciliation behavior
 
@@ -250,7 +338,31 @@ On mismatch, fail closed with the bounded status and a content-free reason
 code. Do not include prompts, transcripts, memory text, paths containing user
 data, tokens, or credentials in the error or persisted report.
 
-### 5.3 Privacy and report shape
+### 5.3 Generic report strictness
+
+The generic `evals/reporting.py` validator is included in this boundary, not
+just the IG01-C/IG01-D validators. For its versioned report schema:
+
+- the top-level, `provider`, `corpus`, `source`, `metrics`, `invariants`,
+  `cases`, and each nested case/metric/invariant object have closed allowlists;
+- unknown fields are rejected recursively, rather than ignored by
+  `_validate_report()`;
+- all string keys are checked against the bounded identifier rules where the
+  object is an evidence schema;
+- a recursive privacy walk rejects the same raw-content key families already
+  enforced by IG01-C (`prompt`, `query`, `text`, `content`, `transcript`,
+  `message`, `raw*`, `secret*`, `token*`, `password`, `credential*`, and
+  `api_key`/`api_secret`), including keys that are not otherwise known to the
+  schema; and
+- validation errors expose only a bounded field/code, never the rejected
+  value, prompt, memory text, or filesystem path.
+
+This must be implemented as a schema/versioned boundary, not as a one-off
+check for the current baseline file. Existing schema-version-1 reports remain
+readable through the legacy path, but unknown-field or raw-content rejection
+still applies whenever the report is parsed for a new evidence claim.
+
+### 5.3B IG01-D privacy and report shape
 
 The existing report contracts reject raw content keys in IG01-D. That rule
 continues recursively. New status/provenance fields are bounded codes,
@@ -258,6 +370,25 @@ identifiers, hashes, counts, and finite numbers only. Unknown fields remain
 rejected for versioned IG01-D reports. If a schema change is required, bump
 the schema version and retain a read-only validator for the prior version;
 never silently reinterpret an old report as new evidence.
+
+### 5.4 Exact reconciliation matrix
+
+The read-only verifier must classify the first applicable condition using this
+matrix:
+
+| Condition | Status | Gate effect |
+|---|---|---|
+| JSON cannot be read/parsed, required field missing, unknown field, invalid enum/identifier, non-finite number, or privacy rule violated | `invalid` | Measurement and promotion blocked |
+| Declared source/corpus revision or fingerprint differs from a readable current root, while the report payload matches the declared older run and no payload tampering is found | `stale` | Promotion blocked; measurement is historical only |
+| Report payload, case rows, metrics, gates, task set, seed/noise, or provider role differs from a fresh recomputation for the same readable root; or a declared fingerprint does not equal the recomputed allowlist digest | `tampered` | Measurement and promotion blocked |
+| Required root, corpus, evaluator source, or provider capability cannot be read/evaluated | `unavailable` | Safety/quality claim blocked; no zero or pass substituted |
+| All identity values and deterministic payload checks match a fresh recomputation | `verified` | May proceed to separate safety/quality gates |
+
+An internally self-consistent but false SHA/fingerprint is therefore
+`tampered` once the root is readable. A valid report from an older legitimate
+revision is `stale`, not tampered. A report with malformed structure is
+`invalid` before any content comparison. This distinction must be asserted in
+tests and must never be encoded as a human-only interpretation.
 
 ## 6. Public and HOLDOUT boundaries
 
@@ -317,6 +448,9 @@ labels or holdout files.
   and cannot report promotion-ready.
 - A select-everything provider has measurable precision/noise/token impact;
   recall alone cannot produce a quality pass.
+- IG01-C case `passed`, nine `safety_gates`, near-zero thresholds, review
+  records, and `select_all`/`select_none` controls remain mutually consistent;
+  a tampered case row cannot make an aggregate gate green.
 
 ### 8.2 Reconciliation and tamper tests
 
@@ -328,6 +462,9 @@ that:
   noise, or provider role returns `stale`/`tampered`/`invalid` and never green;
 - a structurally valid report with self-consistent but false source metadata is
   not accepted as verified;
+- IG01-C source metadata is checked against the exact source allowlist supplied
+  by its runner; if no root/allowlist is supplied, the result is explicitly
+  `legacy`/`unavailable` evidence rather than `verified`;
 - changed numeric metrics or case rows are detected by deterministic baseline
   comparison;
 - baseline-v3 float round-off remains accepted only under its existing bounded
@@ -343,6 +480,15 @@ that:
 - public fingerprints and task counts cannot be changed by a HOLDOUT-only edit;
 - a dedicated HOLDOUT run reports its split explicitly and cannot be used as a
   public target derivation input.
+
+The focused implementation suite must include
+`tests/test_ig01c_evaluator.py` together with
+`tests/test_evaluation_metrics.py`, `tests/test_evaluation_reporting.py`,
+`tests/test_evaluation_runner.py`, `tests/test_evaluation_baseline_snapshot.py`,
+and `tests/test_ig01d_baseline.py`. The implementation report must name the
+exact IG01-C engine, IG01-D fingerprint, generic reporting, and runner files
+used for reconciliation; a test that only inspects status strings without
+recomputing the declared source is insufficient.
 
 ### 8.4 Regression evidence
 
