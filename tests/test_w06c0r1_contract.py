@@ -162,6 +162,12 @@ def test_holdout_report_binds_seal_and_unlock_hash():
     assert report["holdout_evidence"]["unlock_token_hash"].startswith("sha256:")
 
 
+def test_committed_holdout_evidence_binds_current_seal_and_source():
+    artifact = json.loads((ROOT / "evals/w06c0r1/evidence/holdout.json").read_text(encoding="utf-8"))
+    assert artifact["holdout_evidence"]["seal_hash"] == verify_seal()["seal_hash"]
+    assert artifact["source"]["source_fingerprint"] == source_fingerprint(ROOT)
+
+
 def test_holdout_cli_replay_is_rejected_before_provider_run(monkeypatch, tmp_path):
     from evals.w06c0r1.evaluation import main
 
