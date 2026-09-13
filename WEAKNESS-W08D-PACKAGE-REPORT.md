@@ -1,7 +1,7 @@
 # W-08D Typed API Lifecycle Package Report
 
 PACKAGE: W-08D
-REVISION: `fa9825b` (implementation `3e7571f`, tests `6c6cd85`)
+REVISION: `805f081` (implementation `947d221`, privacy test `805f081`)
 OBJECTIVE: Close the typed, fail-closed lifecycle boundary for the existing
 `PUT /memories/{memory_id}` and `DELETE /memories/{memory_id}` API mutations
 without adding a canonical authority or changing the lifecycle manager.
@@ -25,6 +25,8 @@ retrieval, capture, V2, Phase 20, or frozen evaluation file was changed.
 - Graph rebuild failures after a canonical commit were not exposed as a
   bounded degraded response.
 - Error responses could expose raw implementation exception text.
+- FastAPI's default request-validation payload could echo submitted project
+  roots and oversized field values.
 
 The implementation uses a narrow adapter for the existing lifecycle field
 vocabulary and timestamps, while every accepted write still goes through the
@@ -33,7 +35,7 @@ write files or create another authority.
 
 ## TESTS ADDED
 
-`tests/test_w08d_search_api_lifecycle.py` adds 12 focused tests covering:
+`tests/test_w08d_search_api_lifecycle.py` adds 13 focused tests covering:
 
 - unknown/illegal status rejection without revision or graph effects;
 - resolve metadata and terminal no-op behavior;
@@ -42,21 +44,22 @@ write files or create another authority.
 - project scope required/mismatch/accepted/global-ignore behavior;
 - stale expected-revision rejection;
 - post-commit graph degradation visibility;
-- capture-safety ordering and bounded missing-memory errors.
+- capture-safety ordering and bounded missing-memory errors;
+- request-validation privacy for extra path fields and oversized values.
 
 ## TESTS EXECUTED
 
-- W-08D focused tests: **12 passed, 2 dependency warnings**.
+- W-08D focused tests: **13 passed, 2 dependency warnings**.
 - Existing API/lifecycle suites (`test_search_api.py`,
   `test_memory_lifecycle.py`, `test_lifecycle_dedupe.py`,
   `test_authority_resolver.py`): **74 passed, 2 dependency warnings**.
 - Combined focused verification including
-  `test_pre12_memory_state_caller_migration.py`: **108 passed, 2 dependency
+  `test_pre12_memory_state_caller_migration.py`: **119 passed, 2 dependency
   warnings**.
 - Full `pytest tests -q`: an initial run exposed one transient cold native
   SessionStart failure (`test_ig00_bootstrap.py::test_cold_native_session_start_delivers_v1_within_hook_budget`);
   its isolated rerun passed, and the clean full-suite rerun at the final
-  evidence revision completed with **1049 passed, 2 dependency warnings**.
+  evidence revision completed with **1050 passed, 2 dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
