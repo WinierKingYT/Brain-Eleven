@@ -199,9 +199,9 @@ byte-stable; the v3 adapter does not silently reinterpret v2 values.
 For `answerable` cases only, report:
 
 - Precision@K for `K=1`, `K=3`, `K=5`, and `K=10`, using the provider's
-  ordered IDs truncated to the first K after stable duplicate removal (first
-  occurrence wins; duplicate IDs are invalid in the provider result, not
-  silently collapsed),
+  ordered IDs truncated to the first K. Duplicate IDs are an evidence failure
+  (the row is rejected, rather than silently collapsed), matching the existing
+  IG01-C metric contract.
 - mandatory recall and recall,
 - F1 and MRR,
 - noise ratio and token waste,
