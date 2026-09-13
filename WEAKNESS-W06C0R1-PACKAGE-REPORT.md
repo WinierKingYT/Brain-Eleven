@@ -1,7 +1,7 @@
 # W-06C0R1 Package Report
 
-**PACKAGE:** W-06C0R1 — answerability and provenance correction  
-**REVISION:** `09f6f7eac59ca3d4c8f28346606ffd3ad8ca8471`  
+**PACKAGE:** W-06C0R1 — answerability and provenance correction
+**REVISION:** `09f6f7eac59ca3d4c8f28346606ffd3ad8ca8471`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -82,7 +82,7 @@ provider parity, and the stated historical regression.
 ## Score
 
 **Before:** Evaluation quality 6.5/10 (W-06C0R1 blocker: no measurable
-TEST/HOLDOUT quality).  
+TEST/HOLDOUT quality).
 **After:** Measurement infrastructure is evidence-complete for DEV/TEST/
 HOLDOUT, but no retrieval-quality score increase is claimed until an
 independent reviewer accepts the corpus and the historical full-suite failure
