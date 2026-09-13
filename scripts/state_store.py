@@ -14,21 +14,21 @@ import os
 import shutil
 import tempfile
 import time
-import time
+from contextlib import contextmanager, nullcontext
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 try:
-    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
+    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock, memory_store_lock
     from brain_eleven.memory import MemoryStore, MemoryStoreError
     from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
 except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
     if exc.name != "brain_eleven":
         raise
     from memory_store import MemoryStore, MemoryStoreError
-    from memory_store_lock import MemoryStoreLockTimeout, file_lock
+    from memory_store_lock import MemoryStoreLockTimeout, file_lock, memory_store_lock
     from project_registry import ProjectRegistry, ProjectRegistryError
 
 
@@ -110,6 +110,24 @@ class StateTransitionError(StateError):
 
 class StateReferenceError(StateError):
     """Raised when state attempts to reference invalid durable knowledge."""
+
+
+class StateReferenceConflict(StateReferenceError):
+    """Raised when the canonical memory reference guard cannot validate safely."""
+
+    REASONS = frozenset({
+        "MEMORY_REFERENCE_LOCK_TIMEOUT",
+        "MEMORY_REFERENCE_SNAPSHOT_CHANGED",
+    })
+
+    def __init__(self, reason: str):
+        if reason not in self.REASONS:
+            raise ValueError("Unsupported state reference conflict reason")
+        self.reason = reason
+        super().__init__(f"MEMORY_REFERENCE_CONFLICT: {reason}")
+
+
+_REFERENCE_ALLOWED_STATUSES = frozenset({"active", "resolved", "superseded"})
 
 
 def utc_now() -> str:
@@ -990,21 +1008,89 @@ class StateService:
         )
         return persisted
 
-    def _validate_memory_reference(self, project_id: str, memory_id: str) -> str:
+    @staticmethod
+    def _memory_reference_snapshot(record: Mapping[str, Any], *, memory_revision: int) -> dict[str, Any]:
+        """Capture only bounded metadata while the canonical memory lock is held."""
+        scope = record.get("scope")
+        return {
+            "memory_revision": int(memory_revision),
+            "memory_id": record.get("memory_id"),
+            "scope": scope,
+            "project_id": record.get("project_id") if scope == "project" else "",
+            "status": record.get("status", "active"),
+        }
+
+    def _validate_memory_reference_unlocked(
+        self,
+        project_id: str,
+        memory_id: str,
+        document: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Validate a reference against a document read under memory_store_lock."""
         memory_id = _string(memory_id, "memory_id", prefix="mem_")
         try:
-            records = self.memory_store.load()["validated_memory"]
-        except MemoryStoreError as exc:
+            records = document["validated_memory"]
+            memory_revision = int(document["revision"])
+        except (KeyError, TypeError, ValueError) as exc:
             raise StateReferenceError("MemoryStore is unavailable for state reference validation") from exc
         record = next((item for item in records if item.get("memory_id") == memory_id), None)
         if record is None:
             raise StateReferenceError(f"DANGLING_MEMORY_REFERENCE: {memory_id}")
+        status = record.get("status", "active")
+        if status == "deleted":
+            raise StateReferenceError(f"DELETED_MEMORY_REFERENCE: {memory_id}")
+        if status not in _REFERENCE_ALLOWED_STATUSES:
+            raise StateReferenceError(f"INVALID_MEMORY_REFERENCE_STATUS: {memory_id}")
         scope = record.get("scope")
-        if scope == "global":
-            return memory_id
-        if scope == "project" and record.get("project_id") == project_id:
-            return memory_id
-        raise StateReferenceError(f"WRONG_PROJECT_MEMORY_REFERENCE: {memory_id}")
+        if scope != "global" and not (scope == "project" and record.get("project_id") == project_id):
+            raise StateReferenceError(f"WRONG_PROJECT_MEMORY_REFERENCE: {memory_id}")
+        return self._memory_reference_snapshot(record, memory_revision=memory_revision)
+
+    def _assert_memory_reference_snapshot_unlocked(
+        self,
+        project_id: str,
+        snapshot: Mapping[str, Any],
+        document: Mapping[str, Any],
+    ) -> None:
+        """Defensively prove the in-lock snapshot still describes the target."""
+        try:
+            records = document["validated_memory"]
+            memory_revision = int(document["revision"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise StateReferenceConflict("MEMORY_REFERENCE_SNAPSHOT_CHANGED") from exc
+        record = next((item for item in records if item.get("memory_id") == snapshot["memory_id"]), None)
+        if record is None or record.get("status", "active") == "deleted":
+            raise StateReferenceConflict("MEMORY_REFERENCE_SNAPSHOT_CHANGED")
+        current = self._memory_reference_snapshot(record, memory_revision=memory_revision)
+        if current != dict(snapshot):
+            raise StateReferenceConflict("MEMORY_REFERENCE_SNAPSHOT_CHANGED")
+        if current["scope"] == "project" and current["project_id"] != project_id:
+            raise StateReferenceConflict("MEMORY_REFERENCE_SNAPSHOT_CHANGED")
+
+    @contextmanager
+    def _memory_reference_guard(self, project_id: str, memory_id: str):
+        """Hold the canonical memory lock through validation and state commit."""
+        acquired = False
+        try:
+            with memory_store_lock(self.vault_path):
+                acquired = True
+                try:
+                    document = self.memory_store._read_unlocked()
+                except MemoryStoreError as exc:
+                    raise StateReferenceError(
+                        "MemoryStore is unavailable for state reference validation"
+                    ) from exc
+                snapshot = self._validate_memory_reference_unlocked(project_id, memory_id, document)
+                yield snapshot
+        except MemoryStoreLockTimeout as exc:
+            if acquired:
+                raise
+            raise StateReferenceConflict("MEMORY_REFERENCE_LOCK_TIMEOUT") from exc
+
+    def _validate_memory_reference(self, project_id: str, memory_id: str) -> str:
+        """Compatibility helper that never performs an unlocked validation read."""
+        with self._memory_reference_guard(project_id, memory_id) as snapshot:
+            return snapshot["memory_id"]
 
     def add_memory_reference(
         self,
@@ -1015,24 +1101,32 @@ class StateService:
         source: Mapping[str, Any],
         now: Optional[str] = None,
     ) -> dict[str, Any]:
-        memory_id = self._validate_memory_reference(project_id, memory_id)
+        with self._memory_reference_guard(project_id, memory_id) as snapshot:
+            memory_id = snapshot["memory_id"]
+            try:
+                current_document = self.memory_store._read_unlocked()
+            except MemoryStoreError as exc:
+                raise StateReferenceError(
+                    "MemoryStore is unavailable for state reference validation"
+                ) from exc
+            self._assert_memory_reference_snapshot_unlocked(project_id, snapshot, current_document)
 
-        def mutate(project):
-            references = project["references"]["memory_ids"]
-            if memory_id in references:
-                raise StateError(f"State already references memory_id: {memory_id}")
-            references.append(memory_id)
-            return memory_id
+            def mutate(project):
+                references = project["references"]["memory_ids"]
+                if memory_id in references:
+                    raise StateError(f"State already references memory_id: {memory_id}")
+                references.append(memory_id)
+                return memory_id
 
-        _result, persisted = self._mutate(
-            project_id,
-            expected_revision=expected_revision,
-            operation="memory_reference_added",
-            source=source,
-            record_ids=[memory_id],
-            mutator=mutate,
-            now=now,
-        )
+            _result, persisted = self._mutate(
+                project_id,
+                expected_revision=expected_revision,
+                operation="memory_reference_added",
+                source=source,
+                record_ids=[memory_id],
+                mutator=mutate,
+                now=now,
+            )
         return persisted
 
     def add_blocker(
@@ -1047,35 +1141,44 @@ class StateService:
         memory_ref: Optional[str] = None,
         now: Optional[str] = None,
     ) -> dict[str, Any]:
-        if memory_ref is not None:
-            memory_ref = self._validate_memory_reference(project_id, memory_ref)
-        timestamp = now or utc_now()
-        blocker = self._record(
-            kind="blocker",
-            text=text,
-            status="ACTIVE",
-            source=source,
-            now=timestamp,
-            record_id=record_id,
-            severity=severity,
-            memory_ref=memory_ref,
-        )
+        guard = self._memory_reference_guard(project_id, memory_ref) if memory_ref is not None else nullcontext()
+        with guard as snapshot:
+            if snapshot is not None:
+                memory_ref = snapshot["memory_id"]
+                try:
+                    current_document = self.memory_store._read_unlocked()
+                except MemoryStoreError as exc:
+                    raise StateReferenceError(
+                        "MemoryStore is unavailable for state reference validation"
+                    ) from exc
+                self._assert_memory_reference_snapshot_unlocked(project_id, snapshot, current_document)
+            timestamp = now or utc_now()
+            blocker = self._record(
+                kind="blocker",
+                text=text,
+                status="ACTIVE",
+                source=source,
+                now=timestamp,
+                record_id=record_id,
+                severity=severity,
+                memory_ref=memory_ref,
+            )
 
-        def mutate(project):
-            if any(item["id"] == blocker["id"] for item in project["blockers"]):
-                raise StateError(f"Duplicate blocker ID: {blocker['id']}")
-            project["blockers"].append(blocker)
-            return deepcopy(blocker)
+            def mutate(project):
+                if any(item["id"] == blocker["id"] for item in project["blockers"]):
+                    raise StateError(f"Duplicate blocker ID: {blocker['id']}")
+                project["blockers"].append(blocker)
+                return deepcopy(blocker)
 
-        _result, persisted = self._mutate(
-            project_id,
-            expected_revision=expected_revision,
-            operation="blocker_added",
-            source=source,
-            record_ids=[blocker["id"]],
-            mutator=mutate,
-            now=timestamp,
-        )
+            _result, persisted = self._mutate(
+                project_id,
+                expected_revision=expected_revision,
+                operation="blocker_added",
+                source=source,
+                record_ids=[blocker["id"]],
+                mutator=mutate,
+                now=timestamp,
+            )
         return persisted
 
     def resolve_blocker(

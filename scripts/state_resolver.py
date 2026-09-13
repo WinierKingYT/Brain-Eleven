@@ -20,6 +20,7 @@ STATE_NOT_FOUND = "STATE_NOT_FOUND"
 STATE_CORRUPT = "STATE_CORRUPT"
 STATE_UNAVAILABLE = "STATE_UNAVAILABLE"
 STALE_AFTER_DAYS = 30
+_REFERENCE_ALLOWED_STATUSES = frozenset({"active", "resolved", "superseded"})
 
 
 def _utc_now() -> datetime:
@@ -120,6 +121,8 @@ class StateResolver:
         for memory_id in reference_ids:
             record = index.get(memory_id)
             if record is None:
+                dangling.append(memory_id)
+            elif record.get("status", "active") not in _REFERENCE_ALLOWED_STATUSES:
                 dangling.append(memory_id)
             elif record.get("scope") == "global":
                 valid.append(memory_id)
