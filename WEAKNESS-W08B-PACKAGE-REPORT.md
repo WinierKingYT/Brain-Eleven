@@ -1,7 +1,7 @@
 # W-08B Coordinated Backup Snapshot Package Report
 
 **PACKAGE:** W-08B  
-**REVISION:** `f5766b5ca955957ab7c06e679d7acff728ecdad2`  
+**REVISION:** `6065232a3a01de1a3b4b53e7b13f83eece89a8a8`  
 **OBJECTIVE:** Make newly created backups prove a stable, mutually validated
 source set across canonical memory, project registry, optional settings and
 optional project state.
@@ -66,7 +66,7 @@ Phase 20/V2 path was changed.
 
 ## Tests executed
 
-At exact revision `f5766b5` (implementation `9627f4e`, focused tests
+At exact revision `6065232` (implementation `9627f4e`, focused tests
 `47cb48b`, `98f4edd` and `f5766b5`):
 
 - `python -m pytest tests/test_w08b_coordinated_backup.py tests/test_memory_backup.py tests/test_pre13_runtime.py::test_backup_restore_preserves_runtime_receipts -q` — **34 passed**
