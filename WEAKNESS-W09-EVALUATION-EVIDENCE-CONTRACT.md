@@ -310,6 +310,23 @@ not a broader recursive glob. Any change to this allowlist requires a new
 versioned evidence contract and a fresh baseline; it cannot be hidden in a
 refactor.
 
+For IG01-C, the source allowlist is exactly these three repository files:
+
+```text
+evals/ig01c/engine.py
+evals/ig01c/contracts.py
+evals/ig01c/metrics.py
+```
+
+The digest uses the same framed SHA-256 construction and normalized LF bytes
+as the existing fingerprint helpers. It uses the repository-relative path as
+the frame name, sorted lexicographically. It deliberately excludes every
+corpus document, generated report, ignored/private evaluation file, provider
+output, and any other path. Corpus identity is bound separately by the
+version/split/case-ID fields in the report. A caller cannot supply an
+arbitrary path list to redefine the IG01-C source fingerprint; adding a source
+file requires a contract/version update and an explicit allowlist change.
+
 ### 5.2 Reconciliation behavior
 
 Add or expose a read-only verification path that recomputes the declared
@@ -390,6 +407,25 @@ revision is `stale`, not tampered. A report with malformed structure is
 `invalid` before any content comparison. This distinction must be asserted in
 tests and must never be encoded as a human-only interpretation.
 
+### 5.5 Timing telemetry reconciliation
+
+Runtime timing is diagnostic telemetry, not evaluator identity or quality
+payload. The fields `elapsed_ms`, `v1_elapsed_ms`, `v2_elapsed_ms`,
+`p50_ms`, `p95_ms`, and `per_case_mean_ms` must be finite, non-negative
+numbers when present; fields that the existing schema permits to be `null`
+may remain `null`. A negative, non-finite, or malformed timing value is
+`invalid`.
+
+Timing fields are excluded from deterministic source/payload equality. A
+natural rerun may produce different elapsed, percentile, or per-case timing
+values without becoming `tampered` or changing the quality result. The
+implementation may expose a separate bounded timing comparison, but it must
+not use a timing delta to declare a report stale or tampered. All non-timing
+identity fields, case rows, safety gates, quality metrics, capability states,
+provider identities, seeds, noise counts, and split/source fingerprints still
+require exact reconciliation (subject only to the existing bounded
+floating-point tolerance where that baseline contract already applies).
+
 ## 6. Public and HOLDOUT boundaries
 
 The following rules are non-negotiable:
@@ -462,11 +498,17 @@ that:
   noise, or provider role returns `stale`/`tampered`/`invalid` and never green;
 - a structurally valid report with self-consistent but false source metadata is
   not accepted as verified;
-- IG01-C source metadata is checked against the exact source allowlist supplied
-  by its runner; if no root/allowlist is supplied, the result is explicitly
+- IG01-C source metadata is checked against the exact frozen three-file source
+  allowlist; if no repository root is supplied, the result is explicitly
   `legacy`/`unavailable` evidence rather than `verified`;
 - changed numeric metrics or case rows are detected by deterministic baseline
   comparison;
+- IG01-C source reconciliation hashes only its three frozen evaluator files,
+  rejects an arbitrary caller path list, and does not read corpus or generated
+  report files for that digest;
+- elapsed/p50/p95/per-case timing changes across repeated runs remain valid
+  telemetry, while negative/NaN/inf timing values are rejected and any
+  non-timing metric/gate/case mismatch remains `tampered`;
 - baseline-v3 float round-off remains accepted only under its existing bounded
   tolerance, while non-float fields still require exact equality;
 - historical baseline manifests remain byte/hash protected.
