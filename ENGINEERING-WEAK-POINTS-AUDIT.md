@@ -304,3 +304,21 @@ canonical persistence changes.
 This document is a living audit record. Scores may go down when a stronger
 holdout or real-use measurement reveals that an earlier estimate was too
 optimistic.
+
+## W-06C0R1 scope-drift maintenance (2026-09-14)
+
+The W-03B full regression exposed a historical evaluator boundary defect:
+`evals/w06c0r1/evaluation.py::verify_scope_diff()` compared its frozen base
+with the current repository and incorrectly included later W-03B files. The
+bounded maintenance package pins the historical range to
+`3f795f94dde199ba4e970705d37686ee4f50bc5d` →
+`0b5a262c437da13813e542c569857a68c2db7a69`, preserves the original allowlist
+and old W-06C0 compatibility exception, and hash-binds the one-time evidence
+refresh in `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json`.
+
+Exact evidence at revision `8db6b59`: W-06C0/W-06C0R1 focused **34 passed**;
+W-03B/capture focused **127 passed, 2 warnings**; full suite **1122 passed,
+2 warnings**; critical flake8, compileall, manifest/seal, and diff checks
+passed. Corpus cases, labels, provider metrics, runtime, retrieval, V2, and
+Phase 20 were unchanged. The package remains `REVIEW PENDING` until a fresh
+independent read-only implementation review returns `SHIP`.
