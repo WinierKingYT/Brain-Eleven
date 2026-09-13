@@ -1,0 +1,2010 @@
+{
+  "corpus": {
+    "case_count": 30,
+    "excluded_counts": {
+      "answerable": 30,
+      "review_required": 0,
+      "unanswerable": 0
+    },
+    "manifest_hash": "sha256:2402edeea32d08b8b5fc342dcaa7051de8d5744033a56900f04d04da17b6e295",
+    "split": "holdout",
+    "split_fingerprint": "sha256:b97f00357d5c97c6a0e1667989d5a15790b681776c4de84fcfbf94bb9a048039"
+  },
+  "corpus_version": 4,
+  "evaluator_version": "w06c0r1-v1",
+  "holdout_evidence": {
+    "command_hash": "sha256:b60a8a5eb4f91c49f7be117346604b4ead1fb3c64b4c7fb658e85e3ab4e8942f",
+    "seal_hash": "sha256:9d9fcc4324802d0bc2c9c4271598a9888c2c28e8e9f27b7ec77fb9ba440f940c",
+    "unlock_token_hash": "sha256:c1fcb94bf91b7d24aa81295c01296107e4f110dfc53aca19a37a78e16a367849"
+  },
+  "production_mutation": false,
+  "promotion": "blocked",
+  "providers": {
+    "v1": {
+      "actual_provider_id": "context_compiler_baseline_v1",
+      "availability": "AVAILABLE",
+      "candidate_content_fingerprint": "sha256:7341a4e97750a7d311deed6fbc0fe4bc35fa220ad73189a4776a3e9b9c51c61a",
+      "candidate_order_fingerprint": "sha256:b702cab18c7589a799148bcaef7751d70d129e4aabf870192d698403be75a5ae",
+      "case_count": 30,
+      "error_code": null,
+      "excluded_counts": {
+        "answerable": 30,
+        "review_required": 0,
+        "unanswerable": 0
+      },
+      "fallback": false,
+      "latency_ms": {
+        "p50": 0.987,
+        "p95": 0.869
+      },
+      "metrics": {
+        "1": {
+          "f1": 0.17777777777777776,
+          "mandatory_recall": 0.26666666666666666,
+          "mrr": 0.26666666666666666,
+          "noise_ratio": 0.7333333333333333,
+          "precision": 0.26666666666666666,
+          "recall": 0.13333333333333333,
+          "token_waste": 0.7333333333333333
+        },
+        "10": {
+          "f1": 0.2571428571428572,
+          "mandatory_recall": 0.8166666666666667,
+          "mrr": 0.5066666666666666,
+          "noise_ratio": 0.8200000000000001,
+          "precision": 0.18000000000000002,
+          "recall": 0.45,
+          "token_waste": 0.8140902071839029
+        },
+        "3": {
+          "f1": 0.29333333333333333,
+          "mandatory_recall": 0.7,
+          "mrr": 0.4666666666666667,
+          "noise_ratio": 0.7555555555555554,
+          "precision": 0.24444444444444444,
+          "recall": 0.36666666666666664,
+          "token_waste": 0.7577732534084143
+        },
+        "5": {
+          "f1": 0.2571428571428572,
+          "mandatory_recall": 0.8166666666666667,
+          "mrr": 0.5066666666666666,
+          "noise_ratio": 0.8200000000000001,
+          "precision": 0.18000000000000002,
+          "recall": 0.45,
+          "token_waste": 0.8140902071839029
+        }
+      },
+      "model": "existing_adapter",
+      "provider_schema_version": 1,
+      "quality": {
+        "reason": null,
+        "state": "MEASURED"
+      },
+      "requested_provider_id": "v1",
+      "rows": [
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.962,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6865671641791045
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000001"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.022,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.7205882352941176
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000002"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.034,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8247422680412371
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.7068965517241379
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8247422680412371
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000003"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.069,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6716417910447762
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000004"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.075,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8053097345132744
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6764705882352942
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8053097345132744
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000005"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.301,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7938144329896907
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 0.5,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6551724137931034
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7938144329896907
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000006"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.369,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.2,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7787610619469026
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.2,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7787610619469026
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000007"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.97,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8053097345132744
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6764705882352942
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8053097345132744
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000008"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.053,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8247422680412371
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.7068965517241379
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8247422680412371
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000009"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.073,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6716417910447762
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000010"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.074,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000011"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.108,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000012"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.028,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7575757575757576
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 0.5,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6417910447761194
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7575757575757576
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000013"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.986,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 0.5,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000014"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.992,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6379310344827587
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000015"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.904,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6865671641791045
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000016"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.985,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.7205882352941176
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000017"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.859,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6379310344827587
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000018"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.044,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.7205882352941176
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.831858407079646
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000019"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 2.285,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7575757575757576
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6417910447761194
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7575757575757576
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000020"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.016,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7628865979381443
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7628865979381443
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000021"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.842,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000022"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.077,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7610619469026548
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6029411764705882
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7610619469026548
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000023"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.873,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6865671641791045
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7878787878787878
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000024"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.036,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7610619469026548
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6029411764705882
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.3333333333333333,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7610619469026548
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000025"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.907,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 5,
+              "token_waste": 1.0
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000026"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.991,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6716417910447762
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000027"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.143,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6716417910447762
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.5,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7777777777777778
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:ec39857f6b60f40028b906537e8394f431d1fa6b1dc8093570cf0f5fdbf67b16",
+            "sha256:018fd9dca3c5a7003526cbe1244f3449c37bfda74c9734d9e6eaecc251624b84",
+            "sha256:dbf04700b63e6f9b27e65dde74472a17a743d74cccbea6fe355f407544d00d7b",
+            "sha256:cf5e924267f7d49f5b30e9a0f97a400c2b3d49852189b59ca2261499a8bb06af",
+            "sha256:0ce60bf964e6ce558fed096bbd187b5b4e21a76dc5debb4e496344ba7cac0995"
+          ],
+          "task_handle": "task-000028"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 0.915,
+          "metrics": {
+            "1": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 1,
+              "token_waste": 1.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            },
+            "3": {
+              "f1": 0.0,
+              "mandatory_recall": 0.0,
+              "mrr": 0.0,
+              "noise_ratio": 1.0,
+              "precision": 0.0,
+              "recall": 0.0,
+              "selected_count": 3,
+              "token_waste": 1.0
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 0.25,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.8230088495575221
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:a84ba741d767bff5bd4f0e6e8f6df184fd8d839e6eafd9b39c6ab718235ce0ba",
+            "sha256:e80fd32d748d22db5905f9df6bdf6031544e453a09957bbfc562916b4e152f17",
+            "sha256:336c90343362d1d7190f69172cd7a52c38891466f568b85c6b09a4bb700b68fe",
+            "sha256:c5c241a3c5181d7e2e501ea1c12e51aeeed479bcd47626137908edf41737674b",
+            "sha256:0aebed2da285eecad16b696e0d914854308a321069d5afbef28b739899e9af86"
+          ],
+          "task_handle": "task-000029"
+        },
+        {
+          "answerability": "answerable",
+          "latency_ms": 1.053,
+          "metrics": {
+            "1": {
+              "f1": 0.6666666666666666,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.0,
+              "precision": 1.0,
+              "recall": 0.5,
+              "selected_count": 1,
+              "token_waste": 0.0
+            },
+            "10": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            },
+            "3": {
+              "f1": 0.4,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.6666666666666666,
+              "precision": 0.3333333333333333,
+              "recall": 0.5,
+              "selected_count": 3,
+              "token_waste": 0.6379310344827587
+            },
+            "5": {
+              "f1": 0.28571428571428575,
+              "mandatory_recall": 1.0,
+              "mrr": 1.0,
+              "noise_ratio": 0.8,
+              "precision": 0.2,
+              "recall": 0.5,
+              "selected_count": 5,
+              "token_waste": 0.7835051546391752
+            }
+          },
+          "provider_status": "COMPLETE",
+          "safety": {
+            "forbidden_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+            "superseded_leakage": 0,
+            "wrong_project_leakage": 0
+          },
+          "selected_count": 5,
+          "selected_hashes": [
+            "sha256:447e6f4c1578385842218d7f716763375d4718fdc956b65a2318d2ceb555b6f5",
+            "sha256:7113a114c1a2a7bec3770a09f754107aeda35d8a850330a3b0c799c7e90cab59",
+            "sha256:a887166d10ac36df324f1263bb45370297e4a139e197099eb0121001263429a2",
+            "sha256:fbb24a07a24198b23e8f159645a8205a4efe00b5f4fa47feafb18640d9f2009e",
+            "sha256:d64b33bfd46b53a63343330ff5cfec85805c86c61e52d507e52bb6df929e791b"
+          ],
+          "task_handle": "task-000030"
+        }
+      ],
+      "run_status": "COMPLETE",
+      "safety": {
+        "forbidden_leakage": 0,
+        "resolved_leakage": 0,
+        "secret_leakage": 0,
+        "superseded_leakage": 0,
+        "wrong_project_leakage": 0
+      },
+      "scored_count": 30,
+      "slot": "v1",
+      "source_memory_revision": 0,
+      "task_set_fingerprint": "sha256:ed2e65489500c5084c69869b0e506ba608eca72d2443f17102643d2a484e3628"
+    }
+  },
+  "quality": {
+    "reason": null,
+    "state": "MEASURED"
+  },
+  "report_type": "brain_eleven_w06c0r1_feasibility",
+  "schema_version": 1,
+  "source": {
+    "holdout_included": true,
+    "k_values": [
+      1,
+      3,
+      5,
+      10
+    ],
+    "noise_count": 24,
+    "seed": 17,
+    "source_fingerprint": "sha256:c967074ac969999e48c97101c878d5896539416e9893675923b0fd306ef3d510",
+    "task_set_fingerprint": "sha256:ed2e65489500c5084c69869b0e506ba608eca72d2443f17102643d2a484e3628"
+  }
+}
