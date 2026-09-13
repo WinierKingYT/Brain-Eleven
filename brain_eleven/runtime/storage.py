@@ -51,6 +51,11 @@ class RuntimeConfig:
         # The key was introduced additively so existing vaults keep the
         # pre-B1 behavior until an operator explicitly enables it.
         value.setdefault('b1_human_approval', False)
+        retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
+        # This is an additive rollout gate.  Invalid values fail closed and
+        # are represented by bounded telemetry only.
+        value['retrieval_mode'] = retrieval_mode if retrieval_mode in {'V1_LEGACY', 'W06B_TASK_AWARE'} else 'V1_LEGACY'
+        value['retrieval_mode_telemetry'] = None if retrieval_mode in {'V1_LEGACY', 'W06B_TASK_AWARE'} else 'RETRIEVAL_MODE_INVALID'
         if not isinstance(value['b1_human_approval'], bool):
             raise ValueError('Invalid B1 human approval configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):

@@ -71,7 +71,10 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     if not project:
         return {'status': 'SCOPE_DISABLED', 'context': '', 'selected_ids': []}
     task = TaskStateComposer(vault, project_root).compose(request)
-    result = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+    if config.get('retrieval_mode') == 'W06B_TASK_AWARE' and event == 'UserPromptSubmit':
+        result = compile_task_w06b(vault, task, budget=min(budget, 1024), human_approval=config.get('b1_human_approval', False))
+    else:
+        result = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
         from types import SimpleNamespace
@@ -86,7 +89,8 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     current_project = allowed(vault, project_root)
     if current_config['mode'] == 'OFF' or not current_project or current_project['project_id'] != project['project_id']:
         result.update(status='SCOPE_DISABLED', context='', selected_ids=[])
-    elif result.get('input_revisions') and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ())):
+    elif (config.get('retrieval_mode') != 'W06B_TASK_AWARE' and result.get('input_revisions')
+          and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ()) )):
         result.update(status='STALE_INPUT', context='', selected_ids=[])
     result['delivered'] = current_config['mode'] in {'CANARY', 'ACTIVE'} and bool(result.get('context'))
     telemetry = {key: value for key, value in result.items() if key != 'context'}
@@ -95,6 +99,37 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     write_json(runtime.root / 'last-context.json', telemetry)
     result['elapsed_ms'] = telemetry['elapsed_ms']
     return result
+
+
+def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
+    """Native UserPromptSubmit W-06B path; SessionStart never calls this."""
+    from brain_eleven._legacy import load_legacy_module
+    from scripts.capture_safety import evaluate_capture
+    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
+    project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
+    if not project_id:
+        return {'status': 'SCOPE_DISABLED', 'context': '', 'selected_ids': [], 'provider': 'V1'}
+    compiler = compiler_type(str(vault), project_id=project_id)
+    document = compiler.memory_store.load()
+    compiler.memories = document['validated_memory']
+    compiler.source_memory_revision = document['revision']
+    compiler._resolve_current_state()
+    source_state_revision = compiler.source_state_revision
+    from .task_aware import select
+    result = select(compiler, task.task, budget=budget, human_approval=human_approval)
+    result['project_id'] = project_id
+    # W-06B uses the legacy compiler projection; its state revision is an
+    # opaque scalar, unlike the V2 adapter's per-project mapping.
+    result['input_revisions'] = {'memory': document['revision'], 'state_revision': source_state_revision}
+    current_document = compiler.memory_store.load()
+    compiler._resolve_current_state()
+    if (current_document.get('revision') != document['revision'] or
+            compiler.source_state_revision != source_state_revision):
+        return {'status': 'STALE_INPUT', 'context': '', 'selected_ids': [], 'provider': 'V1',
+                'input_revisions': result['input_revisions']}
+    if result.get('context') and (contains_secret(result['context']) or not evaluate_capture(result['context']).accepted):
+        result.update(status='SAFETY_REJECTED', context='', selected_ids=[])
+    return {key: value for key, value in result.items() if key != 'selected'}
 
 
 def compile_task(vault, task, *, routing=None, budget=3000):
