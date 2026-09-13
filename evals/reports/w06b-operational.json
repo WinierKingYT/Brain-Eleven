@@ -1,31 +1,31 @@
 {
-  "implementation_sha": "da356bd14a4bb8fbc70f10be8f7ba59504f16fe6",
+  "implementation_sha": "06644facb12c2d05cdd523d6f929adf3c0c8aa74",
   "repeats_per_case": 30,
   "report_type": "brain_eleven_w06b_operational",
   "schema_version": 1,
-  "source_fingerprint": "sha256:600e18308f0a86c72f66dd4782ef323ecd82e2f934c12996d999331da20020b6",
+  "source_fingerprint": "sha256:1ae785a41dbee49cc86d50d58cd59f8b425c25a6cb3c0c70c742cf678f7d9284",
   "splits": {
     "dev": {
-      "cold_max_ms": 2.225,
-      "cold_p95_ms": 1.304,
+      "cold_max_ms": 2.31,
+      "cold_p95_ms": 1.082,
       "corpus_fingerprint": "sha256:97913b5e78d2c00eae0aa4823bc1281aa0631ff923e5b320544289fea564d8bd",
       "latency_gate": "PASS",
       "max_selected_items": 5,
       "selection_count_gate": "PASS",
       "task_count": 70,
-      "warm_max_ms": 7.286,
-      "warm_p95_ms": 1.306
+      "warm_max_ms": 2.42,
+      "warm_p95_ms": 1.25
     },
     "test": {
-      "cold_max_ms": 7.07,
-      "cold_p95_ms": 1.291,
+      "cold_max_ms": 6.706,
+      "cold_p95_ms": 1.261,
       "corpus_fingerprint": "sha256:3a3394762e6003bdfa6282dc5db2365261f9068b301f07fb3a0a5b6a932d2188",
       "latency_gate": "PASS",
       "max_selected_items": 5,
       "selection_count_gate": "PASS",
       "task_count": 60,
-      "warm_max_ms": 2.667,
-      "warm_p95_ms": 1.226
+      "warm_max_ms": 8.113,
+      "warm_p95_ms": 1.21
     }
   }
 }

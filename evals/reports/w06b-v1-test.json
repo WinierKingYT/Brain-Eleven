@@ -1788,11 +1788,11 @@
     "candidate_content_fingerprint": "sha256:2b1ac7d450eb2d8b9660a719ba4d77627edf3730e08339c5d693959f3b3b219f",
     "candidate_order_fingerprint": "sha256:e6773f8158138c9f7fb37c1720adb4ad47eb459312a77cb9e69ac1d9d40f72b3",
     "fixture_seed": 17,
-    "git_sha": "da356bd14a4bb8fbc70f10be8f7ba59504f16fe6",
+    "git_sha": "06644facb12c2d05cdd523d6f929adf3c0c8aa74",
     "noise_count": 24,
     "normalization": "first_k_provider_order",
     "retrieval_k": 10,
-    "source_fingerprint": "sha256:600e18308f0a86c72f66dd4782ef323ecd82e2f934c12996d999331da20020b6",
+    "source_fingerprint": "sha256:1ae785a41dbee49cc86d50d58cd59f8b425c25a6cb3c0c70c742cf678f7d9284",
     "source_memory_revision": 0,
     "tie_break": "provider_order"
   }
