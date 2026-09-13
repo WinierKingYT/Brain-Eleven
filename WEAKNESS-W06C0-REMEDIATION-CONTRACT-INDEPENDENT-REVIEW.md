@@ -203,3 +203,43 @@ It is not a P1-A implementation regression.
 **Final P1-A verdict: SHIP.** The P1-A replay guard, canonical path, split
 guard, evidence provenance, seal binding, and exact governance scope are
 accepted. P1-B remains unimplemented and independently gated.
+
+## P1-B implementation review — exact HEAD `9f67889`
+
+**Verdict: FIX-FIRST**
+
+Independent checks performed:
+
+- Focused W-06C0 + W-06C0R1 suites: **31 passed**.
+- Historical W-06C0 end revision resolves to the full
+  `f676c91d0e41a7523dc2b96a131814b983401456` and is an ancestor of HEAD.
+- Invalid and non-ancestor scope ends fail closed.
+- The pinned old evaluator blob hash, W06C0R1 source/manifest/seal, and
+  holdout artifact checks pass at the committed values.
+- W06C0R1 scope verification, critical flake8, compileall, and diff checks
+  pass. No production runtime paths changed.
+
+### Blocker B-02 — compatibility metadata is not actually pinned
+
+`_historical_scope_compatibility()` trusts the current contents of
+`evals/w06c0r1/historical_scope_compat.json`. Its `compatibility_id` is checked,
+but `scope_end_revision` and `expected_blob_sha256` are not compared against
+immutable code constants or a separately authenticated metadata fingerprint.
+The metadata path is inside the broadly allowed `evals/w06c0r1/` prefix.
+
+I reproduced the bypass without changing tracked files: using a temporary
+metadata object with the same compatibility ID, the current HEAD as
+`scope_end_revision`, and the current old evaluator blob hash caused
+`verify_scope_diff()` to return `PASS`. A later edit to the tracked metadata
+could therefore authorize a different old evaluator revision/blob while the
+scope gate still reports success. This violates the contract's “pinned,
+one-time” exception and its requirement that later edits fail closed.
+
+The implementation must authenticate the metadata itself or hard-bind the
+expected full scope-end revision and old evaluator blob hash in a separately
+versioned verifier path, then add a test that mutates both metadata values to
+valid-looking alternatives and expects a hard failure. The exact additional
+path rejection test should remain as well.
+
+Until B-02 is closed and independently rechecked, P1-B cannot be accepted as
+SHIP.
