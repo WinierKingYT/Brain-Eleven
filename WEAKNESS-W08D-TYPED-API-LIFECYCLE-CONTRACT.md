@@ -1,9 +1,9 @@
 # W-08D Typed API Lifecycle Contract
 
-PACKAGE: W-08D  
-STATUS: REVIEW PENDING — implementation not authorized  
-PROGRAM: Engineering Weak-Point Improvement Goal  
-PHASE 20: FROZEN / LOCKED  
+PACKAGE: W-08D
+STATUS: REVIEW PENDING — implementation not authorized
+PROGRAM: Engineering Weak-Point Improvement Goal
+PHASE 20: FROZEN / LOCKED
 V2: SHADOW
 
 ## Objective
@@ -69,10 +69,22 @@ script-to-package migration.
    lifecycle operation that preserves its lock, atomic replace, backup, and
    `expected_revision` CAS semantics. No endpoint may write JSON directly or
    call `MemoryStore.replace` with an unverified revision.
-2. **Closed lifecycle vocabulary.** The API may accept only the lifecycle
-   operations/statuses explicitly supported by the current manager and schema.
-   Unknown status values fail with a bounded 422 response before any write or
-   graph effect. The implementation must not invent a new lifecycle authority.
+2. **Closed lifecycle vocabulary and transition matrix.** The bounded API
+   surface uses these exact operations and statuses:
+
+   | Operation | Allowed source → target | Required fields |
+   |---|---|---|
+   | ordinary PUT update | `active` (or missing legacy status) → `active` | content/confidence only; no lifecycle fields |
+   | PUT resolve | `active`/missing → `resolved` | bounded `resolved_by` and optional `reason` |
+   | PUT supersede | `active`/missing → `superseded` | non-empty `superseded_by` and optional `reason` |
+   | DELETE | `active`/missing → `deleted` | no lifecycle target in the body |
+   | repeated terminal operation | terminal → same terminal status | no-op response; no revision/graph write |
+
+   `resolved`, `superseded`, and `deleted` are terminal for this package;
+   terminal → another status, `deleted` through PUT, empty/unknown statuses,
+   and missing supersession targets fail with fixed 422 codes. The
+   implementation must preserve existing manager field names and timestamps;
+   it may add a narrow typed adapter, but must not invent a second authority.
 3. **Legal transitions only.** Existing active/resolved/superseded/deleted
    semantics, timestamps, actor/source fields, supersession links, and
    resolution notes must remain compatible with manager behavior. Illegal
@@ -82,10 +94,14 @@ script-to-package migration.
    API behavior, but it must use a typed lifecycle operation and preserve the
    existing response/status code and CAS behavior. It must not silently erase
    lifecycle lineage or create a status shape the manager cannot read.
-5. **Target and scope validation.** Missing IDs remain 404. Project/scope
-   metadata and fingerprint recomputation remain deterministic and must not
-   allow a project-scoped record to become global accidentally. Any required
-   project identity must use the existing opaque registry identity.
+5. **Target and scope validation.** Missing IDs remain 404. `MemoryUpdate`
+   gains optional `project_id` only as a request-boundary check; DELETE gains
+   the same optional query value. For a global record the value is ignored.
+   For a project-scoped record it is required and must equal the stored opaque
+   `project_id`; absent or mismatched values fail with `PROJECT_SCOPE_REQUIRED`
+   or `PROJECT_SCOPE_MISMATCH` before any write. `project_root` is never
+   accepted by these mutations and absolute roots never enter canonical data.
+   Fingerprint recomputation must not turn a project record global.
 6. **Graph consistency.** A graph rebuild/invalidation occurs only after a
    successful canonical commit. If rebuild fails, the API returns the existing
    bounded degraded/error behavior and must not claim a successful canonical
@@ -96,8 +112,14 @@ script-to-package migration.
    failed validation or lifecycle rejection must not increment the revision.
    No hidden retry is allowed.
 8. **Bounded errors and privacy.** API errors must not expose prompt content,
-   project roots, filesystem paths, secrets, or raw tracebacks. Existing public
-   error codes/statuses remain stable; new lifecycle failures use fixed codes.
+   project roots, filesystem paths, secrets, or raw tracebacks. The fixed
+   response table is: 404 `MEMORY_NOT_FOUND`; 409
+   `MEMORY_STORE_REVISION_CONFLICT`; 422 `LIFECYCLE_TRANSITION_INVALID`,
+   `PROJECT_SCOPE_REQUIRED`, `PROJECT_SCOPE_MISMATCH`, or
+   `CAPTURE_SAFETY_REJECTED`; 503 `GRAPH_PROJECTION_DEGRADED` when canonical
+   commit succeeded but the derived rebuild failed. A 503 payload must include
+   only `canonical_status: committed`, the bounded memory ID, and the fixed
+   projection code; it must never roll back or claim the graph is current.
 
 ## Explicit non-goals
 
@@ -113,12 +135,33 @@ script-to-package migration.
 
 ## Required implementation evidence
 
+### Caller inventory at source revision `ecee32b`
+
+- API mutation definitions/callers: `scripts/search-api.py:615-671` and
+  `:673-713`; the existing endpoint tests are
+  `tests/test_search_api.py:335-401`.
+- Lifecycle authority: `scripts/memory-lifecycle.py:28-184`, CLI dispatch at
+  `:191-239`, and package bridge `brain_eleven/lifecycle/__init__.py:1-20`.
+- Dedupe lifecycle caller: `brain_eleven/lifecycle/dedupe.py:17,69-91`, with
+  legacy adapter `scripts/dedupe-validated-memory.py:31-35` and tests in
+  `tests/test_lifecycle_dedupe.py:14-187`.
+- Existing lifecycle compatibility tests:
+  `tests/test_memory_lifecycle.py:94-305` and
+  `tests/test_pre12_memory_state_caller_migration.py:247`.
+
+The API endpoint is the only current HTTP lifecycle mutation surface. The
+manager, dedupe tool, and their tests must remain behaviorally unchanged;
+their caller inventory is included to prevent a new API adapter from silently
+forking lifecycle semantics.
+
 ### Focused behavior tests
 
 Add tests without weakening existing assertions in `tests/test_search_api.py`
 and lifecycle tests. The new evidence must cover:
 
 - unknown status rejection with no revision/graph effect;
+- the complete matrix above, including required `project_id` behavior,
+  terminal no-op/rejection, and fixed error codes;
 - each legal manager-supported transition and illegal transition rejection;
 - delete parity, lifecycle metadata/lineage preservation, and repeat delete;
 - stale expected revision and concurrent writer conflict;
