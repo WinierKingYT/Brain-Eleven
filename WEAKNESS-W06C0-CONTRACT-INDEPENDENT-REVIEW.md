@@ -1,8 +1,8 @@
 # W-06C0 Contract Independent Review
 
 **Contract reviewed:** `WEAKNESS-W06C0-RETRIEVAL-FEASIBILITY-CONTRACT.md`
-**Revision reviewed:** `872811d` (`docs(w06c0): align answerability vocabulary`)
-**Review type:** read-only contract review
+**Revision reviewed:** `4e6d912540a418218126c3f0ed29637c4941708e`
+**Review type:** read-only contract re-review
 **Production changes:** none
 **Predecessor evidence:** W-06B independent `RETHINK` at `a26912c`; W-09A evaluation boundary independently `SHIP` at `31a436c` / review commit `c6dc3bb`.
 
@@ -145,3 +145,41 @@ metric normalization and provider-matrix rules are not yet precise enough to
 authorize implementation without risking a new, non-reproducible benchmark.
 No production implementation, retrieval tuning, V2 promotion or Phase 20 work
 is authorized until these amendments receive independent review.
+
+## Re-review at `4e6d912`
+
+The amended contract was re-read at the exact requested revision. The previous
+findings are resolved as follows:
+
+| Finding | Verification | Result |
+|---|---|---|
+| F1 — corpus location/manifest/fingerprints | `evals/corpus-v3/`, fixed `dev`/`test`/`holdout` layout and counts, manifest schema/version, normalized file hashes and length-prefixed split fingerprint are frozen in §3.2. | RESOLVED |
+| F2 — retain versus remove | §2.1 retains every reviewed case in its original split; exclusion is by answerability status, while removal requires a later corpus version and manifest reason. | RESOLVED |
+| F3 — review authority/reasons/holdout | §3.1 freezes the six-value reason enum, two independent labelers, disagreement to `review_required`, review metadata, and sealed pre-tuning HOLDOUT labels. | RESOLVED |
+| F4 — K/provider normalization | §4 freezes the six provider slots and normalized availability/run-status/fallback behavior; §5 freezes `K={1,3,5,10}`, ordered truncation, empty selection and duplicate evidence-failure behavior. | RESOLVED |
+| F5 — allowlist/zero diff | §6.1 provides an exact tracked-path allowlist, explicit forbidden paths, fail-before-report behavior and before/after tree proof. | RESOLVED |
+| F6 — provider parity | §7 requires all six slots in DEV/TEST feasibility rows, with explicit `NOT_MEASURED` rows for unavailable optional providers. | RESOLVED |
+| F7 — v3/W09A status mapping | §4.1 scores only `answerable`, excludes `unanswerable`/`review_required` while still running safety checks, rejects unknown literals, and preserves corpus-v2/W09A behavior byte-for-byte. | RESOLVED |
+
+The final wording correction in `4e6d912` removes the only remaining metric
+ambiguity: duplicate provider IDs are rejected as evidence failures and are not
+silently deduplicated. The exact status vocabulary is consistent throughout
+the contract; the legacy `status == "NO"` mention is explicitly scoped to the
+unchanged W-09A corpus-v2 adapter.
+
+The exact commit diff contains only the contract document; no production,
+retrieval, evaluator implementation, corpus-v2, or Phase 20 files changed in
+this re-review. The contract continues to require content-free reports,
+provider isolation, hard-zero safety gates, sealed HOLDOUT handling, and an
+independent review before any successor runtime package is considered.
+
+## Final verdict
+
+**SHIP**
+
+The W-06C0 feasibility contract is now sufficiently bounded and reproducible
+to authorize the evaluation-only implementation package. This verdict does
+not promote a provider, change active retrieval, open Phase 20, or authorize
+W-06C1; those remain behind the contract's evidence and independent-review
+gates. Unavailable providers must remain `NOT MEASURED`, and any quality
+failure must remain visible.
