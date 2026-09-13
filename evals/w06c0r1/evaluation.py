@@ -41,6 +41,35 @@ HISTORICAL_SCOPE_COMPAT_METADATA = ROOT / "evals" / "w06c0r1" / "historical_scop
 HISTORICAL_SCOPE_COMPAT_ID = "W06C0-SCOPE-COMPAT-P1B"
 HISTORICAL_SCOPE_COMPAT_SCOPE_END_REVISION = "f676c91d0e41a7523dc2b96a131814b983401456"
 HISTORICAL_SCOPE_COMPAT_BLOB_SHA256 = "sha256:e375d337a52155d867c12b2f334c56ecf0875d1d153cb99a48980230ae05b3be"
+IMPLEMENTATION_SCOPE_END_REVISION = "0b5a262c437da13813e542c569857a68c2db7a69"
+SCOPE_DRIFT_PIN = ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json"
+SCOPE_DRIFT_PIN_ID = "W06C0R1-SCOPE-DRIFT-P1"
+SCOPE_DRIFT_MAINTENANCE_FILES = frozenset(
+    {
+        "evals/corpus-v4/manifest.json",
+        "evals/corpus-v4/holdout/seal.json",
+        "evals/w06c0r1/evaluation.py",
+        "evals/w06c0r1/evidence/dev.json",
+        "evals/w06c0r1/evidence/test.json",
+        "evals/w06c0r1/evidence/holdout.json",
+        "tests/test_w06c0r1_contract.py",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
+    }
+)
+SCOPE_DRIFT_DOCUMENTATION_FILES = frozenset(
+    {
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-PACKAGE-REPORT.md",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md",
+        "ENGINEERING-WEAK-POINTS-AUDIT.md",
+    }
+)
+POST_SCOPE_PROTECTED_PREFIXES = (
+    "evals/w06c0r1/",
+    "evals/corpus-v4/",
+    "evals/w06c0/",
+    "tests/test_w06c0r1_",
+)
 EVALUATOR_VERSION = "w06c0r1-v1"
 CORPUS_VERSION = 4
 PROVENANCE_VERSION = "w06c0r1-provenance-v1"
@@ -177,6 +206,113 @@ def _load_json(path: Path, error: str) -> Mapping[str, Any]:
     return value
 
 
+def _git_changed_paths(root: Path, *revisions: str) -> tuple[str, ...]:
+    """Return normalized tracked paths changed by a git diff expression."""
+
+    try:
+        completed = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "diff",
+                "--name-only",
+                "--diff-filter=ACDMRTUXB",
+                *revisions,
+                "--",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise W06C0R1Error("cannot inspect exact scope diff") from exc
+    return tuple(sorted({line.replace("\\", "/") for line in completed.stdout.splitlines() if line.strip()}))
+
+
+def _resolve_revision(root: Path, revision: str, label: str) -> str:
+    try:
+        resolved = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--verify", f"{revision}^{{commit}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise W06C0R1Error(f"cannot resolve {label} revision") from exc
+    if not re.fullmatch(r"[0-9a-f]{40}", resolved):
+        raise W06C0R1Error(f"{label} revision could not be resolved")
+    return resolved
+
+
+def _require_ancestor(root: Path, earlier: str, later: str, label: str) -> None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "merge-base", "--is-ancestor", earlier, later],
+            check=False,
+            capture_output=True,
+        )
+    except OSError as exc:
+        raise W06C0R1Error(f"cannot verify {label} revision ancestry") from exc
+    if result.returncode != 0:
+        raise W06C0R1Error(f"{label} revision is not an ancestor")
+
+
+def _file_sha(path: Path, error: str) -> str:
+    if path.is_symlink() or not path.is_file():
+        raise W06C0R1Error(error)
+    try:
+        return _sha(_normalized_bytes(path))
+    except OSError as exc:
+        raise W06C0R1Error(error) from exc
+
+
+def _load_scope_drift_pin(root: Path) -> Mapping[str, Any]:
+    """Validate the one-time post-end maintenance evidence pin."""
+
+    metadata = _load_json(root / SCOPE_DRIFT_PIN.name, "scope drift pin is unreadable")
+    if (
+        metadata.get("schema_version") != 1
+        or metadata.get("compatibility_id") != SCOPE_DRIFT_PIN_ID
+        or metadata.get("scope_end_revision") != IMPLEMENTATION_SCOPE_END_REVISION
+        or metadata.get("maintenance_paths") != sorted(SCOPE_DRIFT_MAINTENANCE_FILES)
+    ):
+        raise W06C0R1Error("scope drift pin is not pinned")
+    expected_source = metadata.get("source_fingerprint")
+    expected_manifest = metadata.get("manifest_hash")
+    expected_seal = metadata.get("seal_hash")
+    expected_evidence = metadata.get("evidence_hashes")
+    if (
+        not isinstance(expected_source, str)
+        or not isinstance(expected_manifest, str)
+        or not isinstance(expected_seal, str)
+        or not isinstance(expected_evidence, Mapping)
+        or set(expected_evidence) != {"dev", "test", "holdout"}
+    ):
+        raise W06C0R1Error("scope drift pin fields are invalid")
+    if source_fingerprint(root) != expected_source:
+        raise W06C0R1Error("scope drift pin source fingerprint mismatch")
+    manifest = _load_json(root / "evals" / "corpus-v4" / "manifest.json", "scope drift manifest is unreadable")
+    if manifest.get("manifest_hash") != expected_manifest:
+        raise W06C0R1Error("scope drift pin manifest hash mismatch")
+    seal = _load_json(root / "evals" / "corpus-v4" / "holdout" / "seal.json", "scope drift seal is unreadable")
+    if seal.get("seal_hash") != expected_seal:
+        raise W06C0R1Error("scope drift pin seal hash mismatch")
+    for split in ("dev", "test", "holdout"):
+        evidence_path = root / "evals" / "w06c0r1" / "evidence" / f"{split}.json"
+        if _file_sha(evidence_path, f"scope drift {split} evidence is unreadable") != expected_evidence[split]:
+            raise W06C0R1Error(f"scope drift pin {split} evidence hash mismatch")
+    return metadata
+
+
+def _post_scope_owned_paths(paths: Sequence[str]) -> tuple[str, ...]:
+    return tuple(
+        path
+        for path in paths
+        if any(path.startswith(prefix) for prefix in POST_SCOPE_PROTECTED_PREFIXES)
+    )
+
+
 def _case_files(root: Path, split: str) -> list[Path]:
     return sorted(path for path in (root / split).glob("*.json") if path.name != "seal.json")
 
@@ -270,46 +406,75 @@ def _historical_scope_compatibility(root: Path, changed: Sequence[str]) -> dict[
     return {"path": compat_path, "scope_end_revision": resolved_end, "expected_blob_sha256": expected}
 
 
-def verify_scope_diff(*, base_revision: str = IMPLEMENTATION_BASE_REVISION, root: Path | str = ROOT) -> dict[str, Any]:
+def verify_scope_diff(
+    *,
+    base_revision: str = IMPLEMENTATION_BASE_REVISION,
+    scope_end_revision: str = IMPLEMENTATION_SCOPE_END_REVISION,
+    root: Path | str = ROOT,
+) -> dict[str, Any]:
+    """Verify the frozen W-06C0R1 range and bounded post-end maintenance pin."""
+
     root = Path(root).resolve()
     if not re.fullmatch(r"[0-9a-f]{7,40}", base_revision):
         raise W06C0R1Error("scope base revision is invalid")
-    try:
-        diff = subprocess.run(
-            # Compare the requested base with the complete current index and
-            # worktree.  A scope check that only compares committed HEADs can
-            # pass trivially while the package is still staged or uncommitted.
-            ["git", "-C", str(root), "diff", "--name-only", "--diff-filter=ACDMRTUXB", base_revision, "--"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        head = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise W06C0R1Error("cannot verify exact implementation scope") from exc
-    changed = tuple(sorted({line.replace("\\", "/") for line in diff.stdout.splitlines() if line.strip()}))
-    compatibility = _historical_scope_compatibility(root, changed)
-    invalid = tuple(
+    if not re.fullmatch(r"[0-9a-f]{40}", scope_end_revision):
+        raise W06C0R1Error("scope end revision is invalid")
+    resolved_base = _resolve_revision(root, base_revision, "scope base")
+    resolved_end = _resolve_revision(root, scope_end_revision, "scope end")
+    head = _resolve_revision(root, "HEAD", "current HEAD")
+    _require_ancestor(root, resolved_base, resolved_end, "scope end")
+    _require_ancestor(root, resolved_end, head, "current HEAD")
+
+    historical_changed = _git_changed_paths(root, resolved_base, resolved_end)
+    worktree_changed = _git_changed_paths(root, "HEAD")
+    post_end_changed = _git_changed_paths(root, resolved_end, head)
+    compatibility = _historical_scope_compatibility(root, historical_changed)
+
+    invalid_historical = tuple(
         path
-        for path in changed
+        for path in historical_changed
         if path not in ALLOWED_SCOPE_FILES
         and not any(path.startswith(prefix) for prefix in ALLOWED_SCOPE_PREFIXES)
         and not (compatibility and path == compatibility["path"])
     )
-    forbidden = tuple(path for path in invalid if any(path.startswith(prefix) for prefix in FORBIDDEN_SCOPE_PREFIXES))
-    if invalid:
+    invalid_worktree = tuple(
+        path
+        for path in worktree_changed
+        if path not in ALLOWED_SCOPE_FILES
+        and path not in SCOPE_DRIFT_DOCUMENTATION_FILES
+        and path not in SCOPE_DRIFT_MAINTENANCE_FILES
+        and not any(path.startswith(prefix) for prefix in ALLOWED_SCOPE_PREFIXES)
+        and not (compatibility and path == compatibility["path"])
+    )
+    if invalid_historical or invalid_worktree:
+        invalid = tuple(sorted(set(invalid_historical + invalid_worktree)))
         raise W06C0R1Error(f"scope allowlist violation: {list(invalid)}")
+
+    post_scope_owned = _post_scope_owned_paths(post_end_changed)
+    if post_scope_owned:
+        pin = _load_scope_drift_pin(root)
+        unpinned = tuple(path for path in post_scope_owned if path not in SCOPE_DRIFT_MAINTENANCE_FILES)
+        if unpinned:
+            raise W06C0R1Error(f"post-scope package paths changed after pinned end: {list(unpinned)}")
+    else:
+        pin = None
+
+    forbidden = tuple(
+        path
+        for path in sorted(set(invalid_historical + invalid_worktree))
+        if any(path.startswith(prefix) for prefix in FORBIDDEN_SCOPE_PREFIXES)
+    )
     return {
         "base_revision": base_revision,
+        "scope_end_revision": resolved_end,
         "head_revision": head,
-        "changed_paths": list(changed),
+        "historical_changed_paths": list(historical_changed),
+        "post_end_changed_paths": list(post_end_changed),
+        "worktree_changed_paths": list(worktree_changed),
+        "changed_paths": list(sorted(set(historical_changed + worktree_changed))),
         "forbidden_paths": list(forbidden),
         "historical_scope_compatibility": compatibility,
+        "scope_drift_pin": dict(pin) if pin is not None else None,
         "status": "PASS",
     }
 
