@@ -5,6 +5,7 @@
 `57365b8` → `6fdaf7f` → `8203c05` → `6de8474` → `fb82bd8` → `42f45b6`
 → `ca42787` → `aa44ac6` → `b79846b` → `4e61526` → `4bde156` →
 `a032144` → `f69bc55` → `ed937b5`
+→ `0b5a262`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -78,23 +79,23 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 - This package measures feasibility; it does not tune ranking, install an
   embedding provider, or change runtime retrieval.
-- P1-A is independently SHIP. P1-B implementation has passed local focused and
-  full regression checks but still requires its own independent read-only
-  review before the parent package can close.
+- P1-A and P1-B are independently SHIP. No open P0/P1 remains in this
+  package; retrieval quality itself remains measured but not promoted.
 
 ## Independent review
 
-**REVIEW PENDING.** P1-A is independently SHIP. P1-B requires independent
-verification of the fixed historical range, pinned blob exception, fail-closed
-unpinned edits, and full regression before W-06C0R1 can close.
+**INDEPENDENT REVIEW: SHIP.** P1-A final seal-binding review and P1-B
+immutable-pin final review are recorded in
+`WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`; final review
+commit `32d158f`.
 
 ## Score
 
 **Before:** Evaluation quality 6.5/10 (W-06C0R1 blocker: no measurable
 TEST/HOLDOUT quality).
-**After:** P1-A closes the alternate-path replay defect in the evaluator, but
-no retrieval-quality score increase is claimed until an independent reviewer
-accepts the implementation and the historical full-suite failure is
-dispositioned by P1-B.
+**After:** Evaluation evidence is now answerable and provenance-complete for
+DEV/TEST/HOLDOUT, final-holdout replay is fail-closed, and the historical
+scope gate is bounded to its immutable package end. No retrieval-quality or
+runtime promotion score increase is claimed.
 
-**VERDICT: REVIEW PENDING**
+**VERDICT: SHIP**

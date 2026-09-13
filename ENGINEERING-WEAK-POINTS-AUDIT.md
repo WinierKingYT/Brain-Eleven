@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `a26912c`
+**Repository revision:** `32d158f`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -141,8 +141,11 @@ reviewed corpus/provenance remediation contract closes these gaps.
 independently reviewed `SHIP` at `f391dd6` (contract revision `946b5cd`). It
 freezes an immutable corpus-v4 target, exact candidate/order/task fingerprints,
 opaque provider task handles, and machine-checkable HOLDOUT sealing. Its
-evaluation-only implementation is now authorized within the allowlist; no
-runtime retrieval work is authorized until that package independently ships.
+evaluation-only implementation is independently reviewed `SHIP` at exact
+review head `32d158f`. The bounded P1-A canonical final-holdout path and P1-B
+historical W-06C0 scope compatibility are both closed. Focused W-06C0 plus
+W-06C0R1 tests pass 31/31, full suite passes 1112 with two dependency
+warnings, and no runtime retrieval or Phase 20 work was introduced.
 
 ### W-07 — Reminder/continuity is not an automatic product path (P2)
 
@@ -241,12 +244,9 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** A bounded W-06C0 corpus/provenance remediation contract must
-be independently reviewed before implementation. It must leave corpus-v3
-immutable, add answerable DEV/TEST/HOLDOUT evidence in a new version, and
-freeze a reproducible two-labeler provenance recipe without weakening the
-quality floor or safety gates. Only after that package is accepted may a
-successor W-06 retrieval contract be designed. W-07B native
+**Next package:** W-06C0R1 is closed. The next bounded work may be a successor
+W-06 retrieval contract, designed against the now-shipped corpus-v4 evidence;
+it must not tune HOLDOUT, promote V2, or open Phase 20. W-07B native
 maintenance/reminder delivery remains a separate P2 package and is not opened
 until its trigger, freshness, idempotence, scope and privacy contract is
 independently reviewed.
@@ -267,6 +267,9 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
+W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
+head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
+review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without
