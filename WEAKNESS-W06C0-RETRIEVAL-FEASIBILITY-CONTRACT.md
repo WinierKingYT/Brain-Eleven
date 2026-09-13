@@ -136,10 +136,17 @@ answerability_reason_version: "w06c0-v1"
 Each split contains exactly the stated number of JSON case files. The manifest
 stores a SHA-256 for every normalized UTF-8 file (CRLF and CR normalized to
 LF), plus a split fingerprint formed by sorting relative POSIX paths and
-hashing length-prefixed `(relative_path, normalized_bytes)` frames. Reports
+hashing length-prefixed `(relative_path, normalized_bytes)` frames. The
+`manifest_sha256` is the SHA-256 of the canonical UTF-8 JSON encoding of the
+manifest with its own `manifest_sha256` field omitted (`sort_keys=true`,
+`separators=(',', ':')`, no trailing newline). The evaluator source
+fingerprint is the SHA-256 over exactly the sorted, tracked files matching
+`evals/w06c0/**/*.py` and `evals/w06c0/**/*.json`, using the same LF
+normalization and 8-byte big-endian length-prefixed path/content framing; both
+hashes use the `sha256:<64 lowercase hex>` form. Missing, extra, duplicate,
+symlinked, or untracked source files in these allowlists fail closed. Reports
 must copy the manifest hash, split fingerprint, source fingerprint, case count,
-scored count, and excluded counts. Missing, extra, duplicate, or symlinked
-case files fail closed.
+scored count, and excluded counts.
 
 - `DEV` is for implementation/evaluator iteration.
 - `TEST` is the public acceptance comparison and is not used to tune provider
@@ -177,7 +184,17 @@ provider is a measured result, never a synthetic vector and never a pass.
 Provider reports must include provider ID, model, revision/schema identity,
 requested slot, actual provider ID, availability (`AVAILABLE` or `UNAVAILABLE`),
 run status (`COMPLETE`, `NOT_MEASURED`, or `ERROR`), bounded error code,
-latency, candidate count, selected count, and content-free evidence hashes.
+latency, candidate count, selected count, `source_memory_revision`,
+`candidate_content_fingerprint`, and `candidate_order_fingerprint`. The
+content fingerprint is the SHA-256 of the canonical sorted candidate rows
+(`memory_id`, `type`, `status`, `scope`, `project_id`, and `content`), and the
+order fingerprint is the SHA-256 of the exact ordered candidate ID list plus
+the source revision, both encoded with the same canonical JSON rules and
+`sha256:` prefix. Every provider row in one run must carry identical values
+for these three snapshot fields; any mismatch hard-fails the report. These
+fields are content-free hashes even though the harness computes them from the
+isolated snapshot. Reports must not include raw prompt, memory content,
+transcript, token, credential, or API response text.
 They must not include raw prompt, memory content, transcript, token,
 credential, or API response text. A fallback must identify its actual provider
 and set `availability=AVAILABLE`, `run_status=COMPLETE`, and `fallback=true`;
