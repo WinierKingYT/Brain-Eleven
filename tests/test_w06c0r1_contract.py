@@ -162,11 +162,12 @@ def test_holdout_report_binds_seal_and_unlock_hash():
     assert report["holdout_evidence"]["unlock_token_hash"].startswith("sha256:")
 
 
-def test_holdout_cli_replay_is_rejected_before_provider_run(tmp_path):
+def test_holdout_cli_replay_is_rejected_before_provider_run(monkeypatch, tmp_path):
     from evals.w06c0r1.evaluation import main
 
     output = tmp_path / "holdout.json"
     output.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr("evals.w06c0r1.evaluation.FINAL_HOLDOUT_OUTPUT", output)
     with pytest.raises(W06C0R1Error, match="replay"):
         main([
             "--corpus-version", "4", "--split", "holdout", "--providers", "v1",
