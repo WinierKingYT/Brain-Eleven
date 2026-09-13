@@ -24,7 +24,25 @@ def _files(paths: Iterable[Path], root: Path):
 def source_fingerprint(root: Path = ROOT) -> str:
     paths=[]
     for pattern in SOURCE_GLOBS: paths.extend(root.glob(pattern))
-    return _framed(_files(paths, root))
+    parts=list(_files(paths, root))
+    fixture=root/"evals"/"fixtures"/"phase15-contract.json"
+    if fixture.is_file() and not fixture.is_symlink(): parts.append((fixture.relative_to(root).as_posix(), fixture.read_bytes().replace(b"\r\n",b"\n")))
+    return _framed(parts)
+
+def candidate_fingerprint(vault: Path) -> str:
+    """Fingerprint canonical candidate records without exposing their content."""
+    path = vault / ".claude" / "validated-memory.json"
+    if not path.is_file() or path.is_symlink(): raise ValueError("canonical candidate snapshot unavailable")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    rows = doc.get("validated_memory")
+    if not isinstance(rows, list): raise ValueError("validated_memory snapshot invalid")
+    safe=[]
+    for row in rows:
+        if not isinstance(row, Mapping): raise ValueError("candidate metadata invalid")
+        required=("memory_id","content","type","status")
+        if any(k not in row for k in required): raise ValueError("candidate metadata incomplete")
+        safe.append({k:row[k] for k in required} | {"project_id":row.get("project_id"), "scope":row.get("scope"), "source_revision":doc.get("revision")})
+    return _framed(((str(row["memory_id"]), json.dumps(row, sort_keys=True, ensure_ascii=False).encode()) for row in sorted(safe,key=lambda x:x["memory_id"])))
 
 def corpus_fingerprint(root: Path = CORPUS_ROOT, *, split: str = "public") -> str:
     paths=[root/"manifest.json"] + [p for suite in (("dev","test") if split=="public" else ("holdout",)) for p in (root/suite).glob("*.json")]
