@@ -36,6 +36,8 @@ Allowed files for the implementation/evidence change:
   exception metadata)
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json` (bounded remediation pin; the
   original pin remains an immutable historical artifact)
+- `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json` (final bounded remediation pin;
+  the R1 and R2 pins remain immutable historical artifacts)
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md`
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-PACKAGE-REPORT.md` (evidence only)
 - `ENGINEERING-WEAK-POINTS-AUDIT.md` (ledger evidence only)
@@ -63,7 +65,7 @@ retrieval, capture, canonical store, or Phase 20 file may change.
 5. Commits after the pinned end that touch W-06C0R1-owned source, corpus,
    evidence, or contract-test paths fail closed **unless** they are the exact
    one-time maintenance set recorded in
-   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json`.
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json`.
    That set is limited to the evaluator/test files, generated manifest/seal/
    evidence files listed above, and the pin itself. The pin records exact
    SHA-256 values for the evaluator source fingerprint, manifest, seal, and
@@ -73,14 +75,15 @@ retrieval, capture, canonical store, or Phase 20 file may change.
    `tests/test_w06c0r1_*.py` requires a new bounded package and pin.
    The one-time maintenance set is anchored to the immutable first
    post-end Git commit that introduces
-   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json`. The verifier must resolve that
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json`. The verifier must resolve that
    full commit SHA from Git history, require the protected-path diff from the
    pinned scope end to that anchor to equal the exact maintenance-path set,
    compare every maintenance-path blob to the anchor commit, and reject any
    protected-path change after the anchor. Updating the pin and its hashes
    cannot renew the exception; a later protected change requires a new
-   bounded package and pin. The original P1 pin remains byte-identical and is
-   included in the bounded R2 maintenance set; it cannot be renewed in place.
+   bounded package and pin. The original P1 and R2 pins remain byte-identical
+   and are included in the bounded R3 maintenance set; they cannot be renewed
+   in place.
 6. The historical `ALLOWED_SCOPE_FILES` constant remains unchanged. It is
    evaluated only against the frozen 3f795f9→0b5a262 package diff. For the
    current worktree and post-end diagnostic, the only documentation-only
