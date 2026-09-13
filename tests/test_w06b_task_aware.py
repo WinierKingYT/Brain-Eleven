@@ -73,12 +73,35 @@ def test_non_string_retrieval_modes_fail_closed(runtime):
         assert loaded["retrieval_mode_telemetry"] == "RETRIEVAL_MODE_INVALID"
 
 
-def test_no_need_uses_legacy_selection_with_bounded_task_status(runtime):
+def test_no_need_uses_legacy_selection_with_bounded_task_status(runtime, monkeypatch):
     vault, _ = runtime
     _set_retrieval_mode(vault, "W06B_TASK_AWARE")
+    import brain_eleven.runtime.context as context_module
+    monkeypatch.setattr(
+        context_module,
+        "compile_task_w06b",
+        lambda *args, **kwargs: {
+            "status": "NO_NEED",
+            "task_need": {"status": "NO_NEED", "error_code": None},
+            "context": "",
+            "selected_ids": [],
+            "provider": "V1",
+        },
+    )
+    monkeypatch.setattr(
+        context_module,
+        "compile_task",
+        lambda *args, **kwargs: {
+            "status": "SUCCESS",
+            "context": "legacy",
+            "selected_ids": ["legacy-id"],
+            "provider": "V1",
+        },
+    )
     result = compile_context(vault, vault, "hello", event="UserPromptSubmit")
     assert result.get("task_need_status") == "NO_NEED"
-    assert result.get("provider") != "W06B_TASK_AWARE"
+    assert result.get("provider") == "V1"
+    assert result.get("context") == "legacy"
 
 
 def test_non_user_prompt_event_keeps_legacy_provider(runtime):
