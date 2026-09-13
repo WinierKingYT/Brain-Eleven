@@ -149,17 +149,20 @@ remain open.
 the three-attempt/five-second retry and error boundary, destination
 no-clobber publication with durability evidence, read-time no-follow
 symlink/reparse containment and project-identifier privacy assertions. The
-contract remains implementation-only scope: W-08B code is not yet shipped,
-and W-08C/W-08D remain blocked until its implementation is independently
-reviewed.
+**W-08B implementation status:** `FIX-FIRST` at exact review head `673b39c`
+in `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`. The focused suite (34), full suite
+(1017) and critical static gates pass, but malformed registry validation can
+echo an attacker-controlled project-like value in a backup exception. This
+violates the contract privacy gate; W-08C/W-08D remain blocked until the
+bounded redaction and independent re-review ship.
 
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`.
-**Next package:** W-08B bounded implementation and independent implementation
-review; W-08C/W-08D remain blocked until W-08B ships.
+**Next package:** W-08B privacy correction and independent re-review;
+W-08C/W-08D remain blocked until W-08B ships.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
