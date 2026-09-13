@@ -28,6 +28,12 @@ Allowed files for the implementation/evidence change:
 
 - `evals/w06c0r1/evaluation.py`
 - `tests/test_w06c0r1_contract.py`
+- `evals/corpus-v4/manifest.json` (generated source-fingerprint binding only)
+- `evals/corpus-v4/holdout/seal.json` (generated seal binding only)
+- `evals/w06c0r1/evidence/{dev,test,holdout}.json` (generated evidence
+  source/seal/report bindings only)
+- `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json` (new, hash-pinned maintenance
+  exception metadata)
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md`
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-PACKAGE-REPORT.md` (evidence only)
 - `ENGINEERING-WEAK-POINTS-AUDIT.md` (ledger evidence only)
@@ -53,11 +59,15 @@ retrieval, capture, canonical store, or Phase 20 file may change.
    fails closed. Standing untracked local artifacts are not part of this
    evaluator scope.
 5. Commits after the pinned end that touch W-06C0R1-owned source, corpus,
-   evidence, or contract-test paths must fail closed and require a new bounded
-   package end. This explicitly includes `evals/w06c0r1/evidence/**`,
-   `evals/w06c0r1/evaluation.py`, `evals/w06c0r1/__init__.py`,
-   `evals/w06c0r1/__main__.py`, `evals/corpus-v4/**`,
-   `evals/w06c0/**`, and `tests/test_w06c0r1_*.py`.
+   evidence, or contract-test paths fail closed **unless** they are the exact
+   one-time maintenance set recorded in `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json`.
+   That set is limited to the evaluator/test files, generated manifest/seal/
+   evidence files listed above, and the pin itself. The pin records exact
+   SHA-256 values for the evaluator source fingerprint, manifest, seal, and
+   evidence reports; missing, malformed, or tampered pin data fails closed.
+   After this maintenance set, any further change to
+   `evals/w06c0r1/**`, `evals/corpus-v4/**`, `evals/w06c0/**`, or
+   `tests/test_w06c0r1_*.py` requires a new bounded package and pin.
 6. The historical `ALLOWED_SCOPE_FILES` constant remains unchanged. It is
    evaluated only against the frozen 3f795f9→0b5a262 package diff. For the
    current worktree and post-end diagnostic, the only documentation-only
@@ -88,6 +98,8 @@ retrieval, capture, canonical store, or Phase 20 file may change.
   package-report-only closure edit remains allowed. The four exact
   maintenance-document paths above are the only additional worktree exception;
   no arbitrary documentation path is accepted.
+- Prove the one-time post-end maintenance set passes only with the exact pin,
+  and pin/source/manifest/seal/evidence tampering fails closed.
 - Prove the old compatibility blob/hash and metadata tampering checks still
   fail closed.
 - Run W-06C0 and W-06C0R1 focused suites, critical flake8 (`E9,F63,F7,F82`),
