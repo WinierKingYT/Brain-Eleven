@@ -1,6 +1,6 @@
 # W-06C0R1 — Historical Scope Drift Maintenance Contract
 
-**Status:** CONTRACT REVIEW PENDING  
+**Status:** CONTRACT AMENDMENT REVIEW PENDING  
 **Package:** W-06C0R1-SCOPE-DRIFT  
 **Parent:** frozen W-06C0R1 evaluation/provenance harness  
 **Phase 20:** FROZEN / LOCKED
@@ -68,6 +68,15 @@ retrieval, capture, canonical store, or Phase 20 file may change.
    After this maintenance set, any further change to
    `evals/w06c0r1/**`, `evals/corpus-v4/**`, `evals/w06c0/**`, or
    `tests/test_w06c0r1_*.py` requires a new bounded package and pin.
+   The one-time maintenance set is anchored to the immutable first
+   post-end Git commit that introduces
+   `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json`. The verifier must resolve that
+   full commit SHA from Git history, require the protected-path diff from the
+   pinned scope end to that anchor to equal the exact maintenance-path set,
+   compare every maintenance-path blob to the anchor commit, and reject any
+   protected-path change after the anchor. Updating the pin and its hashes
+   cannot renew the exception; a later protected change requires a new
+   bounded package and pin.
 6. The historical `ALLOWED_SCOPE_FILES` constant remains unchanged. It is
    evaluated only against the frozen 3f795f9→0b5a262 package diff. For the
    current worktree and post-end diagnostic, the only documentation-only
