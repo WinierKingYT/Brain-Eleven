@@ -168,13 +168,14 @@ The stronger graduation target (precision >=0.75, mandatory recall >=0.90) is no
 ### 6.3 Required tests/evidence
 
 1. **Contract and baseline:** exact revision, provider/config/task-need/K/budget fingerprints, V1 baseline reports and split hashes.
-2. **Safety:** wrong project, global/project boundary, inactive/superseded/resolved records, forbidden IDs, unavailable/corrupt source and stale revision cases.
-3. **Quality:** exact/rephrase/related/old-critical/recent-irrelevant/same-keyword/distractor/continuation cases; mandatory recall, precision, MRR, noise and token waste.
-4. **Determinism:** repeat run, shuffled input, equal-score and malformed-field fixtures.
-5. **Budget:** K, token/byte cap, mandatory overflow and p95 latency tests.
-6. **Rollback:** W06B on/off parity and safety regression.
-7. **Regression:** focused current retrieval/context/router/authority tests, full suite, critical flake8 (`E9,F63,F7,F82`), compile/import sanity and `git diff --check`.
-8. **Independent review:** reviewer reads contract, exact diff, baseline/after reports, safety failures and rollback evidence without relying on implementer reasoning.
+2. **Runtime gate/handoff:** `RuntimeConfig` missing/invalid/allowed-value resolution, `compile_context` UserPromptSubmit handoff, SessionStart legacy parity, `/api/context` and launcher parity, and atomic rollback to `V1_LEGACY`.
+3. **Safety:** wrong project, global/project boundary, inactive/superseded/resolved records, forbidden IDs, unavailable/corrupt source and stale revision cases.
+4. **Quality:** exact/rephrase/related/old-critical/recent-irrelevant/same-keyword/distractor/continuation cases; mandatory recall, precision, MRR, noise and token waste.
+5. **Determinism:** repeat run, shuffled input, equal-score and malformed-field fixtures.
+6. **Budget:** K, token/byte cap, mandatory overflow and p95 latency tests.
+7. **Rollback:** W06B on/off parity and safety regression.
+8. **Regression:** focused current retrieval/context/router/authority tests, full suite, critical flake8 (`E9,F63,F7,F82`), compile/import sanity and `git diff --check`.
+9. **Independent review:** reviewer reads contract, exact diff, baseline/after reports, safety failures and rollback evidence without relying on implementer reasoning.
 
 ## 7. Package report template
 
