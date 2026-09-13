@@ -158,8 +158,8 @@ correction `e4df824`. The focused suite (35), full suite (1018) and critical
 static gates pass; malformed registry validation now emits content-free
 errors. W-08C implementation is independently shipped at exact review
  revision `ecee32b` in `WEAKNESS-W08C-INDEPENDENT-REVIEW.md`. W-08D typed API
- lifecycle remains a separate implementation package; its contract is accepted,
- but implementation remains deferred and unauthorized.
+ lifecycle is independently shipped; its focused, combined, full-suite and
+ privacy/CAS evidence is recorded in `WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 **W-08C contract status:** Independently reviewed `SHIP` at `7f175b3` in
 `WEAKNESS-W08C-CONTRACT-INDEPENDENT-REVIEW.md`. The contract freezes the
@@ -174,16 +174,34 @@ W-08D typed API lifecycle contract is independently `SHIP` at `f4d83b1` in
 `WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is independently
 `SHIP` at `a9c64cf` in `WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
+**W-09 audit finding:** Evaluation Evidence Integrity & Gate Semantics is a
+bounded P1 weakness. `evals/ig01c/engine.validate_report()` accepts some
+self-consistent but tampered case/gate rows without reconciling them to the
+source cases; `evals/run.py` can report a safety-only `gate: pass` while the
+quality result is unavailable or materially below target. Exact public/holdout
+measurements remain visible (V1 public precision `0.1800`, V2 public
+precision `0.1472`; V1 holdout `0.1733`, V2 holdout `0.1026`). No retrieval or
+corpus tuning is authorized by this finding.
+
+**W-07B audit finding:** Native maintenance/reminder delivery remains a P2
+weakness. Native SessionEnd/worker paths do not invoke post-session maintenance,
+and native SessionStart does not consume the derived report. A future bounded
+contract must define trigger, revision/freshness, idempotence, project scope and
+privacy-safe signals before implementation; automatic markdown writes remain
+deferred.
+
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** select the next explicitly prioritized weakness package after
-the independently shipped W-08D typed API lifecycle implementation. W-08D is
-closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed mutation
-safety, and 8.0 for API lifecycle reliability.
+**Next package:** W-09 Evaluation Evidence Integrity & Gate Semantics,
+contract `WEAKNESS-W09-EVALUATION-EVIDENCE-CONTRACT.md`, currently review
+pending. Implementation is not authorized until an independent contract
+review returns `SHIP` and the user authorizes the bounded implementation.
+W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
+mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -199,12 +217,11 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
-**Required outcome:** W-08C is independently shipped under its accepted
-contract. W-08D has an accepted bounded contract and still requires its own
-implementation, focused evidence, and independent implementation review.
-Broader W-06 retrieval and automatic
-markdown reminder writing remain explicit deferred work rather than being
-treated as complete.
+**Required outcome:** W-09 must make evidence status and gate semantics
+machine-readable without changing retrieval behavior, corpus labels, holdout
+inputs, V2 state or Phase 20. Broader W-06 retrieval and W-07B automatic
+reminder delivery remain explicit deferred work rather than being treated as
+complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
