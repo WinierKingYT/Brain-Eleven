@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import os
+import threading
 from pathlib import Path
 
 import pytest
@@ -224,6 +225,86 @@ def test_stale_expected_revision_does_not_write_or_rebuild(api, monkeypatch):
     assert stale.json()["detail"]["code"] == "MEMORY_STORE_REVISION_CONFLICT"
     assert _document(vault) == before
     assert calls == []
+
+
+def test_concurrent_writer_cas_conflict_does_not_silently_overwrite(api, monkeypatch):
+    module, client, vault = api
+    expected_revision = _document(vault)["revision"]
+    entered = threading.Event()
+    writer_done = threading.Event()
+    release = threading.Event()
+    response_box = {}
+    original_transact = module.MemoryStore.transact
+
+    def paused_transact(store, mutator, expected_revision=None):
+        if expected_revision == expected_revision_value:
+            entered.set()
+            assert writer_done.wait(5)
+            assert release.wait(5)
+        return original_transact(store, mutator, expected_revision=expected_revision)
+
+    expected_revision_value = expected_revision
+    monkeypatch.setattr(module.MemoryStore, "transact", paused_transact)
+    rebuilds = []
+    monkeypatch.setattr(module, "_rebuild_graph", lambda: rebuilds.append(True))
+
+    def update():
+        response_box["value"] = client.put(
+            "/memories/source",
+            json={"content": "must not overwrite writer", "expected_revision": expected_revision},
+        )
+
+    update_thread = threading.Thread(target=update)
+    update_thread.start()
+    assert entered.wait(5)
+
+    module.MemoryStore(vault).append(_memory("writer"))
+    writer_done.set()
+    release.set()
+    update_thread.join(5)
+
+    response = response_box["value"]
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "MEMORY_STORE_REVISION_CONFLICT"
+    document = _document(vault)
+    assert document["revision"] == expected_revision + 1
+    assert {item["memory_id"] for item in document["validated_memory"]} == {"source", "target", "writer"}
+    assert next(item for item in document["validated_memory"] if item["memory_id"] == "source")["content"] == "Memory source"
+    assert rebuilds == []
+
+
+def test_canonical_fixture_before_after_preserves_identity_and_scope(api):
+    _module, client, vault = api
+    before = _document(vault)
+    before_by_id = {
+        item["memory_id"]: {
+            "scope": item.get("scope"),
+            "project_id": item.get("project_id", ""),
+            "dedup_fingerprint": item.get("dedup_fingerprint", ""),
+            "status": item.get("status", "active"),
+        }
+        for item in before["validated_memory"]
+    }
+    revision = before["revision"]
+
+    response = client.put(
+        "/memories/source",
+        json={"status": "resolved", "resolved_by": "fixture-test", "reason": "closed"},
+    )
+
+    assert response.status_code == 200
+    after = _document(vault)
+    assert after["revision"] == revision + 1
+    assert {item["memory_id"] for item in after["validated_memory"]} == set(before_by_id)
+    after_by_id = {item["memory_id"]: item for item in after["validated_memory"]}
+    for memory_id, identity in before_by_id.items():
+        assert after_by_id[memory_id]["scope"] == identity["scope"]
+        assert after_by_id[memory_id].get("project_id", "") == identity["project_id"]
+    assert after_by_id["target"]["status"] == before_by_id["target"]["status"]
+    assert after_by_id["source"]["status"] == "resolved"
+    assert after_by_id["source"]["resolved_by"] == "fixture-test"
+    assert after_by_id["source"]["resolution_note"] == "closed"
+    assert after_by_id["source"]["dedup_fingerprint"] != before_by_id["source"]["dedup_fingerprint"]
 
 
 def test_graph_failure_is_visible_after_canonical_commit(api, monkeypatch):
