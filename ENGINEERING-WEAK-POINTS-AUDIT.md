@@ -125,6 +125,18 @@ and MRR also regress against V1. The lexical reranking design is rejected for
 promotion. A successor retrieval contract is required before further tuning;
 V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
+**W-06C0 status:** The evaluation-only retrieval feasibility harness was
+independently reviewed `FIX-FIRST` at `60f8e08` (implementation/test revision
+`62b8aea`). It freezes split/source fingerprints, reports explicit
+answerability states, measures token waste, exercises optional providers only
+when explicitly requested, and enforces the package scope allowlist. The
+measurement exposed two P1 gaps that remain open: TEST and HOLDOUT contain
+zero answerable cases (only one DEV case is scored), and the v3
+`provenance_hash` is format-checked but its two-labeler derivation cannot be
+recomputed from repository evidence. No W-06C1 provider selection, retrieval
+tuning, V2 promotion, or Phase 20 work is authorized until a separately
+reviewed corpus/provenance remediation contract closes these gaps.
+
 ### W-07 — Reminder/continuity is not an automatic product path (P2)
 
 Session end queues an event, but continuity files are still updated through
@@ -222,12 +234,15 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** A successor W-06 retrieval contract must be designed and
-independently reviewed before implementation. It must address the rejected
-lexical-only approach without weakening the frozen quality floor or safety
-gates. W-07B native maintenance/reminder delivery remains a separate P2
-package and is not opened until its trigger, freshness, idempotence, scope and
-privacy contract is independently reviewed.
+**Next package:** A bounded W-06C0 corpus/provenance remediation contract must
+be independently reviewed before implementation. It must leave corpus-v3
+immutable, add answerable DEV/TEST/HOLDOUT evidence in a new version, and
+freeze a reproducible two-labeler provenance recipe without weakening the
+quality floor or safety gates. Only after that package is accepted may a
+successor W-06 retrieval contract be designed. W-07B native
+maintenance/reminder delivery remains a separate P2 package and is not opened
+until its trigger, freshness, idempotence, scope and privacy contract is
+independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
