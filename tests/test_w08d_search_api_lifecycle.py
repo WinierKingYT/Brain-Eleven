@@ -262,3 +262,20 @@ def test_missing_memory_uses_bounded_error(api):
     response = client.put("/memories/missing", json={"content": "safe"})
     assert response.status_code == 404
     assert response.json()["detail"] == {"code": "MEMORY_NOT_FOUND"}
+
+
+def test_request_validation_does_not_echo_project_paths_or_submitted_values(api):
+    _module, client, vault = api
+    private_root = str(vault / "private-secret-vault")
+    response = client.put(
+        "/memories/source",
+        json={
+            "project_root": private_root,
+            "resolved_by": "actor-" + ("x" * 300),
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": {"code": "INVALID_REQUEST"}}
+    assert private_root not in response.text
+    assert "actor-" not in response.text
