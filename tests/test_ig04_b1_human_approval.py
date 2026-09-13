@@ -36,9 +36,14 @@ def b1_runtime(tmp_path):
 
 
 def _transcript(tmp_path, text="We decided to use SQLite for B1 capture."):
-    path = tmp_path / "session.jsonl"
+    root = tmp_path / "vault"
+    slug = str(root.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    directory = tmp_path / slug
+    directory.mkdir(exist_ok=True)
+    path = directory / "b1-session.jsonl"
     path.write_text(json.dumps({
         "type": "user",
+        "sessionId": "b1-session",
         "message": {"role": "user", "content": text},
     }) + "\n", encoding="utf-8")
     return path

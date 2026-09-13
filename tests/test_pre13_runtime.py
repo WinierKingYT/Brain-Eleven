@@ -39,6 +39,18 @@ def replace_namespace(value, **changes):
     return N(**{**vars(value), **changes})
 
 
+def _native_path(tmp_path, project_root, client, session_id, documents):
+    if client == 'claude':
+        slug = str(project_root.resolve()).replace(':', '-').replace('/', '-').replace('\\', '-')
+        directory = tmp_path / slug
+        directory.mkdir(exist_ok=True)
+        path = directory / (session_id + '.jsonl')
+    else:
+        path = tmp_path / (session_id + '.jsonl')
+    path.write_text('\n'.join(json.dumps(document) for document in documents) + '\n', encoding='utf-8')
+    return path
+
+
 def test_diversity_weight_changes_actual_selection():
     def item(key, score):
         return N(candidate_id=key, source_type='memory', project_id='p', content_type='lesson', lifecycle='ACTIVE', canonical_ref={'memory_id':key}, needs=('lesson',), decision_score=score)
@@ -82,9 +94,12 @@ def test_native_capture_to_other_client_context(runtime, client, tmp_path):
     vault, project = runtime
     text = 'We decided to use SQLite for persistent storage.'
     message = {'role':'user', 'content':[{'type':'input_text' if client == 'codex' else 'text','text':text}]}
-    doc = {'type':'response_item','payload':{'type':'message', **message}} if client == 'codex' else {'type':'user','message':message}
-    path = tmp_path / 'transcript.jsonl'
-    path.write_text(json.dumps(doc) + '\n', encoding='utf-8')
+    doc = {'type':'response_item','payload':{'type':'message', **message}} if client == 'codex' else {'type':'user','sessionId':'test-session','message':message}
+    if client == 'codex':
+        documents = [{'type':'session_meta','payload':{'session_id':'test-session','cwd':str(vault)}}, doc]
+    else:
+        documents = [doc]
+    path = _native_path(tmp_path, vault, client, 'test-session', documents)
     payload = {'session_id':'test-session','cwd':str(vault),'transcript_path':str(path)}
     enqueue(vault, client, payload)
     result = Worker(vault).once()
@@ -243,8 +258,7 @@ def test_incremental_reader_waits_for_complete_line_and_rejects_rewrite(runtime,
 
 def test_worker_retries_after_effect_before_ack_without_duplicate(runtime, tmp_path, monkeypatch):
     vault, project = runtime
-    path = tmp_path / 'crash.jsonl'
-    path.write_text(json.dumps({'type':'user','message':{'role':'user','content':candidate(project)['content']}})+'\n', encoding='utf-8')
+    path = _native_path(tmp_path, vault, 'claude', 'crash', [{'type':'user','sessionId':'crash','message':{'role':'user','content':candidate(project)['content']}}])
     enqueue(vault, 'claude', {'session_id':'crash', 'cwd':str(vault),'transcript_path':str(path)})
     worker = Worker(vault)
     commit = worker.queue.commit
@@ -439,8 +453,7 @@ def test_full_local_service_lifecycle_and_native_cli_hook(runtime, tmp_path):
         service_before = read_json(RuntimeConfig(vault).root / 'service.json')
         assert ensure_service(vault, wait=True)
         assert read_json(RuntimeConfig(vault).root / 'service.json') == service_before
-        path = tmp_path / 'native.jsonl'
-        path.write_text(json.dumps({'type':'user','message':{'role':'user','content':candidate(project)['content']}})+'\n', encoding='utf-8')
+        path = _native_path(tmp_path, vault, 'claude', 'native-s', [{'type':'user','sessionId':'native-s','message':{'role':'user','content':candidate(project)['content']}}])
         launcher = Path(__file__).resolve().parents[1] / 'brain_eleven/runtime/launcher.py'
         payload = {'cwd':str(vault),'session_id':'native-s','transcript_path':str(path)}
         from brain_eleven.runtime.install import hook_python
@@ -598,8 +611,7 @@ def test_shadow_keeps_decision_in_review_and_no_canonical_write(runtime, tmp_pat
     from brain_eleven.runtime.review import ReviewStore
     vault, project = runtime
     RuntimeConfig(vault).set_mode('SHADOW')
-    path = tmp_path / 'shadow.jsonl'
-    path.write_text(json.dumps({'type':'user','message':{'role':'user','content':candidate(project)['content']}})+'\n', encoding='utf-8')
+    path = _native_path(tmp_path, vault, 'claude', 'shadow', [{'type':'user','sessionId':'shadow','message':{'role':'user','content':candidate(project)['content']}}])
     enqueue(vault, 'claude', {'cwd':str(vault),'session_id':'shadow','transcript_path':str(path)})
     assert Worker(vault).once()['status'] == 'PROCESSED'
     assert not MemoryStore(vault).load()['validated_memory']

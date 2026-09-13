@@ -34,15 +34,21 @@ def runtime(tmp_path):
     return vault, project["project_id"]
 
 
-def _transcript(tmp_path, text="We decided to use SQLite for persistent storage."):
-    path = tmp_path / "session.jsonl"
-    path.write_text(json.dumps({"type": "user", "message": {"role": "user", "content": text}}) + "\n", encoding="utf-8")
+def _claude_slug(project_root):
+    return str(project_root.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+
+
+def _transcript(tmp_path, text="We decided to use SQLite for persistent storage.", *, session_id="session"):
+    directory = tmp_path / _claude_slug(tmp_path / "vault")
+    directory.mkdir(exist_ok=True)
+    path = directory / (session_id + ".jsonl")
+    path.write_text(json.dumps({"type": "user", "sessionId": session_id, "message": {"role": "user", "content": text}}) + "\n", encoding="utf-8")
     return path
 
 
 def test_queue_ack_requires_verified_effect_receipt(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="unverified")
     enqueue(vault, "claude", {"session_id": "unverified", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker, "process", lambda _job: {"status": "SCOPE_DISABLED", "job_id": "unknown"})
@@ -56,7 +62,7 @@ def test_queue_ack_requires_verified_effect_receipt(runtime, tmp_path, monkeypat
 
 def test_effect_receipt_allows_replay_after_crash_before_queue_ack(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="ack-crash")
     enqueue(vault, "claude", {"session_id": "ack-crash", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     original_commit = worker.queue.commit
@@ -83,7 +89,7 @@ def test_effect_receipt_allows_replay_after_crash_before_queue_ack(runtime, tmp_
 
 def test_corrupt_effect_receipt_is_retryable_and_never_acknowledged(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="bad-receipt")
     enqueue(vault, "claude", {"session_id": "bad-receipt", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("simulated ack crash")))
@@ -100,7 +106,7 @@ def test_corrupt_effect_receipt_is_retryable_and_never_acknowledged(runtime, tmp
 
 def test_crash_before_canonical_write_is_retryable_without_receipt(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="before-write")
     enqueue(vault, "claude", {"session_id": "before-write", "cwd": str(vault), "transcript_path": str(path)})
     monkeypatch.setattr(
         "brain_eleven.runtime.worker.apply_candidate",
@@ -119,7 +125,7 @@ def test_native_session_end_golden_path_records_effect_and_receipt(runtime, tmp_
     from brain_eleven.runtime import launcher
 
     vault, _ = runtime
-    path = _transcript(tmp_path, "We decided to use session cookies for PromtGen authentication.")
+    path = _transcript(tmp_path, "We decided to use session cookies for PromtGen authentication.", session_id="native-golden")
     monkeypatch.setattr(launcher, "ensure_service", lambda *_args, **_kwargs: True)
 
     assert launcher.hook(vault, "claude", "SessionEnd", {
@@ -166,10 +172,12 @@ def test_receipt_failure_does_not_advance_checkpoint_or_ack_tampered_effect(runt
     import brain_eleven.runtime.worker as worker_module
 
     vault, project_id = runtime
-    path = tmp_path / "multi.jsonl"
+    directory = tmp_path / _claude_slug(tmp_path / "vault")
+    directory.mkdir(exist_ok=True)
+    path = directory / "receipt-window.jsonl"
     path.write_text(
         "\n".join(
-            json.dumps({"type": "user", "message": {"role": "user", "content": text}})
+            json.dumps({"type": "user", "sessionId": "receipt-window", "message": {"role": "user", "content": text}})
             for text in (
                 "We decided to use SQLite for persistent storage.",
                 "We decided to use session cookies for authentication.",
@@ -183,7 +191,7 @@ def test_receipt_failure_does_not_advance_checkpoint_or_ack_tampered_effect(runt
     full_batch, _ = original_read(vault, path, "claude", session, project_id, "2026-01-01T00:00:00+00:00")
     calls = {"index": 0}
 
-    def chunked_read(_vault, _path, _client, _session, _project, _captured_at, cursor=None):
+    def chunked_read(_vault, _path, _client, _session, _project, _captured_at, cursor=None, **_kwargs):
         if cursor is None:
             calls["index"] = 0
         index = calls["index"]
@@ -227,10 +235,13 @@ def test_receipt_failure_does_not_advance_checkpoint_or_ack_tampered_effect(runt
 
 def test_codex_worker_golden_path_records_verified_effect(runtime, tmp_path):
     path = tmp_path / "codex.jsonl"
-    path.write_text(json.dumps({
-        "type": "response_item",
-        "payload": {"type": "message", "role": "user", "content": "We decided to use SQLite for Codex capture."},
-    }) + "\n", encoding="utf-8")
+    path.write_text("\n".join([
+        json.dumps({"type": "session_meta", "payload": {"session_id": "codex-golden", "cwd": str(tmp_path / "vault")}}),
+        json.dumps({
+            "type": "response_item",
+            "payload": {"type": "message", "role": "user", "content": "We decided to use SQLite for Codex capture."},
+        }),
+    ]) + "\n", encoding="utf-8")
     vault, _ = runtime
 
     enqueue(vault, "codex", {"session_id": "codex-golden", "cwd": str(vault), "transcript_path": str(path)})
@@ -244,7 +255,7 @@ def test_codex_worker_golden_path_records_verified_effect(runtime, tmp_path):
 
 def test_state_mutation_worker_golden_path_records_verified_effect(runtime, tmp_path):
     vault, project_id = runtime
-    path = _transcript(tmp_path, "The build is currently failing.")
+    path = _transcript(tmp_path, "The build is currently failing.", session_id="state-golden")
 
     enqueue(vault, "claude", {"session_id": "state-golden", "cwd": str(vault), "transcript_path": str(path)})
     result = Worker(vault).once()
@@ -263,7 +274,7 @@ def test_state_mutation_worker_golden_path_records_verified_effect(runtime, tmp_
 
 def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="missing-review")
     enqueue(vault, "claude", {"session_id": "missing-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -282,7 +293,7 @@ def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
 
 def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review")
     enqueue(vault, "claude", {"session_id": "tampered-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -302,7 +313,7 @@ def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, mo
 
 def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review-source")
     enqueue(vault, "claude", {"session_id": "tampered-review-source", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -323,7 +334,7 @@ def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
 @pytest.mark.parametrize("tampered_field", ["session_hash", "evidence_id"])
 def test_replay_rejects_unbounded_review_source_ids(runtime, tmp_path, monkeypatch, tampered_field):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.")
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review-ids-" + tampered_field)
     enqueue(vault, "claude", {"session_id": "tampered-review-ids-" + tampered_field, "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -345,7 +356,7 @@ def test_replay_rejects_unbounded_review_source_ids(runtime, tmp_path, monkeypat
 
 def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
-    path = _transcript(tmp_path, "The build is currently failing.")
+    path = _transcript(tmp_path, "The build is currently failing.", session_id="missing-state")
     enqueue(vault, "claude", {"session_id": "missing-state", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -365,7 +376,7 @@ def test_replay_rejects_missing_state_record(runtime, tmp_path, monkeypatch):
 
 def test_replay_rejects_tampered_state_operation(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "The build is currently failing.")
+    path = _transcript(tmp_path, "The build is currently failing.", session_id="tampered-state-operation")
     enqueue(vault, "claude", {"session_id": "tampered-state-operation", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -386,7 +397,7 @@ def test_replay_rejects_tampered_state_operation(runtime, tmp_path, monkeypatch)
 
 def test_replay_allows_state_lifecycle_after_receipt(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
-    path = _transcript(tmp_path, "The build is currently failing.")
+    path = _transcript(tmp_path, "The build is currently failing.", session_id="state-lifecycle-replay")
     enqueue(vault, "claude", {"session_id": "state-lifecycle-replay", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -411,7 +422,7 @@ def test_replay_allows_state_lifecycle_after_receipt(runtime, tmp_path, monkeypa
 
 def test_replay_rejects_tampered_state_record_provenance(runtime, tmp_path, monkeypatch):
     vault, project_id = runtime
-    path = _transcript(tmp_path, "The build is currently failing.")
+    path = _transcript(tmp_path, "The build is currently failing.", session_id="tampered-state-provenance")
     enqueue(vault, "claude", {"session_id": "tampered-state-provenance", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -454,7 +465,7 @@ def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypat
     assert foreign_result["status"] == "SUCCESS"
     foreign_effect = foreign_result["decisions"][0]["successor_memory_id"]
 
-    path = _transcript(tmp_path, "We decided to use SQLite for local storage.")
+    path = _transcript(tmp_path, "We decided to use SQLite for local storage.", session_id="cross-project-replay")
     enqueue(vault, "claude", {"session_id": "cross-project-replay", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -482,7 +493,7 @@ def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypat
 )
 def test_replay_rejects_receipt_count_list_tampering(runtime, tmp_path, monkeypatch, text, receipt_field):
     vault, _ = runtime
-    path = _transcript(tmp_path, text)
+    path = _transcript(tmp_path, text, session_id="count-tamper-" + receipt_field)
     enqueue(vault, "claude", {"session_id": "count-tamper-" + receipt_field, "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -520,7 +531,7 @@ def test_worker_lock_timeout_is_bounded(runtime, tmp_path, monkeypatch):
 
 def test_deleted_transcript_reaches_visible_dead_letter(runtime, tmp_path):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="deleted")
     enqueue(vault, "claude", {"session_id": "deleted", "cwd": str(vault), "transcript_path": str(path)})
     path.unlink()
 
@@ -533,19 +544,19 @@ def test_deleted_transcript_reaches_visible_dead_letter(runtime, tmp_path):
 
 def test_corrupt_transcript_reaches_visible_dead_letter(runtime, tmp_path):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="corrupt")
     enqueue(vault, "claude", {"session_id": "corrupt", "cwd": str(vault), "transcript_path": str(path)})
     path.write_text("{not-json\n", encoding="utf-8")
 
     results = [Worker(vault).once() for _ in range(3)]
 
-    assert [item["status"] for item in results] == ["QUEUED", "QUEUED", "DEAD_LETTER"]
-    assert results[-1]["error"] == "EVIDENCE_INVALID"
+    assert [item["status"] for item in results] == ["DEAD_LETTER", "IDLE", "IDLE"]
+    assert results[0]["error"] == "TRANSCRIPT_OWNERSHIP_UNVERIFIED"
 
 
 def test_worker_memory_cas_conflict_is_retryable(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="memory-conflict")
     enqueue(vault, "claude", {"session_id": "memory-conflict", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker, "process", lambda _job: (_ for _ in ()).throw(MemoryStoreConflict(1, 2)))
@@ -558,7 +569,7 @@ def test_worker_memory_cas_conflict_is_retryable(runtime, tmp_path, monkeypatch)
 
 def test_worker_state_conflict_is_retryable(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="state-conflict")
     enqueue(vault, "claude", {"session_id": "state-conflict", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker, "process", lambda _job: (_ for _ in ()).throw(StateStoreConflict("project", 1, 2)))
@@ -571,7 +582,7 @@ def test_worker_state_conflict_is_retryable(runtime, tmp_path, monkeypatch):
 
 def test_invalid_project_job_is_retryable_and_never_completed(runtime, tmp_path):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="invalid-project")
     receipt = enqueue(vault, "claude", {"session_id": "invalid-project", "cwd": str(vault), "transcript_path": str(path)})
     queue = CaptureQueue(vault)
     job_path = queue.job_path(receipt["job_id"])
@@ -588,7 +599,7 @@ def test_invalid_project_job_is_retryable_and_never_completed(runtime, tmp_path)
 
 def test_replay_rejects_receipt_with_foreign_project(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="foreign-receipt")
     enqueue(vault, "claude", {"session_id": "foreign-receipt", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -607,7 +618,7 @@ def test_replay_rejects_receipt_with_foreign_project(runtime, tmp_path, monkeypa
 
 def test_replay_rejects_tampered_memory_operation_receipt(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="tampered-operation")
     enqueue(vault, "claude", {"session_id": "tampered-operation", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -626,7 +637,7 @@ def test_replay_rejects_tampered_memory_operation_receipt(runtime, tmp_path, mon
 
 def test_replay_rejects_tampered_memory_effect_ids(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path)
+    path = _transcript(tmp_path, session_id="tampered-memory-effects")
     enqueue(vault, "claude", {"session_id": "tampered-memory-effects", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))

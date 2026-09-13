@@ -162,7 +162,10 @@ def test_late_file_arrival_reuses_one_durable_job(tmp_path):
     trusted = tmp_path / "trusted"
     trusted.mkdir()
     vault, _ = _runtime(tmp_path, roots=trusted)
-    transcript = trusted / "late.jsonl"
+    slug = str(vault.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    transcript_dir = trusted / slug
+    transcript_dir.mkdir()
+    transcript = transcript_dir / "late-arrival.jsonl"
     payload = {
         "session_id": "late-arrival",
         "cwd": str(vault),
@@ -180,7 +183,7 @@ def test_late_file_arrival_reuses_one_durable_job(tmp_path):
     assert waiting["error"] == "TRANSCRIPT_NOT_FOUND"
 
     transcript.write_text(
-        json.dumps({"type": "user", "message": {"role": "user", "content": "We decided to use the late source when it becomes available."}}) + "\n",
+        json.dumps({"type": "user", "sessionId": "late-arrival", "message": {"role": "user", "content": "We decided to use the late source when it becomes available."}}) + "\n",
         encoding="utf-8",
     )
     processed = Worker(vault).once()
