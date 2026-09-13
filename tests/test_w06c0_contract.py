@@ -14,6 +14,7 @@ from evals.w06c0.evaluation import (
     _select_ids,
     load_corpus,
     run_matrix,
+    verify_scope_diff,
     verify_manifest,
 )
 
@@ -95,6 +96,41 @@ def test_optional_slots_are_explicitly_not_measured_and_report_is_content_free()
     rendered = json.dumps(report, ensure_ascii=False, sort_keys=True)
     assert "Record the future authority decision" not in rendered
     assert "Markdown is the canonical" not in rendered
+
+
+def test_zero_answerable_split_is_explicitly_not_a_quality_pass():
+    report = run_matrix(split="test", providers=("v1",))
+    assert report["quality"] == {"answerable_count": 0, "state": "INSUFFICIENT_ANSWERABLE_CASES"}
+    assert report["providers"]["v1"]["quality_state"] == "INSUFFICIENT_ANSWERABLE_CASES"
+    assert report["providers"]["v1"]["metrics"]["1"]["precision"] is None
+
+
+def test_explicit_optional_probe_uses_configured_embedding_adapter(monkeypatch):
+    class FakeEmbedding:
+        provider_id = "fake-embedding"
+        model = "fake-model"
+
+        def embed(self, texts):
+            return SimpleNamespace(
+                status="EMBEDDING_AVAILABLE",
+                provider_id=self.provider_id,
+                model=self.model,
+                vectors=tuple((1.0, 0.0) for _ in texts),
+            )
+
+    monkeypatch.setattr("evals.w06c0.evaluation.create_embedding_provider", lambda: FakeEmbedding())
+    report = run_matrix(split="dev", providers=("embedding",), measure_optional=True)
+    provider = report["providers"]["embedding"]
+    assert provider["availability"] == "AVAILABLE"
+    assert provider["run_status"] == "COMPLETE"
+    assert provider["actual_provider_id"] == "fake-embedding"
+    assert "token_waste" in provider["metrics"]["1"]
+
+
+def test_scope_gate_rejects_forbidden_revision_changes():
+    evidence = verify_scope_diff()
+    assert evidence["allowlist_status"] == "PASS"
+    assert evidence["forbidden_paths"] == []
 
 
 def test_core_provider_matrix_has_identical_snapshot_and_zero_safety():
