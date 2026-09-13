@@ -1,7 +1,7 @@
 # W-06C0 Package Report
 
 PACKAGE: W-06C0 — Retrieval Feasibility & Answerability Foundation  
-REVISION: 62b8aea (implementation and focused-test revision; this report is documentation-only)  
+REVISION: 62b8aea7c0e56ac595b09dba7b01d54e8e4597d9 (exact implementation/test revision; report-only follow-up commit)  
 OBJECTIVE: Measure answerability and provider feasibility without changing production retrieval.
 
 ## FILES CHANGED
