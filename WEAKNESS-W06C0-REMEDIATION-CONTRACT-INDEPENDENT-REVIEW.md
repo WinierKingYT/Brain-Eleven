@@ -111,3 +111,48 @@ exact files pass and that an unlisted Markdown file, directory, or wildcard
 match fails.
 
 **Amended P1-A verdict: SHIP.**
+
+## P1-A implementation review — exact HEAD `0ea09d9`
+
+**Verdict: FIX-FIRST**
+
+Independent checks performed:
+
+- `pytest tests/test_w06c0r1_contract.py -q` → **14 passed**
+- Critical flake8 (`E9,F63,F7,F82`) on evaluator/tests → **PASS**
+- `compileall` on evaluator/tests → **PASS**
+- `git diff --check` → **PASS**
+- `verify_manifest()`, `source_fingerprint()`, and `verify_seal()` → **PASS**
+- Scope diff from `3f795f9` → **PASS**, with no production/forbidden paths
+
+### Blocker A-01 — `--final-holdout` accepts a non-holdout split
+
+`main()` validates the output path but never requires `args.split ==
+"holdout"` when `--final-holdout` is supplied. I reproduced this with a
+temporary canonical path and a stubbed `run_matrix`: the call proceeded with
+`split="dev"`, `allow_holdout=True`, and the final flag. In a clean evidence
+directory this can write a DEV report to the canonical `holdout.json` path and
+corrupt the final-holdout boundary. The focused tests cover same-path and
+alternate-path replay, but not this split mismatch.
+
+The CLI must reject `--final-holdout --split dev` (and every non-`holdout`
+split) before `run_matrix` or provider execution, with a focused test proving
+the provider is not called.
+
+### Blocker A-02 — final holdout evidence and package report hashes are stale
+
+The current `evals/w06c0r1/evidence/holdout.json` contains the old seal hash
+`sha256:9d9fcc...`, while the resealed canonical
+`evals/corpus-v4/holdout/seal.json` contains
+`sha256:d5803b...`. The package report records holdout report hash
+`sha256:99cb95...`, but the current normalized holdout artifact hashes to
+`sha256:616f6d...`. DEV/TEST hashes and manifest/source/seal verification pass;
+the mismatch is specific to the final holdout evidence refresh.
+
+The evidence chain must be regenerated or corrected under the bounded allowlist
+so the final report's embedded seal reference, report hash, and package report
+all describe the current sealed artifact. The one-time final-holdout boundary
+must remain intact; the fix must not silently rerun or unlock HOLDOUT.
+
+Until A-01 and A-02 are closed and independently rechecked, P1-A cannot be
+accepted as SHIP.
