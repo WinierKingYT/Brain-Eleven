@@ -48,20 +48,37 @@ from raw transcript content or silently relabel a foreign session.
 
 The implementation must freeze these current-format adapters with fixtures
 that contain metadata keys only (fixture output must never print transcript
-content):
+content). The queue event currently stores a privacy-preserving normalized
+session key, not the raw client identifier: `client + ':' +
+sha256(raw_session_id)` (see `worker.enqueue`). Adapters compare a raw native
+identifier by applying that exact normalization; they never reverse the hash
+and never add raw session IDs to durable diagnostics.
 
-- **Claude:** the resolved parent directory must equal the deterministic
-  native project slug for the event's `project_root` (drive marker and path
-  separators encoded exactly as the observed native directory convention),
-  the filename stem must equal the event `session_id`, and at least one native
-  record must contain `sessionId` equal to that same ID. All three checks are
+- **Claude:** resolve the event project root to an absolute normalized string,
+  replace each Windows `:` and path separator (`\\` or `/`) with `-` without
+  case folding, and compare the resulting slug exactly to the transcript's
+  parent directory name (for example, `C:\\Users\\faruk\\Documents\\Brain-Eleven`
+  maps to `C--Users-faruk-Documents-Brain-Eleven`). The filename stem must
+  hash-normalize to the event session key, and at least one native record must
+  contain `sessionId` whose hash-normalized value equals that key. All three checks are
   required; a missing or conflicting field is `TRANSCRIPT_OWNERSHIP_UNVERIFIED`
   or `TRANSCRIPT_OWNERSHIP_MISMATCH`.
 - **Codex:** a native `session_meta`/metadata record must contain
-  `payload.session_id` equal to the event `session_id` and a `payload.cwd`
-  resolving exactly to the event's registered `project_root`. The dated
-  filename is not an identity proof by itself. Missing or conflicting fields
-  fail closed with the same bounded codes.
+  `payload.session_id` whose hash-normalized value equals the event session
+  key and a `payload.cwd` resolving exactly to the event's registered
+  `project_root`. The dated filename is not an identity proof by itself.
+  Missing or conflicting fields fail closed with the same bounded codes.
+
+Read-only native-format evidence collected on 2026-09-13 confirms these
+metadata keys without retaining content: Claude records expose top-level
+`sessionId`; Codex records expose a top-level `payload` containing
+`session_id` and `cwd`. If a future client format lacks this evidence, its
+adapter remains explicitly unsupported and rejects capture until a new
+contract revision is reviewed.
+
+The Claude slug is not assumed injective. If two registered project roots
+produce the same slug, ownership is `UNVERIFIED` and capture is rejected;
+the implementation must include a collision fixture.
 
 These rules are intentionally stricter than the current synthetic fixtures.
 End-to-end fixtures that currently omit ownership metadata must be enriched
