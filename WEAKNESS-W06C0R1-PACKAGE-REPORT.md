@@ -3,7 +3,8 @@
 **PACKAGE:** W-06C0R1 — answerability and provenance correction
 **REVISION:** P1-A/P1-B remediation chain `9ff0757` → `27c8ed2` →
 `57365b8` → `6fdaf7f` → `8203c05` → `6de8474` → `fb82bd8` → `42f45b6`
-→ `ca42787` → `aa44ac6` → `b79846b` → `4e61526` → `4bde156`
+→ `ca42787` → `aa44ac6` → `b79846b` → `4e61526` → `4bde156` →
+`a032144` → `f69bc55` → `ed937b5`
 **OBJECTIVE:** Replace the insufficient W-06C0 feasibility corpus with an
 answerable, independently attested corpus-v4 and a machine-checkable
 provenance/provider-parity evaluator. Production retrieval code remains
@@ -58,13 +59,13 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 ## Evidence and metrics
 
-- Manifest: `sha256:53050df3a3aee7fdb6b7626c3d7936d322c723b3b050c5cd6653e200add6492f`.
-- Source fingerprint: `sha256:937b3bbcef835c0d6e855f1914383e1b512827d43dd3cc1a1a4805e76584d98c`.
-- Holdout seal: `sha256:fc4dfbe36cc20f24f88362db49a2e40995d6041414af3a3e14b1c5a9f0a74fda`.
+- Manifest: `sha256:ce2962d57b096495e53a31797432ad2001f8b7490ed05e6b637390c2bd6d0b4c`.
+- Source fingerprint: `sha256:536644763d9fd7059486d830868774f709315818d185a5ef45b14797749b5e33`.
+- Holdout seal: `sha256:5dd676f618908300eed189654ddd4a50050cf2b502b6f2bd306a1f8345132b25`.
 - DEV/TEST/HOLDOUT report hashes:
-  `sha256:7a654ad9b2124d4bc91884d74d0e1bad7247216e8b1793b1bff2e9501edc0b65`,
-  `sha256:621c90f71ca0bd20d5111bf30ca8a7b2af40f081ef427294aa3fa183e640fd6a`,
-  `sha256:ca1439013d844be73fc47d1fc8c827a19ee6f40907c34282e3eb68b1d50fd787`.
+  `sha256:db0d7b9c450a95d121e73045997293ed9b08f62c42b5eb0c49abab4c3847094b`,
+  `sha256:cb9c430508676837e682015f5245429bcbcd01863c3a578b014d14dcd74af01c`,
+  `sha256:3f2e6760e0a3ba7f1121d9188f8732f5ef4b73ec7210e2fe43f0cdcd3debc156`.
 - DEV/TEST/HOLDOUT each contain the required nine retrieval phenomena and meet
   the answerable minimum (60/60, 60/60, 30/30).
 - V1/V2 and authority metrics are recorded in the evidence reports; optional
@@ -77,8 +78,9 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 - This package measures feasibility; it does not tune ranking, install an
   embedding provider, or change runtime retrieval.
-- P1-A is independently SHIP. P1-B implementation still requires its own
-  independent read-only review before the parent package can close.
+- P1-A is independently SHIP. P1-B implementation has passed local focused and
+  full regression checks but still requires its own independent read-only
+  review before the parent package can close.
 
 ## Independent review
 
