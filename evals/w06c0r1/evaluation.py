@@ -753,10 +753,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--final-holdout", action="store_true")
     parser.add_argument("--unlock-token")
     args = parser.parse_args(argv)
-    if args.output.exists() and args.final_holdout:
-        raise W06C0R1Error("holdout output already exists; unlock token cannot be replayed")
-    if args.final_holdout and args.output.resolve() != FINAL_HOLDOUT_OUTPUT.resolve():
-        raise W06C0R1Error("final holdout output must use the canonical evidence path")
+    if args.final_holdout:
+        if args.split != "holdout":
+            raise W06C0R1Error("final holdout requires the holdout split")
+        if args.output.resolve() != FINAL_HOLDOUT_OUTPUT.resolve():
+            raise W06C0R1Error("final holdout output must use the canonical evidence path")
+        if args.output.exists():
+            raise W06C0R1Error("holdout output already exists; unlock token cannot be replayed")
     report = run_matrix(split=args.split, corpus_version=args.corpus_version, providers=args.providers, measure_optional=args.measure_optional, allow_holdout=args.final_holdout, unlock_token=args.unlock_token)
     if args.final_holdout:
         report["holdout_evidence"]["command_hash"] = _sha(_canonical(list(argv if argv is not None else sys.argv[1:])))
