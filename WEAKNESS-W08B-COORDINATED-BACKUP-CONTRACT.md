@@ -166,8 +166,13 @@ snapshot evidence. Missing canonical memory remains an immediate
 
 ### 4.2 Per-attempt algorithm
 
-The implementation must use a finite constant such as
-`MAX_SNAPSHOT_ATTEMPTS = 3`; it must not retry forever. One attempt is:
+The implementation must use the frozen constants
+`MAX_SNAPSHOT_ATTEMPTS = 3` (three complete two-pass attempts, not three
+retries) and `SNAPSHOT_ATTEMPT_BUDGET_SECONDS = 5.0`. It must not retry
+forever. The reader takes no authority lock, so there is no authority-lock
+wait inside an attempt; it checks a monotonic clock before and after each
+source pass and fails with the typed consistency error when the five-second
+budget is exceeded. One attempt is:
 
 1. Read the four fixed source paths into raw byte payloads in the fixed order.
 2. Validate the complete payload set using the existing semantic checks in
@@ -180,9 +185,15 @@ The implementation must use a finite constant such as
 6. Compare the first and second payload maps and all descriptors. If every
    byte and token is identical, the second payload map is the stable candidate.
    If any source differs, discard both maps and retry from step 1.
-7. After the attempt limit, raise a typed consistency error such as
-   `MemoryBackupConsistencyError`, including only changed source names and
-   attempt count. It must not include raw memory, settings or state content.
+7. After the attempt limit, raise the public
+   `MemoryBackupConsistencyError(MemoryBackupError)` with exactly these
+   bounded fields: `changed_sources: Tuple[str, ...]`, `attempts: int` and
+   `reason: str`. `attempts` is in `1..MAX_SNAPSHOT_ATTEMPTS` and `reason` is
+   one of `source_churn`, `read_budget_exceeded` or
+   `optional_source_changed`. The exception text contains only those fixed
+   reason values, source archive-path names and the integer attempt count; it
+   must not include raw memory, settings, state bytes, project roots or
+   project identifiers.
 
 The archive is not opened or published until step 6 succeeds. A source write
 that completes between the first and second read is either detected and
@@ -200,6 +211,16 @@ attempt, the existing `MemoryBackupError`/authority validation error is
 surfaced. An implementation may retry a transient validation failure only when
 the source token demonstrably changed, and must surface the typed consistency
 error if churn continues.
+
+The exact error mapping is frozen: a changed optional file (appearance,
+disappearance or replacement) is a retry and then
+`reason="optional_source_changed"`; a changed required source is a retry and
+then `reason="source_churn"`; a stable malformed/corrupt/invalid-scope source
+is the existing `MemoryBackupError` and is not converted into a retry success;
+the five-second elapsed budget is `reason="read_budget_exceeded"`. W-08B
+takes no authority lock, so authority lock timeout is not a source-read path;
+the separate publication-lock timeout below is a `MemoryBackupError` with the
+fixed label `archive publication lock timeout`.
 
 ### 4.3 Source descriptors and snapshot digest
 
@@ -301,6 +322,21 @@ The archive `archive_id` remains non-secret, random evidence metadata. Existing
 CLI response fields remain compatible; new snapshot details may be exposed
 only as bounded metadata and never as source content.
 
+### 5.1 No-clobber publication and durability
+
+The temporary ZIP must be closed, flushed and fsynced before publication. The
+parent directory must be synced where the host supports directory fsync. The
+final destination is protected by the existing `file_lock` sidecar for exactly
+`ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS = 5.0`; the lock covers the
+destination-exists check and publication only and is never held while reading
+an authority. Under that lock, an existing destination raises
+`MemoryBackupError("Backup archive already exists")`; it is never replaced.
+Two concurrent creators targeting one path must therefore produce exactly one
+success and one bounded failure, with the winner's bytes unchanged. A lock
+timeout raises the fixed `MemoryBackupError` label
+`archive publication lock timeout`. The implementation must leave no
+temporary file after a failed publication.
+
 ## 6. Invariants and safety boundaries
 
 ### 6.1 Coherence and authority
@@ -315,9 +351,10 @@ only as bounded metadata and never as source content.
    bypass CAS, or change a revision.
 4. Validation failures remain visible. Corruption is never treated as an empty
    source, missing optional registry/state, or successful backup.
-5. The snapshot reader does not establish a second authority or a new lock
-   file. It may write only the requested archive's temporary/final file and
-   its existing bounded evidence.
+5. The snapshot reader does not establish a second authority or an
+   authority-wide lock. The only additional lock is the requested archive's
+   publication sidecar described in Section 5.1. It may write only the
+   requested archive's temporary/final file and its existing bounded evidence.
 
 ### 6.2 Scope and project isolation
 
@@ -331,10 +368,15 @@ only as bounded metadata and never as source content.
    the local registry only; no source descriptor or manifest may contain a
    filesystem root.
 4. The source paths must resolve inside the selected vault's `.claude`
-   directory. A source symlink that resolves outside that directory must be
-   rejected with `MemoryBackupError`; this closes a path-scope hole without
-   changing the archive path names. The vault argument itself may be resolved
-   before this containment check.
+   directory. All vault, `.claude`, and source-path symlinks/reparse points
+   are rejected on every read pass; the implementation must use a no-follow
+   open/handle check (`O_NOFOLLOW` where available and the platform's reparse
+   point/final-handle check on Windows). If the host cannot provide a no-follow
+   check, the backup fails closed with a typed `MemoryBackupError` rather than
+   falling back to ordinary `read_bytes`. A path identity/type change between
+   pre-open and post-read is also a hard failure and cannot be turned into a
+   successful retry. The vault argument may be resolved before this
+   containment check, but no source path may escape the selected `.claude`.
 5. Existing archive member traversal, backslash, duplicate-entry and unmanifested
    entry checks remain hard failures.
 
@@ -347,11 +389,11 @@ redaction would alter restore semantics. W-08B must nevertheless guarantee:
 
 - snapshot metadata contains hashes, lengths and revisions only;
 - result dictionaries, exception messages, retry evidence and logs never
-  print raw settings, memory, state or prompt content;
+  print raw settings, memory, state, prompt content or project identifiers;
 - source path names are the fixed allowlist, not user-controlled archive paths;
-- tests include a sentinel sensitive value and assert it is absent from the
-  returned metadata/error text (the archive payload itself remains the
-  explicitly documented backup data).
+- tests include sentinel settings, memory and project identifiers and assert
+  they are absent from returned metadata/error text (the archive payload
+  itself remains the explicitly documented backup data).
 
 ## 7. Fault-injection and concurrency evidence
 
@@ -389,6 +431,14 @@ The lock/deadlock evidence must include:
 - no reverse-order lock requirement added to `MemoryStore`, `StateStore`,
   `ProjectRegistry` or runtime install/migration paths.
 
+The publication evidence must also exercise the exact five-second destination
+lock budget with two concurrent creators and assert exactly one success, one
+`MemoryBackupError`, unchanged winner bytes and no temporary files. A separate
+fault test must prove temp-file fsync or parent-directory-sync failure cannot
+report success. Symlink/reparse-point tests must cover the vault, `.claude`
+directory and each optional source, including a swap between the two read
+passes; every rejection must leave the final archive absent.
+
 ## 8. Test and regression plan
 
 Existing assertions remain unchanged and must pass:
@@ -409,7 +459,11 @@ New focused tests should live in a bounded file such as
 - one mutation per source, optional-file appearance/disappearance, perpetual
   churn and corruption behavior;
 - old schema-1/schema-2 archive verification and restore compatibility;
-- symlink/path containment and no raw-content metadata leakage;
+- symlink/reparse-point path containment (including read-time swap) and no
+  raw-content/project-identifier metadata leakage;
+- exact three-attempt/five-second bounded error fields and mapping;
+- concurrent destination no-clobber publication and archive fsync/parent-sync
+  failure behavior;
 - no multi-lock/static adapter violation and bounded writer completion;
 - output absence on failed consistency or archive publication.
 
