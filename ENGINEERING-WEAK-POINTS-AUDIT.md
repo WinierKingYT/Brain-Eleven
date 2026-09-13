@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-12  
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `05fd7f6`
+**Repository revision:** `90336ee`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,8 +12,8 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after the shipped W-07A package: **982 passed, 2 dependency
-  deprecation warnings**.
+- Full local suite after W-08B: **1018 passed, 2 dependency deprecation
+  warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -141,8 +141,8 @@ These are separate authority packages and are intentionally not mixed with W-01.
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`). ProjectRegistry revision/CAS,
 durable atomic writes, backup envelope, stale-safe monotonic rollback and
 complete identity/status/opt-in rollback integrity are covered. W-08B
-coordinated backup, W-08C state-reference TOCTOU and W-08D typed API lifecycle
-remain open.
+coordinated backup is independently shipped; W-08C state-reference TOCTOU
+and W-08D typed API lifecycle remain open.
 
 **W-08B contract status:** Independently reviewed `SHIP` at `17954cc` in
 `WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
@@ -177,10 +177,10 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
-**Required outcome:** implement and independently review W-08B under the
-accepted contract before moving to W-08C and W-08D. Broader W-06 retrieval
-and automatic markdown reminder writing remain explicit deferred work rather
-than being treated as complete.
+**Required outcome:** define, implement and independently review W-08C under
+its bounded contract before considering W-08D. Broader W-06 retrieval and
+automatic markdown reminder writing remain explicit deferred work rather than
+being treated as complete.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
