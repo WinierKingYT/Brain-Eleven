@@ -13,6 +13,7 @@ from collections import Counter
 import hashlib
 import json
 import math
+import re
 import statistics
 import subprocess
 import tempfile
@@ -82,7 +83,7 @@ def _canonical(value: Any) -> bytes:
 
 def _manifest_hash(manifest: Mapping[str, Any]) -> str:
     payload = dict(manifest)
-    payload["manifest_sha256"] = None
+    payload.pop("manifest_sha256", None)
     return _sha256(_canonical(payload))
 
 
@@ -178,10 +179,15 @@ def _answerability(document: Mapping[str, Any]) -> Mapping[str, Any]:
     if value.get("review_version") != ANSWERABILITY_VERSION:
         raise W06C0Error("case answerability version is invalid")
     reviewers = value.get("reviewers")
-    if not isinstance(reviewers, list) or len(reviewers) != 2 or len(set(reviewers)) != 2:
+    if (
+        not isinstance(reviewers, list)
+        or len(reviewers) != 2
+        or len(set(reviewers)) != 2
+        or any(not isinstance(item, str) or not item.strip() for item in reviewers)
+    ):
         raise W06C0Error("case must have two independent labeler identities")
     provenance = value.get("provenance_hash")
-    if not isinstance(provenance, str) or len(provenance) != 71 or not provenance.startswith("sha256:"):
+    if not isinstance(provenance, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", provenance):
         raise W06C0Error("case answerability provenance is invalid")
     return value
 
@@ -305,6 +311,8 @@ def _metric_rows(selected: Sequence[str], document: Mapping[str, Any], metadata:
     required = set(document["expected_context"]["required"])
     useful = set(document["expected_context"]["useful"])
     relevant = required | useful
+    if not required:
+        raise W06C0Error("answerable case must declare at least one required ID")
     rows: dict[str, Any] = {}
     for k in K_VALUES:
         top = list(selected[:k])
@@ -312,21 +320,47 @@ def _metric_rows(selected: Sequence[str], document: Mapping[str, Any], metadata:
         mandatory = len(set(top) & required)
         count = len(top)
         precision = hit / count if count else 0.0
-        recall = mandatory / len(required) if required else None
-        f1 = 0.0 if recall in {None, 0.0} or precision == 0 else 2 * precision * recall / (precision + recall)
+        recall = hit / len(relevant) if relevant else 0.0
+        mandatory_recall = mandatory / len(required)
+        f1 = 0.0 if recall == 0.0 or precision == 0 else 2 * precision * recall / (precision + recall)
         rows[str(k)] = {
             "precision": precision,
             "recall": recall,
             "f1": f1,
             "mrr": next((1.0 / (index + 1) for index, item in enumerate(top) if item in relevant), 0.0),
-            "mandatory_recall": recall,
+            "mandatory_recall": mandatory_recall,
             "noise_ratio": (count - hit) / max(count, 1),
             "selected_count": count,
         }
     return rows
 
 
-def _empty_optional(slot: str) -> dict[str, Any]:
+def _empty_optional(
+    slot: str,
+    documents: Sequence[Mapping[str, Any]],
+    snapshot: tuple[int, str, str],
+) -> dict[str, Any]:
+    revision, content_fp, order_fp = snapshot
+    answer_counts = Counter(_answerability(document)["status"] for document in documents)
+    rows = [
+        {
+            "task_id": document["task_id"],
+            "answerability": _answerability(document)["status"],
+            "provider_status": "NOT_MEASURED",
+            "selected_ids": [],
+            "selected_count": 0,
+            "latency_ms": None,
+            "safety": {
+                "wrong_project_leakage": 0,
+                "forbidden_leakage": 0,
+                "superseded_leakage": 0,
+                "resolved_leakage": 0,
+                "secret_leakage": 0,
+            },
+            "metrics": None,
+        }
+        for document in documents
+    ]
     return {
         "slot": slot,
         "requested_provider_id": slot,
@@ -336,12 +370,21 @@ def _empty_optional(slot: str) -> dict[str, Any]:
         "run_status": "NOT_MEASURED",
         "fallback": False,
         "error_code": "OPTIONAL_PROVIDER_NOT_SELECTED",
-        "case_count": 0,
+        "case_count": len(documents),
         "scored_count": 0,
-        "excluded_counts": {"answerable": 0, "unanswerable": 0, "review_required": 0},
+        "excluded_counts": {name: answer_counts.get(name, 0) for name in sorted(STATUSES)},
         "metrics": {},
-        "safety": {},
-        "rows": [],
+        "safety": {
+            "wrong_project_leakage": 0,
+            "forbidden_leakage": 0,
+            "superseded_leakage": 0,
+            "resolved_leakage": 0,
+            "secret_leakage": 0,
+        },
+        "source_memory_revision": revision,
+        "candidate_content_fingerprint": content_fp,
+        "candidate_order_fingerprint": order_fp,
+        "rows": rows,
     }
 
 
@@ -370,6 +413,7 @@ def _run_core_provider(
     safety_total = Counter()
     source_values: set[tuple[Any, ...]] = set()
     unavailable = False
+    actual_ids: set[str] = set()
     with tempfile.TemporaryDirectory(prefix=f"brain-eleven-w06c0-{slot}-") as directory:
         for document, task in zip(documents, tasks):
             vault = Path(directory) / task.task_id
@@ -384,10 +428,12 @@ def _run_core_provider(
                 result = provider.select(task, vault)
                 selected = _select_ids(result, candidate_ids)
                 actual_id = result.provider_id
+                actual_ids.add(actual_id)
             except Exception as error:  # provider failures are bounded evidence
                 status = "ERROR"
                 error_code = type(error).__name__
                 actual_id = requested_id
+                actual_ids.add(actual_id)
                 unavailable = True
             elapsed_ms = round((perf_counter() - started) * 1000, 3)
             answerability = _answerability(document)
@@ -418,11 +464,12 @@ def _run_core_provider(
     return {
         "slot": slot,
         "requested_provider_id": slot,
-        "actual_provider_id": requested_id,
+        "actual_provider_id": sorted(actual_ids)[0] if len(actual_ids) == 1 else requested_id,
         "model": "existing_adapter",
         "availability": "AVAILABLE" if not unavailable else "AVAILABLE",
         "run_status": "COMPLETE" if not unavailable else "ERROR",
-        "fallback": False,
+        "fallback": bool(actual_ids and actual_ids != {requested_id}),
+        "provider_schema_version": 1,
         "error_code": "PROVIDER_CASE_ERROR" if unavailable else None,
         "case_count": len(rows),
         "scored_count": len(scored),
@@ -458,12 +505,17 @@ def run_matrix(
     documents, tasks, manifest = load_corpus(split, corpus_root)
     fixture = load_fixture(FIXTURE_PATH)
     results: dict[str, Any] = {}
+    with tempfile.TemporaryDirectory(prefix="brain-eleven-w06c0-snapshot-") as snapshot_directory:
+        snapshot_vault = Path(snapshot_directory) / "vault"
+        build_vault(fixture, snapshot_vault, seed=SEED, noise_count=NOISE_COUNT)
+        revision, _, _, content_fp, order_fp = _snapshot(snapshot_vault)
+        snapshot = (revision, content_fp, order_fp)
     for slot in providers:
         if slot in {"embedding", "reranker"}:
             # Optional model slots are deliberately explicit.  Their real
             # adapters can be added only by a separately reviewed probe; the
             # default matrix must never synthesize semantic evidence.
-            results[slot] = _empty_optional(slot)
+            results[slot] = _empty_optional(slot, documents, snapshot)
             continue
         results[slot] = _run_core_provider(slot, documents, tasks, fixture)
     snapshots = {
