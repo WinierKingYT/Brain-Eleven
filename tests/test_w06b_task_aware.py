@@ -59,7 +59,7 @@ def test_invalid_gate_fails_closed_and_rollback_restores_v1(runtime):
     assert compile_context(vault, vault, "Continue the database work", event="UserPromptSubmit")["provider"] == "W06B_TASK_AWARE"
     _set_retrieval_mode(vault, "V1_LEGACY")
     rollback = compile_context(vault, vault, "Continue the database work", event="UserPromptSubmit")
-    assert rollback.get("provider") != "W06B_TASK_AWARE"
+    assert rollback.get("provider") == "V1"
 
 
 def test_non_string_retrieval_modes_fail_closed(runtime):

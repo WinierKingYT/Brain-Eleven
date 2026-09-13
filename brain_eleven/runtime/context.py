@@ -76,11 +76,13 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         task_need = result.get('task_need', {})
         if task_need.get('status') in {'NO_NEED', 'AMBIGUOUS', 'UNAVAILABLE', 'INVALID'}:
             legacy = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+            legacy['provider'] = 'V1'
             legacy['task_need_status'] = task_need.get('status')
             legacy['task_need_error_code'] = task_need.get('error_code')
             result = legacy
     else:
         result = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+        result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
         from types import SimpleNamespace
