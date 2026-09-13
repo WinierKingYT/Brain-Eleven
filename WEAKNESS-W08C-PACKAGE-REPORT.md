@@ -1,16 +1,18 @@
 # W-08C State Reference Commit Guard
 
-PACKAGE: W-08C  
-REVISION: `200621b`  
+PACKAGE: W-08C
+REVISION: `02548c5`
 OBJECTIVE: Make StateStore memory-reference commits linearizable against the canonical MemoryStore lock.
 
 ## FILES CHANGED
 
 - `scripts/state_store.py` — added a held `memory_store_lock` guard for `add_memory_reference()` and `add_blocker(..., memory_ref=...)`, bounded snapshot validation, closed-world lifecycle checks, and typed guard failures.
 - `scripts/state_resolver.py` — classifies deleted and unknown-status targets as `dangling`; existing result shape is unchanged.
+- `scripts/state.py` — maps the new typed guard failure to the stable `MEMORY_REFERENCE_CONFLICT` CLI code.
+- `brain_eleven/state/store.py` — identity-preserving export of `StateReferenceConflict`.
 - `tests/test_w08c_state_reference_guard.py` — policy, lifecycle, scope, lock ordering, race, CAS, replay, corruption, timeout, privacy, and identity evidence.
 
-No `MemoryStore`, `ProjectRegistry`, package bridge, evaluator, corpus, state schema, audit-event schema, or Phase 20 file was changed.
+No `MemoryStore`, `ProjectRegistry`, evaluator, corpus, state schema, audit-event schema, or Phase 20 file was changed.
 
 ## ROOT CAUSES ADDRESSED
 
@@ -35,10 +37,10 @@ No `MemoryStore`, `ProjectRegistry`, package bridge, evaluator, corpus, state sc
 
 ## TESTS EXECUTED
 
-At exact revision `200621b`:
+At exact revision `02548c5`:
 
-- Focused W-08C and required state/authority suite: **90 passed**.
-- Full suite: **1037 passed, 2 pre-existing dependency warnings** in 218.29s.
+- Focused W-08C, CLI, and required state/authority suite: **90 passed**; the post-correction CLI/mapping subset was also rerun with **30 passed**.
+- Full suite: **1037 passed, 2 pre-existing dependency warnings** in 217.44s.
 - `tests/test_evaluation_baseline_snapshot.py`: **5 passed**.
 - Task-state smoke/public/holdout reports: **byte-identical** to the frozen `evals/reports/ig07-slice2e/before-*.json` reports. Each suite exited 0.
 - Critical flake8 (`E9,F63,F7,F82`): **0**.
@@ -63,12 +65,12 @@ At exact revision `200621b`:
 ## KNOWN LIMITATIONS
 
 - Later lifecycle changes remain visible through `StateResolver`; W-08D owns lifecycle/API coordination.
-- The new `StateReferenceConflict` lives in the legacy `scripts.state_store` implementation because this package is explicitly bounded against bridge changes. The existing CLI module and package bridge were intentionally left untouched and require independent review against the contract's desired `MEMORY_REFERENCE_CONFLICT` CLI mapping.
+- No W-08C implementation limitation remains after the bounded CLI and package-surface correction. The broader lifecycle/API mutation coordination remains W-08D.
 
 ## OPEN FAILURES
 
 - None found by local focused, full, static, or task-state baseline checks.
-- Independent review is still required; the CLI mapping/bridge-scope point above remains an explicit review item.
+- Independent review is still required.
 
 ## INDEPENDENT REVIEW
 
