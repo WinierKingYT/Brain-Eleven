@@ -31,7 +31,8 @@ retriever.
 ### 2.1 Included
 
 1. Add a versioned retrieval corpus contract that records, for every case:
-   - `answerability.status` (`YES`, `NO`, or `REVIEW_REQUIRED`),
+   - `answerability.status` (`answerable`, `unanswerable`, or
+     `review_required`), aligned with the existing IG01-C evaluator vocabulary,
    - a bounded, content-free `answerability.reason`,
    - immutable split/provenance metadata.
 2. Produce a new corpus version (`corpus-v3`) only from reviewed cases. The
@@ -92,9 +93,9 @@ Allowed reasons are a finite, versioned vocabulary. Reasons must not contain
 raw prompts, memory content, secrets, filesystem paths, or private project
 identifiers beyond the existing public case ID boundary.
 
-`NO` and `REVIEW_REQUIRED` cases are retained for audit visibility but excluded
-from quality aggregates. They remain visible in counts and cannot silently
-become scored by provider selection.
+`unanswerable` and `review_required` cases are retained for audit visibility but
+excluded from quality aggregates. They remain visible in counts and cannot
+silently become scored by provider selection.
 
 ### 3.2 Splits and immutability
 
