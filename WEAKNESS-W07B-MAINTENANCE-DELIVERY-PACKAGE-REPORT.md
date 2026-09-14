@@ -1,7 +1,7 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `8b18d66` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
+**REVISION:** `e1512e9` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
 **STATUS:** REVIEW PENDING / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -45,6 +45,9 @@ Final hardening commit `8b18d66` makes report severity projection bounded,
 keeps raw exception text out of maintenance logs, and acknowledges a
 SessionStart reminder only after final scope/freshness validation and an
 atomic delivery receipt.
+
+Reconciliation fairness commit `e1512e9` scans past already-reconciled
+completed jobs so a later enqueue gap cannot be starved by the bounded batch.
 
 ## ROOT CAUSES ADDRESSED
 
