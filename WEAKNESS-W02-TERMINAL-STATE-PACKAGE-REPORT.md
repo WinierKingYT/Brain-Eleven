@@ -1,12 +1,16 @@
 # W-02 Terminal-State Closure — Package Report
 
-**VERDICT: REVIEW PENDING / NOT ACCEPTED**
+**VERDICT: SHIP**
 **Implementation revision:** `c842320ae091e6fadad76536baa08a2aac69cb2b`
 **Test and validation revision:** `93436fbf232d21f5ebc584fb642689f0061cf657`
 **Defect baseline:** `b9d4c06` (the intervening `8b0e382` changes only the
 contract review document)
 **Phase 20:** FROZEN / LOCKED
 **V2 runtime:** SHADOW
+
+**Score before/after:** Capture runtime **8.0 → 8.5** (the completed-folder
+terminal crash window is closed; broader native capture and provenance work
+remain scored separately).
 
 ## Bounded change
 
@@ -119,6 +123,10 @@ the exact implementation/test revision above.
   canonical schema, retention, V2 promotion and Phase 20 changes remain outside
   scope.
 
-Independent read-only implementation review must return `SHIP`, `FIX-FIRST`
-or `RETHINK` against the recorded revision and evidence. The implementation
-agent does not grant acceptance. **Current verdict: REVIEW PENDING.**
+Independent read-only implementation review at exact final revision
+`ed54bfa99a3ec6898fbc9e7b2a6c0ce2497ce1fe` returned **SHIP**. The reviewer
+reran the focused 83-case suite, critical flake8, compileall and package-range
+diff checks, and inspected the recorded full-suite result. No P0/P1/P2
+findings remain. The implementation agent did not grant acceptance.
+
+**VERDICT: SHIP**

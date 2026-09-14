@@ -24,7 +24,7 @@ the behavior and operational evidence found in the current repository.
 |---|---:|---|
 | Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
 | Scope and fail-closed safety | 7.5 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; transcript session/project ownership is still unverified. |
-| Capture runtime | 7.5 | Claim/retry/lease crash-loss and late known-locator durability are independently shipped; a completed-folder commit crash window and transcript ownership gap remain. |
+| Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
 | Retrieval quality | 4.5 | Broader task-aware retrieval remains open; W-06A only improves the V1 bootstrap slice. |
@@ -265,20 +265,16 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
 **Next package:** W-06C0R1 scope-drift maintenance is independently `SHIP`ped
-at exact implementation head `942aee8`, and W-03B transcript
-ownership/provenance is independently `SHIP`ped at exact review head
-`f1d8896`. The next safety-priority bounded work is the successor W-02
-queue-terminal-state contract for the completed-folder crash window. The W-06
-retrieval successor remains evaluation-only and must not tune HOLDOUT, promote
-V2, or open Phase 20. W-07B native maintenance/reminder delivery remains a
-separate P2 package and is not opened until its trigger, freshness,
-idempotence, scope and privacy contract is independently reviewed.
+at exact implementation head `942aee8`, W-03B transcript ownership/provenance
+is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
+completed-folder terminal-state successor is independently `SHIP`ped at exact
+review head `ed54bfa`. The next bounded work is a W-07B native
+maintenance/reminder delivery contract review; its trigger, freshness,
+idempotence, project scope and privacy boundaries must be frozen before any
+runtime change. The W-06 retrieval successor remains evaluation-only and must
+not tune HOLDOUT, promote V2 or open Phase 20.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
-The W-02 successor completed-folder terminal-state contract is independently
-`SHIP` at exact contract revision `9f44c94`; production implementation is the
-next bounded step and remains unshipped until its fault-injection evidence and
-independent implementation review pass.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -300,6 +296,9 @@ review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
 W-03B transcript ownership/provenance — `SHIP` at exact review head `f1d8896`,
 report in `WEAKNESS-W03B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W03B-TRANSCRIPT-OWNERSHIP-INDEPENDENT-REVIEW.md`.
+W-02 completed-folder terminal-state closure — `SHIP` at exact review head
+`ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
+independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without
