@@ -262,9 +262,9 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-06C0R1 scope-drift maintenance is in final R4
-implementation review. Once independently `SHIP`ped, the next
-safety-priority bounded work is the successor W-03B transcript
+**Next package:** W-06C0R1 scope-drift maintenance is independently `SHIP`ped
+at exact implementation head `942aee8` (final docs are recorded below). The
+next safety-priority bounded work is the successor W-03B transcript
 ownership/provenance contract, based on the read-only native smoke finding
 above. It must preserve W-03A path confinement
 and W-04 late-locator retry behavior, and must not infer project identity from
@@ -319,10 +319,15 @@ and old W-06C0 compatibility exception, and now hash-binds the immutable R4
 maintenance anchor. R1, R2, and R3 pin files remain byte-identical historical
 artifacts; R4 is the canonical pin.
 
-Exact evidence at revision `a6ac097`: W-06C0/W-06C0R1 focused **36 passed**;
+Exact evidence at implementation revision `a6ac097`: W-06C0/W-06C0R1
+focused **36 passed**;
 W-03B/capture focused **127 passed, 2 warnings**; clean full suite
 **1124 passed, 2 warnings**; critical flake8, compileall, manifest/seal, and
 diff checks passed. Corpus cases, labels, provider metrics, runtime,
-retrieval, V2, and Phase 20 were unchanged. The package remains
-`REVIEW PENDING` until a fresh independent read-only implementation review
-returns `SHIP`.
+retrieval, V2, and Phase 20 were unchanged. Independent implementation review
+at exact head `942aee8` returned `SHIP`; no P0/P1/P2 findings remain.
+
+**W-06C0R1 independent review:** `SHIP` at `942aee8`, recorded in
+`WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`. The R4 immutable anchor
+rejects post-anchor evaluator/pin renewal and keeps the historical allowlist
+unchanged.

@@ -88,22 +88,20 @@ changed.
 ## OPEN FAILURES
 
 - None observed in the exact local full regression or focused safety suites.
-- Independent implementation review is still pending after immutable R4
-  anchor enforcement.
+- Independent implementation review: **SHIP** at exact implementation head
+  `942aee8077b3ad87081d8430062dd53aa56e5d64`.
 
 ## INDEPENDENT REVIEW
 
 - Contract review: **SHIP** at `211c28b` (independent read-only review).
-- Implementation review: **PENDING** (R4 implementation review required).
+- Implementation review: **SHIP** at `942aee8`; no P0/P1/P2 findings.
 
 ## SCORE BEFORE / AFTER
 
 - Evaluation quality: **9.0 → 9.0** (measurement behavior unchanged).
-- Repository truthfulness/scope evidence: **7.5 → provisional 8.5** pending
-  independent implementation review.
+- Repository truthfulness/scope evidence: **7.5 → 8.5**.
 - Capture/runtime scores: unchanged by this evaluator-only package.
 
 ## VERDICT
 
-`REVIEW PENDING` — implementation and full regression are complete; the
-independent reviewer must return exactly `SHIP`, `FIX-FIRST`, or `RETHINK`.
+`SHIP` — implementation, evidence, and independent review are complete.
