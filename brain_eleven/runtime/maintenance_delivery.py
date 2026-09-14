@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -139,7 +140,9 @@ def _safe_report(raw: Mapping[str, Any], intent: Mapping[str, Any], *, memory_re
 
 def _error_code(exc: Exception) -> str:
     value = getattr(exc, "code", None)
-    return value if isinstance(value, str) and value else "MAINTENANCE_FAILED"
+    if isinstance(value, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,63}", value):
+        return value
+    return "MAINTENANCE_FAILED"
 
 
 def _published_report(path: Path, intent: Mapping[str, Any]) -> Optional[dict[str, Any]]:

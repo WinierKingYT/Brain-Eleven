@@ -89,8 +89,10 @@ def create_app(vault, *, token=None, background=True):
             delay = 2
             try:
                 result = await asyncio.to_thread(Worker(vault).once)
-                from .maintenance_delivery import process_pending
-                maintenance_count = await asyncio.to_thread(process_pending, vault, limit=1)
+                maintenance_count = 0
+                if result['status'] != 'OFF':
+                    from .maintenance_delivery import process_pending
+                    maintenance_count = await asyncio.to_thread(process_pending, vault, limit=1)
                 if result['status'] not in {'IDLE', 'OFF'}:
                     app.state.last_activity = time.monotonic()
                     delay = .05
