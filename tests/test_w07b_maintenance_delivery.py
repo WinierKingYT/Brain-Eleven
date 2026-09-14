@@ -199,8 +199,11 @@ def test_failed_delivery_is_bounded_and_content_free(tmp_path, monkeypatch):
     delivery.enqueue(vault, _job(project_id), _result())
     before_memory = MemoryStore(vault).revision()
     before_state = StateStore(vault).project_revision(project_id)
+    class UnsafeFailure(RuntimeError):
+        code = "raw private exception"
+
     def fail(*args, **kwargs):
-        raise RuntimeError("raw private exception")
+        raise UnsafeFailure("raw private exception")
     monkeypatch.setattr(maintenance, "run_maintenance", fail)
     assert delivery.process_pending(vault) == 0
     failed = list((delivery._root(vault) / "queued").glob("*.json"))
@@ -210,5 +213,6 @@ def test_failed_delivery_is_bounded_and_content_free(tmp_path, monkeypatch):
     failed = list((delivery._root(vault) / "failed").glob("*.json"))
     assert len(failed) == 1
     assert "raw private exception" not in failed[0].read_text(encoding="utf-8")
+    assert "MAINTENANCE_FAILED" in failed[0].read_text(encoding="utf-8")
     assert MemoryStore(vault).revision() == before_memory
     assert StateStore(vault).project_revision(project_id) == before_state
