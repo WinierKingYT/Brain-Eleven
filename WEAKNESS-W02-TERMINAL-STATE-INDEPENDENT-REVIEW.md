@@ -1,9 +1,9 @@
 # W-02 Terminal-State Closure — Independent Implementation Review
 
-**Reviewed revision:** `ed54bfa99a3ec6898fbc9e7b2a6c0ce2497ce1fe`  
-**Implementation:** `c842320ae091e6fadad76536baa08a2aac69cb2b`  
-**Tests:** `93436fbf232d21f5ebc584fb642689f0061cf657`  
-**Package report:** `fde49af` plus report-only whitespace correction  
+**Reviewed revision:** `ed54bfa99a3ec6898fbc9e7b2a6c0ce2497ce1fe`
+**Implementation:** `c842320ae091e6fadad76536baa08a2aac69cb2b`
+**Tests:** `93436fbf232d21f5ebc584fb642689f0061cf657`
+**Package report:** `fde49af` plus report-only whitespace correction
 **Reviewer:** independent read-only reviewer (`/root/w02_terminal_review`)
 
 ## Verified evidence
