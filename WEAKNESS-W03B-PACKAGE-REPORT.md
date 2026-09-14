@@ -1,7 +1,7 @@
 # W-03B Package Report — Transcript Ownership and Session Provenance
 
 **PACKAGE:** W-03B
-**REVISION:** `42f573728de5f711fd982fda9bfc079735d0aae6`
+**REVISION:** `f1d889620e359e6ab54ae81de106b983c412c562`
 **OBJECTIVE:** Prevent a transcript inside a trusted client root from being
   attributed to the wrong native session or project before evidence/canonical
   processing.
@@ -36,18 +36,13 @@
 
 ## TESTS EXECUTED
 
-- Focused W-03B/capture/runtime suite: **132 passed, 2 warnings**.
+- Focused W-03B/capture/runtime suite: **127 passed, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`): **PASS**.
 - `compileall` on changed production modules: **PASS**.
 - `git diff --check`: **PASS**.
-- Full `pytest tests -q`: **1116 passed, 2 failed, 2 warnings**.
-
-The two full-suite failures are in the pre-existing
-`tests/test_w06c0r1_contract.py` scope guard. Its fixed W06C0R1 base revision
-rejects the later W-03B production/documentation paths as out-of-allowlist:
-`verify_scope_diff()` reports a scope violation before any W-03B behavior is
-asserted. No W06C0R1 evaluator/corpus file was changed in this package and the
-failure is retained visibly for a separate scope-boundary decision.
+- Full `pytest tests -q`: **1124 passed, 2 warnings**.
+- The former W-06C0R1 scope-guard failures are closed by the separate
+  W-06C0R1 scope-drift package; W-03B runtime behavior was unchanged.
 
 ## QUALITY METRICS BEFORE / AFTER
 
@@ -69,28 +64,23 @@ failure is retained visibly for a separate scope-boundary decision.
 - Native client adapters are intentionally strict. Unsupported future native
   transcript formats remain rejected until a reviewed contract revision adds
   metadata evidence.
-- W06C0R1's repository-wide historical scope guard now blocks the full suite
-  after unrelated later packages; that boundary is not changed here.
+- Scope verification is delegated to the independently shipped W-06C0R1
+  scope-drift package; this package does not alter its evaluator boundary.
 
 ## OPEN FAILURES
 
-- Two W06C0R1 scope-guard tests fail on the exact W-03B HEAD as described
-  above. W-03B cannot be called fully accepted while the package-level full
-  regression gate is unresolved.
+- None observed at the exact review head.
 
 ## INDEPENDENT REVIEW
 
 Contract: `SHIP` at `c3dcb10`.
-Implementation review: **PENDING**.
+Implementation review: **SHIP** at exact head `f1d8896`.
 
 ## SCORE BEFORE / AFTER
 
-- Scope/fail-closed safety: 7.5 → provisional 8.5 (focused evidence only;
-  final score waits for independent review/full-gate resolution).
-- Capture runtime: 7.5 → provisional 8.5 (focused evidence only;
-  final score waits for independent review/full-gate resolution).
+- Scope/fail-closed safety: 7.5 → 8.5.
+- Capture runtime: 7.5 → 8.5.
 
 ## VERDICT
 
-`FIX-FIRST / REVIEW PENDING` — implementation is pushed, but independent
-review and the unrelated W06C0R1 full-suite scope failure remain open.
+`SHIP` — implementation, full regression, and independent review are complete.
