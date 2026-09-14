@@ -53,9 +53,11 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
         if reminder_text:
             candidate_context = context + ('\n\n## Maintenance\n' if context else '## Maintenance\n') + reminder_text
             if estimator.estimate(candidate_context).count <= budget and safe(candidate_context):
-                context = candidate_context
-                if session:
-                    ack_reminder(vault, project['project_id'], reminder['report_id'], session)
+                delivered = not session or ack_reminder(
+                    vault, project['project_id'], reminder['report_id'], session
+                )
+                if delivered:
+                    context = candidate_context
     except Exception:
         # A stale or unavailable derived report must never block bootstrap.
         pass
