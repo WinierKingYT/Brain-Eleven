@@ -272,7 +272,10 @@ review head `ed54bfa`. The next bounded work is a W-07B native
 maintenance/reminder delivery contract review; its trigger, freshness,
 idempotence, project scope and privacy boundaries must be frozen before any
 runtime change. The W-06 retrieval successor remains evaluation-only and must
-not tune HOLDOUT, promote V2 or open Phase 20.
+not tune HOLDOUT, promote V2 or open Phase 20. The W-07B contract is
+independently `SHIP` at exact revision `acebec1`; its bounded runtime
+implementation is now authorized, while package acceptance remains pending
+implementation evidence and independent review.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
@@ -296,6 +299,9 @@ review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
 W-03B transcript ownership/provenance — `SHIP` at exact review head `f1d8896`,
 report in `WEAKNESS-W03B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W03B-TRANSCRIPT-OWNERSHIP-INDEPENDENT-REVIEW.md`.
+W-02 completed-folder terminal-state closure — `SHIP` at exact review head
+`ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
+independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 W-02 completed-folder terminal-state closure — `SHIP` at exact review head
 `ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
 independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
