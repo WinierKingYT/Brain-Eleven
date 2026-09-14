@@ -623,6 +623,18 @@ class Worker:
                 self._write_receipt(job, result)
                 self._persist_checkpoint(job, result['checkpoint_key'], result['cursor'])
                 self.queue.commit(job['job_id'])
+                # Native maintenance is scheduled only after the capture
+                # receipt and terminal queue commit are durable. Scheduling
+                # failure never rolls back or replays the canonical effect.
+                if job.get('event', {}).get('event_type') == 'SESSION_END':
+                    try:
+                        from .maintenance_delivery import enqueue as enqueue_maintenance
+                        intent = enqueue_maintenance(self.vault, job, result)
+                        if intent:
+                            result['maintenance_intent_id'] = intent.get('intent_id')
+                            result['maintenance_intent_status'] = intent.get('status')
+                    except Exception:
+                        result['maintenance_intent_status'] = 'DEGRADED'
                 write_json(self.config.root / 'last-worker.json', {'at': now(), **result})
                 return result
             except Exception as exc:

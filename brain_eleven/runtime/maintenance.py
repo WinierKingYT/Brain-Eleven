@@ -32,7 +32,7 @@ from brain_eleven.support import (  # noqa: E402
     setup_logging,
 )
 from brain_eleven.extraction import EntityExtractor  # noqa: E402
-from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
+from brain_eleven.memory import MemoryStore, MemoryStoreError, filter_memories  # noqa: E402
 
 logger = setup_logging(__name__)
 
@@ -51,19 +51,34 @@ def _run_step(name: str, fn) -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 
-def run_maintenance(vault_path: str = ".", generated_by_run: str = None) -> Dict[str, Any]:
+def run_maintenance(vault_path: str = ".", generated_by_run: str = None,
+                    project_id: str = None) -> Dict[str, Any]:
     """Run graph rebuild + anomaly detection + same-day digest, return a report dict."""
     graph_step = _run_step(
         "graph_rebuild",
         lambda: EntityExtractor(vault_path).build_graph().stats(),
     )
+    scoped_memories = None
+    if project_id:
+        try:
+            document = MemoryStore(vault_path).load()
+            scoped_memories = filter_memories(
+                document.get("validated_memory", []),
+                project_id=project_id,
+                retrieval_scope="project",
+            )
+        except Exception:
+            scoped_memories = []
     anomaly_step = _run_step(
         "anomaly_detection",
-        lambda: AnomalyDetector(vault_path).detect_all(),
+        lambda: AnomalyDetector(vault_path).detect_all(scoped_memories),
     )
     digest_step = _run_step(
         "digest",
-        lambda: MemorySummarizer(vault_path).generate_digest(days=1, top_n_per_type=3),
+        lambda: MemorySummarizer(vault_path).generate_digest(
+            days=1, top_n_per_type=3, project_id=project_id,
+            retrieval_scope="project" if project_id else "default",
+        ),
     )
 
     anomaly_report = anomaly_step["data"] if anomaly_step["ok"] else None
@@ -80,6 +95,7 @@ def run_maintenance(vault_path: str = ".", generated_by_run: str = None) -> Dict
     report = {
         "generated_at": datetime.now().isoformat(),
         "generated_by_run": generated_by_run,
+        "project_id": project_id,
         "source_memory_revision": source_memory_revision,
         "graph": graph_step,
         "anomalies": anomaly_step,

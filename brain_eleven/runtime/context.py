@@ -42,6 +42,17 @@ def compile_bootstrap(vault, project_root, *, budget=3000):
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.
     context = compiler._generate_context_block(memories, {}, '', '', state)
+    try:
+        from .maintenance_delivery import latest_reminder
+        reminder = latest_reminder(vault, project['project_id'], budget=600)
+        reminder_text = reminder.get('context', '') if reminder.get('status') == 'FRESH' else ''
+        if reminder_text:
+            candidate_context = context + ('\n\n## Maintenance\n' if context else '## Maintenance\n') + reminder_text
+            if estimator.estimate(candidate_context).count <= budget and safe(candidate_context):
+                context = candidate_context
+    except Exception:
+        # A stale or unavailable derived report must never block bootstrap.
+        pass
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
         context = compiler._generate_context_block(memories, {}, '', '', state)
