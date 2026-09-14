@@ -22,6 +22,7 @@ Design constraints (this runs inside a shell hook on every session end):
 """
 
 import json
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any
@@ -36,6 +37,13 @@ from brain_eleven.memory import MemoryStore, MemoryStoreError, filter_memories  
 
 logger = setup_logging(__name__)
 
+
+def _safe_error_code(exc: Exception) -> str:
+    value = getattr(exc, "code", None)
+    if isinstance(value, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,63}", value):
+        return value
+    return "MAINTENANCE_FAILED"
+
 # Anomaly counts at or above this many warning-or-worse findings get
 # surfaced at the next session start rather than silently logged.
 SURFACE_THRESHOLD = 1
@@ -47,8 +55,8 @@ def _run_step(name: str, fn) -> Dict[str, Any]:
         result = fn()
         return {"ok": True, "data": result}
     except Exception as e:
-        logger.error(f"Maintenance step '{name}' failed: {e}")
-        return {"ok": False, "error": str(e)}
+        logger.error("Maintenance step '%s' failed: %s", name, _safe_error_code(e))
+        return {"ok": False, "error": str(e), "error_code": _safe_error_code(e)}
 
 
 def run_maintenance(vault_path: str = ".", generated_by_run: str = None,

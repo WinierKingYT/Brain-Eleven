@@ -45,6 +45,8 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
         context = compiler._generate_context_block(memories, {}, '', '', state)
+    reminder_context = None
+    reminder_record = None
     try:
         from .maintenance_delivery import ack_reminder, latest_reminder
         reminder = latest_reminder(vault, project['project_id'], budget=600,
@@ -53,21 +55,27 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
         if reminder_text:
             candidate_context = context + ('\n\n## Maintenance\n' if context else '## Maintenance\n') + reminder_text
             if estimator.estimate(candidate_context).count <= budget and safe(candidate_context):
-                delivered = not session or ack_reminder(
-                    vault, project['project_id'], reminder['report_id'], session
-                )
-                if delivered:
-                    context = candidate_context
+                reminder_context = candidate_context
+                reminder_record = reminder
     except Exception:
         # A stale or unavailable derived report must never block bootstrap.
         pass
     status = 'SUCCESS'
-    if not safe(context) or estimator.estimate(context).count > budget:
+    effective_context = reminder_context or context
+    if not safe(effective_context) or estimator.estimate(effective_context).count > budget:
         status, context = 'DEGRADED', ''
     compiler._ensure_output_is_current(lineage)
     current_project = allowed(vault, project_root)
     if runtime.load()['mode'] == 'OFF' or not current_project or current_project['project_id'] != project['project_id']:
         status, context = 'SCOPE_DISABLED', ''
+    elif status == 'SUCCESS' and reminder_context and reminder_record:
+        try:
+            delivered = not session or ack_reminder(
+                vault, project['project_id'], reminder_record['report_id'], session
+            )
+        except Exception:
+            delivered = False
+        context = reminder_context if delivered else context
     return {'status': status, 'context': context, 'selected_ids': [item['id'] for item in memories] if context else [],
             'project_id': project['project_id'], 'delivered': bool(context), 'provider': 'V1',
             'estimated_tokens': estimator.estimate(context).count}

@@ -106,6 +106,13 @@ def enqueue(vault: str | Path, job: Mapping[str, Any], result: Mapping[str, Any]
 def _safe_report(raw: Mapping[str, Any], intent: Mapping[str, Any], *, memory_revision: int,
                  state_revision: Optional[int]) -> dict[str, Any]:
     """Project maintenance output to counts/statuses; never persist content."""
+    def count(value: Any) -> int:
+        try:
+            value = int(value)
+        except (TypeError, ValueError, OverflowError):
+            return 0
+        return max(0, min(value, 1_000_000))
+
     graph = raw.get("graph", {}) if isinstance(raw.get("graph"), Mapping) else {}
     anomalies = raw.get("anomalies", {}) if isinstance(raw.get("anomalies"), Mapping) else {}
     digest = raw.get("digest", {}) if isinstance(raw.get("digest"), Mapping) else {}
@@ -113,6 +120,12 @@ def _safe_report(raw: Mapping[str, Any], intent: Mapping[str, Any], *, memory_re
     graph_projection = graph_data.get("projection", {}) if isinstance(graph_data.get("projection"), Mapping) else {}
     anomaly_data = anomalies.get("data", {}) if isinstance(anomalies.get("data"), Mapping) else {}
     digest_data = digest.get("data", {}) if isinstance(digest.get("data"), Mapping) else {}
+    severity = anomaly_data.get("by_severity", {})
+    severity = severity if isinstance(severity, Mapping) else {}
+    bounded_severity = {
+        name: count(severity.get(name, 0))
+        for name in ("critical", "error", "warning", "info")
+    }
     return {
         "schema_version": SCHEMA_VERSION,
         "status": "SUCCESS" if all(x.get("ok") for x in (graph, anomalies, digest)) else "DEGRADED",
@@ -127,14 +140,14 @@ def _safe_report(raw: Mapping[str, Any], intent: Mapping[str, Any], *, memory_re
         "graph": {"ok": bool(graph.get("ok")), "status": "rebuilt" if graph.get("ok") else "failed"},
         "anomalies": {
             "ok": bool(anomalies.get("ok")),
-            "total_memories_scanned": int(anomaly_data.get("total_memories_scanned", 0)),
-            "total_anomalies": int(anomaly_data.get("total_anomalies", 0)),
-            "by_severity": dict(anomaly_data.get("by_severity", {})) if isinstance(anomaly_data.get("by_severity", {}), Mapping) else {},
+            "total_memories_scanned": count(anomaly_data.get("total_memories_scanned", 0)),
+            "total_anomalies": count(anomaly_data.get("total_anomalies", 0)),
+            "by_severity": bounded_severity,
         },
         "digest": {
             "ok": bool(digest.get("ok")),
-            "total_memories_considered": int(digest_data.get("total_memories_considered", 0)),
-            "total_after_dedup": int(digest_data.get("total_after_dedup", 0)),
+            "total_memories_considered": count(digest_data.get("total_memories_considered", 0)),
+            "total_after_dedup": count(digest_data.get("total_after_dedup", 0)),
         },
         "surface_at_next_session": bool(raw.get("surface_at_next_session")),
     }
