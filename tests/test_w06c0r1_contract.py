@@ -108,7 +108,7 @@ def test_scope_end_revision_is_pinned_and_invalid_end_fails_closed():
 def test_scope_drift_pin_tampering_fails_closed(monkeypatch, tmp_path):
     from evals.w06c0r1 import evaluation
 
-    pin = json.loads((ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json").read_text(encoding="utf-8"))
+    pin = json.loads(evaluation.SCOPE_DRIFT_PIN.read_text(encoding="utf-8"))
     pin["evidence_hashes"]["dev"] = "sha256:" + ("0" * 64)
     replacement = tmp_path / evaluation.SCOPE_DRIFT_PIN.name
     replacement.write_text(json.dumps(pin), encoding="utf-8")
