@@ -200,7 +200,9 @@ def reconcile_completed(vault: str | Path, *, limit: int = 16) -> int:
         return 0
     scheduled = 0
     completed = Path(vault) / ".brain-eleven" / "capture" / "completed"
-    for path in sorted(completed.glob("*.json"))[:limit]:
+    for path in sorted(completed.glob("*.json")):
+        if scheduled >= limit:
+            break
         try:
             job = read_json(path)
             event = job.get("event", {}) if isinstance(job, dict) else {}
