@@ -30,4 +30,3 @@ absence of a hardware power-loss guarantee remain documented package limits.
 ## Verdict
 
 **SHIP**
-
