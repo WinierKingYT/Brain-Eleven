@@ -305,11 +305,13 @@ class CaptureQueue:
             raise CaptureQueueCorruptError("capture queue schema is unsupported")
         if not isinstance(document["job_id"], str) or not _JOB_ID.fullmatch(document["job_id"]):
             raise CaptureQueueCorruptError("capture queue job identity is invalid")
+        if path.name != document["job_id"] + ".json":
+            raise CaptureQueueCorruptError("capture queue filename/job identity mismatch")
         if not isinstance(document["idempotency_key"], str) or not document["idempotency_key"]:
             raise CaptureQueueCorruptError("capture queue idempotency identity is invalid")
         if document["job_id"] != _job_id(document["idempotency_key"]):
             raise CaptureQueueCorruptError("capture queue job/idempotency identity mismatch")
-        if document["status"] not in JOB_STATUSES:
+        if not isinstance(document["status"], str) or document["status"] not in JOB_STATUSES:
             raise CaptureQueueCorruptError("capture queue job state is unsupported")
         if not isinstance(document["attempt"], int) or isinstance(document["attempt"], bool) or document["attempt"] < 0:
             raise CaptureQueueCorruptError("capture queue attempt is invalid")
@@ -341,6 +343,57 @@ class CaptureQueue:
     def _queued_count(self) -> int:
         return sum(1 for path in self._directory(QUEUED).glob("*.json") if path.is_file())
 
+    def _committed_ledger_ids(self) -> set[str]:
+        """Read terminal acknowledgements once per locked reconciliation pass."""
+        if not self.ledger_path.exists():
+            return set()
+        committed = set()
+        try:
+            with self.ledger_path.open(encoding="utf-8") as handle:
+                for line in handle:
+                    record = json.loads(line)
+                    if not isinstance(record, dict):
+                        raise CaptureQueueCorruptError("capture queue ledger record is invalid")
+                    if record.get("action") == "COMMITTED":
+                        job_id = record.get("job_id")
+                        if not isinstance(job_id, str) or not _JOB_ID.fullmatch(job_id):
+                            raise CaptureQueueCorruptError("capture queue ledger identity is invalid")
+                        committed.add(job_id)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise CaptureQueueCorruptError("capture queue ledger is unreadable") from exc
+        return committed
+
+    def _reconcile_terminal(self, source: Path, job: dict[str, Any],
+                            committed: set[str], *, now: str) -> bool:
+        """Close terminal state/location/ledger under the caller's queue lock.
+
+        A legacy completed location proves that commit's rename happened;
+        queue repair acknowledges it without executing any worker effects.
+        """
+        completed = source.parent == self._directory(COMMITTED)
+        if not completed and job["status"] != COMMITTED:
+            return False
+        repaired = False
+        if job["status"] in {CLAIMED, PROCESSING} and completed:
+            _parse_utc(job.get("claimed_at"), field="claimed_at")
+            if "committed_at" in job:
+                _parse_utc(job["committed_at"], field="committed_at")
+            job["status"] = COMMITTED
+            job.setdefault("committed_at", now)
+            _atomic_write_json(source, job)
+            repaired = True
+        elif job["status"] != COMMITTED:
+            raise CaptureQueueCorruptError("completed job has an invalid state")
+        _parse_utc(job.get("committed_at"), field="committed_at")
+        if not completed:
+            self._move(source, self._job_path(COMMITTED, job["job_id"]))
+            repaired = True
+        if job["job_id"] not in committed:
+            self._ledger(action="COMMITTED", job=job)
+            committed.add(job["job_id"])
+            repaired = True
+        return repaired
+
     def enqueue(self, event: HookEvent) -> QueueReceipt:
         """Durably enqueue an event once; duplicate delivery is acknowledged safely."""
         self._ensure_layout()
@@ -349,12 +402,16 @@ class CaptureQueue:
             with self._locked():
                 existing = self._existing_job(job["job_id"])
                 if existing is not None:
-                    status, path = existing
+                    _, path = existing
                     existing_job = self._read_job(path)
                     if existing_job["idempotency_key"] != event.idempotency_key:
                         raise CaptureQueueCorruptError("capture queue job identity collision")
+                    if path.parent == self._directory(COMMITTED) or existing_job["status"] == COMMITTED:
+                        if path.parent not in {self._directory(CLAIMED), self._directory(COMMITTED)}:
+                            raise CaptureQueueCorruptError("committed job has an invalid location")
+                        self._reconcile_terminal(path, existing_job, self._committed_ledger_ids(), now=_utc_now())
                     self._ledger(action="DUPLICATE", job=existing_job)
-                    return QueueReceipt(job_id=job["job_id"], status=status, duplicate=True)
+                    return QueueReceipt(job_id=job["job_id"], status=existing_job["status"], duplicate=True)
                 if self._queued_count() >= self.config.max_queued_jobs:
                     raise CaptureQueueFullError("capture queue is full")
                 self._validate_event(job["event"])
@@ -436,10 +493,12 @@ class CaptureQueue:
                 if job["status"] not in {CLAIMED, PROCESSING}:
                     raise CaptureQueueStateError("capture job cannot be committed")
                 destination = self._job_path(COMMITTED, job_id)
-                self._move(source, destination)
                 job["status"] = COMMITTED
                 job["committed_at"] = _utc_now()
-                _atomic_write_json(destination, job)
+                # A crash during rename must leave an already-terminal record
+                # that recovery can finish without replaying worker effects.
+                _atomic_write_json(source, job)
+                self._move(source, destination)
                 self._ledger(action="COMMITTED", job=job)
                 return QueueReceipt(job_id=job_id, status=COMMITTED)
         except MemoryStoreLockTimeout as exc:
@@ -478,14 +537,22 @@ class CaptureQueue:
             raise CaptureQueueLockError("capture queue lock timed out") from exc
 
     def recover_expired_claims(self, *, now: Optional[str] = None) -> int:
-        """Recover jobs stranded by a worker crash after their explicit lease expires."""
+        """Close interrupted commits and recover claims after their lease expires."""
         self._ensure_layout()
         current = _parse_utc(now or _utc_now(), field="recovery_at")
         recovered = 0
         try:
             with self._locked():
+                committed = self._committed_ledger_ids()
+                recovery_at = current.isoformat().replace("+00:00", "Z")
+                for source in sorted(self._directory(COMMITTED).glob("*.json")):
+                    job = self._read_job(source)
+                    recovered += self._reconcile_terminal(source, job, committed, now=recovery_at)
                 for source in sorted(self._directory(CLAIMED).glob("*.json")):
                     job = self._read_job(source)
+                    if job["status"] == COMMITTED:
+                        recovered += self._reconcile_terminal(source, job, committed, now=recovery_at)
+                        continue
                     # A crash after persisting the next state but before the
                     # rename leaves the document in the claimed directory.
                     # Repair that location/state pair before lease handling.
