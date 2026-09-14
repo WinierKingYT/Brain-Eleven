@@ -1,7 +1,7 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `1a2c839` (tests; implementation `94f331f`)  
+**REVISION:** `8468b32` (final evidence head; implementation `94f331f`, hardening `b2a0ff8`)
 **STATUS:** REVIEW PENDING / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -37,6 +37,10 @@ Test commit `1a2c839`:
   freshness, corruption/cross-project rejection, bounded failure, and
   canonical non-mutation tests.
 
+Follow-up commits `b2a0ff8` and `8468b32` bound persisted failure codes to
+content-free uppercase identifiers, keep maintenance processing disabled in
+runtime `OFF`, and test the rejection of an unsafe exception code.
+
 ## ROOT CAUSES ADDRESSED
 
 - Native `SessionEnd` previously stopped at capture delivery and did not
@@ -52,21 +56,24 @@ Test commit `1a2c839`:
 
 ## TESTS ADDED
 
-Eight focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
+Eleven focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
 
 1. SessionEnd-only intent creation and duplicate idempotence; Stop exclusion.
 2. Worker scheduling after a terminal capture result.
-3. Privacy-safe report projection and fresh reminder delivery.
-4. Repeated processing without rerunning maintenance.
-5. Crash after report publication and before terminal intent move.
-6. Stale report rejection after a canonical revision change.
-7. Corrupt and foreign report rejection.
-8. Bounded retry/failure, content-free error persistence, and unchanged
+3. Completed-capture reconciliation after an enqueue gap.
+4. Privacy-safe report projection and fresh reminder delivery.
+5. Repeated processing without rerunning maintenance.
+6. Crash after report publication and before terminal intent move.
+7. Crash before report publication with staging promotion and no rerun.
+8. Stale report rejection after a canonical revision change.
+9. Corrupt and foreign report rejection.
+10. Surface flag and session-keyed delivery receipt behavior.
+11. Bounded retry/failure, content-free error persistence, and unchanged
    MemoryStore/StateStore revisions.
 
 ## TESTS EXECUTED
 
-- Focused W-07B: **8 passed**.
+- Focused W-07B: **11 passed**.
 - Existing native/maintenance/session/capture focus: **66 passed**.
 - Full regression at implementation + test exact head: **1165 passed, 2
   warnings**.
@@ -132,6 +139,6 @@ close this package.
 **REVIEW PENDING / NOT ACCEPTED**
 
 The implementation and evidence commits are pushed, but W-07B remains open
-until the exact final head receives an independent read-only verdict of
+until exact final head `8468b32` receives an independent read-only verdict of
 `SHIP`, `FIX-FIRST`, or `RETHINK` and the remaining native/process evidence is
 addressed.
