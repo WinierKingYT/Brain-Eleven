@@ -1,7 +1,7 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `8468b32` (final evidence head; implementation `94f331f`, hardening `b2a0ff8`)
+**REVISION:** `8b044cf` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
 **STATUS:** REVIEW PENDING / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -75,7 +75,7 @@ Eleven focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
 
 - Focused W-07B: **11 passed**.
 - Existing native/maintenance/session/capture focus: **66 passed**.
-- Full regression at implementation + test exact head: **1165 passed, 2
+- Full regression at implementation + test exact head: **1168 passed, 2
   warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on touched runtime/test files: PASS.
 - `compileall` on touched runtime/test files: PASS.
