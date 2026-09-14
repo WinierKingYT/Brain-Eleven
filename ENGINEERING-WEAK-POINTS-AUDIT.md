@@ -262,9 +262,11 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 `WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
-**Next package:** W-06C0R1 is closed. The next safety-priority bounded work is
-the successor W-03B transcript ownership/provenance contract, based on the
-read-only native smoke finding above. It must preserve W-03A path confinement
+**Next package:** W-06C0R1 scope-drift maintenance is in final R4
+implementation review. Once independently `SHIP`ped, the next
+safety-priority bounded work is the successor W-03B transcript
+ownership/provenance contract, based on the read-only native smoke finding
+above. It must preserve W-03A path confinement
 and W-04 late-locator retry behavior, and must not infer project identity from
 untrusted content. A separate successor W-02 queue-terminal-state contract
 may follow for the completed-folder crash window. The W-06 retrieval
@@ -313,12 +315,14 @@ with the current repository and incorrectly included later W-03B files. The
 bounded maintenance package pins the historical range to
 `3f795f94dde199ba4e970705d37686ee4f50bc5d` →
 `0b5a262c437da13813e542c569857a68c2db7a69`, preserves the original allowlist
-and old W-06C0 compatibility exception, and hash-binds the one-time evidence
-refresh in `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json`.
+and old W-06C0 compatibility exception, and now hash-binds the immutable R4
+maintenance anchor. R1, R2, and R3 pin files remain byte-identical historical
+artifacts; R4 is the canonical pin.
 
-Exact evidence at revision `8db6b59`: W-06C0/W-06C0R1 focused **34 passed**;
-W-03B/capture focused **127 passed, 2 warnings**; full suite **1122 passed,
-2 warnings**; critical flake8, compileall, manifest/seal, and diff checks
-passed. Corpus cases, labels, provider metrics, runtime, retrieval, V2, and
-Phase 20 were unchanged. The package remains `REVIEW PENDING` until a fresh
-independent read-only implementation review returns `SHIP`.
+Exact evidence at revision `a6ac097`: W-06C0/W-06C0R1 focused **36 passed**;
+W-03B/capture focused **127 passed, 2 warnings**; clean full suite
+**1124 passed, 2 warnings**; critical flake8, compileall, manifest/seal, and
+diff checks passed. Corpus cases, labels, provider metrics, runtime,
+retrieval, V2, and Phase 20 were unchanged. The package remains
+`REVIEW PENDING` until a fresh independent read-only implementation review
+returns `SHIP`.

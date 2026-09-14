@@ -1,7 +1,7 @@
 # W-06C0R1 Scope Drift Maintenance — Package Report
 
 **PACKAGE:** W-06C0R1-SCOPE-DRIFT  
-**REVISION:** `b26dd04ba0e1bc871146520c086218e65520a320`  
+**REVISION:** `a6ac0971b684d637f88dfd9c7d13017f4ea7f3bf`  
 **OBJECTIVE:** Bind the W-06C0R1 scope assertion to its immutable historical
 package end and isolate later unrelated packages without weakening the
 allowlist or evaluator safety gates.
@@ -14,6 +14,9 @@ allowlist or evaluator safety gates.
 - `evals/corpus-v4/holdout/seal.json` (resealed generated binding only)
 - `evals/w06c0r1/evidence/{dev,test,holdout}.json` (fresh generated evidence)
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json`
+- `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json`
+- `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json`
+- `WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R4.json`
 - `WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md`
 
 Corpus cases, attestations, labels, provider implementations, metrics,
@@ -44,9 +47,9 @@ changed.
 
 ## TESTS EXECUTED
 
-- W-06C0 + W-06C0R1 focused suites: **34 passed**.
+- W-06C0 + W-06C0R1 focused suites: **36 passed**.
 - W-03B/capture/runtime focused suite: **127 passed, 2 warnings**.
-- Full `pytest tests -q`: **1122 passed, 2 warnings**.
+- Full `pytest tests -q`: **1124 passed, 2 warnings** on the clean rerun.
 - Critical flake8 (`E9,F63,F7,F82`): **PASS**.
 - `compileall`: **PASS**.
 - `git diff --check`: **PASS**.
@@ -57,7 +60,8 @@ changed.
 ## QUALITY METRICS BEFORE / AFTER
 
 - W-06C0R1 full regression at W-03B HEAD: **1116 passed, 2 failed** →
-  **1122 passed, 0 failed**.
+  **1124 passed, 0 failed** on the clean rerun. An earlier run had one
+  unrelated cold-native-start flake; its focused bootstrap rerun passed 11/11.
 - Historical scope reproducibility: current-HEAD dependent → pinned package
   end with explicit current-HEAD diagnostics.
 - Corpus/provider quality metrics: unchanged after source-bound evidence
@@ -84,12 +88,13 @@ changed.
 ## OPEN FAILURES
 
 - None observed in the exact local full regression or focused safety suites.
-- Independent implementation review is still pending.
+- Independent implementation review is still pending after immutable R4
+  anchor enforcement.
 
 ## INDEPENDENT REVIEW
 
 - Contract review: **SHIP** at `211c28b` (independent read-only review).
-- Implementation review: **PENDING**.
+- Implementation review: **PENDING** (R4 implementation review required).
 
 ## SCORE BEFORE / AFTER
 
