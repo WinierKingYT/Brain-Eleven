@@ -1,6 +1,6 @@
 # W-02 Terminal-State Closure — Independent Contract Review
 
-**Reviewed revision:** `9f44c94e1c32d97b73e668d4c2d1845e8f50a5b0`  
+**Reviewed revision:** `9f44c944fe30bc1e3c902d360a5287f5d1b8c323`  
 **Contract:** `WEAKNESS-W02-TERMINAL-STATE-CONTRACT.md`  
 **Reviewer:** independent read-only reviewer (`/root/w02_contract_review3`)  
 **Review type:** contract-only; implementation acceptance remains separate
@@ -24,4 +24,3 @@ This verdict accepts the contract only. It does not accept or authorize a
 production implementation as shipped; implementation must still satisfy the
 contract's focused fault-injection matrix, full regression and independent
 implementation review.
-
