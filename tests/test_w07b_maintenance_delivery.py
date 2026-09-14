@@ -104,6 +104,33 @@ def test_worker_schedules_intent_only_after_terminal_capture(tmp_path, monkeypat
     assert delivery.read_json(queued[0])["project_id"] == project_id
 
 
+def test_completed_capture_reconciliation_recovers_enqueue_gap(tmp_path, monkeypatch):
+    vault, project_id = _runtime_worker_vault(tmp_path)
+    worker = Worker(vault)
+
+    def processed(job):
+        checkpoint = worker._checkpoint_for(job)
+        return {
+            "status": "PROCESSED", "job_id": job["job_id"], "messages": 0,
+            "effects": 0, "evidence_count": 0, "canonical_effect_count": 0,
+            "review_effect_count": 0, "effect_ids": [],
+            "canonical_operation_ids": [], "review_effect_ids": [],
+            "effect_verified": True, "has_more": False,
+            "checkpoint_key": checkpoint.name,
+            "cursor": {"offset": 0, "prefix_hash": "0" * 64, "has_more": False},
+        }
+
+    monkeypatch.setattr(worker, "process", processed)
+    original_enqueue = delivery.enqueue
+    monkeypatch.setattr(delivery, "enqueue", lambda *args, **kwargs: (_ for _ in ()).throw(OSError("outbox gap")))
+    assert worker.once()["status"] == "PROCESSED"
+    monkeypatch.setattr(delivery, "enqueue", original_enqueue)
+    assert delivery.reconcile_completed(vault) == 1
+    queued = list((delivery._root(vault) / "queued").glob("*.json"))
+    assert len(queued) == 1
+    assert delivery.read_json(queued[0])["project_id"] == project_id
+
+
 def test_processing_publishes_privacy_safe_report_and_fresh_reminder(tmp_path, monkeypatch):
     vault, project_id = _vault(tmp_path)
     delivery.enqueue(vault, _job(project_id), _result())
@@ -159,6 +186,30 @@ def test_crash_after_report_publication_resumes_without_rerun(tmp_path, monkeypa
     assert len(list((delivery._root(vault) / "completed").glob("*.json"))) == 1
 
 
+def test_crash_before_report_publication_promotes_staging_without_rerun(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    delivery.enqueue(vault, _job(project_id), _result())
+    original_write = delivery.write_json
+    failed_once = {"value": False}
+
+    def crash_report_write(path, value):
+        if Path(path).parent.name == "reports" and not failed_once["value"]:
+            failed_once["value"] = True
+            raise RuntimeError("simulated report publication crash")
+        return original_write(path, value)
+
+    monkeypatch.setattr(maintenance, "run_maintenance", lambda *args, **kwargs: _raw_report())
+    monkeypatch.setattr(delivery, "write_json", crash_report_write)
+    assert delivery.process_pending(vault) == 0
+    assert list((delivery._root(vault) / "staging").glob("*.json"))
+
+    rerun_calls = []
+    monkeypatch.setattr(delivery, "write_json", original_write)
+    monkeypatch.setattr(maintenance, "run_maintenance", lambda *args, **kwargs: rerun_calls.append(1))
+    assert delivery.process_pending(vault) == 1
+    assert rerun_calls == []
+
+
 def test_revision_change_hides_old_report(tmp_path, monkeypatch):
     vault, project_id = _vault(tmp_path)
     delivery.enqueue(vault, _job(project_id), _result())
@@ -193,6 +244,23 @@ def test_corrupt_or_foreign_report_is_never_delivered(tmp_path):
     (root / "reports" / "foreign.json").write_text(json.dumps(foreign), encoding="utf-8")
     assert delivery.latest_reminder(vault, project_id)["status"] == "STALE_OR_MISSING"
 
+
+def test_surface_flag_and_delivery_receipt_bound_reminders(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    delivery.enqueue(vault, _job(project_id), _result())
+    raw = _raw_report()
+    raw["surface_at_next_session"] = False
+    monkeypatch.setattr(maintenance, "run_maintenance", lambda *args, **kwargs: raw)
+    assert delivery.process_pending(vault) == 1
+    assert delivery.latest_reminder(vault, project_id, delivery_key="session-1")["status"] == "STALE_OR_MISSING"
+
+    delivery.enqueue(vault, {**_job(project_id), "event": {**_job(project_id)["event"], "event_id": "event-w07b-002"}}, _result())
+    raw["surface_at_next_session"] = True
+    assert delivery.process_pending(vault) == 1
+    fresh = delivery.latest_reminder(vault, project_id, delivery_key="session-1")
+    assert fresh["status"] == "FRESH"
+    assert delivery.ack_reminder(vault, project_id, fresh["report_id"], "session-1") is True
+    assert delivery.latest_reminder(vault, project_id, delivery_key="session-1")["status"] == "ALREADY_DELIVERED"
 
 def test_failed_delivery_is_bounded_and_content_free(tmp_path, monkeypatch):
     vault, project_id = _vault(tmp_path)
