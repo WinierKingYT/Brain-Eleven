@@ -1,7 +1,7 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `8b044cf` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
+**REVISION:** `8b18d66` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
 **STATUS:** REVIEW PENDING / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -40,6 +40,11 @@ Test commit `1a2c839`:
 Follow-up commits `b2a0ff8` and `8468b32` bound persisted failure codes to
 content-free uppercase identifiers, keep maintenance processing disabled in
 runtime `OFF`, and test the rejection of an unsafe exception code.
+
+Final hardening commit `8b18d66` makes report severity projection bounded,
+keeps raw exception text out of maintenance logs, and acknowledges a
+SessionStart reminder only after final scope/freshness validation and an
+atomic delivery receipt.
 
 ## ROOT CAUSES ADDRESSED
 
