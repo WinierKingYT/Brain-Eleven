@@ -1,0 +1,26 @@
+{
+  "compatibility_id": "W06C0R1-SCOPE-DRIFT-P4",
+  "evidence_hashes": {
+    "dev": "sha256:b05d920b89a67d60a2453ecf9297b86919422781b2fd858fb0a60bc1f5069746",
+    "holdout": "sha256:b8f48b73563058d5e2a0ab5bfaf75a8118c01d9b2aff2f80b271fbb867c7aab4",
+    "test": "sha256:3a84131183d941dca3bb3e9ba51398918c8b216bdfbd50a0926913db867293d7"
+  },
+  "maintenance_paths": [
+    "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json",
+    "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json",
+    "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R4.json",
+    "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
+    "evals/corpus-v4/holdout/seal.json",
+    "evals/corpus-v4/manifest.json",
+    "evals/w06c0r1/evaluation.py",
+    "evals/w06c0r1/evidence/dev.json",
+    "evals/w06c0r1/evidence/holdout.json",
+    "evals/w06c0r1/evidence/test.json",
+    "tests/test_w06c0r1_contract.py"
+  ],
+  "manifest_hash": "sha256:81a869b588cc36abf0860ae9aeb379745d1ef148501246b04f3570efd8b67400",
+  "schema_version": 1,
+  "scope_end_revision": "0b5a262c437da13813e542c569857a68c2db7a69",
+  "seal_hash": "sha256:6356b6c018dfd490a6cc8cff8d788e64f8aa5823a2875637102813ec5930e989",
+  "source_fingerprint": "sha256:647fef6fe7f4fb9af40ad0331ba0e8abb62042e33c8083a11d672d24870afe2f"
+}

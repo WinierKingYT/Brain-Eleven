@@ -42,15 +42,16 @@ HISTORICAL_SCOPE_COMPAT_ID = "W06C0-SCOPE-COMPAT-P1B"
 HISTORICAL_SCOPE_COMPAT_SCOPE_END_REVISION = "f676c91d0e41a7523dc2b96a131814b983401456"
 HISTORICAL_SCOPE_COMPAT_BLOB_SHA256 = "sha256:e375d337a52155d867c12b2f334c56ecf0875d1d153cb99a48980230ae05b3be"
 IMPLEMENTATION_SCOPE_END_REVISION = "0b5a262c437da13813e542c569857a68c2db7a69"
-SCOPE_DRIFT_PIN = ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json"
-SCOPE_DRIFT_PIN_RELATIVE = "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json"
+SCOPE_DRIFT_PIN = ROOT / "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R4.json"
+SCOPE_DRIFT_PIN_RELATIVE = "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R4.json"
 SCOPE_DRIFT_HISTORICAL_PIN_RELATIVE = frozenset(
     {
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json",
     }
 )
-SCOPE_DRIFT_PIN_ID = "W06C0R1-SCOPE-DRIFT-P3"
+SCOPE_DRIFT_PIN_ID = "W06C0R1-SCOPE-DRIFT-P4"
 SCOPE_DRIFT_MAINTENANCE_FILES = frozenset(
     {
         "evals/corpus-v4/manifest.json",
@@ -63,6 +64,7 @@ SCOPE_DRIFT_MAINTENANCE_FILES = frozenset(
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN.json",
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R2.json",
         "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R3.json",
+        "WEAKNESS-W06C0R1-SCOPE-DRIFT-PIN-R4.json",
     }
 )
 SCOPE_DRIFT_DOCUMENTATION_FILES = frozenset(
@@ -526,10 +528,10 @@ def verify_scope_diff(
 
     post_scope_owned = _post_scope_owned_paths(post_end_changed)
     if post_scope_owned:
-        pin = _load_scope_drift_pin(root)
         unpinned = tuple(path for path in post_scope_owned if path not in SCOPE_DRIFT_MAINTENANCE_FILES)
         if unpinned:
             raise W06C0R1Error(f"post-scope package paths changed after pinned end: {list(unpinned)}")
+        pin = _load_scope_drift_pin(root)
     else:
         pin = None
 

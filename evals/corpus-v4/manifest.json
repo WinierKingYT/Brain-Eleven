@@ -1205,7 +1205,7 @@
       "sha256": "sha256:fdec94a70bba8385e78c2483fbbedfa0b97621c306e708db2ab13b14b668e8be"
     }
   },
-  "manifest_hash": "sha256:ce1f63d274ef34e30ea422f856026a91c9bcc0882c99fdeb194977c2877f7a38",
+  "manifest_hash": "sha256:81a869b588cc36abf0860ae9aeb379745d1ef148501246b04f3570efd8b67400",
   "minimum_answerable_counts": {
     "dev": 45,
     "holdout": 22,
@@ -1706,7 +1706,7 @@
   },
   "provenance_version": "w06c0r1-provenance-v1",
   "schema_version": 1,
-  "source_fingerprint": "sha256:bc16836bbd8dc3adffe35e432165cbdff6e4b1179f409484b861fc43ac47d194",
+  "source_fingerprint": "sha256:647fef6fe7f4fb9af40ad0331ba0e8abb62042e33c8083a11d672d24870afe2f",
   "split_directories": [
     "dev",
     "test",
