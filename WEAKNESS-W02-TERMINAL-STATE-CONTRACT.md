@@ -6,6 +6,14 @@
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
+**Review boundary:** This revision is contract-only. Its independent review
+must assess whether the problem statement, bounded scope, invariants, test
+matrix and exit gate are sufficient and internally consistent. The absence of
+production implementation, successor tests and package evidence is expected
+at this stage and is not a contract defect. Those artifacts belong to the
+later implementation review and cannot be used to grant this contract an
+implementation `SHIP` verdict.
+
 ## Evidence-backed problem
 
 The earlier W-02 claim transition is already independently shipped. A
@@ -123,4 +131,3 @@ This package remains `FIX-FIRST / NOT ACCEPTED` until the exact-head focused
 and full evidence is recorded and the independent review returns `SHIP`.
 Implementation must not be treated as complete merely because the queue test
 suite is green.
-
