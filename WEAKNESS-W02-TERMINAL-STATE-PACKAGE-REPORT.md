@@ -1,11 +1,11 @@
 # W-02 Terminal-State Closure — Package Report
 
-**VERDICT: REVIEW PENDING / NOT ACCEPTED**  
-**Implementation revision:** `c842320ae091e6fadad76536baa08a2aac69cb2b`  
-**Test and validation revision:** `93436fbf232d21f5ebc584fb642689f0061cf657`  
+**VERDICT: REVIEW PENDING / NOT ACCEPTED**
+**Implementation revision:** `c842320ae091e6fadad76536baa08a2aac69cb2b`
+**Test and validation revision:** `93436fbf232d21f5ebc584fb642689f0061cf657`
 **Defect baseline:** `b9d4c06` (the intervening `8b0e382` changes only the
-contract review document)  
-**Phase 20:** FROZEN / LOCKED  
+contract review document)
+**Phase 20:** FROZEN / LOCKED
 **V2 runtime:** SHADOW
 
 ## Bounded change
