@@ -275,6 +275,10 @@ separate P2 package and is not opened until its trigger, freshness,
 idempotence, scope and privacy contract is independently reviewed.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
+The W-02 successor completed-folder terminal-state contract is independently
+`SHIP` at exact contract revision `9f44c94`; production implementation is the
+next bounded step and remains unshipped until its fault-injection evidence and
+independent implementation review pass.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
