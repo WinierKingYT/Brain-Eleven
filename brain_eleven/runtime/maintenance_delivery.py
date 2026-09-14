@@ -37,6 +37,8 @@ def _ensure(vault: str | Path) -> dict[str, Path]:
     directories = _dirs(vault)
     for path in directories.values():
         path.mkdir(parents=True, exist_ok=True)
+    for name in ("reports", "staging", "delivered"):
+        (_root(vault) / name).mkdir(parents=True, exist_ok=True)
     return directories
 
 
@@ -170,8 +172,53 @@ def _published_report(path: Path, intent: Mapping[str, Any]) -> Optional[dict[st
     return report
 
 
+def _stage_path(vault: str | Path, intent_id: str) -> Path:
+    return _root(vault) / "staging" / (intent_id + ".json")
+
+
+def _delivery_path(vault: str | Path, project_id: str, report_id: str, delivery_key: str) -> Path:
+    delivery_id = identity("maintenance_delivery_", project_id, report_id, delivery_key)
+    return _root(vault) / "delivered" / (delivery_id + ".json")
+
+
+def reconcile_completed(vault: str | Path, *, limit: int = 16) -> int:
+    """Recreate intents for committed SessionEnd jobs if enqueue was interrupted."""
+    if limit <= 0:
+        return 0
+    scheduled = 0
+    completed = Path(vault) / ".brain-eleven" / "capture" / "completed"
+    for path in sorted(completed.glob("*.json"))[:limit]:
+        try:
+            job = read_json(path)
+            event = job.get("event", {}) if isinstance(job, dict) else {}
+            project_id = _project_id(job) if isinstance(job, dict) else None
+            if event.get("event_type") != "SESSION_END" or not project_id:
+                continue
+            directories = _ensure(vault)
+            intent_id = _intent_id(job, project_id)
+            if _find(directories, intent_id):
+                continue
+            from .worker import Worker
+            receipt = Worker(vault)._read_receipt(job)
+            result = {
+                "status": "PROCESSED",
+                "effect_verified": True,
+                "canonical_effect_count": receipt.get("canonical_effect_count", 0),
+            }
+            if enqueue(vault, job, result):
+                scheduled += 1
+        except (OSError, TypeError, ValueError, KeyError, RuntimeError):
+            # A malformed/unfinished capture remains visible to the normal
+            # capture reconciliation path; never persist its source content.
+            continue
+    return scheduled
+
+
 def process_pending(vault: str | Path, *, limit: int = 1) -> int:
     """Process a bounded number of queued intents; safe to call repeatedly."""
+    if limit <= 0:
+        return 0
+    reconcile_completed(vault, limit=max(limit, 1))
     directories = _ensure(vault)
     candidates = []
     for status in (QUEUED, PROCESSING):
@@ -210,6 +257,19 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                 processing.unlink(missing_ok=True)
                 processed += 1
                 continue
+            staged_path = _stage_path(vault, intent_id)
+            staged = _published_report(staged_path, intent)
+            if staged is not None:
+                # A crash between staging and public report replacement is
+                # recoverable without rerunning graph/anomaly/digest work.
+                write_json(report_path, staged)
+                intent.update({"status": COMPLETED, "completed_at": now(),
+                               "report_path": str(report_path.name)})
+                write_json(_intent_path(directories, COMPLETED, intent_id), intent)
+                staged_path.unlink(missing_ok=True)
+                processing.unlink(missing_ok=True)
+                processed += 1
+                continue
             from .maintenance import run_maintenance
             raw = run_maintenance(vault, generated_by_run=intent_id, project_id=intent["project_id"])
             current_memory, current_state = _revisions(vault, intent["project_id"])
@@ -217,9 +277,13 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                     current_state != intent.get("source_state_revision")):
                 raise RuntimeError("MAINTENANCE_SOURCE_CHANGED")
             report = _safe_report(raw, intent, memory_revision=current_memory, state_revision=current_state)
+            if report.get("source_graph_revision") != current_memory:
+                raise RuntimeError("MAINTENANCE_GRAPH_STALE")
+            write_json(staged_path, report)
             write_json(report_path, report)
             intent.update({"status": COMPLETED, "completed_at": now(), "report_path": str(report_path.name)})
             write_json(_intent_path(directories, COMPLETED, intent_id), intent)
+            staged_path.unlink(missing_ok=True)
             processing.unlink(missing_ok=True)
             processed += 1
         except Exception as exc:
@@ -234,7 +298,8 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
     return processed
 
 
-def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600) -> dict[str, Any]:
+def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600,
+                    delivery_key: Optional[str] = None) -> dict[str, Any]:
     """Return a bounded reminder only for a current project/revision report."""
     directories = _ensure(vault)
     reports = sorted((_root(vault) / "reports").glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -250,14 +315,41 @@ def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600) ->
             continue
         if report.get("source_graph_revision") != current_memory:
             continue
+        if report.get("surface_at_next_session") is not True:
+            continue
         anomalies = report.get("anomalies", {})
         digest = report.get("digest", {})
         text = (f"Maintenance report: {anomalies.get('total_anomalies', 0)} anomalies; "
                 f"{digest.get('total_after_dedup', 0)} recent memories after dedup.")
         if len(text.encode("utf-8")) > budget:
             text = text.encode("utf-8")[:budget].decode("utf-8", "ignore")
-        return {"status": "FRESH", "context": text, "report_id": report.get("report_id"), "project_id": project_id}
+        report_id = report.get("report_id")
+        if isinstance(delivery_key, str) and delivery_key:
+            if _delivery_path(vault, project_id, report_id, delivery_key).exists():
+                return {"status": "ALREADY_DELIVERED", "context": "", "report_id": report_id,
+                        "project_id": project_id}
+        return {"status": "FRESH", "context": text, "report_id": report_id, "project_id": project_id}
     return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
 
 
-__all__ = ["SCHEMA_VERSION", "enqueue", "latest_reminder", "process_pending"]
+def ack_reminder(vault: str | Path, project_id: str, report_id: str, delivery_key: str) -> bool:
+    """Record one content-free SessionStart delivery receipt."""
+    if not all(isinstance(value, str) and value for value in (project_id, report_id, delivery_key)):
+        return False
+    path = _delivery_path(vault, project_id, report_id, delivery_key)
+    with file_lock(_root(vault) / "delivery", timeout=.5):
+        if path.exists():
+            return False
+        write_json(path, {
+            "schema_version": SCHEMA_VERSION,
+            "delivery_id": path.stem,
+            "project_id": project_id,
+            "report_id": report_id,
+            "session_hash": identity("session_", delivery_key),
+            "delivered_at": now(),
+        })
+    return True
+
+
+__all__ = ["SCHEMA_VERSION", "ack_reminder", "enqueue", "latest_reminder",
+           "process_pending", "reconcile_completed"]

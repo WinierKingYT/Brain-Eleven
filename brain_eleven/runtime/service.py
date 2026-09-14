@@ -91,12 +91,15 @@ def create_app(vault, *, token=None, background=True):
                 result = await asyncio.to_thread(Worker(vault).once)
                 maintenance_count = 0
                 if result['status'] != 'OFF':
-                    from .maintenance_delivery import process_pending
+                    from .maintenance_delivery import process_pending, reconcile_completed
+                    reconciled_count = await asyncio.to_thread(reconcile_completed, vault, limit=16)
                     maintenance_count = await asyncio.to_thread(process_pending, vault, limit=1)
+                else:
+                    reconciled_count = 0
                 if result['status'] not in {'IDLE', 'OFF'}:
                     app.state.last_activity = time.monotonic()
                     delay = .05
-                elif maintenance_count:
+                elif maintenance_count or reconciled_count:
                     app.state.last_activity = time.monotonic()
                     delay = .05
             except Exception:
