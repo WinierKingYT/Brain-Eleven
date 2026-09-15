@@ -167,6 +167,27 @@ def test_budget_flag_round_trips_through_request_serialization(tmp_path):
     assert parsed.budget.usable_tokens == budget.usable_tokens
 
 
+def test_serialization_rejects_malformed_derived_usable_tokens(tmp_path):
+    context, _state, _project = _configured(tmp_path)
+    resolution = _resolved(tmp_path, context)
+    budget = BudgetContract(1024, minimum_headroom_tokens=32, allow_optional_omission=False).to_dict()
+    base = {
+        "schema_version": 1,
+        "task_state": context.to_dict(),
+        "resolution_result": resolution.to_dict(),
+        "budget": budget,
+    }
+
+    for value in (True, None, 992.0, "992"):
+        document = {**base, "budget": {**budget, "usable_tokens": value}}
+        try:
+            compilation_request_from_dict(document)
+        except ValueError as exc:
+            assert "usable_tokens" in str(exc)
+        else:
+            raise AssertionError(f"malformed usable_tokens value was accepted: {value!r}")
+
+
 def test_false_flag_all_fit_matches_default_context(tmp_path):
     context, _state, _project = _configured(tmp_path)
     resolution = _resolved(tmp_path, context)
