@@ -1,11 +1,11 @@
 # TSC-02 — Project Identity and Registry-Lineage Package Report
 
-**PACKAGE:** TSC-02  
+**PACKAGE:** TSC-02
 **REVISION:** `b2e80d0cd7f21ff7a960ceeaaace8eac608526a0` (implementation and
-focused-test revisions: `5083bcf`, `f69ac0e`, `b2e80d0`)  
-**BASELINE:** `4bf07478db02002971ad108192c553a9beb35967`  
-**PROGRAM:** Engineering Weak-Point Improvement Goal  
-**PHASE 20:** FROZEN / LOCKED  
+focused-test revisions: `5083bcf`, `f69ac0e`, `b2e80d0`)
+**BASELINE:** `4bf07478db02002971ad108192c553a9beb35967`
+**PROGRAM:** Engineering Weak-Point Improvement Goal
+**PHASE 20:** FROZEN / LOCKED
 **V2 RUNTIME:** SHADOW
 
 ## OBJECTIVE
