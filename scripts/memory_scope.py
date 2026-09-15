@@ -185,8 +185,37 @@ def resolve_capture_scope(
         return GLOBAL_SCOPE, "", ""
 
     if project_root is not None:
-        derived_id, derived_label = registered_project_identity(project_root, registry_path)
-        project_id = project_id or derived_id
+        if registry_path is None:
+            derived_id, derived_label = project_identity(project_root)
+            if project_id and project_id != derived_id:
+                raise ValueError("PROJECT_ROOT_ID_MISMATCH")
+        else:
+            try:
+                from brain_eleven.projects.registry import ProjectRegistry
+            except ModuleNotFoundError as exc:
+                if exc.name != "brain_eleven":
+                    raise
+                from project_registry import ProjectRegistry
+
+            registry = ProjectRegistry(registry_path)
+            registered = registry.resolve(project_root)
+            if project_id:
+                if registered is None:
+                    raise ValueError("PROJECT_ROOT_ID_UNREGISTERED")
+                if registered["project_id"] != project_id:
+                    raise ValueError("PROJECT_ROOT_ID_MISMATCH")
+                derived_id = registered["project_id"]
+                derived_label = registered["project_label"]
+            elif registered is None:
+                # Preserve the root-only auto-registration behavior for
+                # callers that have not supplied an identity claim.
+                derived_id, derived_label = registered_project_identity(
+                    project_root, registry_path
+                )
+            else:
+                derived_id = registered["project_id"]
+                derived_label = registered["project_label"]
+        project_id = derived_id
         project = project or derived_label
     if not project_id:
         if project:
