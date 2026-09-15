@@ -139,6 +139,71 @@ def test_stale_generator_cannot_resurrect_durable_clear(tmp_path):
     assert read_cache(stale)["embeddings"] == {}
 
 
+def test_compatible_same_id_selection_is_order_independent(tmp_path):
+    def publish(vault, first_id):
+        first = enable_fake_provider(EmbeddingGenerator(str(vault)))
+        second = enable_fake_provider(EmbeddingGenerator(str(vault)))
+        first_vector = np.zeros(first.dimension, dtype=np.float32)
+        first_vector[0] = 1.0
+        second_vector = np.zeros(second.dimension, dtype=np.float32)
+        second_vector[1] = 1.0
+        first_entry = first._cache_entry("same", first_vector)
+        second_entry = second._cache_entry("same", second_vector)
+        first_entry["generated_at"] = "2026-01-01T00:00:00"
+        second_entry["generated_at"] = "2026-01-02T00:00:00"
+        first.embeddings["same"] = first_entry
+        second.embeddings["same"] = second_entry
+        if first_id == "first":
+            assert first.save() is True
+            assert second.save() is True
+        else:
+            assert second.save() is True
+            assert first.save() is True
+        return read_cache(first)["embeddings"]["same"]
+
+    forward = publish(tmp_path / "forward", "first")
+    reverse = publish(tmp_path / "reverse", "second")
+    assert forward == reverse
+
+
+def test_process_crash_before_atomic_replace_preserves_destination(tmp_path):
+    writer = enable_fake_provider(EmbeddingGenerator(str(tmp_path)))
+    add_entry(writer, "one", "first")
+    assert writer.save() is True
+    before = writer.embedding_cache.read_bytes()
+
+    worker = """
+import importlib.util
+import os
+import sys
+from pathlib import Path
+import numpy as np
+from brain_eleven.runtime import storage
+spec = importlib.util.spec_from_file_location('embedding_generator', Path('scripts') / 'embedding-generator.py')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+storage.os.replace = lambda *args: os._exit(17)
+generator = module.EmbeddingGenerator(sys.argv[1])
+generator.use_openai = True
+generator.client = object()
+vector = np.zeros(generator.dimension, dtype=np.float32)
+vector[0] = 1.0
+generator.embeddings['two'] = generator._cache_entry('second', vector)
+generator.save()
+"""
+    process = subprocess.Popen(
+        [sys.executable, "-c", worker, os.fspath(tmp_path)],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    process.wait(timeout=30)
+    assert process.returncode == 17
+    assert writer.embedding_cache.read_bytes() == before
+
+
 def test_process_concurrency_retains_distinct_entries(tmp_path):
     worker = """
 import importlib.util
@@ -212,3 +277,23 @@ def test_save_does_not_replace_corrupt_snapshot(tmp_path):
 
     assert generator.save() is False
     assert cache.read_bytes() == before
+
+
+def test_cache_operations_leave_canonical_revision_and_ranking_unchanged(tmp_path):
+    from brain_eleven.memory import MemoryStore
+
+    engine = SemanticSearchEngine(str(tmp_path))
+    enable_fake_provider(engine.generator)
+    writer = enable_fake_provider(EmbeddingGenerator(str(tmp_path)))
+    memories = [{"memory_id": "one", "content": "first", "type": "decision"}]
+    writer.batch_embed(memories)
+    assert writer.save() is True
+    before_revision = MemoryStore(tmp_path).revision()
+    before_results = engine.search("first", memories, top_k=1)
+
+    add_entry(writer, "unrelated", "unrelated")
+    assert writer.save() is True
+    after_results = engine.search("first", memories, top_k=1)
+
+    assert MemoryStore(tmp_path).revision() == before_revision
+    assert before_results == after_results
