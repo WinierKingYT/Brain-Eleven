@@ -56,6 +56,9 @@ def run(samples=40, records=1000):
             seed=0, index=index, quality=.5) for index in range(records)]
         store.replace(document)
         migrate(vault)
+        baseline_document = store.load()
+        baseline_memory_count = len(baseline_document.get('validated_memory', []))
+        baseline_revision = store.revision()
         cfg = RuntimeConfig(vault)
         # This disposable synthetic vault bypasses rollout only to exercise the
         # implementation. The production promotion command still enforces gates.
@@ -120,6 +123,14 @@ def run(samples=40, records=1000):
             for path in (capture_root / 'completed').glob('*.json'):
                 job = read_json(path)
                 latencies.append((datetime.fromisoformat(job['committed_at']) - datetime.fromisoformat(job['created_at'])).total_seconds() * 1000)
+            final_document = store.load()
+            final_memory_count = len(final_document.get('validated_memory', []))
+            final_revision = store.revision()
+            canonical_effects = final_memory_count - baseline_memory_count
+            canonical_revision_delta = final_revision - baseline_revision
+            canonical_effect_verified = (
+                canonical_effects == samples and canonical_revision_delta >= samples
+            )
             for index in range(samples):
                 payload = {'cwd': str(vault), 'session_id': 'benchmark-prompts', 'turn_id': str(index),
                            'prompt': 'Which database did we decide to use for persistent storage?'}
@@ -135,13 +146,17 @@ def run(samples=40, records=1000):
                       'records': records, 'samples_per_event': samples, 'cold_start_ms': round(cold_ms, 2),
                       'stop_hook_p95_ms': p95(stop_ms), 'prompt_hook_p95_ms': p95(prompt_ms),
                       'queue_p95_ms': p95(latencies) if latencies else None, 'queue_max_ms': round(max(latencies), 2) if latencies else None,
-                      'completed': len(latencies), 'singleton': singleton,
+                      'completed': len(latencies), 'canonical_effects': canonical_effects,
+                      'canonical_revision_delta': canonical_revision_delta,
+                      'canonical_effect_verified': canonical_effect_verified,
+                      'singleton': singleton,
                       'stop_status_counts': dict(sorted(Counter(stop_status).items())),
                       'prompt_status_counts': dict(sorted(Counter(prompt_status).items()))}
             all_hooks_ok = all(status == 'OK' for status in stop_status + prompt_status)
             report['gates'] = {'hook_p95_500ms': max(p95(stop_ms), p95(prompt_ms)) <= 500,
                                'queue_30s': len(latencies) == samples and max(latencies) <= 30000,
                                'all_hooks_ok': all_hooks_ok,
+                               'canonical_effect_verified': canonical_effect_verified,
                                'no_dead_letters': not any((capture_root / 'dead-letter').glob('*.json')), 'singleton': singleton}
             report['status'] = 'PASS' if all(report['gates'].values()) else 'FAIL'
             return report
