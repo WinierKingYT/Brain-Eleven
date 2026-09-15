@@ -49,12 +49,19 @@ def write_json(path, value):
     snapshot = guard_runtime_path(runtime_root, path) if runtime_root else None
     if runtime_root is None:
         path.parent.mkdir(parents=True, exist_ok=True)
-    else:
-        # guard_runtime_path has created only validated runtime components.
-        path.parent.mkdir(parents=True, exist_ok=True)
+    # For runtime-owned paths guard_runtime_path has created only validated
+    # components.  Do not repeat mkdir: a second lookup would reopen a TOCTOU
+    # window before the temp file is created.
     fd, name = tempfile.mkstemp(prefix='.' + path.name, dir=path.parent)
     try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+        if runtime_root:
+            # Verify the directory identity before writing any JSON bytes.  If
+            # the parent was swapped after the first guard, the temp file is
+            # removed by finally without ever receiving sensitive content.
+            assert_runtime_snapshot(runtime_root, path, snapshot)
+        stream_fd = fd
+        fd = None
+        with os.fdopen(stream_fd, 'w', encoding='utf-8') as stream:
             json.dump(value, stream, ensure_ascii=False, sort_keys=True)
             stream.flush()
             os.fsync(stream.fileno())
@@ -65,6 +72,8 @@ def write_json(path, value):
             assert_runtime_snapshot(runtime_root, path, snapshot)
         os.replace(name, path)
     finally:
+        if fd is not None:
+            os.close(fd)
         if os.path.exists(name):
             os.unlink(name)
 

@@ -72,6 +72,18 @@ def _mkdir_checked(path: Path) -> None:
     _check_component(path, directory=True)
 
 
+def _check_existing_ancestors(path: Path) -> None:
+    """Reject links/reparse points anywhere above a selected path."""
+    current = Path(path).absolute()
+    while True:
+        if _lexists(current):
+            _check_component(current, directory=True)
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+
+
 def _ensure_directory_tree(path: Path) -> None:
     """Create a missing directory tree without following existing links."""
     path = Path(path).absolute()
@@ -83,7 +95,7 @@ def _ensure_directory_tree(path: Path) -> None:
         if parent == current:
             raise RuntimePathError("Runtime directory has no regular ancestor")
         current = parent
-    _check_component(current, directory=True)
+    _check_existing_ancestors(current)
     for component in reversed(missing):
         _mkdir_checked(component)
 
@@ -106,11 +118,7 @@ def _existing_root_check(root: Path) -> None:
     root = Path(root).absolute()
     if len(root.parents) < 2 or root.parent.name != ".brain-eleven":
         raise RuntimePathError("Invalid runtime root")
-    vault = root.parent.parent
-    for component in (vault, root.parent, root):
-        if not _lexists(component):
-            break
-        _check_component(component, directory=True)
+    _check_existing_ancestors(root)
 
 
 def validate_vault_path(vault: str | Path) -> Path:
@@ -118,14 +126,7 @@ def validate_vault_path(vault: str | Path) -> Path:
     candidate = Path(vault).expanduser()
     if not candidate.is_absolute():
         candidate = Path.cwd() / candidate
-    current = candidate.absolute()
-    while True:
-        if _lexists(current):
-            _check_component(current, directory=True)
-        parent = current.parent
-        if parent == current:
-            break
-        current = parent
+    _check_existing_ancestors(candidate)
     return candidate
 
 
