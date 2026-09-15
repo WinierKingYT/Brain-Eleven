@@ -295,7 +295,6 @@ def test_processing_lease_blocks_concurrent_duplicate_run(tmp_path, monkeypatch)
 def test_expired_lease_fences_old_worker_before_publication(tmp_path, monkeypatch):
     vault, project_id = _vault(tmp_path)
     delivery.enqueue(vault, _job(project_id), _result())
-    monkeypatch.setattr(delivery, "_LEASE_SECONDS", 0.01)
     first_started = threading.Event()
     first_release = threading.Event()
     calls = []
@@ -312,7 +311,10 @@ def test_expired_lease_fences_old_worker_before_publication(tmp_path, monkeypatc
     first = threading.Thread(target=lambda: first_result.update(value=delivery.process_pending(vault)))
     first.start()
     assert first_started.wait(5)
-    time.sleep(0.05)
+    queued = next((delivery._root(vault) / "queued").glob("*.json"))
+    intent = delivery.read_json(queued)
+    intent["lease_expires_at"] = time.time() - 1
+    delivery.write_json(queued, intent)
     assert delivery.process_pending(vault) == 1
     first_release.set()
     first.join(5)
