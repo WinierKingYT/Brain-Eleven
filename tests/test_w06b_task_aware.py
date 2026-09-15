@@ -149,3 +149,53 @@ def test_equal_score_tie_is_independent_of_input_order():
     first = Compiler(); first.records = records
     second = Compiler(); second.records = list(reversed(records))
     assert select(first, Task()) ["selected_ids"] == select(second, Task())["selected_ids"]
+
+
+def test_canonical_global_records_are_selected_without_cross_project_leakage():
+    class Compiler:
+        def _rank_memories(self, limit=40):
+            return [
+                {
+                    "memory_id": "global-empty",
+                    "scope": "global",
+                    "project_id": "",
+                    "content": "global persistence policy",
+                    "ranking_score": 3,
+                    "type": "lesson",
+                },
+                {
+                    "memory_id": "global-legacy",
+                    "content": "legacy global persistence policy",
+                    "ranking_score": 2,
+                    "type": "lesson",
+                },
+                {
+                    "memory_id": "foreign-project",
+                    "scope": "project",
+                    "project_id": "project-b",
+                    "content": "foreign project persistence policy",
+                    "ranking_score": 4,
+                    "type": "decision",
+                },
+            ]
+
+        def _resolve_current_state(self):
+            return object()
+
+        def _generate_context_block(self, records, *_):
+            return "\n".join(item["content"] for item in records)
+
+    class Task:
+        task_id = "tsk_global_scope"
+        raw_request = "Review the global persistence policy"
+        entities = ()
+        context_needs = ()
+        continuation_of = None
+        project = type("Project", (), {"project_id": "project-a"})()
+        intent = type("Intent", (), {"value": "REVIEW"})()
+
+    result = select(Compiler(), Task())
+
+    assert result["status"] == "SUCCESS"
+    assert {"global-empty", "global-legacy"} <= set(result["selected_ids"])
+    assert "foreign-project" not in result["selected_ids"]
