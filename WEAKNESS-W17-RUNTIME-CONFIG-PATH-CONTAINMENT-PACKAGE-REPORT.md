@@ -1,7 +1,7 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
 **PACKAGE:** W-17
-**REVISION:** `a429971b0c9d70d29fc2c76f30028cbdc03493d3`
+**REVISION:** `676f09d46f6af06f8a899d4ac2673b01463310b9`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -20,8 +20,7 @@ lock/CAS behavior.
 - `brain_eleven/runtime/install.py`, `launcher.py`, `maintenance_delivery.py`,
   `migration.py`, `review.py`, `service.py`, `worker.py` — runtime-owned lock
   and directory bootstrap callers routed through the guard;
-- `scripts/memory_store_lock.py` — legacy lock path guard for runtime-owned
-  targets while preserving the historical lock object surface;
+- `scripts/memory_store_lock.py` — unchanged canonical legacy lock surface;
 - `tests/test_w17_runtime_path_containment.py` — safety and parity coverage;
 - W-17 contract and independent contract-review evidence documents.
 
@@ -43,11 +42,11 @@ The new path-safety module checks existing components with `lstat()`, rejects
 symlinks and Windows `FILE_ATTRIBUTE_REPARSE_POINT`, creates missing regular
 ancestors one component at a time, validates lexical/resolved containment,
 rejects final-file links and path escapes, and records root/parent identities.
-Runtime writes revalidate the snapshot before replacement.  Runtime-owned
-locks use the guarded wrapper before lock creation; direct hook bootstrap paths
-were updated to use the same wrapper.  The existing JSON temp-file flush/fsync/
-replace path and W-15 fingerprint/CAS semantics remain intact for regular
-paths.
+Runtime writes revalidate the snapshot before replacement. Runtime-owned locks
+use target-scoped POSIX directory/file locks or Windows named mutexes, so no
+raceable sidecar marker is created; direct hook bootstrap paths use the same
+wrapper. The existing JSON temp-file flush/fsync/replace path and W-15
+fingerprint/CAS semantics remain intact for regular paths.
 
 ## TESTS ADDED
 
@@ -61,15 +60,17 @@ paths.
 - regular atomic JSON write behavior;
 - parent replacement/path-swap detection before publication;
 - Windows junction/reparse rejection;
-- runtime snapshot identity mismatch detection.
+- runtime snapshot identity mismatch detection;
+- selected-vault validation, runtime-root creation and lock-boundary race
+  probes, including the no-sidecar-marker guarantee.
 
 ## TESTS EXECUTED
 
 - W17 plus W15, native bootstrap, runtime, maintenance, terminal-state and
-  provenance surfaces: **116 passed, 2 warnings**; the W17-only set is
-  **16 passed**.
-- Full suite at exact revision `a429971`: **1260 passed, 2 warnings** in
-  267.84 seconds.
+  provenance surfaces: **32 passed, 2 warnings**; the W17-only set is
+  **18 passed**.
+- Full suite at exact revision `676f09d`: **1262 passed, 2 warnings** in
+  263.35 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
