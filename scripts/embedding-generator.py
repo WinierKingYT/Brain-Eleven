@@ -11,11 +11,18 @@ OpenAI embeddings (text-embedding-3-small):
 
 import json
 import hashlib
+import copy
 import numpy as np
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 import os
+
+from brain_eleven.runtime.storage import runtime_file_lock as file_lock, write_json
+
+
+class CachePersistenceError(RuntimeError):
+    """Raised when a cache publication cannot preserve the prior snapshot."""
 
 
 class EmbeddingGenerator:
@@ -24,6 +31,11 @@ class EmbeddingGenerator:
     def __init__(self, vault_path: str, api_key: Optional[str] = None):
         self.vault_path = Path(vault_path)
         self.embedding_cache = self.vault_path / ".claude/embeddings.json"
+        # ``file_lock`` derives the sidecar path from the cache path.  Keep
+        # the resolved name visible for compatibility, but always pass the
+        # cache path to the lock helper so the sidecar is exactly
+        # ``embeddings.json.lock`` (never ``.lock.lock``).
+        self.embedding_lock = self.embedding_cache.with_name(self.embedding_cache.name + ".lock")
         self.model = "text-embedding-3-small"
         self.dimension = 1536
         self.provider = "openai"
@@ -50,6 +62,8 @@ class EmbeddingGenerator:
             print("⚠️  No OpenAI API key; semantic search is unavailable")
 
         self.embeddings = {}
+        self._cache_base_entries = {}
+        self._cache_fingerprint = None
         self._load_cache()
 
     # ========================================================================
@@ -174,18 +188,101 @@ class EmbeddingGenerator:
         """Load embeddings from cache file"""
 
         if not self.embedding_cache.exists():
+            self.embeddings = {}
+            self._cache_base_entries = {}
+            self._cache_fingerprint = None
             return
 
         try:
             with open(self.embedding_cache, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                self.embeddings = data.get("embeddings", {})
+                loaded = data.get("embeddings", {}) if isinstance(data, dict) else {}
+                self.embeddings = loaded if isinstance(loaded, dict) else {}
+                self._cache_base_entries = copy.deepcopy(self.embeddings)
+                self._cache_fingerprint = self._cache_signature()
                 print(f"📦 Loaded {len(self.embeddings)} cached embeddings")
 
-        except Exception as e:
-            print(f"⚠️  Failed to load embedding cache: {e}")
+        except Exception:
+            self.embeddings = {}
+            self._cache_base_entries = {}
+            self._cache_fingerprint = self._cache_signature()
+            print("⚠️  Failed to load embedding cache; semantic cache unavailable")
 
-    def _save_cache(self):
+    def _cache_signature(self):
+        try:
+            return hashlib.sha256(self.embedding_cache.read_bytes()).hexdigest()
+        except OSError:
+            return None
+
+    @staticmethod
+    def _entries_equal(left, right):
+        """Compare JSON-like entries without allowing array truth ambiguity."""
+        try:
+            result = left == right
+            if isinstance(result, np.ndarray):
+                return bool(np.array_equal(left, right))
+            return bool(result)
+        except (TypeError, ValueError):
+            return False
+
+    def _dirty_cache_entries(self):
+        """Return local additions/changes since the last loaded snapshot.
+
+        Entries read from an older snapshot are deliberately excluded when a
+        concurrent writer has published a newer cache.  This prevents a stale
+        generator from resurrecting entries cleared by another process while
+        still allowing independently-created entries to merge.
+        """
+        return {
+            memory_id: entry
+            for memory_id, entry in self.embeddings.items()
+            if memory_id not in self._cache_base_entries
+            or not self._entries_equal(self._cache_base_entries[memory_id], entry)
+        }
+
+    @staticmethod
+    def _entry_metadata(entry):
+        if not isinstance(entry, dict):
+            return None
+        return tuple(entry.get(key) for key in (
+            "content_hash", "provider", "model", "dimension",
+            "embedding_schema_version", "source_revision",
+        ))
+
+    def _merge_cache_entries(self, disk, incoming, *, force_replace=False):
+        if force_replace:
+            return {}
+        merged = dict(disk)
+        for memory_id, entry in incoming.items():
+            existing = merged.get(memory_id)
+            if existing is None:
+                merged[memory_id] = entry
+                continue
+            if self._entries_equal(existing, entry):
+                continue
+            if self._entry_metadata(existing) != self._entry_metadata(entry):
+                raise CachePersistenceError("incompatible embedding cache entry")
+            # A provider may return a numerically different vector for the
+            # same content. The caller's update wins when provenance matches.
+            merged[memory_id] = entry
+        return merged
+
+    def _read_disk_entries(self):
+        if not self.embedding_cache.exists():
+            return {}
+        try:
+            with open(self.embedding_cache, "r", encoding="utf-8") as stream:
+                data = json.load(stream)
+        except FileNotFoundError:
+            return {}
+        except (OSError, TypeError, ValueError) as exc:
+            raise CachePersistenceError("embedding cache is not valid JSON") from exc
+        if not isinstance(data, dict) or not isinstance(data.get("embeddings"), dict):
+            raise CachePersistenceError("embedding cache has an invalid envelope")
+        entries = data.get("embeddings", {}) if isinstance(data, dict) else {}
+        return entries
+
+    def _save_cache(self, *, force_replace=False):
         """Save embeddings to cache file"""
 
         try:
@@ -201,17 +298,30 @@ class EmbeddingGenerator:
                 }
             }
 
-            with open(self.embedding_cache, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            self.embedding_cache.parent.mkdir(parents=True, exist_ok=True)
+            with file_lock(self.embedding_cache, timeout=5):
+                disk_entries = self._read_disk_entries()
+                incoming = self._dirty_cache_entries()
+                merged = self._merge_cache_entries(
+                    disk_entries, incoming, force_replace=force_replace
+                )
+                data["embeddings"] = merged
+                data["metadata"]["total_embeddings"] = len(merged)
+                write_json(self.embedding_cache, data)
+                self.embeddings = merged
+                self._cache_base_entries = copy.deepcopy(merged)
+                self._cache_fingerprint = self._cache_signature()
 
-            print(f"💾 Saved {len(self.embeddings)} embeddings to cache")
+            print(f"💾 Saved {len(merged)} embeddings to cache")
+            return True
 
-        except Exception as e:
-            print(f"❌ Failed to save embedding cache: {e}")
+        except Exception:
+            print("❌ Failed to save embedding cache; prior snapshot preserved")
+            return False
 
     def save(self):
         """Persist embeddings to disk"""
-        self._save_cache()
+        return self._save_cache()
 
     # ========================================================================
     # UTILITY METHODS
@@ -245,7 +355,6 @@ class EmbeddingGenerator:
         Legacy list-only entries are rejected because their provenance cannot
         prove that they match the current content or provider.
         """
-
         if memory_id in self.embeddings:
             entry = self.embeddings[memory_id]
             if not isinstance(entry, dict):
@@ -274,8 +383,22 @@ class EmbeddingGenerator:
 
     def clear_cache(self):
         """Clear all embeddings"""
+        previous_embeddings = copy.deepcopy(self.embeddings)
         self.embeddings.clear()
-        print("🗑️  Embedding cache cleared")
+        result = self._save_cache(force_replace=True)
+        if not result:
+            self.embeddings = previous_embeddings
+        if result:
+            print("🗑️  Embedding cache cleared")
+        return result
+
+    def refresh_cache(self):
+        """Reload the atomically published cache when another process changed it."""
+        signature = self._cache_signature()
+        if signature != self._cache_fingerprint:
+            self._load_cache()
+            return True
+        return False
 
 
 # ============================================================================

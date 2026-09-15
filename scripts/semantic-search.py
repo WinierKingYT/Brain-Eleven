@@ -41,6 +41,7 @@ class SemanticSearchEngine:
     def search(self, query: str, memories: List[Dict], top_k: int = 5) -> List[Dict]:
         """Search using semantic similarity"""
 
+        self.generator.refresh_cache()
         # Never rank with deterministic/hash vectors.  When the configured
         # provider is unavailable the caller must use lexical retrieval.
         if not self.generator.semantic_available:
