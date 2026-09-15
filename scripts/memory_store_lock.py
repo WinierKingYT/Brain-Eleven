@@ -17,15 +17,23 @@ def file_lock(
     target_path: Union[str, Path],
     timeout: float = 10.0,
     poll_interval: float = 0.05,
+    *,
+    before_open=None,
+    create_parent: bool = True,
 ) -> Iterator[None]:
     """Lock a persistent sidecar file until the mutation is complete."""
     target = Path(target_path)
     lock_path = target.with_name(f"{target.name}.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if before_open is not None:
+        before_open()
+    if create_parent:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
     handle = open(lock_path, "a+", encoding="utf-8")
     acquired = False
     deadline = time.monotonic() + timeout
     try:
+        if before_open is not None:
+            before_open()
         while not acquired:
             try:
                 if os.name == "nt":

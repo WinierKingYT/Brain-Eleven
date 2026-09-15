@@ -60,16 +60,39 @@ def _check_component(path: Path, *, directory: bool = False) -> None:
 
 
 def _mkdir_checked(path: Path) -> None:
+    path = Path(path).absolute()
     if _lexists(path):
         _check_component(path, directory=True)
         return
+    parent = path.parent
+    _check_existing_ancestors(parent)
+    parent_identity = _identity(parent)
+    created = False
     try:
         path.mkdir()
+        created = True
     except FileExistsError:
         # A concurrent creator is acceptable only after it passes the same
         # no-follow check.  A link created during the race is rejected.
         pass
-    _check_component(path, directory=True)
+    try:
+        # A selected vault/ancestor can be replaced while mkdir follows the
+        # lexical parent.  Detect that swap before accepting the new
+        # component, and remove a component created by this call so the race
+        # cannot leave an outside directory behind.
+        _check_existing_ancestors(parent)
+        if _identity(parent) != parent_identity:
+            raise RuntimePathError("Runtime parent changed during directory creation")
+        _check_component(path, directory=True)
+    except Exception:
+        if created and _lexists(path):
+            try:
+                info = os.lstat(path)
+                if stat.S_ISDIR(info.st_mode) and not _is_reparse_or_symlink(path):
+                    path.rmdir()
+            except OSError:
+                pass
+        raise
 
 
 def _check_existing_ancestors(path: Path) -> None:

@@ -23,10 +23,21 @@ def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
     """Acquire a lock only after validating a vault-owned runtime path."""
     target = Path(target)
     runtime_root = runtime_root_for_path(target)
+    lock_kwargs = {}
     if runtime_root is not None:
-        guard_runtime_path(runtime_root, target)
-        guard_runtime_path(runtime_root, target.with_name(f"{target.name}.lock"))
-    with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval):
+        target_snapshot = guard_runtime_path(runtime_root, target)
+        lock_path = target.with_name(f"{target.name}.lock")
+        lock_snapshot = guard_runtime_path(runtime_root, lock_path)
+
+        def validate_before_open():
+            # The legacy lock creates and opens the sidecar itself.  Recheck
+            # immediately before that operation so a parent swap cannot
+            # redirect lock creation outside the selected vault.
+            assert_runtime_snapshot(runtime_root, target, target_snapshot)
+            assert_runtime_snapshot(runtime_root, lock_path, lock_snapshot)
+
+        lock_kwargs = {"before_open": validate_before_open, "create_parent": False}
+    with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval, **lock_kwargs):
         yield
 
 
@@ -97,10 +108,11 @@ def _config_fingerprint(value):
 
 class RuntimeConfig:
     def __init__(self, vault):
-        # Validate the caller-selected path before resolving it.  Otherwise a
-        # vault symlink/junction would be silently promoted to the containment
-        # root and runtime writes could escape the selected vault.
-        self.vault = validate_vault_path(vault).resolve()
+        # Keep the validated lexical path.  Resolving after validation would
+        # reopen a race in which the selected vault is swapped to a link
+        # before resolve() follows it; later runtime guards must see that
+        # replacement and fail closed.
+        self.vault = validate_vault_path(vault)
         self.root = self.vault / '.brain-eleven' / 'runtime'
         self.path = self.root / 'config.json'
 
