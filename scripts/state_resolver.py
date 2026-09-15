@@ -28,7 +28,15 @@ def _utc_now() -> datetime:
 
 
 def _parse_timestamp(value: str) -> datetime:
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("updated_at must be a timezone-aware ISO-8601 timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("updated_at must be a timezone-aware ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("updated_at must include a timezone offset")
+    return parsed
 
 
 @dataclass(frozen=True)
@@ -150,18 +158,18 @@ class StateResolver:
 
         try:
             state = self.store.get_project(project_id)
-        except StateStoreCorrupt as exc:
+        except StateStoreCorrupt:
             return _empty_resolution(
                 project_id,
                 STATE_CORRUPT,
-                error=str(exc),
+                error="state document is corrupt",
                 archived=registry_record["status"] == "archived",
             )
-        except OSError as exc:
+        except OSError:
             return _empty_resolution(
                 project_id,
                 STATE_UNAVAILABLE,
-                error=str(exc),
+                error="state store is unavailable",
                 archived=registry_record["status"] == "archived",
             )
         if state is None:
@@ -172,7 +180,15 @@ class StateResolver:
                 archived=registry_record["status"] == "archived",
             )
 
-        timestamp = _parse_timestamp(state["updated_at"])
+        try:
+            timestamp = _parse_timestamp(state["updated_at"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return _empty_resolution(
+                project_id,
+                STATE_CORRUPT,
+                error="state.updated_at is invalid",
+                archived=registry_record["status"] == "archived",
+            )
         current_time = _utc_now() if now is None else now
         age_days = max(0, (current_time - timestamp).days)
         freshness = {

@@ -235,9 +235,11 @@ def _provenance(value: Any, field: str, *, canonical: bool) -> dict[str, Any]:
 def _timestamp(value: Any, field: str) -> str:
     result = _string(value, field)
     try:
-        datetime.fromisoformat(result.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(result.replace("Z", "+00:00"))
     except ValueError as exc:
         raise StateSchemaError(f"{field} must be an ISO-8601 timestamp") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise StateSchemaError(f"{field} must include a timezone offset")
     return result
 
 
