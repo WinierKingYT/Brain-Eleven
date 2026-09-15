@@ -23,7 +23,7 @@ the behavior and operational evidence found in the current repository.
 | Area | Score | Evidence / status |
 |---|---:|---|
 | Persistence and concurrency | 7.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped; archived-state mutation and runtime-config races remain open. |
-| Scope and fail-closed safety | 6.5 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; root/ID disagreement remains a P1 leakage path. |
+| Scope and fail-closed safety | 7.5 | W-13 root/ID consistency is independently shipped; archived-state mutation and runtime-path containment races remain open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -313,13 +313,12 @@ but retains a caller-supplied `project_id`; `brain_eleven/memory/capture.py`
 and `scripts/search-api.py` accept both values. A capture using project A's
 root with project B's ID persisted project-A-labelled content under project B.
 This violates the zero wrong-project-leakage invariant. Status:
-**IMPLEMENTED / REVIEW PENDING** at exact code revision `cc344e3`. The shared
-resolver now requires an exact registry match for root+ID pairs, rejects
-unregistered explicit IDs without creating a registry entry, and preserves
-root-only auto-registration/relocation. Focused scope/capture/API coverage and
-full regression are recorded in
-`WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`; independent implementation
-review is still required before this finding can become SHIP.
+**CLOSED / SHIP** at exact code revision `cc344e3`; current evidence/document
+head is `366835b`. The shared resolver requires an exact registry match for
+root+ID pairs, rejects unregistered explicit IDs without creating a registry
+entry, and preserves root-only auto-registration/relocation. Focused
+scope/capture/API coverage, full regression, and independent review are
+recorded in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`.
 
 ### W-14 — Archived project can race a state mutation (P1)
 
@@ -376,9 +375,9 @@ is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
 completed-folder terminal-state successor is independently `SHIP`ped at exact
 review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
-at exact head `f322d2c`. The next audit
-finding is W-13 (project root/ID disagreement); W-06 retrieval work remains
-evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20. W-10's
+at exact head `f322d2c`. W-06 retrieval work remains evaluation-only and must
+not tune HOLDOUT, promote V2 or open Phase 20. The next audit finding is W-14
+(archived-state mutation race). W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
@@ -410,6 +409,10 @@ independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 W-02 completed-folder terminal-state closure — `SHIP` at exact review head
 `ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
 independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
+W-13 project-root/project-ID consistency — `SHIP` at exact code revision
+`cc344e3`, report in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md` and
+independent implementation review recorded at test/documentation head
+`366835b`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without

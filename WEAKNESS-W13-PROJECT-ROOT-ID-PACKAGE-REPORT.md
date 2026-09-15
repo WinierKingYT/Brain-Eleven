@@ -80,12 +80,17 @@ for root-only calls.
 
 ## Independent review
 
-Contract review: **SHIP** by an independent read-only reviewer, recorded in the
-review conversation after contract revision `4311b1f`. Implementation review:
-**PENDING**.
+Contract review: **SHIP** by an independent read-only reviewer after contract
+revision `4311b1f`. Implementation review: **SHIP** at exact code revision
+`cc344e3` with current test/documentation head `366835b`. The reviewer reran
+103 focused tests (2 inherited dependency warnings), critical flake8,
+compileall, and diff checks. It verified the read-only registry lookup,
+fail-closed mismatch/unregistered behavior, root-only relocation, global CLI
+compatibility, remember/API no-write behavior, and project isolation. No new
+P0/P1/P2 finding was reported.
 
-SCORE BEFORE: scope/fail-closed safety 8.5/10 (audit estimate)  
-SCORE AFTER: not raised until independent implementation review
+SCORE BEFORE: scope/fail-closed safety 6.5/10  
+SCORE AFTER: scope/fail-closed safety 7.5/10 (W-14/W-17 remain open)
 
-VERDICT: **REVIEW PENDING**
+VERDICT: **SHIP**
 
