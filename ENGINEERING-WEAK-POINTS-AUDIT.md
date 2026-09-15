@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `287c438` (W-18 final report; implementation `bc393e7`)
+**Evidence revision:** `587c72f` (W-12A final report; implementation `d33b38d`)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,8 +12,8 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the W-17 implementation revision: **1264 passed, 2
-  dependency deprecation warnings**.
+- Full local suite at the W-12A implementation revision: **1273 passed, 4
+  skipped, 2 dependency deprecation warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -303,8 +303,13 @@ and access refresh paths, uses atomic fsync/replace, and fails open on cache
 lock/write errors. Status: **CLOSED / SHIP** at exact implementation revision
 `4cde804`; focused, process-stress, and full-regression evidence is recorded in
 [`WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
-`authority/cache.py` has the same pre-existing race and remains an explicit
-follow-up **W-12A OPEN**.
+`authority/cache.py` had the same pre-existing race. The bounded W-12A fix now
+guards its full store and validated-hit refresh operations with the existing
+sidecar lock and atomic writer. Status: **CLOSED / SHIP** at exact
+implementation revision `d33b38d`; process-stress, raw-reader, failure-path
+and full-regression evidence is recorded in
+[`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md) and the independent review in
+[`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`](WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md).
 
 ### W-13 — Supplied project root and project ID can disagree (P1)
 
@@ -400,8 +405,9 @@ not tune HOLDOUT, promote V2 or open Phase 20. W-15 runtime-config lost-update
 protection is independently `SHIP`ped at exact package head `7fd9d5a`; W-16
 append-boundary validation is independently `SHIP`ped at exact review head
 `3406d7b`; W-17 runtime path containment and W-18 parent-directory durability
-are now independently `SHIP`ped. The next bounded candidates are W-12A and
-W-07B. W-10's
+are now independently `SHIP`ped. W-12A authority-cache concurrency is also
+independently `SHIP`ped at exact implementation revision `d33b38d`; the next
+bounded candidate is W-07B. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
@@ -412,6 +418,9 @@ implementation revision `6017255`, with final evidence documentation at
 W-18 MemoryStore parent-directory durability is independently `SHIP`ped at
 exact implementation revision `bc393e7`, with final evidence documentation at
 `287c438`.
+W-12A AuthorityCache concurrency is independently `SHIP`ped at exact
+implementation revision `d33b38d`, with final evidence documentation at
+`587c72f`.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -454,7 +463,11 @@ W-16 malformed canonical append validation — `SHIP` at exact review head
 independent review in `WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`;
 W-18 MemoryStore parent-directory durability — `SHIP`, report in
 `WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`; W-12A AuthorityCache
+concurrency — `SHIP`, report in
+`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md` and independent
+review in
+`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without

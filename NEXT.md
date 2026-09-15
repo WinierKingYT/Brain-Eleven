@@ -36,6 +36,16 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
+**Engineering weak-point goal:** W-12A (AuthorityCache concurrency) is the
+latest closed package. Its lock/atomicity fix is independently `SHIP` at
+implementation `d33b38d`, with 1273 passed, 4 skipped and 2 pre-existing
+dependency warnings in the full suite. The package report and independent
+review are `WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md` and
+`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
+The next bounded weakness is W-07B native runtime acceptance evidence;
+retrieval quality and V2 promotion remain deferred, and Phase 20 stays
+FROZEN / LOCKED.
+
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
 risk). Slice 1's four bridge-only, non-authority modules (`logging_config`,
@@ -273,3 +283,12 @@ No new P0/P1/P2 findings. Same day: Codex produced `IG07-SLICE2B-PLAN.md`
 not a simple move); independently spot-checked every cited line reference
 against actual code and approved for implementation in the plan's
 graph-first order.
+
+**2026-09-15** — Engineering weak-point audit continued with W-18
+MemoryStore parent-directory durability and W-12A AuthorityCache
+concurrency. W-18 and W-12A both received independent `SHIP`; W-12A now
+serializes authority-cache read-modify-write and access refresh with the
+existing sidecar lock while preserving content-free fail-open behavior.
+Full suite at the W-12A head: 1273 passed, 4 skipped, 2 pre-existing
+dependency warnings. Next work is W-07B native runtime acceptance evidence;
+no V2 promotion or Phase 20 work is open.

@@ -8,7 +8,7 @@
 
 **CONTRACT:** `aab3da1d7ccaaf89a298f608aac704da8889ca9b`
 
-**STATUS:** IMPLEMENTATION COMPLETE / REVIEW PENDING
+**STATUS:** CLOSED / SHIP
 
 **PROGRAM STATE:** Phase 20 `FROZEN / LOCKED`; V2 `SHADOW`.
 
@@ -99,23 +99,23 @@ flush/fsync/atomic-replace writer.
 
 ## OPEN FAILURES
 
-No focused or full-suite failure remains. Independent implementation review is
-still required; until it returns `SHIP`, W-12A remains open. W-07B remains
-`FIX-FIRST / NOT ACCEPTED`; Phase 20 remains `FROZEN / LOCKED` and V2 remains
-`SHADOW`.
+No focused or full-suite failure remains. W-07B remains `FIX-FIRST /
+NOT ACCEPTED`; Phase 20 remains `FROZEN / LOCKED` and V2 remains `SHADOW`.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** A separate read-only reviewer must inspect the exact
-implementation/test revisions, process stress, failure semantics, privacy
-boundary and resolver compatibility. Self-review is not acceptance.
+`/root/w10_exact_review` independently inspected the exact implementation and
+test revisions, process stress, failure semantics, privacy boundary and
+resolver compatibility. The review returned **SHIP**; self-review was not
+used as acceptance. See
+`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
 
 ## SCORE BEFORE / AFTER
 
-Persistence/concurrency: **8.5 → pending review**. No score increase is
-claimed until independent review returns `SHIP`.
+Persistence/concurrency: **8.5 → 8.5**. The package closes a concrete cache
+race without claiming an unrelated score increase.
 
 ## VERDICT
 
-**REVIEW PENDING** — implementation and evidence are ready for independent
-review; no `SHIP` claim is made in this report.
+**SHIP** — implementation, tests and independent evidence are pushed at their
+exact revisions.
