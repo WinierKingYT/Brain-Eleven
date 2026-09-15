@@ -54,8 +54,11 @@ normalization, automatic defaulting, or new authority is introduced.
 - Only the package adapter/export if required to expose validator error
   identity (no duplicate `MemoryStore`).
 - Focused tests and evidence/package documents.  Two sparse fixture records may
-  be made minimally valid by adding `content`; no production caller migration
-  is expected.
+  be made minimally valid by adding `content`; specifically the two call sites
+  in `tests/test_memory_store.py` (the normal append and stale-conflict setup)
+  and the one call site in `tests/test_pre12_store_package_boundaries.py` are
+  the complete fixture adjustment scope.  No production caller migration is
+  expected.
 
 `MemoryStore.transact()`, `replace()`, `append_validated()`,
 `MemoryValidator`, `MemoryTruthEngine`, `StateStore`, `ProjectRegistry`,
@@ -76,7 +79,9 @@ retrieval, V2, capture flow, and Phase 20 are out of scope.
    added to `append()`.
 4. **Lifecycle safety:** supplied status values are explicit and supported;
    absent optional legacy fields remain absent rather than being silently
-   invented.
+   invented.  Required string fields and `project_id` are rejected when empty
+   after whitespace stripping; valid stored values retain their original
+   bytes/field values.
 5. **Authority boundary:** all accepted writes still pass through the existing
    `transact()` lock/CAS/atomic path.  No direct file write or second store is
    allowed.
