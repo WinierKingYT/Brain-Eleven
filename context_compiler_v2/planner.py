@@ -28,6 +28,8 @@ class SelectionPlan:
     selected: tuple[CandidateDraft, ...]
     omitted: tuple[OmittedItem, ...]
     mandatory_cost: int
+    optional_omission_disallowed: bool = False
+    optional_omission_reason: str | None = None
 
 
 def _selection_reason(draft: CandidateDraft) -> str:
@@ -140,6 +142,11 @@ def choose(
                 reason = "profile_budget_exhausted"
             elif max_optional_items is not None and optional_count >= max_optional_items:
                 reason = "profile_item_limit"
+            if not budget.allow_optional_omission:
+                return SelectionPlan(
+                    (), (), mandatory_cost, optional_omission_disallowed=True,
+                    optional_omission_reason=reason,
+                )
             omitted.append(OmittedItem(draft.evidence.resolution.candidate_id, reason, draft.role, draft.tier))
     return SelectionPlan(
         tuple(sorted(selected, key=lambda draft: (draft.tier, draft.evidence.resolution.candidate_id))),

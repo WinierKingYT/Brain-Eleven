@@ -201,6 +201,22 @@ class ContextCompilerV2:
                     "mandatory_tokens": plan.mandatory_cost,
                 },
             )
+        if plan.optional_omission_disallowed:
+            return self._result(
+                "INSUFFICIENT_BUDGET",
+                compilation_id,
+                provisional_profile,
+                request,
+                revisions=snapshot.revisions,
+                error="OPTIONAL_OMISSION_DISALLOWED",
+                warnings=("optional_omission_disallowed",),
+                telemetry={
+                    "mode": "SHADOW",
+                    "cache_hit": False,
+                    "audit_cache_hit": audit_cache_hit,
+                    "optional_omission_reason": plan.optional_omission_reason,
+                },
+            )
 
         selected_drafts = list(plan.selected)
         omissions = list(plan.omitted)
@@ -234,6 +250,23 @@ class ContextCompilerV2:
                     warnings=("mandatory_context_not_silently_truncated",),
                     omitted=tuple(sorted(omissions, key=lambda item: item.candidate_id)),
                     telemetry={"mode": "SHADOW", "cache_hit": False, "audit_cache_hit": audit_cache_hit, "rendered_tokens": final_estimate.count},
+                )
+            if not request.budget.allow_optional_omission:
+                return self._result(
+                    "INSUFFICIENT_BUDGET",
+                    compilation_id,
+                    provisional_profile,
+                    request,
+                    revisions=snapshot.revisions,
+                    error="OPTIONAL_OMISSION_DISALLOWED",
+                    warnings=("optional_omission_disallowed",),
+                    telemetry={
+                        "mode": "SHADOW",
+                        "cache_hit": False,
+                        "audit_cache_hit": audit_cache_hit,
+                        "optional_candidates": len(optional),
+                        "rendered_tokens": final_estimate.count,
+                    },
                 )
             remove = max(optional, key=lambda draft: (draft.tier, draft.utility.estimated_cost.count, draft.evidence.resolution.candidate_id))
             selected_drafts.remove(remove)
