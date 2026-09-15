@@ -72,6 +72,22 @@ def _mkdir_checked(path: Path) -> None:
     _check_component(path, directory=True)
 
 
+def _ensure_directory_tree(path: Path) -> None:
+    """Create a missing directory tree without following existing links."""
+    path = Path(path).absolute()
+    missing = []
+    current = path
+    while not _lexists(current):
+        missing.append(current)
+        parent = current.parent
+        if parent == current:
+            raise RuntimePathError("Runtime directory has no regular ancestor")
+        current = parent
+    _check_component(current, directory=True)
+    for component in reversed(missing):
+        _mkdir_checked(component)
+
+
 def _ensure_root(root: Path) -> None:
     """Create missing vault runtime directories one component at a time."""
     root = Path(root).absolute()
@@ -80,7 +96,7 @@ def _ensure_root(root: Path) -> None:
     vault = root.parent.parent
     # The selected vault is the containment anchor.  Existing symlink/reparse
     # vaults are rejected rather than silently resolving to another tree.
-    _mkdir_checked(vault)
+    _ensure_directory_tree(vault)
     _mkdir_checked(root.parent)
     _mkdir_checked(root)
 
