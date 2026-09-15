@@ -14,8 +14,9 @@ coverage (`02c05c0`) and W-22 optional-omission enforcement
 These bounded reliability/safety changes do not promote V2 or unlock Phase 20.
 
 W-07B-R1 repaired the disposable synthetic runtime benchmark and added bounded
-status reporting. At exact head `4568da9`, its focused suite is 36/36 and the
-full regression is 1341 passed, 4 skipped, 2 existing dependency warnings.
+status reporting plus canonical-effect verification. At exact head `6acfe9e`,
+its focused suite is 37/37 and the full regression is 1342 passed, 4 skipped, 2
+existing dependency warnings.
 The synthetic run completes 20/20 canonical effects with no dead letters, but
 the 500 ms hook and 30 s queue gates fail; authenticated native Claude/Codex
 trust and multi-session dogfood are still unverified. W-07B therefore remains

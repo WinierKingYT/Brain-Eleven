@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `4568da980aedfcf2ba3e3d1f80465214a25418c9`
+**REVISION:** `6acfe9e0a71636a6dcaf406c31f32964be2bbc54`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -47,7 +47,7 @@ disposable transcript-root configuration for both clients, and the explicit
 - W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery and
   maintenance delivery): **36 passed**.
 - W-06C0R1 scope contract suite: **23 passed**.
-- Full regression at this exact revision: **1341 passed, 4 skipped, 2
+- Full regression at this exact revision: **1342 passed, 4 skipped, 2
   existing dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`), `compileall` and `git diff --check`:
   **PASS**.
@@ -62,10 +62,10 @@ Only timings, counts and status codes were emitted:
 | completed canonical effects | 20/20 |
 | dead-letter files | 0 |
 | singleton service | true |
-| Stop p95 | 555.10 ms |
-| UserPromptSubmit p95 | 512.68 ms |
-| queue p95 | 65,492.02 ms |
-| queue max | 69,149.36 ms |
+| Stop p95 | 541.95 ms |
+| UserPromptSubmit p95 | 959.08 ms |
+| queue p95 | 70,106.58 ms |
+| queue max | 75,177.31 ms |
 | Stop statuses | 20 `OK` |
 | UserPromptSubmit statuses | 18 `OK`, 2 `DEGRADED` |
 
@@ -118,9 +118,10 @@ is implied.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** A separate read-only reviewer must inspect the contract,
-diff, focused/full evidence and privacy boundary. Self-review is not an
-acceptance verdict.
+The first independent review returned `FIX-FIRST` with one P1: unhandled
+`TimeoutExpired` could still suppress a report. That path is now bounded as a
+`TIMEOUT` status at this revision; a fresh read-only re-review is pending.
+Self-review is not an acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 

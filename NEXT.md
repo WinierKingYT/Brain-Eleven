@@ -51,10 +51,11 @@ review still keeps W-07B
 native latency matrix and multi-session dogfood are missing. Retrieval quality
 and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
 
-W-07B-R1 is the active evidence package at exact head `4568da9`: the synthetic
-benchmark now binds disposable Claude/Codex transcript roots and records hook
-degradation instead of raising. Its focused suite is 36/36 and full regression
-is 1341 passed, 4 skipped, 2 warnings. The synthetic run completes 20/20
+W-07B-R1 is the active evidence package at exact head `6acfe9e`: the synthetic
+benchmark now binds disposable Claude/Codex transcript roots, verifies the
+canonical revision/count delta and records hook degradation instead of raising.
+Its focused suite is 37/37 and full regression is 1342 passed, 4 skipped, 2
+warnings. The synthetic run completes 20/20
 canonical effects with no dead letters, but Stop/UserPromptSubmit p95 and
 queue latency gates fail. Native authenticated trust, the full 2×4
 cold/warm matrix and dogfood remain open; W-07B stays `FIX-FIRST / NOT
@@ -272,9 +273,10 @@ in-file, not a functional finding.
 ## Recent sessions
 
 **2026-09-15 (continued)** — W-07B-R1 repaired the synthetic runtime evidence
-harness at `4568da9`. Disposable transcript roots and native-shaped fixtures
+harness at `6acfe9e`. Disposable transcript roots and native-shaped fixtures
 now exercise ownership successfully; hook degradation and latency failures are
-reported as bounded metrics. Full regression is 1341 passed, 4 skipped, and
+reported as bounded metrics, including canonical revision/count verification.
+Full regression is 1342 passed, 4 skipped, and
 the package remains `FIX-FIRST / NOT ACCEPTED` because authenticated native
 trust, the complete latency matrix and dogfood are still absent.
 
