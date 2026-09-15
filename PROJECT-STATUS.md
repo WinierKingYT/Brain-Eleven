@@ -23,6 +23,12 @@ leakage. TSC-02 project identity/registry lineage and TSC-03 strict state
 decoding remain separate follow-up packages. This closure does not promote V2
 or unlock Phase 20.
 
+TSC-02's bounded identity/registry-lineage contract is independently accepted
+(`SHIP`) at `62dfedf` with review `90fd416`; implementation is pending and must
+remain separate from the `task_state_context.py` architecture inversion. The
+root-reuse leakage found by the audit remains open until that implementation
+passes its own independent review.
+
 W-07B-R1 repaired the disposable synthetic runtime benchmark, added bounded
 status reporting plus canonical-effect verification, and now records the full
 synthetic 2-client × 4-event × cold/warm latency matrix. At exact head

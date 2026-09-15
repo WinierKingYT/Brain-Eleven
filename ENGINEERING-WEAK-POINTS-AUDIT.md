@@ -668,3 +668,23 @@ bounded `STATE_CORRUPT` without path/content leakage or side effects. See
 native `compile_context` translation and `task_state_context.py` inversion
 remain open follow-up findings; Phase 20 remains FROZEN / LOCKED and V2
 remains SHADOW.
+
+## TSC-02 — project identity and registry lineage (2026-09-15)
+
+The read-only audit reproduced a P1 scope-safety failure: a
+`TaskStateContext` composed for `project-p` remained routable after its root
+was relocated and the old root was registered as `project-q`. Router and
+Authority returned `DEGRADED` while carrying the old `project-p` state
+candidate. The context currently has no registry revision or root lineage
+(`scripts/task_state_context.py:24-29,69-72`); Router checks only project ID and
+state revision (`context_router/router.py:43-71`), and Authority has no root
+check (`authority/resolver.py:60-70`).
+
+`WEAKNESS-TSC-02-IDENTITY-CONTRACT.md` is independently reviewed **SHIP** at
+contract revision `62dfedf` (review artifact `90fd416`). The bounded design
+requires an opaque normalized-root identity, registry revision, two-phase
+composer revalidation, pre-cache Router/Authority checks, explicit unresolved/
+global lineage forms, strict serialization policy and zero project candidates
+after root reuse. It does not change ProjectRegistry persistence, canonical
+MemoryStore/StateStore authorities, retrieval, V2 or Phase 20. Implementation
+has not started; TSC-02 remains **CONTRACT ACCEPTED / IMPLEMENTATION PENDING**.
