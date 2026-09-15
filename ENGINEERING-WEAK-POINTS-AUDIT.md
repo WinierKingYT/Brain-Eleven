@@ -487,7 +487,7 @@ skipped and 2 dependency warnings. V2 remains SHADOW; no promotion or Phase
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
 **Current package:** W-07B native runtime acceptance remains `FIX-FIRST / NOT
-ACCEPTED` at exact evidence head `0fe1625`; its authenticated native trust and
+ACCEPTED` at exact evidence head `7b0733b`; its authenticated native trust and
 multi-session dogfood gates are still open. The synthetic latency matrix is
 complete, but it is not authenticated native evidence. W-19A stale
 reminder authority and W-19B native health diagnostics are independently
@@ -619,12 +619,12 @@ unchanged.
 
 The original synthetic runtime benchmark wrote transcripts outside the
 configured ownership roots and raised before producing any timing evidence.
-At exact head `0fe1625`, the evidence-only repair binds disposable Claude and
+At exact head `7b0733b`, the evidence-only repair binds disposable Claude and
 Codex roots, uses client-shaped records, records bounded hook status counts,
 verifies the canonical effect by revision/count delta, and emits all 16
 Claude/Codex × event × cold/warm synthetic cells with five samples each. The
-focused W-07B suite passes 45/45; the W06C0R1 scope suite passes 36/36; the
-full regression passes 1343 tests with 4 skips and 2 existing dependency
+focused W-07B suite passes 46/46; the W06C0R1 scope suite passes 36/36; the
+full regression passes 1344 tests with 4 skips and 2 existing dependency
 warnings. A 20-event, 1000-record synthetic run completes 20/20 canonical
 effects with no dead letters and a singleton service. Matrix completeness, the
 3-second cell p95 bound, queue drain and the 40/40 terminal delta pass, while

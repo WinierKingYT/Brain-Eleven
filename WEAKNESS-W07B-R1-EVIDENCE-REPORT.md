@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `0fe162557c03906f1069b9371a98cc0249b1f822`
+**REVISION:** `7b0733bc610e50126ef80f4a46dc2926408afdb3`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -38,16 +38,16 @@ temporary roots, emits client-shaped records and records bounded status codes.
 
 ## TESTS ADDED
 
-Five focused tests cover hook-status mapping without retaining output,
+Six focused tests cover hook-status mapping without retaining output,
 disposable transcript-root configuration for both clients, the explicit
 `all_hooks_ok` failure gate and the complete matrix contract.
 
 ## TESTS EXECUTED
 
 - W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery,
-  maintenance delivery and stale-reminder safety): **45 passed**.
+  maintenance delivery and stale-reminder safety): **46 passed**.
 - W-06C0R1 scope contract suite: **36 passed**.
-- Full regression at this exact revision: **1343 passed, 4 skipped, 2
+- Full regression at this exact revision: **1344 passed, 4 skipped, 2
   existing dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`), `compileall` and `git diff --check`:
   **PASS**.
@@ -64,7 +64,7 @@ Only timings, counts and status codes were emitted:
 | singleton service | true |
 | canonical revision delta | +20 |
 | latency matrix cells | 16/16, 5 samples per cell |
-| maximum matrix p95 | 2,704.27 ms |
+| maximum matrix p95 | 2,713.68 ms |
 | cold SessionStart statuses | Claude 4 `DEGRADED`/1 `OK`; Codex 4 `DEGRADED`/1 `OK` |
 | cold UserPromptSubmit statuses | Claude 5 `DEGRADED`; Codex 5 `DEGRADED` |
 | matrix queue terminal verification | drained `true`; expected/delta `40/40` |
@@ -125,12 +125,12 @@ is implied.
 
 ## INDEPENDENT REVIEW
 
-The independent review found two harness P1s: degraded responses could be
-misclassified as `OK`, and a failed cold stop could be counted as a valid cold
-sample. Both are now fail-closed; matrix queue drain and terminal deltas are
-also explicit gates. A fresh independent read-only review is required for
-this revision, while native trust and dogfood gaps remain. Self-review is not
-an acceptance verdict.
+The independent review found two harness P1s and one P2: degraded responses
+could be misclassified as `OK`, a failed cold stop could be counted as a valid
+cold sample, and an HTTP protocol error could abort cleanup. All three are now
+bounded/fail-closed; matrix queue drain and terminal deltas are explicit gates.
+A fresh independent read-only review is required for this revision, while
+native trust and dogfood gaps remain. Self-review is not an acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 
