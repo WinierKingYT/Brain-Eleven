@@ -312,10 +312,14 @@ follow-up **W-12A OPEN**.
 but retains a caller-supplied `project_id`; `brain_eleven/memory/capture.py`
 and `scripts/search-api.py` accept both values. A capture using project A's
 root with project B's ID persisted project-A-labelled content under project B.
-This violates the zero wrong-project-leakage invariant. Status: **OPEN / P1**;
-when both values are supplied, require an exact registry match or derive the
-opaque ID exclusively from the registered root, with capture/API regression
-tests.
+This violates the zero wrong-project-leakage invariant. Status:
+**IMPLEMENTED / REVIEW PENDING** at exact code revision `cc344e3`. The shared
+resolver now requires an exact registry match for root+ID pairs, rejects
+unregistered explicit IDs without creating a registry entry, and preserves
+root-only auto-registration/relocation. Focused scope/capture/API coverage and
+full regression are recorded in
+`WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`; independent implementation
+review is still required before this finding can become SHIP.
 
 ### W-14 — Archived project can race a state mutation (P1)
 
