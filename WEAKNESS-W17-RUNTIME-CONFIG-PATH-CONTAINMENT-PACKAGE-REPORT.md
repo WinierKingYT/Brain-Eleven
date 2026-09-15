@@ -1,7 +1,7 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
-**PACKAGE:** W-17  
-**REVISION:** `355d2024926bd720e0655834827140d607b6cd4a`  
+**PACKAGE:** W-17
+**REVISION:** `a429971b0c9d70d29fc2c76f30028cbdc03493d3`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -66,9 +66,10 @@ paths.
 ## TESTS EXECUTED
 
 - W17 plus W15, native bootstrap, runtime, maintenance, terminal-state and
-  provenance surfaces: **143 passed, 2 warnings**.
-- Full suite at exact revision `355d202`: **1254 passed, 2 warnings** in
-  244.33 seconds.
+  provenance surfaces: **116 passed, 2 warnings**; the W17-only set is
+  **16 passed**.
+- Full suite at exact revision `a429971`: **1260 passed, 2 warnings** in
+  267.84 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
@@ -117,8 +118,8 @@ verdict must be exactly `SHIP`, `FIX-FIRST`, or `RETHINK`.
 
 ## SCORE BEFORE / AFTER
 
-Scope/fail-closed safety: **8.2 → pending independent review**  
-Persistence/concurrency: **8.0 → pending independent review**  
+Scope/fail-closed safety: **8.2 → pending independent review**
+Persistence/concurrency: **8.0 → pending independent review**
 Runtime path containment: **symlink/reparse redirect possible → bounded
 fail-closed guard**
 

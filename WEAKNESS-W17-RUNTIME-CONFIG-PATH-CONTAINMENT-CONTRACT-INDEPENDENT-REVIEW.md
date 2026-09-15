@@ -1,6 +1,6 @@
 # W-17 Runtime Path Containment — Contract Independent Review
 
-**Contract revision:** `5054dda8d58452d58e40950eaf683f70408f6444`  
+**Contract revision:** `5054dda8d58452d58e40950eaf683f70408f6444`
 **Verdict:** **SHIP**
 
 The contract is bounded to vault-owned `.brain-eleven/runtime/**` paths and
