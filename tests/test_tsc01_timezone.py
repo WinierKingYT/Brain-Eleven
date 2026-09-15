@@ -152,4 +152,3 @@ def test_composer_exposes_bounded_corrupt_state_without_side_effects(tmp_path):
     assert context.state.error == "state document is corrupt"
     assert str(tmp_path) not in (context.state.error or "")
     assert _file_snapshot(tmp_path) == before_files
-

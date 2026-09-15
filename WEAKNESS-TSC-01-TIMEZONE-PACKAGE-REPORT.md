@@ -1,9 +1,9 @@
 # TSC-01 — Timezone-Bound State Resolution Package Report
 
-**PACKAGE:** TSC-01  
-**REVISION:** `9bb24d8c3a5ff3595975f26fc1b826c114ba1314`  
-**STATUS:** REVIEW PENDING — implementation and verification are complete; independent acceptance has not been performed.  
-**Phase 20:** FROZEN / LOCKED  
+**PACKAGE:** TSC-01
+**REVISION:** `9bb24d8c3a5ff3595975f26fc1b826c114ba1314`
+**STATUS:** REVIEW PENDING — implementation and verification are complete; independent acceptance has not been performed.
+**Phase 20:** FROZEN / LOCKED
 **V2 runtime:** SHADOW
 
 ## OBJECTIVE
@@ -130,4 +130,3 @@ increase is claimed.
 
 **REVIEW PENDING — do not treat as SHIP until independent review returns exactly
 `SHIP`.**
-
