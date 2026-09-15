@@ -1,6 +1,7 @@
 """W-17 fail-closed containment tests for vault-owned runtime state."""
 
 import os
+import threading
 from pathlib import Path
 import subprocess
 
@@ -282,6 +283,39 @@ def test_runtime_lock_does_not_create_a_raceable_sidecar_marker(tmp_path):
         assert not lock_path.exists()
 
     assert not lock_path.exists()
+
+
+def test_distinct_runtime_targets_do_not_share_a_lock(tmp_path):
+    vault = _vault(tmp_path)
+    cfg = storage.RuntimeConfig(vault)
+    first = cfg.root / "locks" / "first"
+    second = cfg.root / "locks" / "second"
+    first_entered = threading.Event()
+    second_entered = threading.Event()
+    release = threading.Event()
+
+    def hold_first():
+        with storage.runtime_file_lock(first):
+            first_entered.set()
+            release.wait(5)
+
+    thread = threading.Thread(target=hold_first)
+    thread.start()
+    assert first_entered.wait(5)
+    with storage.runtime_file_lock(second):
+        second_entered.set()
+    release.set()
+    thread.join(5)
+    assert second_entered.is_set()
+
+
+def test_runtime_lock_key_normalizes_lexical_aliases(tmp_path):
+    vault = _vault(tmp_path)
+    cfg = storage.RuntimeConfig(vault)
+    target = cfg.root / "locks" / "report"
+    alias = cfg.root / "locks" / "nested" / ".." / "report"
+
+    assert storage._runtime_lock_key(target) == storage._runtime_lock_key(alias)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse evidence")
