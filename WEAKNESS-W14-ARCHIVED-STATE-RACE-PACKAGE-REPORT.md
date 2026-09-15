@@ -82,10 +82,18 @@ check/write serialize without a new authority.
 ## Independent review
 
 Contract review: **SHIP** at contract revision `0fed4bd`. Implementation
-review: **PENDING**.
+review: **SHIP** at exact implementation/test revision `aef19b8`, with current
+evidence/docs head `439a62c`. The independent reviewer reran the W-14/state/
+registry/runtime focused set (**110 passed**, 2 inherited dependency warnings),
+repeated the race test 10 times (**30/30 passed**), and verified critical
+flake8, compileall and diff checks. The lock ordering, archive-first rejection,
+mutation-first serialization, timeout mapping and scope boundaries were all
+accepted. A 250 ms scheduling window in the mutation-first test was noted as a
+non-blocking test-quality improvement; source-level lock proof is independent
+of that timing window.
 
 SCORE BEFORE: persistence/concurrency 7.0/10; scope/fail-closed 7.5/10  
-SCORE AFTER: not raised until independent implementation review
+SCORE AFTER: persistence/concurrency 7.5/10; scope/fail-closed 8.0/10
 
-VERDICT: **REVIEW PENDING**
+VERDICT: **SHIP**
 

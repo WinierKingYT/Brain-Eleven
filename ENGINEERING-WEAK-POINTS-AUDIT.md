@@ -22,8 +22,8 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 7.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped; archived-state mutation and runtime-config races remain open. |
-| Scope and fail-closed safety | 7.5 | W-13 root/ID consistency is independently shipped; archived-state mutation and runtime-path containment races remain open. |
+| Persistence and concurrency | 7.5 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, and W-14 archive/state linearization are independently shipped; runtime-config races remain open. |
+| Scope and fail-closed safety | 8.0 | W-13 root/ID consistency and W-14 archived-state linearization are independently shipped; runtime-path containment remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -325,10 +325,10 @@ recorded in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`.
 `StateService` checks project activity before taking the state lock, while a
 concurrent registry archive can commit between that check and the state
 transaction. A fault-injected probe archived a project and then observed a
-successful requirement write after archive. Status: **IMPLEMENTED / REVIEW
-PENDING** at exact head `aef19b8`; the shared registry sidecar lock now spans
-the active check and state transaction. Archive-first/mutation-first race
-evidence, timeout mapping, and full regression are recorded in
+successful requirement write after archive. Status: **CLOSED / SHIP** at exact
+head `aef19b8`; the shared registry sidecar lock now spans the active check and
+state transaction. Archive-first/mutation-first race evidence, timeout
+mapping, full regression, and independent review are recorded in
 `WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md`.
 
 ### W-15 — Runtime rollout/config updates can lose concurrent operator changes (P1)
@@ -378,8 +378,8 @@ completed-folder terminal-state successor is independently `SHIP`ped at exact
 review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
 at exact head `f322d2c`. W-06 retrieval work remains evaluation-only and must
-not tune HOLDOUT, promote V2 or open Phase 20. The next audit finding is W-14
-(archived-state mutation race). W-10's
+not tune HOLDOUT, promote V2 or open Phase 20. The next audit finding is W-15
+(runtime config lost-update race). W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
@@ -415,6 +415,9 @@ W-13 project-root/project-ID consistency — `SHIP` at exact code revision
 `cc344e3`, report in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md` and
 independent implementation review recorded at test/documentation head
 `366835b`.
+W-14 archived-state mutation race — `SHIP` at exact implementation revision
+`aef19b8`, report in `WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md` and
+independent review recorded at evidence head `439a62c`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without
