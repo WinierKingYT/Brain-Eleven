@@ -1,8 +1,9 @@
 """W-10: V2 shadow output never crosses the native model boundary."""
 
 import json
+from types import SimpleNamespace
 
-from brain_eleven.runtime.context import compile_bootstrap, compile_context
+from brain_eleven.runtime.context import MAX_V1_STATE_ID_MARKERS, _normalize_v1_state_identity, compile_bootstrap, compile_context
 from brain_eleven.runtime.storage import RuntimeConfig, identity, read_json, write_json
 from brain_eleven.runtime.worker import apply_candidate
 from tests.test_pre13_runtime import candidate, runtime
@@ -108,3 +109,14 @@ def test_launcher_missing_delivery_metadata_fails_closed(runtime, monkeypatch):
     payload = {"cwd": str(vault), "session_id": "w10-legacy", "turn_id": "1", "prompt": "Continue"}
     output, _, _ = launcher.hook(vault, "codex", "UserPromptSubmit", payload)
     assert "hookSpecificOutput" not in output
+
+
+def test_state_identity_markers_are_bounded_and_content_free():
+    state = SimpleNamespace(
+        active_blockers=tuple({"id": f"blocker-{index}"} for index in range(10_000)),
+        active_requirements=(), active_work_items=(), constraints=(), risks=(),
+    )
+    rendered = _normalize_v1_state_identity("base", state)
+    marker_lines = [line for line in rendered.splitlines() if line.startswith("- blocker-")]
+    assert len(marker_lines) == MAX_V1_STATE_ID_MARKERS == 64
+    assert len(rendered) < 2_000

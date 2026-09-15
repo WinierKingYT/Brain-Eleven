@@ -21,6 +21,7 @@ from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapsh
 # allow-list local to the delivery boundary so a provider label cannot drift
 # away from the text that is actually returned.
 MODEL_FACING_V1_PROVIDERS = frozenset({'V1', 'W06B_TASK_AWARE'})
+MAX_V1_STATE_ID_MARKERS = 64
 
 
 def _normalize_v1_state_identity(context, state):
@@ -31,9 +32,13 @@ def _normalize_v1_state_identity(context, state):
     for attribute in ('active_work_items', 'active_requirements', 'active_blockers', 'constraints', 'risks'):
         records = getattr(state, attribute, ())
         for record in records if isinstance(records, (list, tuple)) else ():
+            if len(record_ids) >= MAX_V1_STATE_ID_MARKERS:
+                break
             record_id = record.get('id') if isinstance(record, dict) else None
             if isinstance(record_id, str) and record_id and record_id not in record_ids:
                 record_ids.append(record_id)
+        if len(record_ids) >= MAX_V1_STATE_ID_MARKERS:
+            break
     if not record_ids:
         return context
     return context + '\n\n## STATE RECORD IDS\n' + '\n'.join(f'- {item}' for item in record_ids)
