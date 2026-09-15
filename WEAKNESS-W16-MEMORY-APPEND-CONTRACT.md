@@ -1,9 +1,9 @@
 # W-16 Canonical Memory Append Validation Contract
 
-**Status:** REVIEW PENDING — implementation is not authorized by this document  
+**Status:** REVIEW PENDING — implementation is not authorized by this document
 **Finding:** public `MemoryStore.append()` validates only the bucket name and
-can persist an arbitrary nested dictionary as canonical memory.  
-**Priority:** P2 dormant authority surface  
+can persist an arbitrary nested dictionary as canonical memory.
+**Priority:** P2 dormant authority surface
 **Contract revision:** `c6ec24c` (W-15 close baseline)
 
 ## Evidence

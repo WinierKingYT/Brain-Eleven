@@ -1,7 +1,7 @@
 # W-16 Canonical Memory Append Validation Package Report
 
-**PACKAGE:** W-16  
-**REVISION:** `79d7ee1e623a3b266453cd93eb11eb980b3f8deb`  
+**PACKAGE:** W-16
+**REVISION:** `f831e3aa7c6c6c5d82f854c72ff99a99e3c0e601`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -61,13 +61,15 @@ intent and do not alter production behavior.
 ## TESTS EXECUTED
 
 - W-16 append boundary plus existing caller/authority/lifecycle/graph/context
-  surfaces: **168 passed, 2 warnings**.
-- Full suite at exact revision `79d7ee1`: **1242 passed, 2 warnings** in
-  240.41 seconds.
+  surfaces: **170 passed, 2 warnings** after explicit-null coverage.
+- Full suite at exact revision `f831e3a`: **1244 passed, 2 warnings** in
+  244.49 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on touched Python files: **PASS**.
 - `compileall` on touched Python files: **PASS**.
-- `git diff --check`: **PASS** (pre-existing untracked permission warnings
-  were not staged or modified).
+- `git diff --check` on the current working tree: **PASS**. The historical
+  `c6ec24c..HEAD` range contains only pre-existing Markdown line-break
+  whitespace in earlier W-16 documents; no touched Python file is flagged.
+  Pre-existing untracked permission warnings were not staged or modified.
 
 ## QUALITY METRICS BEFORE / AFTER
 
@@ -115,8 +117,8 @@ verdict must be exactly `SHIP`, `FIX-FIRST`, or `RETHINK`.
 
 ## SCORE BEFORE / AFTER
 
-Persistence/concurrency: **8.0 → pending independent review**  
-Scope/fail-closed safety: **8.0 → pending independent review**  
+Persistence/concurrency: **8.0 → pending independent review**
+Scope/fail-closed safety: **8.0 → pending independent review**
 Dormant append authority: **unvalidated nested records → bounded structural validation**
 
 ## VERDICT
