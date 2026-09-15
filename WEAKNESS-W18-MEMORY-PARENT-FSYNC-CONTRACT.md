@@ -1,10 +1,15 @@
 # W-18 MemoryStore Parent-Directory Durability Contract
 
-**Status:** BOUNDED CONTRACT / REVIEW PENDING  
-**Revision audited:** `b8277e5ed59c77947446ba8041e9cfb45aa16e34`  
-**Program:** Engineering Weak-Point Improvement Goal  
-**Phase 20:** FROZEN / LOCKED  
-**V2 runtime:** SHADOW  
+**Status:** BOUNDED CONTRACT / REVIEW PENDING
+
+**Revision audited:** `b8277e5ed59c77947446ba8041e9cfb45aa16e34`
+
+**Program:** Engineering Weak-Point Improvement Goal
+
+**Phase 20:** FROZEN / LOCKED
+
+**V2 runtime:** SHADOW
+
 **Implementation authorization:** This document defines the bounded package; implementation remains subject to the independent contract review.
 
 ## 1. Problem statement
