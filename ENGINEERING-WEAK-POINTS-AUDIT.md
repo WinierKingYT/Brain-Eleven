@@ -487,8 +487,9 @@ skipped and 2 dependency warnings. V2 remains SHADOW; no promotion or Phase
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
 **Current package:** W-07B native runtime acceptance remains `FIX-FIRST / NOT
-ACCEPTED` at exact evidence head `7707a1e`; its authenticated native trust,
-latency matrix and multi-session dogfood gates are still open. W-19A stale
+ACCEPTED` at exact evidence head `61ab6ce`; its authenticated native trust and
+multi-session dogfood gates are still open. The synthetic latency matrix is
+complete, but it is not authenticated native evidence. W-19A stale
 reminder authority and W-19B native health diagnostics are independently
 `SHIP`ped at exact heads `352f51b` and `5555318`.
 No new W-22 implementation is open. W-21 and W-22 are independently shipped;
@@ -618,17 +619,17 @@ unchanged.
 
 The original synthetic runtime benchmark wrote transcripts outside the
 configured ownership roots and raised before producing any timing evidence.
-At exact head `c17fd84`, the evidence-only repair binds disposable Claude and
-Codex roots, uses client-shaped synthetic records and records bounded hook
-status counts and verifies the canonical effect by revision/count delta. The
-focused W-07B suite passes 37/37; the full regression passes 1342 tests with 4
-skips and 2 existing dependency warnings. A 20-event,
-1000-record synthetic run completes 20/20 canonical effects with no dead
-letters and a singleton service, but Stop/UserPromptSubmit p95 and queue
-latency gates fail (544.47 ms, 537.79 ms and 71.00 s maximum respectively;
-six prompt events are `DEGRADED`). This improves evidence truthfulness without
-closing W-07B: authenticated native trust, the complete 2×4 cold/warm matrix,
-multi-session dogfood remain open. The independent read-only review at code
-revision `c17fd84` returned `FIX-FIRST` after confirming the timeout and
-metadata corrections. W-07B is `FIX-FIRST / NOT ACCEPTED`; Phase 20 remains
-FROZEN / LOCKED and V2 remains SHADOW.
+At exact head `61ab6ce`, the evidence-only repair binds disposable Claude and
+Codex roots, uses client-shaped records, records bounded hook status counts,
+verifies the canonical effect by revision/count delta, and emits all 16
+Claude/Codex × event × cold/warm synthetic cells with five samples each. The
+focused W-07B suite passes 45/45; the W06C0R1 scope suite passes 36/36; the
+full regression passes 1343 tests with 4 skips and 2 existing dependency
+warnings. A 20-event, 1000-record synthetic run completes 20/20 canonical
+effects with no dead letters and a singleton service. Matrix completeness and
+the 3-second cell p95 bound pass, while the 500 ms hook, 30 s queue and
+all-hooks quality gates fail. This improves evidence truthfulness without
+closing W-07B: authenticated native trust and multi-session dogfood remain
+open. A fresh independent read-only review of this exact revision is pending;
+W-07B is `FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2
+remains SHADOW.

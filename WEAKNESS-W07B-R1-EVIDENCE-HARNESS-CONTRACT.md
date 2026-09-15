@@ -105,6 +105,6 @@ dogfood gates. If any required cell or native client is unavailable, the
 package remains **FIX-FIRST / NOT ACCEPTED** with the exact bounded failure
 code preserved.
 
-**Plan status: APPROVED — implementation executed at `c17fd84`; package remains
-FIX-FIRST / NOT ACCEPTED pending the required native evidence and independent
-review.**
+**Plan status: APPROVED — harness implementation extended at
+`61ab6cee0759f83c5de4cc64318cd14c403092bb`; package remains FIX-FIRST / NOT
+ACCEPTED pending authenticated native evidence, dogfood and independent review.**

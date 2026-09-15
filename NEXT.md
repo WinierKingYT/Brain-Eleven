@@ -47,20 +47,23 @@ acceptance evidence is still active:
 deterministic process/restart recovery has 18 passing repetitions, but the
 committed native trust, latency and dogfood gates remain open. Independent
 review still keeps W-07B
-`FIX-FIRST / NOT ACCEPTED` because authenticated Claude/Codex trust, the
-native latency matrix and multi-session dogfood are missing. Retrieval quality
-and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
+`FIX-FIRST / NOT ACCEPTED` because authenticated Claude/Codex trust and
+native latency evidence are missing; the synthetic matrix is complete but is
+not a native-client substitute. Multi-session dogfood is also missing.
+Retrieval quality and V2 promotion remain deferred, and Phase 20 stays FROZEN
+/ LOCKED.
 
-W-07B-R1 is the active evidence package at exact head `c17fd84`: the synthetic
-benchmark now binds disposable Claude/Codex transcript roots, verifies the
-canonical revision/count delta and records hook degradation instead of raising.
-Its focused suite is 37/37 and full regression is 1342 passed, 4 skipped, 2
-warnings. The synthetic run completes 20/20
-canonical effects with no dead letters, but Stop/UserPromptSubmit p95 and
-queue latency gates fail. Native authenticated trust, the full 2×4
-cold/warm matrix and dogfood remain open. Independent read-only review at
-`c17fd84` returned `FIX-FIRST` after confirming timeout handling and metadata;
-W-07B stays `FIX-FIRST / NOT ACCEPTED`.
+W-07B-R1 is the active evidence package at exact head `61ab6ce`: the synthetic
+benchmark binds disposable Claude/Codex transcript roots, verifies the
+canonical revision/count delta, records hook degradation instead of raising,
+and now emits the complete synthetic 2-client × 4-event × cold/warm matrix.
+Its focused suite is 45/45, the W06C0R1 scope suite is 36/36, and full
+regression is 1343 passed, 4 skipped, 2 warnings. The synthetic run completes
+20/20 canonical effects with no dead letters; the matrix is complete and its
+3-second p95 bound passes, while the hook, queue and all-hooks quality gates
+fail. Authenticated native trust and multi-session dogfood remain open. A
+fresh independent read-only review is required for this revision; W-07B stays
+`FIX-FIRST / NOT ACCEPTED`.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
@@ -232,8 +235,9 @@ in-file, not a functional finding.
 ## What's next
 
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
-  Claude/Codex smoke, the fixed latency matrix and privacy-safe multi-session
-  dogfood. Do not mark W-07B SHIP while any of those gates is absent.
+  Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
+  latency matrix is complete at `61ab6ce`, but it cannot substitute for native
+  evidence; do not mark W-07B SHIP while any native gate is absent.
 - IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
   highest blast-radius module in the whole inventory, 26/26 callers,
   deliberately excluded from every slice so far including 2E) — needs its
@@ -273,14 +277,14 @@ in-file, not a functional finding.
 
 ## Recent sessions
 
-**2026-09-15 (continued)** — W-07B-R1 repaired the synthetic runtime evidence
-harness at `c17fd84`. Disposable transcript roots and native-shaped fixtures
-now exercise ownership successfully; hook degradation and latency failures are
-reported as bounded metrics, including canonical revision/count verification.
-Full regression is 1342 passed, 4 skipped, and
-the package remains `FIX-FIRST / NOT ACCEPTED` because authenticated native
-trust, the complete latency matrix and dogfood are still absent; independent
-review recorded `FIX-FIRST`.
+**2026-09-15 (continued)** — W-07B-R1 extended the synthetic runtime evidence
+harness at `61ab6ce`. Disposable transcript roots and native-shaped fixtures
+exercise ownership successfully; hook degradation and latency failures are
+reported as bounded metrics, including canonical revision/count verification,
+and all 16 client/event/cold-warm cells now have five samples each. Full
+regression is 1343 passed, 4 skipped, and the package remains
+`FIX-FIRST / NOT ACCEPTED` because authenticated native trust and dogfood are
+still absent; a fresh independent review is pending.
 
 **2026-09-10** — Found `master` frozen 91 commits behind five sequential,
 unmerged topic branches (each closing an IG package independently).

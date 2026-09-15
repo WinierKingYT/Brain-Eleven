@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `c17fd84ac95742088c60fc4ec250dbd26db37fd7`
+**REVISION:** `61ab6cee0759f83c5de4cc64318cd14c403092bb`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -20,8 +20,8 @@ promote W-07B, V2 or Phase 20.
 ## FILES CHANGED
 
 - `evals/runtime_benchmark.py` — disposable Claude/Codex transcript roots,
-  native-shaped synthetic records, bounded hook status fields and explicit
-  benchmark gates.
+  native-shaped synthetic records, bounded hook status fields, the complete
+  synthetic client/event/phase matrix and explicit benchmark gates.
 - `tests/test_w07b_r1_evidence.py` — focused checks for status mapping,
   transcript-root binding and visible failure gates.
 
@@ -38,16 +38,16 @@ temporary roots, emits client-shaped records and records bounded status codes.
 
 ## TESTS ADDED
 
-Three focused tests cover hook-status mapping without retaining output,
-disposable transcript-root configuration for both clients, and the explicit
-`all_hooks_ok` failure gate.
+Five focused tests cover hook-status mapping without retaining output,
+disposable transcript-root configuration for both clients, the explicit
+`all_hooks_ok` failure gate and the complete matrix contract.
 
 ## TESTS EXECUTED
 
-- W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery and
-  maintenance delivery): **37 passed**.
-- W-06C0R1 scope contract suite: **23 passed**.
-- Full regression at this exact revision: **1342 passed, 4 skipped, 2
+- W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery,
+  maintenance delivery and stale-reminder safety): **45 passed**.
+- W-06C0R1 scope contract suite: **36 passed**.
+- Full regression at this exact revision: **1343 passed, 4 skipped, 2
   existing dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`), `compileall` and `git diff --check`:
   **PASS**.
@@ -62,17 +62,20 @@ Only timings, counts and status codes were emitted:
 | completed canonical effects | 20/20 |
 | dead-letter files | 0 |
 | singleton service | true |
-| Stop p95 | 544.47 ms |
-| UserPromptSubmit p95 | 537.79 ms |
-| queue p95 | 66,370.20 ms |
-| queue max | 70,999.83 ms |
-| Stop statuses | 20 `OK` |
-| UserPromptSubmit statuses | 18 `OK`, 2 `DEGRADED` |
+| canonical revision delta | +20 |
+| latency matrix cells | 16/16, 5 samples per cell |
+| maximum matrix p95 | 2,708.25 ms |
+| cold SessionStart statuses | Claude 4 `DEGRADED`/1 `OK`; Codex 4 `DEGRADED`/1 `OK` |
+| cold UserPromptSubmit statuses | Claude 5 `DEGRADED`; Codex 4 `DEGRADED`/1 `OK` |
+| queue p95 / max | gate remains `false` (over 30 s) |
 
-Gates: `no_dead_letters=true`, `singleton=true`; `hook_p95_500ms=false`,
-`queue_30s=false`, `all_hooks_ok=false`. Overall synthetic benchmark status is
-**FAIL**, which is the intended visible result for an unmet latency/degraded
-hook condition.
+Gates: `no_dead_letters=true`, `singleton=true`,
+`canonical_effect_verified=true`, `latency_matrix_complete=true` and
+`latency_matrix_p95_3000ms=true`; `hook_p95_500ms=false`, `queue_30s=false`
+and `all_hooks_ok=false`. Overall synthetic benchmark status is **FAIL**,
+which keeps the observed latency/degraded-hook condition visible. The matrix
+is complete as synthetic evidence; it is not authenticated native-client
+evidence.
 
 ## QUALITY METRICS BEFORE / AFTER
 
@@ -82,7 +85,7 @@ hook condition.
 | Hook degradation visibility | Hidden by exception | Explicit status counts and failing gate |
 | Native authenticated Claude trust | Unverified | Unverified |
 | Native authenticated Codex trust | Unverified | Unverified |
-| Required 2×4 cold/warm latency matrix | Missing | Still missing; two-event synthetic timing is recorded |
+| Required 2×4 cold/warm latency matrix | Missing | Complete synthetic 16-cell matrix; native execution remains unverified |
 | Multi-session dogfood | Missing | Missing |
 
 ## SAFETY METRICS
@@ -93,22 +96,24 @@ hook condition.
 - Raw prompt, transcript, token or exception content in evidence: **0**.
 - Live vault/config mutation: **0**.
 - Queue completion without canonical verification in this benchmark: **0**;
-  all 20 completed records were counted from the canonical completion folder.
+  all 20 completed records were verified by a +20 canonical record delta and
+  +20 canonical revision delta before the report was emitted.
 
 ## KNOWN LIMITATIONS
 
 This is an evidence-harness repair, not native-client acceptance. The
-benchmark covers synthetic `Stop` and `UserPromptSubmit` events only; it does
-not provide the required Claude/Codex `SessionStart`/`SessionEnd` cold/warm
-matrix. The measured queue and hook latency gates currently fail. Authenticated
-isolated Claude and Codex execution, privacy-safe multi-session dogfood and an
-independent review remain outstanding.
+benchmark now covers all required synthetic Claude/Codex ×
+`SessionStart`/`UserPromptSubmit`/`Stop`/`SessionEnd` × cold/warm cells, but the
+matrix invokes the disposable launcher rather than authenticated native
+executables. The measured queue and hook latency gates currently fail.
+Authenticated isolated Claude and Codex execution, privacy-safe multi-session
+dogfood and a fresh independent review of this revision remain outstanding.
 
 ## OPEN FAILURES
 
 - `NATIVE_CLAUDE_TRUST_UNVERIFIED`
 - `NATIVE_CODEX_TRUST_UNVERIFIED`
-- `NATIVE_LATENCY_MATRIX_INCOMPLETE`
+- `NATIVE_LATENCY_MATRIX_UNVERIFIED`
 - `SYNTHETIC_QUEUE_LATENCY_GATE_FAILED`
 - `SYNTHETIC_PROMPT_HOOK_DEGRADED`
 - `NATIVE_DOGFOOD_SAMPLE_MISSING`
@@ -120,10 +125,10 @@ is implied.
 
 The first independent review returned `FIX-FIRST` with one P1: unhandled
 `TimeoutExpired` could still suppress a report. That path is now bounded as a
-`TIMEOUT` status at this revision. The follow-up review confirmed the timeout
-fix and returned `FIX-FIRST` because the required native trust, full latency
-matrix and dogfood evidence are still absent. Self-review is not an
-acceptance verdict.
+`TIMEOUT` status. A subsequent bounded matrix implementation completed all
+16 synthetic cells at this revision; the prior review's native trust and
+dogfood gaps remain, and a fresh independent read-only review is required.
+Self-review is not an acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 
@@ -133,5 +138,6 @@ latency or dogfood gates.
 
 ## VERDICT
 
-**FIX-FIRST / NOT ACCEPTED** — evidence reporting is repaired; the remaining
-native and quality gates are still open.
+**FIX-FIRST / NOT ACCEPTED** — evidence reporting and the synthetic matrix are
+repaired; authenticated native trust, native quality and dogfood gates remain
+open.
