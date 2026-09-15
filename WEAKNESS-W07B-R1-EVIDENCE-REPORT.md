@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `7b0733bc610e50126ef80f4a46dc2926408afdb3`
+**REVISION:** `ca15e31f3d33434a0b0e7fe1bbbd4f0d0fd716de`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -38,16 +38,16 @@ temporary roots, emits client-shaped records and records bounded status codes.
 
 ## TESTS ADDED
 
-Six focused tests cover hook-status mapping without retaining output,
+Seven focused tests cover hook-status mapping without retaining output,
 disposable transcript-root configuration for both clients, the explicit
 `all_hooks_ok` failure gate and the complete matrix contract.
 
 ## TESTS EXECUTED
 
 - W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery,
-  maintenance delivery and stale-reminder safety): **46 passed**.
+  maintenance delivery and stale-reminder safety): **47 passed**.
 - W-06C0R1 scope contract suite: **36 passed**.
-- Full regression at this exact revision: **1344 passed, 4 skipped, 2
+- Full regression at this exact revision: **1345 passed, 4 skipped, 2
   existing dependency warnings**.
 - Critical flake8 (`E9,F63,F7,F82`), `compileall` and `git diff --check`:
   **PASS**.
@@ -64,7 +64,7 @@ Only timings, counts and status codes were emitted:
 | singleton service | true |
 | canonical revision delta | +20 |
 | latency matrix cells | 16/16, 5 samples per cell |
-| maximum matrix p95 | 2,713.68 ms |
+| maximum matrix p95 | 2,695.03 ms |
 | cold SessionStart statuses | Claude 4 `DEGRADED`/1 `OK`; Codex 4 `DEGRADED`/1 `OK` |
 | cold UserPromptSubmit statuses | Claude 5 `DEGRADED`; Codex 5 `DEGRADED` |
 | matrix queue terminal verification | drained `true`; expected/delta `40/40` |
@@ -125,9 +125,10 @@ is implied.
 
 ## INDEPENDENT REVIEW
 
-The independent review found two harness P1s and one P2: degraded responses
+The independent review found two harness P1s and two P2s: degraded responses
 could be misclassified as `OK`, a failed cold stop could be counted as a valid
-cold sample, and an HTTP protocol error could abort cleanup. All three are now
+cold sample, an HTTP protocol error could abort cleanup, and a queue polling
+protocol/schema failure could suppress the report. All four are now
 bounded/fail-closed; matrix queue drain and terminal deltas are explicit gates.
 A fresh independent read-only review is required for this revision, while
 native trust and dogfood gaps remain. Self-review is not an acceptance verdict.
