@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-15  
 **REVISION:** `7fd9d5a72d3995723c4f13f6fd07b541959ba30a`  
-**STATUS:** REVIEW PENDING — independent review required
+**STATUS:** CLOSED / SHIP — independently reviewed
 
 ## OBJECTIVE
 
@@ -97,17 +97,18 @@ open; W-16–W-18 remain unaddressed.  No Phase 20 work is authorized.
 
 ## INDEPENDENT REVIEW
 
-Pending.  A separate read-only reviewer must check the lock/CAS boundary,
-installer inclusion, expensive-validation window, CLI compatibility, and exact
-revision, returning only `SHIP`, `FIX-FIRST`, or `RETHINK`.
+[`WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`](WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md)
+returned **SHIP** at exact package head `7fd9d5a`.  The reviewer independently
+ran 119 focused tests, critical flake8, compileall and diff checks.  No P0/P1/P2
+blocking findings remain.
 
 ## SCORE BEFORE / AFTER
 
-Persistence/concurrency: **7.5 → pending review**  
-Scope/fail-closed safety: **8.0 → pending review**  
-Runtime config safety: **new W-15 dimension, baseline lost-update defect → pending review**
+Persistence/concurrency: **7.5 → 8.0**  
+Scope/fail-closed safety: **8.0 → 8.0**  
+Runtime config safety: **lost-update defect → bounded CAS/lock protection**
 
 ## VERDICT
 
-**REVIEW PENDING** — implementation is complete and pushed, but this package is
-not closed until independent review returns `SHIP`.
+**SHIP** — implementation and evidence are pushed, and independent review
+accepted the package at the exact revision above.
