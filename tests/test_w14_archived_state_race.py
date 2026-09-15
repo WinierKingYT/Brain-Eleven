@@ -1,11 +1,13 @@
 """W-14 regression tests for registry/archive and state mutation ordering."""
 
 import threading
+from contextlib import contextmanager
 
 import pytest
 
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateProjectArchived, StateService
+import state_store as legacy_state_store
 
 
 SOURCE = {"type": "user", "reference": "w14-test"}
@@ -98,4 +100,21 @@ def test_mutation_first_holds_registry_lock_until_state_commit(tmp_path):
     assert ProjectRegistry(vault).get("project-id")["status"] == "archived"
     assert service.store.get_project("project-id")["revision"] == 2
     assert service.store.get_project("project-id")["requirements"][0]["text"] == "serialized mutation"
+
+
+def test_registry_lifecycle_lock_timeout_is_mapped_to_state_error(tmp_path, monkeypatch):
+    vault, service = _setup(tmp_path)
+
+    @contextmanager
+    def timeout(_path):
+        raise legacy_state_store.MemoryStoreLockTimeout("registry lifecycle timeout")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(legacy_state_store, "_registry_file_lock", timeout)
+    with pytest.raises(legacy_state_store.StateStoreLockTimeout):
+        service.add_requirement(
+            "project-id", text="must not write", expected_revision=1, source=SOURCE
+        )
+
+    assert service.store.get_project("project-id")["revision"] == 1
 
