@@ -613,3 +613,20 @@ at exact head `942aee8` returned `SHIP`; no P0/P1/P2 findings remain.
 `WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`. The R4 immutable anchor
 rejects post-anchor evaluator/pin renewal and keeps the historical allowlist
 unchanged.
+
+## W-07B-R1 evidence harness repair (2026-09-15)
+
+The original synthetic runtime benchmark wrote transcripts outside the
+configured ownership roots and raised before producing any timing evidence.
+At exact head `4568da9`, the evidence-only repair binds disposable Claude and
+Codex roots, uses client-shaped synthetic records and records bounded hook
+status counts. The focused W-07B suite passes 36/36; the full regression passes
+1341 tests with 4 skips and 2 existing dependency warnings. A 20-event,
+1000-record synthetic run completes 20/20 canonical effects with no dead
+letters and a singleton service, but Stop/UserPromptSubmit p95 and queue
+latency gates fail (555.10 ms, 512.68 ms and 69.15 s maximum respectively;
+two prompt events are `DEGRADED`). This improves evidence truthfulness without
+closing W-07B: authenticated native trust, the complete 2×4 cold/warm matrix,
+multi-session dogfood and independent review remain open. W-07B is
+`FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2 remains
+SHADOW.
