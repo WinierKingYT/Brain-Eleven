@@ -109,7 +109,9 @@ benchmark now covers all required synthetic Claude/Codex ×
 matrix invokes the disposable launcher rather than authenticated native
 executables. The measured queue and hook latency gates currently fail.
 Authenticated isolated Claude and Codex execution, privacy-safe multi-session
-dogfood and a fresh independent review of this revision remain outstanding.
+dogfood and native latency evidence remain outstanding. The independent
+read-only follow-up review recorded `FIX-FIRST` at this exact implementation
+revision; it found no remaining P0/P1/P2 defect in the bounded harness.
 
 ## OPEN FAILURES
 
@@ -130,8 +132,10 @@ could be misclassified as `OK`, a failed cold stop could be counted as a valid
 cold sample, an HTTP protocol error could abort cleanup, and a queue polling
 protocol/schema failure could suppress the report. All four are now
 bounded/fail-closed; matrix queue drain and terminal deltas are explicit gates.
-A fresh independent read-only review is required for this revision, while
-native trust and dogfood gaps remain. Self-review is not an acceptance verdict.
+The independent read-only follow-up review recorded `FIX-FIRST` at
+`ca15e31eb5bf3ab987246b3f2b5ce8dd5bed06f3` and found no remaining P0/P1/P2
+defect in the bounded harness. Native trust, latency and dogfood gaps remain;
+self-review is not an acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 

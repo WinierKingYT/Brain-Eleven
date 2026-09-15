@@ -107,4 +107,5 @@ code preserved.
 
 **Plan status: APPROVED — harness implementation extended at
 `ca15e31eb5bf3ab987246b3f2b5ce8dd5bed06f3`; package remains FIX-FIRST / NOT
-ACCEPTED pending authenticated native evidence, dogfood and independent review.**
+ACCEPTED pending authenticated native evidence, dogfood and the native
+latency gate; independent read-only review is recorded as `FIX-FIRST`.**
