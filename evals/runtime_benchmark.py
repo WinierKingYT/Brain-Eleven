@@ -41,7 +41,11 @@ def _hook_status(stdout, returncode, *, event):
         return 'INVALID_OUTPUT'
     if event in {'Stop', 'SessionEnd'}:
         return 'OK' if payload == {} else 'DEGRADED'
-    return 'OK' if 'hookSpecificOutput' in payload else 'DEGRADED'
+    return (
+        'OK'
+        if 'hookSpecificOutput' in payload and not payload.get('systemMessage')
+        else 'DEGRADED'
+    )
 
 
 def _run_hook(launcher, vault, client, event, payload):
@@ -183,14 +187,24 @@ def run(samples=40, records=1000):
             latency_matrix = {}
             matrix_statuses = []
             matrix_p95_values = []
+            matrix_terminal_before = sum(
+                len(list((capture_root / name).glob('*.json')))
+                for name in ('completed', 'dead-letter')
+            )
+            matrix_terminal_expected = 0
             for client in ('claude', 'codex'):
                 for event in ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd'):
                     for phase in ('cold', 'warm'):
                         elapsed_values = []
                         statuses = []
                         for repetition in range(latency_repetitions):
+                            attempt_started = time.perf_counter()
                             if phase == 'cold':
-                                _stop_service(vault, cfg)
+                                stopped = _stop_service(vault, cfg)
+                                if not stopped:
+                                    elapsed_values.append((time.perf_counter() - attempt_started) * 1000)
+                                    statuses.append('SERVICE_STOP_FAILED')
+                                    continue
                             else:
                                 ensure_service(vault, wait=True)
                             raw_session = f'latency-{client}-{event}-{phase}-{repetition}'
@@ -216,9 +230,12 @@ def run(samples=40, records=1000):
                             elapsed, status = _run_hook(launcher, vault, client, event, payload)
                             elapsed_values.append(elapsed)
                             statuses.append(status)
+                            if event in {'Stop', 'SessionEnd'}:
+                                matrix_terminal_expected += 1
                         key = f'{client}:{event}:{phase}'
                         cell = {
                             'samples': len(elapsed_values),
+                            'valid_samples': sum(status != 'SERVICE_STOP_FAILED' for status in statuses),
                             'p50_ms': p50(elapsed_values),
                             'p95_ms': p95(elapsed_values),
                             'status_counts': dict(sorted(Counter(statuses).items())),
@@ -227,18 +244,33 @@ def run(samples=40, records=1000):
                         matrix_statuses.extend(statuses)
                         matrix_p95_values.append(cell['p95_ms'])
             latency_matrix_complete = all(
-                cell['samples'] >= 5 for cell in latency_matrix.values()
+                cell['samples'] >= 5
+                and cell['valid_samples'] >= 5
+                and cell['status_counts'].get('SERVICE_STOP_FAILED', 0) == 0
+                for cell in latency_matrix.values()
             )
             matrix_p95_within_budget = bool(matrix_p95_values) and max(matrix_p95_values) <= 3000
             matrix_deadline = time.monotonic() + 180
+            matrix_queue_drained = False
             while time.monotonic() < matrix_deadline:
                 try:
                     status = request_service(vault, '/api/runtime/status', timeout=5)
                 except (OSError, TimeoutError, ValueError):
                     status = None
                 if status and not status['queue']['queued'] and not status['queue']['processing']:
+                    matrix_queue_drained = True
                     break
                 time.sleep(.05)
+            matrix_terminal_after = sum(
+                len(list((capture_root / name).glob('*.json')))
+                for name in ('completed', 'dead-letter')
+            )
+            matrix_terminal_delta = matrix_terminal_after - matrix_terminal_before
+            matrix_terminal_verified = (
+                matrix_queue_drained
+                and matrix_terminal_delta == matrix_terminal_expected
+                and not any((capture_root / 'dead-letter').glob('*.json'))
+            )
             report = {'schema_version': 1, 'evidence_type': 'SYNTHETIC_PROCESS_BENCHMARK',
                       'implementation_fingerprint': implementation_fingerprint(), 'platform': sys.platform,
                       'records': records, 'samples_per_event': samples, 'cold_start_ms': round(cold_ms, 2),
@@ -250,6 +282,10 @@ def run(samples=40, records=1000):
                       'latency_matrix_repetitions': latency_repetitions,
                       'latency_matrix': latency_matrix,
                       'latency_matrix_complete': latency_matrix_complete,
+                      'latency_matrix_queue_drained': matrix_queue_drained,
+                      'latency_matrix_terminal_expected': matrix_terminal_expected,
+                      'latency_matrix_terminal_delta': matrix_terminal_delta,
+                      'latency_matrix_terminal_verified': matrix_terminal_verified,
                       'singleton': singleton,
                       'stop_status_counts': dict(sorted(Counter(stop_status).items())),
                       'prompt_status_counts': dict(sorted(Counter(prompt_status).items()))}
@@ -260,6 +296,8 @@ def run(samples=40, records=1000):
                                'canonical_effect_verified': canonical_effect_verified,
                                'latency_matrix_complete': latency_matrix_complete,
                                'latency_matrix_p95_3000ms': matrix_p95_within_budget,
+                               'latency_matrix_queue_drained': matrix_queue_drained,
+                               'latency_matrix_terminal_verified': matrix_terminal_verified,
                                'no_dead_letters': not any((capture_root / 'dead-letter').glob('*.json')), 'singleton': singleton}
             report['status'] = 'PASS' if all(report['gates'].values()) else 'FAIL'
             return report

@@ -16,6 +16,11 @@ def test_hook_status_maps_launcher_results_without_retaining_content():
         0,
         event="UserPromptSubmit",
     ) == "OK"
+    assert runtime_benchmark._hook_status(
+        '{"hookSpecificOutput":{"additionalContext":"bounded"},"systemMessage":"degraded"}',
+        0,
+        event="UserPromptSubmit",
+    ) == "DEGRADED"
     assert runtime_benchmark._hook_status("{}", 0, event="SessionEnd") == "OK"
     assert runtime_benchmark._hook_status("not-json", 0, event="Stop") == "INVALID_OUTPUT"
     assert runtime_benchmark._hook_status("{}", 1, event="Stop") == "NONZERO_EXIT"
@@ -84,4 +89,12 @@ def test_benchmark_reports_complete_latency_matrix_gate():
         for node in ast.walk(tree)
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
     }
-    assert {"latency_matrix", "latency_matrix_complete", "p50_ms", "p95_ms"} <= names
+    assert {
+        "latency_matrix",
+        "latency_matrix_complete",
+        "latency_matrix_queue_drained",
+        "latency_matrix_terminal_verified",
+        "SERVICE_STOP_FAILED",
+        "p50_ms",
+        "p95_ms",
+    } <= names
