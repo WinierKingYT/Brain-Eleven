@@ -28,18 +28,26 @@ authority.
 1. Select reports only for the requested project whose report envelope is
    valid, successful or explicitly degraded, and whose memory/state revisions
    match one current revision snapshot.
-2. Among those reports, choose the newest report deterministically. Filesystem
-   modification time alone is not a sufficient tie-break; use report metadata
-   (`generated_at`, then `report_id`) after the existing newest-first scan.
+2. Every candidate must contain a parseable, timezone-aware ISO-8601
+   `generated_at` string. Among those reports, choose the newest report
+   deterministically. Filesystem modification time alone is not a sufficient
+   tie-break; use validated report metadata (`generated_at`, then `report_id`)
+   after the existing newest-first scan.
 3. Once the newest matching report is selected, its
    `surface_at_next_session` flag is authoritative:
    - `true` returns the existing bounded `FRESH` reminder;
    - `false` returns `STALE_OR_MISSING` and never falls back to an older
      surfaced report;
-   - a valid `DEGRADED` report returns a bounded non-fresh status and never
-     falls back to an older surfaced report.
+   - a valid `DEGRADED` report returns the existing bounded
+     `STALE_OR_MISSING` status and never falls back to an older surfaced
+     report.
 4. A malformed, foreign, stale-revision, or unreadable report is not a
-   candidate and may be skipped. No raw report content, prompt, transcript,
+   candidate and may be skipped. The current revision snapshot includes an
+   explicit `None` state revision; a report with any non-`None`
+   `source_state_revision` does not match that snapshot. Report enumeration
+   must treat a file disappearing or failing `stat()` between directory scan
+   and read as unreadable and skip it without raising. No raw report content,
+   prompt, transcript,
    exception, or private memory text may be returned or persisted.
 5. Existing `ack_reminder` delivery receipts remain content-free,
    project-scoped, idempotent, and unchanged for a selected fresh report.
