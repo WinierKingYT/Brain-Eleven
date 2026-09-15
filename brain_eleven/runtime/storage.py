@@ -127,8 +127,9 @@ def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
 
     snapshot = guard_runtime_path(runtime_root, target)
     # Validate once more immediately before entering the OS lock primitive.
-    # POSIX locks an already-open runtime-root directory descriptor; Windows
-    # uses a named mutex, so neither path creates an external marker.
+    # POSIX creates its marker relative to an already-open runtime-root
+    # descriptor; Windows uses a named mutex, so neither primitive can create
+    # a marker through a swapped lexical parent.
     assert_runtime_snapshot(runtime_root, target, snapshot)
     if os.name == "nt":
         with _runtime_windows_mutex(target, timeout):
