@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-12  
 **REVISION:** `4cde804c39ee0f6f316308d10a14034f153bef9f` (code/test head)  
-**CONTRACT:** `051ca12ba80d4777c99cb4af856d247103082e7c`  
+**CONTRACT:** `051ca12ba80d4777c99cb4af856d247103082e7c`
 **OBJECTIVE:** Preserve derived router/compiler cache entries under concurrent
 read-modify-write and make access-time refresh atomic.
 
@@ -80,7 +80,11 @@ change canonical stores, authority resolution, ranking, HOLDOUT, V2, or Phase
 
 ## Independent review
 
-**REVIEW PENDING.** The implementer does not self-declare `SHIP`.
+**SHIP** — independent read-only review at exact code/test revision
+`4cde804c39ee0f6f316308d10a14034f153bef9f`; evidence review revision
+`66b9d3b069f798bf74ed078ff8998ed1d8f1c5a`. The reviewer verified the lock and
+atomicity boundary, process stress, fail-open cache behavior, full regression,
+and explicit W-12A deferral.
 
 ## Score before / after
 
@@ -91,4 +95,4 @@ change canonical stores, authority resolution, ranking, HOLDOUT, V2, or Phase
 
 ## Verdict
 
-**REVIEW PENDING**
+**SHIP**

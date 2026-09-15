@@ -298,8 +298,13 @@ paths use direct `write_text()` rather than atomic replacement. A 16-writer
 temporary-vault stress probe retained only one completed entry in repeated
 runs and observed replacement errors. Canonical stores are unaffected, but
 cache loss causes misses, latency spikes and unstable operational behavior.
-Status: **OPEN**. The bounded fix is a shared lock plus atomic writes and a
-concurrent preservation test; it must not alter retrieval ranking.
+The bounded fix applies the existing sidecar lock to complete read-modify-write
+and access refresh paths, uses atomic fsync/replace, and fails open on cache
+lock/write errors. Status: **CLOSED / SHIP** at exact implementation revision
+`4cde804`; focused, process-stress, and full-regression evidence is recorded in
+[`WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
+`authority/cache.py` has the same pre-existing race and remains an explicit
+follow-up **W-12A OPEN**.
 
 ### W-13 — Supplied project root and project ID can disagree (P1)
 
@@ -368,7 +373,7 @@ completed-folder terminal-state successor is independently `SHIP`ped at exact
 review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
 at exact head `f322d2c`. The next audit
-finding is W-12 (derived router/compiler cache synchronization); W-06 retrieval work remains
+finding is W-13 (project root/ID disagreement); W-06 retrieval work remains
 evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
