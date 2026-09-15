@@ -6,6 +6,7 @@ from .store import (
     MemoryStoreConflict,
     MemoryStoreCorrupt,
     MemoryStoreError,
+    MemoryStoreRecordInvalid,
     no_change,
 )
 from .scope import (
@@ -55,6 +56,7 @@ __all__ = [
     "MemoryStoreConflict",
     "MemoryStoreCorrupt",
     "MemoryStoreError",
+    "MemoryStoreRecordInvalid",
     "no_change",
     "ALL_RETRIEVAL_SCOPE",
     "DEFAULT_RETRIEVAL_SCOPE",

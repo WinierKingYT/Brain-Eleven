@@ -13,6 +13,7 @@ from scripts.memory_store import (
     MemoryStoreConflict,
     MemoryStoreCorrupt,
     MemoryStoreError,
+    MemoryStoreRecordInvalid,
     no_change,
 )
 
@@ -22,5 +23,6 @@ __all__ = [
     "MemoryStoreConflict",
     "MemoryStoreCorrupt",
     "MemoryStoreError",
+    "MemoryStoreRecordInvalid",
     "no_change",
 ]

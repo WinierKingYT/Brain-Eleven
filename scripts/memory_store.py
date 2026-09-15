@@ -14,6 +14,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple, Union
+from collections.abc import Mapping
 
 try:
     from brain_eleven.infrastructure.locking import memory_store_lock
@@ -46,6 +47,10 @@ class MemoryStoreCorrupt(MemoryStoreError):
     """Raised when the canonical JSON cannot be trusted."""
 
 
+class MemoryStoreRecordInvalid(MemoryStoreError):
+    """Raised when a nested canonical memory record is malformed."""
+
+
 class _NoChange:
     def __init__(self, value):
         self.value = value
@@ -54,6 +59,56 @@ class _NoChange:
 def no_change(value=None) -> _NoChange:
     """Return a transaction result that deliberately skips persistence."""
     return _NoChange(value)
+
+
+_VALID_RECORD_SCOPE = {"global", "project"}
+_RECORD_STRING_FIELDS = {
+    "timestamp",
+    "source_id",
+    "source",
+    "dedup_fingerprint",
+    "project_id",
+    "project",
+    "project_label",
+}
+
+
+def _validate_record(record: Mapping) -> None:
+    """Validate the minimum canonical record boundary before locking."""
+    if not isinstance(record, Mapping):
+        raise MemoryStoreRecordInvalid("Canonical memory record must be an object")
+    for field in ("memory_id", "type", "content"):
+        value = record.get(field)
+        if not isinstance(value, str) or not value.strip():
+            raise MemoryStoreRecordInvalid(f"Canonical memory {field} must be a non-empty string")
+
+    for field in _RECORD_STRING_FIELDS:
+        if field in record and not isinstance(record[field], str):
+            raise MemoryStoreRecordInvalid(f"Canonical memory {field} must be a string")
+
+    status = record.get("status")
+    if status is not None and (not isinstance(status, str) or not status.strip()):
+        raise MemoryStoreRecordInvalid("Canonical memory status is invalid")
+
+    scope = record.get("scope")
+    if scope is not None and (not isinstance(scope, str) or scope not in _VALID_RECORD_SCOPE):
+        raise MemoryStoreRecordInvalid("Canonical memory scope is invalid")
+    # A missing scope is legacy-global.  Do not silently attach project
+    # identity to such a record.
+    effective_scope = scope or "global"
+    project_id = record.get("project_id", "")
+    project = record.get("project", "")
+    project_label = record.get("project_label", "")
+    if effective_scope == "project" and not project_id.strip():
+        raise MemoryStoreRecordInvalid("Project-scoped memory requires project_id")
+    if effective_scope == "global" and any(value.strip() for value in (project_id, project, project_label)):
+        raise MemoryStoreRecordInvalid("Global memory cannot carry project identity")
+
+    if "is_approved" in record and not isinstance(record["is_approved"], bool):
+        raise MemoryStoreRecordInvalid("Canonical memory is_approved must be boolean")
+    for field in ("issues", "related_notes"):
+        if field in record and not isinstance(record[field], list):
+            raise MemoryStoreRecordInvalid(f"Canonical memory {field} must be a list")
 
 
 def _utc_now() -> str:
@@ -203,6 +258,7 @@ class MemoryStore:
         """Append one canonical record through the transaction boundary."""
         if bucket not in {"validated_memory", "rejected_memory"}:
             raise ValueError(f"Unsupported canonical bucket: {bucket}")
+        _validate_record(record)
 
         def mutate(latest):
             latest.setdefault(bucket, []).append(dict(record))
