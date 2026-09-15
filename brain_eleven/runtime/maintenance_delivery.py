@@ -470,6 +470,7 @@ def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600,
         reports = []
     for path in reports:
         try:
+            mtime = path.stat().st_mtime
             report = read_json(path)
         except (OSError, TypeError, ValueError):
             continue
@@ -484,13 +485,13 @@ def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600,
         report_id = report.get("report_id")
         if generated_at is None or not isinstance(report_id, str):
             continue
-        candidates.append((generated_at, report_id, path.name, report))
+        candidates.append((mtime, generated_at, report_id, path.name, report))
 
-    candidates.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
+    candidates.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
     if not candidates:
         return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
 
-    report = candidates[0][3]
+    report = candidates[0][4]
     if report.get("status") != "SUCCESS" or report.get("surface_at_next_session") is not True:
         return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
 
