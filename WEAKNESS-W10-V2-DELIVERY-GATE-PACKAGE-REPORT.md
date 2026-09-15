@@ -1,7 +1,7 @@
 # W-10 — V2 Shadow Delivery Gate Package Report
 
 **PACKAGE:** W-10  
-**REVISION:** `3277dc7d5e14436e740179b88e2d2f362017a2d9`  
+**REVISION:** `29aa519b60b09e16d92d709dee70cb9529b8cc81`  
 **OBJECTIVE:** Restore the non-injecting V2 `SHADOW` boundary and make the
 model-facing provider explicit.
 
@@ -41,11 +41,11 @@ store, retrieval weight, or Phase 20 file changed.
   `W06B_TASK_AWARE` provider while the product-level V2 status remains
   `SHADOW`.
 - The launcher requires `delivery_approved == true`, an allowed provider, an
-  explicit `delivered == true`, and non-empty context for current service
-  responses. A bounded compatibility branch accepts only pre-gate mocked
-  responses that contain neither new field.
-- V1 state identity markers remain bounded and are applied consistently to the
-  bootstrap and normal project-scoped rendering.
+  explicit `delivered == true`, and non-empty context for every current
+  service response. Missing approval/provider metadata fails closed.
+- Normal-turn V1 preserves the existing bounded state identity markers needed
+  by the task/state runtime; SessionStart's established V1 bootstrap rendering
+  remains unchanged.
 
 ## Tests added
 
@@ -55,15 +55,16 @@ store, retrieval weight, or Phase 20 file changed.
 - project-scoped normal V1/bootstrap parity;
 - proof that normal V1 does not invoke the V2 renderer;
 - `SHADOW` no-delivery behavior;
-- launcher rejection of V2 provider, missing approval, and mismatched metadata;
-- explicit V1 delivery and bounded legacy mock compatibility.
+- launcher rejection of V2 provider, missing approval, mismatched metadata,
+  and missing delivery fields;
+- explicit V1 delivery through the current service contract.
 
 ## Tests executed
 
-- `python -m pytest tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_w06b_task_aware.py -q` — **24 passed**
-- `python -m pytest tests -q` — **1177 passed, 2 warnings**
-- `python -m flake8 --select=E9,F63,F7,F82 brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py` — **passed**
-- `python -m compileall -q brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py` — **passed**
+- `python -m pytest tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_w06b_task_aware.py tests/test_pre13_runtime.py -q` — **82 passed, 2 warnings**
+- `python -m pytest tests -q` — **1177 passed, 2 warnings** at this exact revision
+- `python -m flake8 --select=E9,F63,F7,F82 brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_pre13_runtime.py` — **passed**
+- `python -m compileall -q brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_pre13_runtime.py` — **passed**
 - `git diff --check` — **passed**
 
 All commands used the repository `.venv` interpreter. The full suite was run
@@ -95,18 +96,21 @@ at the exact implementation revision above.
   remains `SHADOW` by contract.
 - Real Claude/Codex executable trust and native-client dogfood remain separate
   W-07B acceptance gates and were not claimed here.
-- The legacy compatibility branch in `launcher.py` exists only for responses
-  that predate the explicit fields; current `compile_context` responses always
-  emit provider and approval metadata.
+- The normal-turn V1 adapter intentionally preserves the legacy state-record
+  identity section required by the existing runtime suite; it does not read
+  unscoped Companion files.
 
 ## Open failures
 
 - No W-10 test or full-suite failure remains.
-- Independent read-only package review is still required.
+- The first independent review found a P1 metadata bypass; it was removed in
+  `29aa519`, with missing metadata now rejected and the focused/full suites
+  rerun. Independent read-only re-review is still required.
 
 ## Independent review
 
-**REVIEW PENDING.** The implementer does not self-declare `SHIP`.
+**REVIEW PENDING after hardening.** The implementer does not self-declare
+`SHIP`.
 
 ## Score before / after
 
@@ -118,4 +122,3 @@ at the exact implementation revision above.
 ## Verdict
 
 **REVIEW PENDING**
-
