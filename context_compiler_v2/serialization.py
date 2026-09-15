@@ -30,9 +30,14 @@ def compilation_request_from_dict(document: Mapping[str, Any]) -> CompilationReq
     if set(budget_data) - allowed or "max_context_tokens" not in budget_data:
         raise ValueError("compilation_request.budget fields are invalid")
     budget_payload = dict(budget_data)
+    has_declared_usable = "usable_tokens" in budget_payload
     declared_usable = budget_payload.pop("usable_tokens", None)
     budget = BudgetContract(**budget_payload)
-    if declared_usable is not None and declared_usable != budget.usable_tokens:
+    if has_declared_usable and (
+        isinstance(declared_usable, bool)
+        or not isinstance(declared_usable, int)
+        or declared_usable != budget.usable_tokens
+    ):
         raise ValueError("compilation_request.budget usable_tokens is inconsistent")
     profile = document.get("compiler_profile")
     return CompilationRequest(
