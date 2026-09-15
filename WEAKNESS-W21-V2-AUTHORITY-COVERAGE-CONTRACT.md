@@ -1,6 +1,6 @@
 # W-21 — V2 Authority Coverage Contract
 
-**Status:** CONTRACT REVIEW PENDING — implementation not started
+**Status:** IMPLEMENTED — independently reviewed SHIP
 
 **Contract revision:** This document is accepted only at the exact committed
 revision recorded when the contract-review commit is made; an uncommitted
@@ -101,4 +101,9 @@ W-21 may be marked `SHIP` only after an independent contract review returns
 regression is green, and an independent read-only implementation review
 returns exactly `SHIP`.
 
-Until then: **W-21 = OPEN / NOT ACCEPTED**.
+Implementation revision: `8553119`; test/documentation head:
+`02c05c0edef15ea1582c9c5b118e6593c596ef5b`.
+
+Independent implementation review at the exact test/documentation head returned
+**SHIP** with no P0, P1 or P2 findings. W-21 is closed as a bounded shadow
+runtime safety correction; it does not promote V2 or unlock Phase 20.

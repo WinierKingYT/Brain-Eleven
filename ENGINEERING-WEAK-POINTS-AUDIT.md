@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `db6ae44` (W-20 exact implementation/review head)
+**Evidence revision:** `02c05c0` (W-21 exact implementation/review head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the committed W-20 evidence revision: **1318 passed, 4
+- Full local suite at the committed W-21 evidence revision: **1329 passed, 4
   skipped, 2 dependency deprecation warnings**.
 - W-07B process recovery evidence: **18 passed** across intent, claim,
   staging, publication and service-restart boundaries; native authenticated
@@ -23,6 +23,10 @@ the behavior and operational evidence found in the current repository.
 - W-20 embedding-cache evidence: **40 focused tests passed** across atomic
   publication, process crash/concurrency, durable clear, stale-reader
   refresh, deterministic merge and canonical/ranking isolation.
+- W-21 V2 authority-coverage evidence: **114 focused tests passed** across
+  missing/empty/partial/duplicate coverage, complete SUCCESS/DEGRADED
+  behavior, OFF/stale precedence, content-free telemetry and read-only
+  filesystem behavior.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -32,7 +36,7 @@ the behavior and operational evidence found in the current repository.
 | Area | Score | Evidence / status |
 |---|---:|---|
 | Persistence and concurrency | 8.7 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, W-16 append-boundary validation, W-18 parent-directory durability and W-20 embedding-cache atomic/no-loss publication are independently shipped; lower-priority durability gaps remain open. |
-| Scope and fail-closed safety | 8.5 | W-13 root/ID consistency, W-14 archived-state linearization, W-16 malformed-record rejection and W-17 runtime path containment are independently shipped. |
+| Scope and fail-closed safety | 8.7 | W-13 root/ID consistency, W-14 archived-state linearization, W-16 malformed-record rejection, W-17 runtime path containment and W-21 complete V2 authority coverage are independently shipped. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -41,7 +45,7 @@ the behavior and operational evidence found in the current repository.
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
 | Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
-| V2 runtime readiness | 6.0 | W-10's explicit provider/approval delivery gate is independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
+| V2 runtime readiness | 6.5 | W-10's explicit provider/approval delivery gate and W-21 authority-coverage fail-closed boundary are independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
 | Reminder/continuity runtime | 6.5 | W-19A makes the newest valid maintenance report authoritative and W-19B exposes native warning/error health; authenticated trust, latency and broader dogfood remain open. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
@@ -455,10 +459,13 @@ unchanged.
 
 ### W-21 — V2 selection can accept candidates without authority coverage (P1 if promoted)
 
-The shadow V2 decision engine treats missing or empty authority resolution as
-an empty map and can still report success for a Router candidate. This is a
-latent fail-closed violation, but V2 remains SHADOW and no promotion work is
-authorized. A bounded authority-coverage contract is required before any fix.
+**Status:** Independently reviewed **SHIP** at exact head `02c05c0`. Missing,
+empty, partial and duplicate authority coverage now fails closed before
+selection with the bounded `AUTHORITY_COVERAGE_UNAVAILABLE` error. Complete
+SUCCESS/DEGRADED coverage preserves selection and degraded visibility;
+candidate/project scope mismatches remain omitted. The focused suite has 114
+passing tests and the full suite has 1329 passed, 4 skipped and 2 dependency
+warnings. V2 remains SHADOW; no promotion or Phase 20 work was introduced.
 
 ### W-22 — V2 optional-omission flag is accepted but ignored (P2)
 
@@ -478,9 +485,9 @@ ACCEPTED` at exact evidence head `7707a1e`; its authenticated native trust,
 latency matrix and multi-session dogfood gates are still open. W-19A stale
 reminder authority and W-19B native health diagnostics are independently
 `SHIP`ped at exact heads `352f51b` and `5555318`.
-The next bounded candidates after W-07B are W-21 V2 authority coverage and
-W-22 optional-omission contract repair; each requires its own reviewed
-contract.
+The next bounded candidate after W-07B is W-22 optional-omission contract
+repair; W-21 V2 authority coverage is independently shipped at exact head
+`02c05c0`.
 W-06C0R1 scope-drift maintenance is independently `SHIP`ped
 at exact implementation head `942aee8`, W-03B transcript ownership/provenance
 is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
@@ -526,6 +533,9 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 W-20 legacy embedding-cache durability — `SHIP` at exact review head
 `db6ae44`, report in `WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md` and
 independent implementation review recorded there.
+W-21 V2 authority coverage — `SHIP` at exact review head `02c05c0`, report in
+`WEAKNESS-W21-V2-AUTHORITY-COVERAGE-PACKAGE-REPORT.md` and independent review
+recorded there.
 W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
 head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
 review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
