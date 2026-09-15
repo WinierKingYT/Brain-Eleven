@@ -628,6 +628,7 @@ letters and a singleton service, but Stop/UserPromptSubmit p95 and queue
 latency gates fail (544.47 ms, 537.79 ms and 71.00 s maximum respectively;
 six prompt events are `DEGRADED`). This improves evidence truthfulness without
 closing W-07B: authenticated native trust, the complete 2×4 cold/warm matrix,
-multi-session dogfood and independent review remain open. W-07B is
-`FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2 remains
-SHADOW.
+multi-session dogfood remain open. The independent read-only review at code
+revision `c17fd84` returned `FIX-FIRST` after confirming the timeout and
+metadata corrections. W-07B is `FIX-FIRST / NOT ACCEPTED`; Phase 20 remains
+FROZEN / LOCKED and V2 remains SHADOW.

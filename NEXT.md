@@ -58,8 +58,9 @@ Its focused suite is 37/37 and full regression is 1342 passed, 4 skipped, 2
 warnings. The synthetic run completes 20/20
 canonical effects with no dead letters, but Stop/UserPromptSubmit p95 and
 queue latency gates fail. Native authenticated trust, the full 2×4
-cold/warm matrix and dogfood remain open; W-07B stays `FIX-FIRST / NOT
-ACCEPTED` pending independent review.
+cold/warm matrix and dogfood remain open. Independent read-only review at
+`c17fd84` returned `FIX-FIRST` after confirming timeout handling and metadata;
+W-07B stays `FIX-FIRST / NOT ACCEPTED`.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
@@ -278,7 +279,8 @@ now exercise ownership successfully; hook degradation and latency failures are
 reported as bounded metrics, including canonical revision/count verification.
 Full regression is 1342 passed, 4 skipped, and
 the package remains `FIX-FIRST / NOT ACCEPTED` because authenticated native
-trust, the complete latency matrix and dogfood are still absent.
+trust, the complete latency matrix and dogfood are still absent; independent
+review recorded `FIX-FIRST`.
 
 **2026-09-10** — Found `master` frozen 91 commits behind five sequential,
 unmerged topic branches (each closing an IG package independently).
