@@ -25,6 +25,10 @@ def p95(values):
     return round(sorted(values)[math.ceil(len(values) * .95) - 1], 2)
 
 
+def p50(values):
+    return round(sorted(values)[math.ceil(len(values) * .50) - 1], 2)
+
+
 def _hook_status(stdout, returncode, *, event):
     """Map launcher output to bounded benchmark status without persisting it."""
     try:
@@ -35,9 +39,49 @@ def _hook_status(stdout, returncode, *, event):
         return 'NONZERO_EXIT'
     if not isinstance(payload, dict):
         return 'INVALID_OUTPUT'
-    if event == 'Stop':
+    if event in {'Stop', 'SessionEnd'}:
         return 'OK' if payload == {} else 'DEGRADED'
     return 'OK' if 'hookSpecificOutput' in payload else 'DEGRADED'
+
+
+def _run_hook(launcher, vault, client, event, payload):
+    """Run one disposable launcher invocation with bounded status output."""
+    command = [sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', event]
+    start = time.perf_counter()
+    try:
+        result = subprocess.run(
+            command,
+            input=json.dumps(payload),
+            text=True,
+            encoding='utf-8',
+            capture_output=True,
+            timeout=5,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+        )
+    except subprocess.TimeoutExpired:
+        return (time.perf_counter() - start) * 1000, 'TIMEOUT'
+    except OSError:
+        return (time.perf_counter() - start) * 1000, 'LAUNCH_ERROR'
+    return (
+        (time.perf_counter() - start) * 1000,
+        _hook_status(result.stdout, result.returncode, event=event),
+    )
+
+
+def _stop_service(vault, cfg, *, timeout=8):
+    """Request a disposable service stop and wait for its endpoint to close."""
+    try:
+        request_service(vault, '/api/runtime/stop', {}, timeout=2)
+    except (OSError, TimeoutError, ValueError):
+        pass
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            request_service(vault, '/api/runtime/status', timeout=.2)
+        except (OSError, TimeoutError, ValueError):
+            return True
+        time.sleep(.05)
+    return False
 
 
 def run(samples=40, records=1000):
@@ -102,16 +146,8 @@ def run(samples=40, records=1000):
                     message = {'type': 'response_item', 'payload': {'type': 'message', **message}}
                 path.write_text(json.dumps(event) + '\n' + (json.dumps(message) + '\n' if client == 'codex' else ''), encoding='utf-8')
                 payload = {'cwd': str(vault), 'session_id': raw_session, 'transcript_path': str(path)}
-                command = [sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'Stop']
-                start = time.perf_counter()
-                try:
-                    result = subprocess.run(command, input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
-                                            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-                except subprocess.TimeoutExpired:
-                    status = 'TIMEOUT'
-                else:
-                    status = _hook_status(result.stdout, result.returncode, event='Stop')
-                stop_ms.append((time.perf_counter() - start) * 1000)
+                elapsed, status = _run_hook(launcher, vault, client, 'Stop', payload)
+                stop_ms.append(elapsed)
                 stop_status.append(status)
             deadline = time.monotonic() + 180
             while time.monotonic() < deadline:
@@ -140,17 +176,69 @@ def run(samples=40, records=1000):
                 payload = {'cwd': str(vault), 'session_id': 'benchmark-prompts', 'turn_id': str(index),
                            'prompt': 'Which database did we decide to use for persistent storage?'}
                 client = 'claude' if index % 2 == 0 else 'codex'
-                start = time.perf_counter()
-                try:
-                    result = subprocess.run([sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'UserPromptSubmit'],
-                        input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
-                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-                except subprocess.TimeoutExpired:
-                    status = 'TIMEOUT'
-                else:
-                    status = _hook_status(result.stdout, result.returncode, event='UserPromptSubmit')
-                prompt_ms.append((time.perf_counter() - start) * 1000)
+                elapsed, status = _run_hook(launcher, vault, client, 'UserPromptSubmit', payload)
+                prompt_ms.append(elapsed)
                 prompt_status.append(status)
+            latency_repetitions = min(10, max(5, samples // 4))
+            latency_matrix = {}
+            matrix_statuses = []
+            matrix_p95_values = []
+            for client in ('claude', 'codex'):
+                for event in ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd'):
+                    for phase in ('cold', 'warm'):
+                        elapsed_values = []
+                        statuses = []
+                        for repetition in range(latency_repetitions):
+                            if phase == 'cold':
+                                _stop_service(vault, cfg)
+                            else:
+                                ensure_service(vault, wait=True)
+                            raw_session = f'latency-{client}-{event}-{phase}-{repetition}'
+                            payload = {'cwd': str(vault), 'session_id': raw_session}
+                            if event in {'SessionStart', 'UserPromptSubmit'}:
+                                payload.update(
+                                    {
+                                        'turn_id': f'turn-{repetition}',
+                                        'prompt': 'Synthetic latency probe with no retained content.',
+                                    }
+                                )
+                            else:
+                                path = (claude_project_root if client == 'claude' else codex_root) / f'{raw_session}.jsonl'
+                                message = {'role': 'user', 'content': 'Synthetic latency probe.'}
+                                if client == 'claude':
+                                    event_record = {'sessionId': raw_session, 'type': 'user', 'message': message}
+                                    path.write_text(json.dumps(event_record) + '\n', encoding='utf-8')
+                                else:
+                                    meta = {'type': 'session_meta', 'payload': {'session_id': raw_session, 'cwd': str(vault)}}
+                                    event_record = {'type': 'response_item', 'payload': {'type': 'message', **message}}
+                                    path.write_text(json.dumps(meta) + '\n' + json.dumps(event_record) + '\n', encoding='utf-8')
+                                payload['transcript_path'] = str(path)
+                            elapsed, status = _run_hook(launcher, vault, client, event, payload)
+                            elapsed_values.append(elapsed)
+                            statuses.append(status)
+                        key = f'{client}:{event}:{phase}'
+                        cell = {
+                            'samples': len(elapsed_values),
+                            'p50_ms': p50(elapsed_values),
+                            'p95_ms': p95(elapsed_values),
+                            'status_counts': dict(sorted(Counter(statuses).items())),
+                        }
+                        latency_matrix[key] = cell
+                        matrix_statuses.extend(statuses)
+                        matrix_p95_values.append(cell['p95_ms'])
+            latency_matrix_complete = all(
+                cell['samples'] >= 5 for cell in latency_matrix.values()
+            )
+            matrix_p95_within_budget = bool(matrix_p95_values) and max(matrix_p95_values) <= 3000
+            matrix_deadline = time.monotonic() + 180
+            while time.monotonic() < matrix_deadline:
+                try:
+                    status = request_service(vault, '/api/runtime/status', timeout=5)
+                except (OSError, TimeoutError, ValueError):
+                    status = None
+                if status and not status['queue']['queued'] and not status['queue']['processing']:
+                    break
+                time.sleep(.05)
             report = {'schema_version': 1, 'evidence_type': 'SYNTHETIC_PROCESS_BENCHMARK',
                       'implementation_fingerprint': implementation_fingerprint(), 'platform': sys.platform,
                       'records': records, 'samples_per_event': samples, 'cold_start_ms': round(cold_ms, 2),
@@ -159,22 +247,24 @@ def run(samples=40, records=1000):
                       'completed': len(latencies), 'canonical_effects': canonical_effects,
                       'canonical_revision_delta': canonical_revision_delta,
                       'canonical_effect_verified': canonical_effect_verified,
+                      'latency_matrix_repetitions': latency_repetitions,
+                      'latency_matrix': latency_matrix,
+                      'latency_matrix_complete': latency_matrix_complete,
                       'singleton': singleton,
                       'stop_status_counts': dict(sorted(Counter(stop_status).items())),
                       'prompt_status_counts': dict(sorted(Counter(prompt_status).items()))}
-            all_hooks_ok = all(status == 'OK' for status in stop_status + prompt_status)
+            all_hooks_ok = all(status == 'OK' for status in stop_status + prompt_status + matrix_statuses)
             report['gates'] = {'hook_p95_500ms': max(p95(stop_ms), p95(prompt_ms)) <= 500,
                                'queue_30s': len(latencies) == samples and max(latencies) <= 30000,
                                'all_hooks_ok': all_hooks_ok,
                                'canonical_effect_verified': canonical_effect_verified,
+                               'latency_matrix_complete': latency_matrix_complete,
+                               'latency_matrix_p95_3000ms': matrix_p95_within_budget,
                                'no_dead_letters': not any((capture_root / 'dead-letter').glob('*.json')), 'singleton': singleton}
             report['status'] = 'PASS' if all(report['gates'].values()) else 'FAIL'
             return report
         finally:
-            try:
-                request_service(vault, '/api/runtime/stop', {}, timeout=2)
-            except (OSError, TimeoutError, ValueError):
-                pass
+            _stop_service(vault, cfg)
             deadline = time.monotonic() + 8
             while (cfg.root / 'service.json').exists() and time.monotonic() < deadline:
                 time.sleep(.1)
