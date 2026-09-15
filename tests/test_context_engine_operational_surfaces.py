@@ -276,6 +276,27 @@ def test_cache_access_refresh_never_exposes_partial_json(tmp_path):
         assert not malformed
 
 
+def test_cache_lock_failure_is_nonfatal_for_derived_state(tmp_path, monkeypatch):
+    class FailingLock:
+        def __enter__(self):
+            raise TimeoutError("cache lock unavailable")
+
+        def __exit__(self, *_args):
+            return False
+
+    import context_compiler_v2.cache as compiler_cache_module
+    import context_router.cache as router_cache_module
+
+    for cache_type, module in (
+        (RouterCache, router_cache_module),
+        (CompilerCache, compiler_cache_module),
+    ):
+        monkeypatch.setattr(module, "file_lock", lambda *_args, **_kwargs: FailingLock())
+        cache = cache_type(tmp_path / cache_type.__name__)
+        cache.store("lock-failure", {"memory": 1}, {"candidate_ids": ["safe"]})
+        assert not cache.path.exists()
+
+
 def test_shadow_runners_and_clis_remain_non_injecting_and_content_free(tmp_path, capsys):
     context, project = _configured(tmp_path)
     route = ContextRouter(tmp_path).route(context)
