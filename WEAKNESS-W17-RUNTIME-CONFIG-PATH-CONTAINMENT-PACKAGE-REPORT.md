@@ -1,8 +1,8 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
 **PACKAGE:** W-17
-**REVISION:** `3fb861fb8e5e24a5dc52df475e033fb44056ab2e`
-**STATUS:** REVIEW PENDING
+**REVISION:** `6017255c3405dfdbc8d9d154498c7a5edd5f7649` (implementation/test)
+**STATUS:** CLOSED / SHIP
 
 ## OBJECTIVE
 
@@ -108,25 +108,31 @@ retain the previous JSON and recursive-directory behavior.
 ## OPEN FAILURES
 
 No W-17 focused or full-suite failures remain at this head.  Independent
-read-only implementation review is pending.  W-07B remains
+read-only implementation review returned **SHIP**.  W-07B remains
 `FIX-FIRST / NOT ACCEPTED`, W-12A remains open, and W-18 remains queued.  Phase
 20 is still `FROZEN / LOCKED`; V2 remains `SHADOW`.
 
 ## INDEPENDENT REVIEW
 
-**PENDING.** A separate reviewer must inspect the exact diff, caller coverage,
-POSIX/Windows path behavior, no-external-effect evidence, regular-path parity,
-and preservation of lock/CAS/atomic/canonical authority boundaries.  The final
-verdict must be exactly `SHIP`, `FIX-FIRST`, or `RETHINK`.
+Separate read-only reviewer `/root/w10_exact_review` inspected the exact
+implementation/test revision `6017255c3405dfdbc8d9d154498c7a5edd5f7649` and
+the final documentation revision `7c159a35dacc067fde83ea4f350b9af5a6f33e1f`.
+The reviewer rechecked selected-vault, ancestor, root-creation, lock-swap,
+junction/reparse, no-sidecar, target-isolation and lexical-alias cases, and
+confirmed that no canonical authority, host config, HOLDOUT, V2 or Phase 20
+scope was changed.
+
+**SHIP** — independent review recorded in
+`WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-INDEPENDENT-REVIEW.md`.
 
 ## SCORE BEFORE / AFTER
 
-Scope/fail-closed safety: **8.2 → pending independent review**
-Persistence/concurrency: **8.0 → pending independent review**
+Scope/fail-closed safety: **8.2 → 8.5**
+Persistence/concurrency: **8.0 → 8.0**
 Runtime path containment: **symlink/reparse redirect possible → bounded
-fail-closed guard**
+fail-closed guard with race-safe target locks**
 
 ## VERDICT
 
-**REVIEW PENDING** — implementation and evidence are pushed at the exact
-revision above; no self-issued SHIP decision is made.
+**SHIP** — implementation and evidence are pushed at the exact revision
+above; the independent verdict is recorded separately.

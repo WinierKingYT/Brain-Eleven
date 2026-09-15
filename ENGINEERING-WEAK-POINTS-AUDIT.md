@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `a867f2d`
+**Evidence revision:** `6017255` (W-17 implementation/test exact head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,8 +12,8 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after W-10: **1178 passed, 2 dependency deprecation
-  warnings**.
+- Full local suite at the W-17 implementation revision: **1264 passed, 2
+  dependency deprecation warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -23,7 +23,7 @@ the behavior and operational evidence found in the current repository.
 | Area | Score | Evidence / status |
 |---|---:|---|
 | Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, and W-16 append-boundary validation are independently shipped; lower-priority durability gaps remain open. |
-| Scope and fail-closed safety | 8.2 | W-13 root/ID consistency, W-14 archived-state linearization, and W-16 malformed-record rejection are independently shipped; runtime-path containment remains open. |
+| Scope and fail-closed safety | 8.5 | W-13 root/ID consistency, W-14 archived-state linearization, W-16 malformed-record rejection and W-17 runtime path containment are independently shipped. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -362,8 +362,14 @@ and the independent review in
 `brain_eleven/runtime/storage.py::write_json()` creates directories and
 replaces files without rejecting symlink/reparse path components. A temporary
 vault with `.brain-eleven/runtime` redirected caused an approval update to
-write outside the vault. Status: **OPEN / P2**; apply the existing no-follow
-and containment policy used by backup publication.
+write outside the vault. Status: **CLOSED / SHIP** at exact implementation
+revision `6017255c3405dfdbc8d9d154498c7a5edd5f7649`; runtime-owned writes and
+locks now use component-level no-follow/reparse checks, identity revalidation,
+descriptor-relative POSIX target locks and Windows target-scoped mutexes.
+Evidence is recorded in
+`WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-PACKAGE-REPORT.md` and the
+independent review in
+`WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-INDEPENDENT-REVIEW.md`.
 
 ### W-18 — MemoryStore replacement does not fsync the parent directory (P2)
 
@@ -389,11 +395,15 @@ at exact head `f322d2c`. W-06 retrieval work remains evaluation-only and must
 not tune HOLDOUT, promote V2 or open Phase 20. W-15 runtime-config lost-update
 protection is independently `SHIP`ped at exact package head `7fd9d5a`; W-16
 append-boundary validation is independently `SHIP`ped at exact review head
-`3406d7b`; the next audit finding is W-17. W-10's
+`3406d7b`; W-17 runtime path containment is now independently `SHIP`ped and
+the next audit finding is W-18. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
+W-17 runtime-owned path containment is independently `SHIP`ped at exact
+implementation revision `6017255`, with final evidence documentation at
+`7c159a3`.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
