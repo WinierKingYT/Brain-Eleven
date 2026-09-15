@@ -1,6 +1,6 @@
 # TSC-02 — Project Identity and Registry-Lineage Contract
 
-**Status:** CONTRACT / IMPLEMENTATION NOT AUTHORIZED  
+**Status:** CONTRACT REVISION / IMPLEMENTATION NOT AUTHORIZED  
 **Program:** Engineering Weak-Point Improvement Goal  
 **Baseline revision:** `5b1d1c7`  
 **Phase 20:** FROZEN / LOCKED  
@@ -74,13 +74,20 @@ W-07B native trust/latency/dogfood, and Phase 20.
 
 ### 3.1 Opaque root identity
 
-The context must carry a `root_identity` value that is:
+The context must carry a `root_identity` value for a resolved project-scoped
+context. It is absent only for an explicitly unresolved or global-only context,
+whose route contract forbids project candidates. Such a context must carry an
+explicit `lineage.status` (`unresolved` or `global`) so absence cannot be
+mistaken for an old, unverified project context. A resolved project-scoped
+context's `root_identity` value is:
 
 - computed from `normalize_registry_root(project_root)` using a documented,
   deterministic, domain-separated digest;
 - opaque, fixed-format and content-free (for example a lowercase SHA-256
   digest with a `project-root-v1:` domain prefix);
-- never the raw absolute/relative root, a prompt, a memory field or a traceback;
+- never the raw absolute/relative root, a memory field or a traceback. The
+  existing `TaskEnvelope.request.raw` field remains part of the historical
+  task contract and is not rewritten by TSC-02.
 - recomputed from the current registry record for validation, never accepted
   from an untrusted caller without comparison.
 
@@ -91,17 +98,22 @@ at the old root must never make the old context valid for that root.
 
 ### 3.2 Registry snapshot
 
-The context must carry a non-negative `registry_revision` from the same
-registry read that resolved the project. Composer behavior must be bounded if
-the registry changes between task resolution and state resolution: it must
-re-read and compare the project record and revision, then return an explicit
-stale/error result rather than publishing a mixed task/state context.
+The context must carry a non-negative `registry_revision` observed while
+resolving the project. The existing `ProjectRegistry.load()` API is the
+permitted snapshot source; no new registry persistence API is required. The
+composer may resolve the root and read the revision in two calls, but it must
+re-read both before publishing and compare project ID, normalized root and
+revision. If any value changes between those reads, it returns an explicit
+stale/error result rather than publishing a mixed task/state context. This
+two-phase revalidation is the accepted race policy for TSC-02.
 
 Router and Authority must verify both the project record's current root
 identity and the registry revision policy before accepting a non-global
 project context. A registry revision change for an unrelated project may be
 treated as stale conservatively; it must never be treated as proof that an old
-context is current.
+context is current. These checks happen before RouterCache/AuthorityCache
+lookups, so a stale context cannot receive a cached project result; cache
+modules need not change unless an implementation cannot enforce this ordering.
 
 ### 3.3 Serialization and compatibility
 
@@ -120,6 +132,12 @@ shape is a new `TaskStateContext` schema version with required `lineage` fields:
   }
 }
 ```
+
+For an unresolved context, `lineage` is `{"status": "unresolved"}` and the
+task project/state remain the existing unknown forms. For a global-only route,
+`lineage` is `{"status": "global"}` and the route must contain no project IDs.
+Those two forms are not eligible for a current-project route merely because a
+caller supplies a project ID later.
 
 The exact field names may change only with a documented contract update. A
 schema-1 context without lineage must not silently enter a current-project
@@ -148,11 +166,14 @@ candidates.
 - No package function writes `MemoryStore`, `StateStore`, `ProjectRegistry`,
   graph or cache as a repair side effect. Cache entries containing lineage are
   derived and must be invalidated on a mismatch.
-- Raw roots, path fragments, registry documents, prompts, memory content and
-  exception/traceback text do not appear in serialized context, RouterResult,
-  ResolutionResult, errors or telemetry.
+- New lineage fields, lineage errors and lineage telemetry contain no raw
+  roots, path fragments, registry documents, memory content or
+  exception/traceback text. Existing `TaskEnvelope.request.raw` remains part
+  of the historical task contract and is governed by its existing tests; TSC-02
+  does not claim to remove or sanitize that field.
 - `TaskStateContext.to_dict()` field order and all non-lineage task/state JSON
-  fields remain byte/parity compatible within the declared schema policy.
+  fields remain byte/parity compatible within the declared schema policy; the
+  added lineage envelope is the only intentional shape change.
 - `task_state_context.py`'s existing task/state behavior, TaskEnvelope
   identity, and current state freshness semantics remain unchanged except for
   the explicit lineage envelope and bounded stale outcome.
@@ -180,18 +201,21 @@ Focused tests must be added without deleting or weakening existing tests:
    change `brain_eleven/runtime/context.py` only if the bounded result cannot
    otherwise be represented, and record that separately.
 7. **No-side-effect/privacy:** stale/invalid contexts leave bytes, revisions,
-   cache files and registry unchanged and return path/content-free errors.
+   cache files and registry unchanged and return path/content-free lineage
+   errors. Existing non-lineage registry/state error text is not redesigned by
+   TSC-02; if it must be changed, open a separate privacy contract.
 
 Required existing surfaces include:
 
 - `tests/test_task_state_context.py`
 - `tests/test_context_router.py`
 - `tests/test_authority_resolver.py`
-- `tests/test_authority_serialization.py`
 - `tests/test_context_compiler.py`
 - `tests/test_phase14_scope.py`
 - `tests/test_task_model.py`
 - `tests/test_pre12_memory_state_caller_migration.py`
+- new focused lineage/serialization tests (the current tree has no dedicated
+  `test_authority_serialization.py` file)
 
 Exact caller inventories and any additional dynamic/evaluation callers must
 be recorded before implementation. `evals/task_state_eval.py` and all frozen
@@ -225,8 +249,9 @@ additions:
 
 TSC-02 is `SHIP` only when every gate passes and independent review returns
 exactly `SHIP`. Any old context delivering a project candidate after root
-reuse, any raw path leakage, any silent acceptance of schema-1 current context,
-any race not detected, or any canonical write side effect is `FIX-FIRST`.
+reuse, any raw path leakage in the new lineage surfaces, any silent acceptance
+of schema-1 current context, any race not detected, or any canonical write
+side effect is `FIX-FIRST`.
 
 If satisfying the contract requires changing `ProjectRegistry` persistence,
 MemoryStore/StateStore, retrieval, broad native compiler behavior or the
