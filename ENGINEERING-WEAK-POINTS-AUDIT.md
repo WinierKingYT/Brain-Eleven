@@ -22,8 +22,8 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, and W-15 runtime-config CAS are independently shipped; lower-priority durability gaps remain open. |
-| Scope and fail-closed safety | 8.0 | W-13 root/ID consistency and W-14 archived-state linearization are independently shipped; runtime-path containment remains open. |
+| Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, and W-16 append-boundary validation are independently shipped; lower-priority durability gaps remain open. |
+| Scope and fail-closed safety | 8.2 | W-13 root/ID consistency, W-14 archived-state linearization, and W-16 malformed-record rejection are independently shipped; runtime-path containment remains open. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -346,12 +346,16 @@ in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
 
 ### W-16 — Public `MemoryStore.append()` accepts malformed canonical records (P2)
 
-The public append surface validates the document envelope but accepts arbitrary
-dictionaries without record type, scope, lifecycle, fingerprint or provenance
-validation. A malformed record can therefore be persisted directly, even
-though no current production caller was found. Status: **OPEN / P2 dormant
-authority surface**; either make raw append private or enforce the canonical
-record schema and add a malformed-record test.
+The public append surface validated the document envelope but accepted
+arbitrary dictionaries without a minimum record boundary. A malformed record
+could therefore be persisted directly, even though no current production
+caller was found. Status: **CLOSED / SHIP** at exact review head `3406d7b`;
+`_validate_record()` now rejects malformed required fields, explicit null
+lifecycle/scope fields, invalid supplied types and inconsistent scope metadata
+before the existing lock/revision/atomic transaction. Evidence is recorded in
+[`WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md`](WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md)
+and the independent review in
+[`WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md).
 
 ### W-17 — Runtime config writes follow symlinked/reparse runtime paths (P2)
 
@@ -383,8 +387,9 @@ review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
 at exact head `f322d2c`. W-06 retrieval work remains evaluation-only and must
 not tune HOLDOUT, promote V2 or open Phase 20. W-15 runtime-config lost-update
-protection is independently `SHIP`ped at exact package head `7fd9d5a`; the
-next audit finding is W-16. W-10's
+protection is independently `SHIP`ped at exact package head `7fd9d5a`; W-16
+append-boundary validation is independently `SHIP`ped at exact review head
+`3406d7b`; the next audit finding is W-17. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
@@ -426,6 +431,9 @@ independent review recorded at evidence head `439a62c`.
 W-15 runtime-config lost-update protection — `SHIP` at exact package head
 `7fd9d5a`, report in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
 independent review in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
+W-16 malformed canonical append validation — `SHIP` at exact review head
+`3406d7b`, report in `WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md` and
+independent review in `WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without

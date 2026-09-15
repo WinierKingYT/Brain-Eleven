@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-16
 **REVISION:** `f831e3aa7c6c6c5d82f854c72ff99a99e3c0e601`
-**STATUS:** REVIEW PENDING
+**STATUS:** CLOSED / SHIP — independently reviewed
 
 ## OBJECTIVE
 
@@ -110,18 +110,21 @@ is still `FROZEN / LOCKED` and V2 remains `SHADOW`.
 
 ## INDEPENDENT REVIEW
 
-**PENDING.** A separate read-only reviewer must inspect the exact head,
-validator boundary, fixture scope, package identity, preservation of the
-canonical transaction path, and the recorded regression evidence.  The final
-verdict must be exactly `SHIP`, `FIX-FIRST`, or `RETHINK`.
+[`WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md)
+returned **SHIP** at exact review head
+`3406d7b3d8863d687ea66b3112abc475363c4b30`.  The independent reviewer
+verified explicit-null rejection, package identity, adapter boundary,
+fixture scope, canonical transaction preservation, focused/full regression,
+and critical static gates.
 
 ## SCORE BEFORE / AFTER
 
-Persistence/concurrency: **8.0 → pending independent review**
-Scope/fail-closed safety: **8.0 → pending independent review**
+Persistence/concurrency: **8.0 → 8.0** (transaction/lock/CAS path preserved)
+Scope/fail-closed safety: **8.0 → 8.2** (malformed append boundary closed)
 Dormant append authority: **unvalidated nested records → bounded structural validation**
 
 ## VERDICT
 
-**REVIEW PENDING** — implementation and evidence are pushed at the exact
-revision above; no self-issued SHIP decision is made.
+**SHIP** — implementation, evidence, and independent review are pushed at
+the exact review revision above.  Phase 20 remains `FROZEN / LOCKED` and V2
+remains `SHADOW`.
