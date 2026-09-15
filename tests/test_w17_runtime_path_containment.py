@@ -91,6 +91,21 @@ def test_runtime_escape_is_rejected_without_writing_outside_root(tmp_path):
     assert not (tmp_path / "escaped.json").exists()
 
 
+def test_direct_runtime_write_rejects_symlink_above_existing_vault(tmp_path):
+    outside = tmp_path / "outside"
+    runtime = outside / "vault" / ".brain-eleven" / "runtime"
+    runtime.mkdir(parents=True)
+    selected_parent = tmp_path / "selected-parent"
+    _make_link(selected_parent, outside)
+    target = selected_parent / "vault" / ".brain-eleven" / "runtime" / "direct.json"
+
+    with pytest.raises(RuntimePathError):
+        storage.write_json(target, {"must": "stay inside"})
+
+    assert not (runtime / "direct.json").exists()
+    assert not list(runtime.glob(".direct.json*"))
+
+
 def test_missing_regular_runtime_directories_are_created_and_written(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
@@ -129,8 +144,12 @@ def test_path_swap_between_temp_creation_and_publish_fails_closed(tmp_path, monk
     outside = tmp_path / "outside"
     outside.mkdir()
     original_check = storage.assert_runtime_snapshot
+    check_calls = []
 
     def swap_then_check(root, path, snapshot):
+        check_calls.append(1)
+        if len(check_calls) == 1:
+            return original_check(root, path, snapshot)
         parent = Path(path).parent
         moved = tmp_path / "moved-artifacts"
         parent.rename(moved)
@@ -143,6 +162,42 @@ def test_path_swap_between_temp_creation_and_publish_fails_closed(tmp_path, monk
 
     assert list(outside.iterdir()) == []
     assert not (outside / "report.json").exists()
+    assert not target.exists()
+
+
+def test_path_swap_before_temp_write_never_serializes_outside(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    cfg = storage.RuntimeConfig(vault)
+    target = cfg.root / "artifacts" / "report.json"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    temp_name = {}
+    serialized_outside = []
+    original_mkstemp = storage.tempfile.mkstemp
+    original_check = storage.assert_runtime_snapshot
+
+    def swap_before_temp(*args, **kwargs):
+        parent = Path(kwargs["dir"])
+        moved = tmp_path / "moved-artifacts"
+        parent.rename(moved)
+        _make_link(parent, outside)
+        result = original_mkstemp(*args, **kwargs)
+        temp_name["path"] = Path(result[1])
+        return result
+
+    def observe_before_check(root, path, snapshot):
+        candidate = temp_name.get("path")
+        if candidate is not None and candidate.exists() and candidate.read_bytes():
+            serialized_outside.append(candidate.resolve())
+        return original_check(root, path, snapshot)
+
+    monkeypatch.setattr(storage.tempfile, "mkstemp", swap_before_temp)
+    monkeypatch.setattr(storage, "assert_runtime_snapshot", observe_before_check)
+    with pytest.raises(RuntimePathError):
+        storage.write_json(target, {"must": "stay inside"})
+
+    assert serialized_outside == []
+    assert list(outside.iterdir()) == []
     assert not target.exists()
 
 
