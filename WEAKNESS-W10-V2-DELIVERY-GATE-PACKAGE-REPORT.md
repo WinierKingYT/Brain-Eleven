@@ -1,7 +1,7 @@
 # W-10 — V2 Shadow Delivery Gate Package Report
 
 **PACKAGE:** W-10  
-**REVISION:** `29aa519b60b09e16d92d709dee70cb9529b8cc81`  
+**REVISION:** `29aa519b60b09e16d92d709dee70cb9529b8cc81`
 **OBJECTIVE:** Restore the non-injecting V2 `SHADOW` boundary and make the
 model-facing provider explicit.
 
