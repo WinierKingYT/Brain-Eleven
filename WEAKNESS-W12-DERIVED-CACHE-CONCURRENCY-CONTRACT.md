@@ -39,11 +39,14 @@ Only these production files may change:
 - `context_compiler_v2/cache.py`
 
 Focused tests may change or be added under `tests/`. Use the existing
-package-owned `brain_eleven.infrastructure.file_lock` surface; do not create
-a second locking primitive or change canonical store locking. Refactor
-internal unlocked readers/helpers as needed so `CompilerCache.store()` does
-not recursively acquire its own lock. `authority/cache.py` is out of scope and
-must not be changed in this package.
+package-owned `brain_eleven.infrastructure.locking.file_lock` surface (also
+re-exported by `brain_eleven.infrastructure`); do not create a second locking
+primitive or change canonical store locking. Refactor internal unlocked
+readers/helpers as needed so `CompilerCache.store()` does not recursively
+acquire its own lock. `authority/cache.py` is out of scope and must not be
+changed in this package. It has the same pre-existing race and is recorded as
+an explicit follow-up (`W-12A`); closing W-12 does not claim that authority
+caching is fixed.
 
 ## Invariants
 
