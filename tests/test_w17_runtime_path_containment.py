@@ -64,6 +64,27 @@ def test_selected_vault_symlink_rejected_before_external_effect(tmp_path):
     assert not (outside / ".brain-eleven" / "runtime" / "config.json.lock").exists()
 
 
+def test_vault_validation_swap_fails_closed(tmp_path, monkeypatch):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    selected = tmp_path / "selected-vault"
+    selected.mkdir()
+    original_validate = storage.validate_vault_path
+
+    def validate_then_swap(vault):
+        candidate = original_validate(vault)
+        moved = tmp_path / "moved-selected-vault"
+        selected.rename(moved)
+        _make_link(selected, outside)
+        return candidate
+
+    monkeypatch.setattr(storage, "validate_vault_path", validate_then_swap)
+    with pytest.raises(RuntimePathError):
+        storage.RuntimeConfig(selected).set_human_approval(True)
+
+    assert list(outside.iterdir()) == []
+
+
 def test_final_config_symlink_is_rejected_and_target_is_unchanged(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
@@ -199,6 +220,34 @@ def test_path_swap_before_temp_write_never_serializes_outside(tmp_path, monkeypa
     assert serialized_outside == []
     assert list(outside.iterdir()) == []
     assert not target.exists()
+
+
+def test_runtime_lock_swap_fails_before_external_lock_marker(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    cfg = storage.RuntimeConfig(vault)
+    target = cfg.root / "locks" / "report"
+    storage.ensure_runtime_directory(cfg.root, target.parent)
+    outside = tmp_path / "outside-locks"
+    outside.mkdir()
+    original_check = storage.assert_runtime_snapshot
+    swapped = []
+
+    def swap_before_lock(root, path, snapshot):
+        if not swapped:
+            parent = Path(path).parent
+            moved = tmp_path / "moved-locks"
+            parent.rename(moved)
+            _make_link(parent, outside)
+            swapped.append(True)
+        return original_check(root, path, snapshot)
+
+    monkeypatch.setattr(storage, "assert_runtime_snapshot", swap_before_lock)
+    with pytest.raises(RuntimePathError):
+        with storage.runtime_file_lock(target):
+            pass
+
+    assert list(outside.iterdir()) == []
+    assert not (outside / "report.lock").exists()
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse evidence")
