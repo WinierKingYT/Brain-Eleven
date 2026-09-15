@@ -1,6 +1,6 @@
 # W-12A Authority Cache Concurrency Contract
 
-**Status:** BOUNDED CONTRACT / REVIEW PENDING
+**Status:** APPROVED CONTRACT / IMPLEMENTATION AUTHORIZED
 
 **Revision audited:** `10c8de10fe8fb438d3c9b1fe9870d691fdbb38a7`
 
@@ -10,8 +10,9 @@
 
 **V2 runtime:** SHADOW
 
-**Implementation authorization:** This document defines the bounded package;
-implementation remains subject to independent contract review.
+**Implementation authorization:** The bounded contract received an independent
+read-only review verdict of `SHIP`; implementation may proceed within this
+scope. Package acceptance still requires a separate implementation review.
 
 ## 1. Problem statement
 
