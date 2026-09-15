@@ -114,10 +114,10 @@ def test_two_independent_process_writers_preserve_both_records(vault):
 
 def test_expected_revision_rejects_stale_writer_without_mutation(vault):
     store = MemoryStore(vault)
-    store.append({"memory_id": "m1"})
+    store.append({"memory_id": "m1", "type": "lesson", "content": "seed"})
 
     with pytest.raises(MemoryStoreConflict) as error:
-        store.append({"memory_id": "m2"}, expected_revision=0)
+        store.append({"memory_id": "m2", "type": "lesson", "content": "stale"}, expected_revision=0)
 
     assert error.value.expected_revision == 0
     assert error.value.actual_revision == 1

@@ -56,7 +56,7 @@ def test_memory_package_preserves_load_and_revision_behavior(tmp_path: Path) -> 
     assert snapshot["revision"] == 0
     assert store.revision() == 0
 
-    store.append({"memory_id": "mem_package_boundary", "type": "lesson"})
+    store.append({"memory_id": "mem_package_boundary", "type": "lesson", "content": "package boundary"})
     persisted = json.loads(
         (tmp_path / ".claude" / "validated-memory.json").read_text(encoding="utf-8")
     )
