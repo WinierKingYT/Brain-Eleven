@@ -98,7 +98,8 @@ def run_maintenance(vault_path: str = ".", generated_by_run: str = None,
         source_memory_revision = MemoryStore(vault_path).revision()
     except MemoryStoreError as exc:
         source_memory_revision = None
-        logger.error(f"Could not read canonical revision for maintenance report: {exc}")
+        logger.error("Could not read canonical revision for maintenance report: %s",
+                     _safe_error_code(exc))
 
     report = {
         "generated_at": datetime.now().isoformat(),

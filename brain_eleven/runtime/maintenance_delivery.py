@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -22,6 +25,7 @@ COMPLETED = "COMPLETED"
 FAILED = "FAILED"
 _TERMINAL = {COMPLETED, FAILED}
 _MAX_ATTEMPTS = 3
+_LEASE_SECONDS = 300
 
 
 def _root(vault: str | Path) -> Path:
@@ -168,21 +172,91 @@ def _published_report(path: Path, intent: Mapping[str, Any]) -> Optional[dict[st
         return None
     if not isinstance(report, dict):
         return None
-    if report.get("schema_version") != SCHEMA_VERSION:
-        return None
-    if report.get("intent_id") != intent.get("intent_id"):
-        return None
-    if report.get("project_id") != intent.get("project_id"):
-        return None
-    if report.get("status") not in {"SUCCESS", "DEGRADED"}:
-        return None
-    if report.get("source_memory_revision") != intent.get("source_memory_revision"):
-        return None
-    if report.get("source_state_revision") != intent.get("source_state_revision"):
-        return None
-    if report.get("source_graph_revision") != intent.get("source_memory_revision"):
+    if not _valid_report(report, intent=intent):
         return None
     return report
+
+
+def _nonnegative_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _bounded_count(value: Any) -> bool:
+    return _nonnegative_int(value) and value <= 1_000_000
+
+
+def _valid_report(report: Any, *, intent: Optional[Mapping[str, Any]] = None,
+                  project_id: Optional[str] = None, memory_revision: Optional[int] = None,
+                  state_revision: Optional[int] = None, require_success: bool = False) -> bool:
+    """Validate the content-free report envelope before it can be surfaced."""
+    if not isinstance(report, dict) or report.get("schema_version") != SCHEMA_VERSION:
+        return False
+    if not isinstance(report.get("report_id"), str) or not re.fullmatch(
+            r"maintenance_report_[0-9a-f]{64}", report["report_id"]):
+        return False
+    if not isinstance(report.get("intent_id"), str) or not re.fullmatch(
+            r"maintenance_[0-9a-f]{64}", report["intent_id"]):
+        return False
+    if not isinstance(report.get("event_id_hash"), str) or not re.fullmatch(r"[0-9a-f]{64}", report["event_id_hash"]):
+        return False
+    if not isinstance(report.get("project_id"), str) or not report["project_id"]:
+        return False
+    if project_id is not None and report["project_id"] != project_id:
+        return False
+    status = report.get("status")
+    if status not in {"SUCCESS", "DEGRADED"} or (require_success and status != "SUCCESS"):
+        return False
+    source_memory = report.get("source_memory_revision")
+    source_state = report.get("source_state_revision")
+    source_graph = report.get("source_graph_revision")
+    if not _nonnegative_int(source_memory) or source_state is not None and not _nonnegative_int(source_state):
+        return False
+    if not _nonnegative_int(source_graph) or source_graph != source_memory:
+        return False
+    if memory_revision is not None and source_memory != memory_revision:
+        return False
+    if state_revision is not None and source_state != state_revision:
+        return False
+    if intent is not None:
+        if report.get("intent_id") != intent.get("intent_id"):
+            return False
+        if report.get("project_id") != intent.get("project_id"):
+            return False
+        if source_memory != intent.get("source_memory_revision"):
+            return False
+        if source_state != intent.get("source_state_revision"):
+            return False
+    graph = report.get("graph")
+    anomalies = report.get("anomalies")
+    digest = report.get("digest")
+    if not isinstance(graph, dict) or not isinstance(anomalies, dict) or not isinstance(digest, dict):
+        return False
+    if not isinstance(graph.get("ok"), bool) or graph.get("status") not in {"rebuilt", "failed"}:
+        return False
+    if not isinstance(anomalies.get("ok"), bool) or not _bounded_count(anomalies.get("total_memories_scanned")):
+        return False
+    if not _bounded_count(anomalies.get("total_anomalies")):
+        return False
+    severity = anomalies.get("by_severity")
+    if not isinstance(severity, dict) or set(severity) != {"critical", "error", "warning", "info"}:
+        return False
+    if not all(_bounded_count(value) for value in severity.values()):
+        return False
+    if not isinstance(digest.get("ok"), bool):
+        return False
+    if not _bounded_count(digest.get("total_memories_considered")) or not _bounded_count(digest.get("total_after_dedup")):
+        return False
+    if status == "SUCCESS" and not (graph["ok"] and anomalies["ok"] and digest["ok"] and graph["status"] == "rebuilt"):
+        return False
+    return isinstance(report.get("surface_at_next_session"), bool)
+
+
+def _lease_active(intent: Mapping[str, Any]) -> bool:
+    value = intent.get("lease_expires_at")
+    try:
+        return math.isfinite(float(value)) and float(value) > time.time()
+    except (TypeError, ValueError, OverflowError):
+        return False
 
 
 def _stage_path(vault: str | Path, intent_id: str) -> Path:
@@ -246,7 +320,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
         intent_id = intent.get("intent_id")
         if not isinstance(intent_id, str):
             continue
-        processing = _intent_path(directories, PROCESSING, intent_id)
+        claimed_path = path
         with file_lock(_root(vault) / "index", timeout=.5):
             current = _find(directories, intent_id)
             if not current or current[0] not in {QUEUED, PROCESSING}:
@@ -254,12 +328,18 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
             intent = read_json(current[1])
             if not isinstance(intent, dict):
                 continue
-            if current[1] != processing:
-                current[1].replace(processing)
+            if intent.get("status") == PROCESSING and _lease_active(intent):
+                continue
+            claimed_path = current[1]
             intent["status"] = PROCESSING
             intent["attempt"] = int(intent.get("attempt", 0)) + 1
             intent["started_at"] = now()
-            write_json(processing, intent)
+            intent["lease_owner"] = identity("maintenance_worker_", os.getpid(), time.time_ns())
+            intent["lease_expires_at"] = time.time() + _LEASE_SECONDS
+            # Persist the lease in the existing location before any derived
+            # work.  A crash leaves a recoverable PROCESSING record instead
+            # of a disappearing queued document.
+            write_json(claimed_path, intent)
         try:
             report_path = _root(vault) / "reports" / (intent_id + ".json")
             published = _published_report(report_path, intent)
@@ -269,7 +349,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                 intent.update({"status": COMPLETED, "completed_at": now(),
                                "report_path": str(report_path.name)})
                 write_json(_intent_path(directories, COMPLETED, intent_id), intent)
-                processing.unlink(missing_ok=True)
+                claimed_path.unlink(missing_ok=True)
                 processed += 1
                 continue
             staged_path = _stage_path(vault, intent_id)
@@ -282,7 +362,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                                "report_path": str(report_path.name)})
                 write_json(_intent_path(directories, COMPLETED, intent_id), intent)
                 staged_path.unlink(missing_ok=True)
-                processing.unlink(missing_ok=True)
+                claimed_path.unlink(missing_ok=True)
                 processed += 1
                 continue
             from .maintenance import run_maintenance
@@ -299,7 +379,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
             intent.update({"status": COMPLETED, "completed_at": now(), "report_path": str(report_path.name)})
             write_json(_intent_path(directories, COMPLETED, intent_id), intent)
             staged_path.unlink(missing_ok=True)
-            processing.unlink(missing_ok=True)
+            claimed_path.unlink(missing_ok=True)
             processed += 1
         except Exception as exc:
             attempts = int(intent.get("attempt", 1))
@@ -307,7 +387,8 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                            "error_code": _error_code(exc), "finished_at": now()})
             destination = _intent_path(directories, intent["status"], intent_id)
             write_json(destination, intent)
-            processing.unlink(missing_ok=True)
+            if destination != claimed_path:
+                claimed_path.unlink(missing_ok=True)
             if intent["status"] == FAILED:
                 processed += 1
     return processed
@@ -324,11 +405,8 @@ def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600,
             report = read_json(path)
         except (OSError, TypeError, ValueError):
             continue
-        if not isinstance(report, dict) or report.get("status") != "SUCCESS" or report.get("project_id") != project_id:
-            continue
-        if report.get("source_memory_revision") != current_memory or report.get("source_state_revision") != current_state:
-            continue
-        if report.get("source_graph_revision") != current_memory:
+        if not _valid_report(report, project_id=project_id, memory_revision=current_memory,
+                             state_revision=current_state, require_success=True):
             continue
         if report.get("surface_at_next_session") is not True:
             continue
