@@ -2,12 +2,17 @@
 import hashlib
 import json
 import os
+import time
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 from datetime import datetime, timezone
 
-from brain_eleven.infrastructure.locking import file_lock as _base_file_lock
+from brain_eleven.infrastructure.locking import (
+    MemoryStoreLockTimeout,
+    file_lock as _base_file_lock,
+)
 from .path_safety import (
     assert_runtime_snapshot,
     ensure_runtime_directory,
@@ -18,42 +23,101 @@ from .path_safety import (
 )
 
 
+_runtime_thread_locks = {}
+_runtime_thread_locks_guard = threading.Lock()
+
+
+def _runtime_posix_lock(root, target, timeout, poll_interval):
+    import fcntl
+
+    # Existing runtime files can carry a target-specific cross-process flock.
+    # A first write has no file to lock yet, so use the validated runtime root
+    # as a conservative creation lock and supplement it with a thread lock.
+    lock_target = target if os.path.isfile(target) else root
+    if lock_target == root:
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    else:
+        flags = os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(lock_target, flags)
+    acquired = False
+    deadline = time.monotonic() + timeout
+    key = os.fspath(target)
+    with _runtime_thread_locks_guard:
+        thread_lock = _runtime_thread_locks.setdefault(key, threading.Lock())
+    try:
+        remaining = max(0.0, deadline - time.monotonic())
+        if not thread_lock.acquire(timeout=remaining):
+            raise MemoryStoreLockTimeout(f"Timed out acquiring runtime lock {target}")
+        try:
+            while not acquired:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                except (BlockingIOError, OSError):
+                    if time.monotonic() >= deadline:
+                        raise MemoryStoreLockTimeout(f"Timed out acquiring runtime lock {target}")
+                    time.sleep(poll_interval)
+            yield
+        finally:
+            if acquired:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+            thread_lock.release()
+    finally:
+        os.close(descriptor)
+
+
+@contextmanager
+def _runtime_windows_mutex(target, timeout):
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.WaitForSingleObject.restype = ctypes.c_uint32
+    kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    name = "Local\\BrainElevenRuntime-" + hashlib.sha256(os.fspath(target).casefold().encode()).hexdigest()
+    handle = kernel32.CreateMutexW(None, False, name)
+    if not handle:
+        raise OSError(ctypes.get_last_error(), "CreateMutexW failed")
+    acquired = False
+    try:
+        result = kernel32.WaitForSingleObject(handle, int(max(0.0, timeout) * 1000))
+        if result == 0x102:  # WAIT_TIMEOUT
+            raise MemoryStoreLockTimeout(f"Timed out acquiring runtime lock {target}")
+        if result not in (0, 0x80):  # WAIT_OBJECT_0 / WAIT_ABANDONED
+            raise OSError(ctypes.get_last_error(), "WaitForSingleObject failed")
+        acquired = True
+        yield
+    finally:
+        if acquired:
+            kernel32.ReleaseMutex(handle)
+        kernel32.CloseHandle(handle)
+
+
 @contextmanager
 def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
-    """Acquire a lock only after validating a vault-owned runtime path."""
-    target = Path(target)
+    """Acquire a runtime lock without creating a raceable sidecar file."""
+    target = Path(target).absolute()
     runtime_root = runtime_root_for_path(target)
-    lock_kwargs = {}
-    if runtime_root is not None:
-        target_snapshot = guard_runtime_path(runtime_root, target)
-        lock_path = target.with_name(f"{target.name}.lock")
-        lock_snapshot = guard_runtime_path(runtime_root, lock_path)
+    if runtime_root is None:
+        with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval):
+            yield
+        return
 
-        def validate_before_open():
-            # The legacy lock creates and opens the sidecar itself.  Recheck
-            # immediately before that operation so a parent swap cannot
-            # redirect lock creation outside the selected vault.
-            assert_runtime_snapshot(runtime_root, target, target_snapshot)
-            assert_runtime_snapshot(runtime_root, lock_path, lock_snapshot)
-
-        def cleanup_invalid_lock(path):
-            # The legacy lock only calls this when its exclusive create
-            # succeeded and validation failed before the caller entered the
-            # critical section.  A regular marker can therefore be removed;
-            # links/reparse points are never followed for cleanup.
-            try:
-                if os.path.lexists(path) and not os.path.islink(path):
-                    os.unlink(path)
-            except OSError:
-                pass
-
-        lock_kwargs = {
-            "before_open": validate_before_open,
-            "create_parent": False,
-            "cleanup_on_error": cleanup_invalid_lock,
-        }
-    with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval, **lock_kwargs):
-        yield
+    snapshot = guard_runtime_path(runtime_root, target)
+    # Validate once more immediately before entering the OS lock primitive.
+    # POSIX locks an already-open runtime-root directory descriptor; Windows
+    # uses a named mutex, so neither path creates an external marker.
+    assert_runtime_snapshot(runtime_root, target, snapshot)
+    if os.name == "nt":
+        with _runtime_windows_mutex(target, timeout):
+            assert_runtime_snapshot(runtime_root, target, snapshot)
+            yield
+    else:
+        with _runtime_posix_lock(runtime_root, target, timeout, poll_interval):
+            assert_runtime_snapshot(runtime_root, target, snapshot)
+            yield
 
 
 # Keep the historical storage module patch point used by W-15 tests while
