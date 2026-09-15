@@ -1,6 +1,7 @@
 # W-20 — Legacy Embedding Cache Durability Contract
 
-**Status:** CONTRACT REVIEW PENDING — implementation not started
+**Status:** IMPLEMENTATION SHIPPED — independent contract review `SHIP` at
+`515682c`; independent implementation review `SHIP` at `db6ae44`
 
 **Program:** Engineering Weak-Point Improvement Goal
 
@@ -84,6 +85,6 @@ W-20 may be marked `SHIP` only after contract-independent review returns
 focused/full regression is green, and an independent read-only implementation
 review returns exactly `SHIP`.
 
-Until then: **W-20 = OPEN / NOT ACCEPTED**.
-
-**Contract status: REVIEW PENDING — implementation başlamadı.**
+W-20 is independently accepted as **SHIP** at exact implementation revision
+`db6ae44`; the package report records the bounded evidence and remaining
+out-of-scope work.

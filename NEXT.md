@@ -36,11 +36,12 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-19A is the latest closed implementation
-package. It fixed stale maintenance reminders by making the newest valid
-project/revision report authoritative; its independent review is `SHIP` at
-`352f51b`, with 22 focused tests and a full suite of 1298 passed, 4 skipped,
-2 warnings. W-07B native runtime acceptance evidence is still active:
+**Engineering weak-point goal:** W-20 is the latest closed implementation
+package. It made the legacy embedding cache atomic, no-loss under covered
+concurrent writers, durable on clear and refreshable for long-lived readers;
+its independent review is `SHIP` at `db6ae44`, with 40 focused tests and a
+full suite of 1318 passed, 4 skipped, 2 warnings. W-07B native runtime
+acceptance evidence is still active:
 deterministic process/restart recovery has 18 passing repetitions, but the
 committed native trust, latency and dogfood gates remain open. Independent
 review still keeps W-07B
@@ -48,14 +49,14 @@ review still keeps W-07B
 native latency matrix and multi-session dogfood are missing. Retrieval quality
 and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
 
-W-19B is now independently `SHIP`ped at `5555318`: warning-bearing native
+W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
 `ATTENTION` without changing canonical data. Native client trust, latency and
 dogfood still belong to W-07B. The remaining read-only findings are recorded
 in `ENGINEERING-WEAK-POINTS-AUDIT.md`: legacy embedding-cache
-durability/staleness (W-20), missing V2 authority coverage (W-21) and an
-ignored V2 optional-omission flag (W-22). Each needs a separate reviewed
-contract; none has started implementation.
+durability/staleness (W-20) is now closed at `db6ae44`; missing V2 authority
+coverage (W-21) and an ignored V2 optional-omission flag (W-22) remain open
+and each needs a separate reviewed contract.
 
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
@@ -309,3 +310,11 @@ evidence (18 passing repetitions), and full regression at committed head
 Independent review kept W-07B `FIX-FIRST / NOT ACCEPTED`: native
 authenticated trust, latency and dogfood evidence remain open. No V2
 promotion or Phase 20 work is open.
+
+**2026-09-15 (continued)** — W-20 embedding-cache contract was independently
+reviewed `SHIP`, then implemented and independently re-reviewed `SHIP` at
+`db6ae44`. The cache now uses locked atomic publication, no-loss compatible
+merges, durable clearing, stale-writer suppression and explicit reader
+refresh. Process crash/concurrency, canonical isolation and ranking-parity
+evidence passed; full regression is 1318 passed, 4 skipped, 2 warnings.
+W-07B, W-21 and W-22 remain open; Phase 20 remains FROZEN / LOCKED.

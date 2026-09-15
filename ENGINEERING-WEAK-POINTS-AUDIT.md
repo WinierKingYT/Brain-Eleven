@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `5555318` (W-19B exact implementation/review head)
+**Evidence revision:** `db6ae44` (W-20 exact implementation/review head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the committed W-19B evidence revision: **1304 passed, 4
+- Full local suite at the committed W-20 evidence revision: **1318 passed, 4
   skipped, 2 dependency deprecation warnings**.
 - W-07B process recovery evidence: **18 passed** across intent, claim,
   staging, publication and service-restart boundaries; native authenticated
@@ -20,6 +20,9 @@ the behavior and operational evidence found in the current repository.
 - W-19A reminder-authority evidence: **22 focused tests passed** across newest
   clean/degraded suppression, timestamp/state validation, deterministic ties,
   unreadable reports and read-only canonical revision checks.
+- W-20 embedding-cache evidence: **40 focused tests passed** across atomic
+  publication, process crash/concurrency, durable clear, stale-reader
+  refresh, deterministic merge and canonical/ranking isolation.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -28,7 +31,7 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 8.5 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, W-16 append-boundary validation and W-18 parent-directory durability are independently shipped; lower-priority durability gaps remain open. |
+| Persistence and concurrency | 8.7 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, W-16 append-boundary validation, W-18 parent-directory durability and W-20 embedding-cache atomic/no-loss publication are independently shipped; lower-priority durability gaps remain open. |
 | Scope and fail-closed safety | 8.5 | W-13 root/ID consistency, W-14 archived-state linearization, W-16 malformed-record rejection and W-17 runtime path containment are independently shipped. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
@@ -438,6 +441,18 @@ also clears memory without durable deletion. This is an evaluation/retrieval
 reliability candidate only after an explicit contract; no provider migration or
 ranking tuning is authorized.
 
+**Status:** Independently reviewed **SHIP** at exact head `db6ae44`. The cache
+now publishes through the existing sidecar lock and same-directory atomic
+writer, merges compatible entries without losing concurrent additions, rejects
+incompatible same-ID provenance without replacing the prior snapshot, persists
+clear operations, suppresses stale-writer resurrection and exposes an explicit
+semantic-search refresh boundary. Process-crash, process-concurrency,
+deterministic tie-break, canonical-revision and ranking-parity evidence is in
+`WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md`; the focused suite has 40
+passing tests and the full suite has 1318 passed, 4 skipped and 2 dependency
+warnings. Provider selection, retrieval tuning, V2 promotion and Phase 20 are
+unchanged.
+
 ### W-21 — V2 selection can accept candidates without authority coverage (P1 if promoted)
 
 The shadow V2 decision engine treats missing or empty authority resolution as
@@ -463,9 +478,9 @@ ACCEPTED` at exact evidence head `7707a1e`; its authenticated native trust,
 latency matrix and multi-session dogfood gates are still open. W-19A stale
 reminder authority and W-19B native health diagnostics are independently
 `SHIP`ped at exact heads `352f51b` and `5555318`.
-The next bounded candidates after W-07B are W-20 legacy embedding-cache
-durability, W-21 V2 authority coverage and W-22 optional-omission contract
-repair; each requires its own reviewed contract.
+The next bounded candidates after W-07B are W-21 V2 authority coverage and
+W-22 optional-omission contract repair; each requires its own reviewed
+contract.
 W-06C0R1 scope-drift maintenance is independently `SHIP`ped
 at exact implementation head `942aee8`, W-03B transcript ownership/provenance
 is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
@@ -508,6 +523,9 @@ report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
 `SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
 `WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
+W-20 legacy embedding-cache durability — `SHIP` at exact review head
+`db6ae44`, report in `WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md` and
+independent implementation review recorded there.
 W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
 head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
 review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
