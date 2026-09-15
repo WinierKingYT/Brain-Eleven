@@ -36,14 +36,23 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-12A (AuthorityCache concurrency) remains
-the latest closed implementation package. W-07B native runtime acceptance
-evidence is active: deterministic process/restart recovery now has 18 passing
-repetitions and the committed full suite is 1291 passed, 4 skipped, 2
-warnings (`7707a1e`). Independent review still keeps W-07B
+**Engineering weak-point goal:** W-19A is the latest closed implementation
+package. It fixed stale maintenance reminders by making the newest valid
+project/revision report authoritative; its independent review is `SHIP` at
+`352f51b`, with 22 focused tests and a full suite of 1298 passed, 4 skipped,
+2 warnings. W-07B native runtime acceptance evidence is still active:
+deterministic process/restart recovery has 18 passing repetitions, but the
+committed native trust, latency and dogfood gates remain open. Independent
+review still keeps W-07B
 `FIX-FIRST / NOT ACCEPTED` because authenticated Claude/Codex trust, the
 native latency matrix and multi-session dogfood are missing. Retrieval quality
 and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
+
+The next read-only findings are recorded in
+`ENGINEERING-WEAK-POINTS-AUDIT.md`: native hook false-green health (W-19B),
+legacy embedding-cache durability/staleness (W-20), missing V2 authority
+coverage (W-21) and an ignored V2 optional-omission flag (W-22). Each needs a
+separate reviewed contract; none has started implementation.
 
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
