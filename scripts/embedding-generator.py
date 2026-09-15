@@ -249,6 +249,14 @@ class EmbeddingGenerator:
             "embedding_schema_version", "source_revision",
         ))
 
+    @staticmethod
+    def _entry_order_key(entry):
+        """Return a stable key for compatible same-ID cache entries."""
+        try:
+            return json.dumps(entry, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        except (TypeError, ValueError):
+            return repr(entry)
+
     def _merge_cache_entries(self, disk, incoming, *, force_replace=False):
         if force_replace:
             return {}
@@ -263,8 +271,10 @@ class EmbeddingGenerator:
             if self._entry_metadata(existing) != self._entry_metadata(entry):
                 raise CachePersistenceError("incompatible embedding cache entry")
             # A provider may return a numerically different vector for the
-            # same content. The caller's update wins when provenance matches.
-            merged[memory_id] = entry
+            # same content. Choose by a stable serialized key so publication
+            # order cannot change the result when provenance matches.
+            if self._entry_order_key(entry) < self._entry_order_key(existing):
+                merged[memory_id] = entry
         return merged
 
     def _read_disk_entries(self):
