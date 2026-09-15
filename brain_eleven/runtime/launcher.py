@@ -154,7 +154,7 @@ def main(argv=None):
             if record:
                 record['hook_elapsed_ms'] = round((time.perf_counter() - started) * 1000)
                 write_json(path, record)
-        status = 'OK'
+        status = 'DEGRADED' if isinstance(result, dict) and result.get('systemMessage') else 'OK'
     except Exception:
         # Never echo stdin, a prompt, a transcript location, or an exception.
         print(json.dumps({'systemMessage': 'Brain-Eleven kullanılamıyor; çalışma devam ediyor. doctor ile kontrol edin.'}), flush=True)

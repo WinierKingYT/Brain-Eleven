@@ -226,11 +226,16 @@ def doctor(vault, *, home=None):
         checks['service'] = 'RUNNING'
     except (OSError, ValueError, KeyError):
         checks['service'] = 'STOPPED'
-    checks['last_hook'] = read_json(cfg.root / 'last-hook.json')
+    try:
+        last_hook = read_json(cfg.root / 'last-hook.json', {})
+    except (OSError, ValueError, TypeError):
+        last_hook = {}
+    checks['last_hook'] = last_hook if isinstance(last_hook, dict) else {}
     checks['last_session_start'], session_failed = _session_start_health(vault)
+    native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (
         all(checks['dependencies'].values())
         and all(x['configured'] for x in checks['clients'].values())
-        and not session_failed
+        and not session_failed and not native_hook_failed
     ) else 'ATTENTION'
     return checks
