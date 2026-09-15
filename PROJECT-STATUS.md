@@ -7,10 +7,10 @@
 **ACTIVE PACKAGE: NONE — next IG-04 sub-package or IG-05 direction not yet decided**.
 
 The engineering weak-point goal is active alongside the frozen IG program.
-W-20 legacy embedding-cache durability is independently shipped at exact head
-`db6ae44`, and W-21 V2 authority coverage is independently shipped at exact
-head `02c05c0`; see the corresponding package reports. These bounded
-reliability/safety changes do not promote V2 or unlock Phase 20.
+W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority
+coverage (`02c05c0`) and W-22 optional-omission enforcement
+(`736c6c9`) are independently shipped; see the corresponding package reports.
+These bounded reliability/safety changes do not promote V2 or unlock Phase 20.
 
 The [IG program contract](INTELLIGENCE-GRADUATION.md) replaces the former “next: Phase 20” schedule. PRE-12 is a closed historical foundation record; it does not mean product intelligence is complete. PRE-13 development is preserved at `7e6f55a82465f6fef7abf8318a451308bbe9a0e9`; its quality failures and missing live-use evidence are not erased by feature freeze. IG-01 was opened under its separate [evaluation foundation contract](IG01-EVALUATION-FOUNDATION.md) and is now closed; implementation remains bounded to the currently active package and does not authorize intelligence tuning.
 

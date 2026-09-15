@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `02c05c0` (W-21 exact implementation/review head)
+**Evidence revision:** `736c6c9` (W-22 exact implementation/review head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the committed W-21 evidence revision: **1329 passed, 4
+- Full local suite at the committed W-22 evidence revision: **1338 passed, 4
   skipped, 2 dependency deprecation warnings**.
 - W-07B process recovery evidence: **18 passed** across intent, claim,
   staging, publication and service-restart boundaries; native authenticated
@@ -27,6 +27,9 @@ the behavior and operational evidence found in the current repository.
   missing/empty/partial/duplicate coverage, complete SUCCESS/DEGRADED
   behavior, OFF/stale precedence, content-free telemetry and read-only
   filesystem behavior.
+- W-22 optional-omission evidence: **27 focused tests passed** across false
+  flag enforcement, profile/item/token/final overflow, mandatory precedence,
+  serialization validation and default compatibility.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -44,8 +47,8 @@ the behavior and operational evidence found in the current repository.
 | Task understanding | 8.5* | Deterministic task model has strong parity evidence; marked provisional until the whole task/context boundary is audited. |
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
-| Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
-| V2 runtime readiness | 6.5 | W-10's explicit provider/approval delivery gate and W-21 authority-coverage fail-closed boundary are independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
+| Context compilation | 7.0 | Related-note boundary, V1 bootstrap relevance/order, bounded structured native continuity and W-22 visible optional-omission enforcement are shipped; V2 is shadow-only. |
+| V2 runtime readiness | 6.8 | W-10's explicit provider/approval delivery gate, W-21 authority-coverage fail-closed boundary and W-22 budget enforcement are independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
 | Reminder/continuity runtime | 6.5 | W-19A makes the newest valid maintenance report authoritative and W-19B exposes native warning/error health; authenticated trust, latency and broader dogfood remain open. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
@@ -469,10 +472,13 @@ warnings. V2 remains SHADOW; no promotion or Phase 20 work was introduced.
 
 ### W-22 — V2 optional-omission flag is accepted but ignored (P2)
 
-`allow_optional_omission=false` is serialized by the V2 context models but is
-not consumed by planning/rebalance; optional items are omitted under the same
-budget pressure as `true`. This remains a contract decision candidate and is
-not being tuned during the current W-07B acceptance work.
+**Status:** Independently reviewed **SHIP** at exact head `736c6c9`.
+`allow_optional_omission=false` now fails visibly with
+`INSUFFICIENT_BUDGET`/`OPTIONAL_OMISSION_DISALLOWED` before optional removal,
+while mandatory-overflow precedence and the default true path remain intact.
+The focused suite has 27 passing tests and the full suite has 1338 passed, 4
+skipped and 2 dependency warnings. V2 remains SHADOW; no promotion or Phase
+20 work was introduced.
 
 ## Current package selection
 
@@ -485,9 +491,8 @@ ACCEPTED` at exact evidence head `7707a1e`; its authenticated native trust,
 latency matrix and multi-session dogfood gates are still open. W-19A stale
 reminder authority and W-19B native health diagnostics are independently
 `SHIP`ped at exact heads `352f51b` and `5555318`.
-The next bounded candidate after W-07B is W-22 optional-omission contract
-repair; W-21 V2 authority coverage is independently shipped at exact head
-`02c05c0`.
+No new W-22 implementation is open. W-21 and W-22 are independently shipped;
+the remaining bounded acceptance work is W-07B native trust/latency/dogfood.
 W-06C0R1 scope-drift maintenance is independently `SHIP`ped
 at exact implementation head `942aee8`, W-03B transcript ownership/provenance
 is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
@@ -536,6 +541,9 @@ independent implementation review recorded there.
 W-21 V2 authority coverage — `SHIP` at exact review head `02c05c0`, report in
 `WEAKNESS-W21-V2-AUTHORITY-COVERAGE-PACKAGE-REPORT.md` and independent review
 recorded there.
+W-22 optional-omission enforcement — `SHIP` at exact review head `736c6c9`,
+report in `WEAKNESS-W22-OPTIONAL-OMISSION-PACKAGE-REPORT.md` and independent
+review recorded there.
 W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
 head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
 review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.

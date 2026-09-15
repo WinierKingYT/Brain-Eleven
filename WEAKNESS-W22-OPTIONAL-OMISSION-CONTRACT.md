@@ -1,6 +1,6 @@
 # W-22 — V2 Optional-Omission Contract
 
-**Status:** CONTRACT REVIEW PENDING — implementation not started
+**Status:** IMPLEMENTED — independently reviewed SHIP
 **Contract base:** exact repository head `8ea6a99`
 **Program:** Engineering Weak-Point Improvement Goal
 **Phase 20:** FROZEN / LOCKED — **V2:** SHADOW
@@ -80,4 +80,10 @@ W-22 may be marked `SHIP` only after an independent contract review returns
 green, and an independent read-only implementation review returns exactly
 `SHIP`.
 
-Until then: **W-22 = OPEN / NOT ACCEPTED**.
+Implementation revisions: `58a120e`, `0f0a277`, `d7d34b4`; test revisions:
+`be0418f`, `bbc3760`, `736c6c9`.
+
+Independent implementation review at exact head
+`736c6c9a49b4698f3111eac0e71812fb2a514a51` returned **SHIP** with no P0, P1
+or P2 findings. W-22 is closed as a bounded shadow-runtime budget correction;
+it does not promote V2 or unlock Phase 20.

@@ -36,12 +36,13 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-21 is the latest closed implementation
-package. It makes V2 authority hand-off fail closed for missing, empty,
-partial and duplicate coverage; its independent review is `SHIP` at
-`02c05c0`, with 114 focused tests and a full suite of 1329 passed, 4 skipped,
-2 warnings. W-20 remains closed at `db6ae44` with atomic, no-loss embedding
-cache publication. W-07B native runtime
+**Engineering weak-point goal:** W-22 is the latest closed implementation
+package. It enforces the V2 optional-omission flag with visible budget
+failures and preserves mandatory-overflow precedence; its independent review
+is `SHIP` at `736c6c9`, with 27 focused tests and a full suite of 1338 passed,
+4 skipped, 2 warnings. W-21 remains closed at `02c05c0` with complete
+authority coverage, and W-20 remains closed at `db6ae44` with atomic,
+no-loss embedding cache publication. W-07B native runtime
 acceptance evidence is still active:
 deterministic process/restart recovery has 18 passing repetitions, but the
 committed native trust, latency and dogfood gates remain open. Independent
@@ -55,9 +56,9 @@ hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
 `ATTENTION` without changing canonical data. Native client trust, latency and
 dogfood still belong to W-07B. The remaining read-only findings are recorded
 in `ENGINEERING-WEAK-POINTS-AUDIT.md`: legacy embedding-cache
-durability/staleness (W-20) and V2 authority coverage (W-21) are now closed;
-W-22's ignored V2 optional-omission flag remains open and needs a separate
-reviewed contract.
+durability/staleness (W-20), V2 authority coverage (W-21) and optional
+omission enforcement (W-22) are now closed. The remaining acceptance gap is
+W-07B's native trust/latency/dogfood evidence.
 
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
@@ -312,9 +313,9 @@ Independent review kept W-07B `FIX-FIRST / NOT ACCEPTED`: native
 authenticated trust, latency and dogfood evidence remain open. No V2
 promotion or Phase 20 work is open.
 
-**2026-09-15 (continued)** — W-20 embedding-cache contract was independently
-reviewed `SHIP`, then W-21's authority-coverage contract and implementation
-were independently reviewed `SHIP` at `02c05c0`. W-21 now rejects missing,
-empty, partial and duplicate V2 authority coverage before selection; focused
-coverage is 114 tests and full regression is 1329 passed, 4 skipped,
-2 warnings. W-07B and W-22 remain open; Phase 20 remains FROZEN / LOCKED.
+**2026-09-15 (continued)** — W-20 embedding-cache and W-21 authority-coverage
+packages were independently reviewed `SHIP`; W-22 optional-omission contract
+and implementation then independently reached `SHIP` at `736c6c9`. W-22 now
+enforces visible false-flag budget failures and preserves mandatory-overflow
+precedence; focused coverage is 27 tests and full regression is 1338 passed,
+4 skipped, 2 warnings. W-07B remains open; Phase 20 remains FROZEN / LOCKED.
