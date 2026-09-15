@@ -25,11 +25,15 @@ def compilation_request_from_dict(document: Mapping[str, Any]) -> CompilationReq
     budget_data = _mapping(document["budget"], "compilation_request.budget")
     allowed = {
         "max_context_tokens", "minimum_headroom_tokens", "hard_byte_limit", "estimation_mode",
-        "mandatory_overflow_policy", "allow_optional_omission",
+        "mandatory_overflow_policy", "allow_optional_omission", "usable_tokens",
     }
     if set(budget_data) - allowed or "max_context_tokens" not in budget_data:
         raise ValueError("compilation_request.budget fields are invalid")
-    budget = BudgetContract(**dict(budget_data))
+    budget_payload = dict(budget_data)
+    declared_usable = budget_payload.pop("usable_tokens", None)
+    budget = BudgetContract(**budget_payload)
+    if declared_usable is not None and declared_usable != budget.usable_tokens:
+        raise ValueError("compilation_request.budget usable_tokens is inconsistent")
     profile = document.get("compiler_profile")
     return CompilationRequest(
         task_state_from_dict(_mapping(document["task_state"], "compilation_request.task_state")),

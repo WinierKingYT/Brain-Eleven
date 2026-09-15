@@ -252,6 +252,36 @@ class ContextCompilerV2:
                     telemetry={"mode": "SHADOW", "cache_hit": False, "audit_cache_hit": audit_cache_hit, "rendered_tokens": final_estimate.count},
                 )
             if not request.budget.allow_optional_omission:
+                mandatory_items = tuple(
+                    context_item_from_draft(draft, selection_reason(draft), draft.utility.estimated_cost)
+                    for draft in selected_drafts if draft.mandatory
+                )
+                mandatory_rendered = render_bundle(request.task_state, mandatory_items)
+                mandatory_estimate = self.estimator.estimate(mandatory_rendered)
+                mandatory_remeasured = self.estimator.estimate(mandatory_rendered)
+                if mandatory_remeasured != mandatory_estimate:
+                    return self._result(
+                        "FAILED", compilation_id, provisional_profile, request, revisions=snapshot.revisions,
+                        error="Token estimator is not deterministic for the final rendered context",
+                        warnings=("nondeterministic_final_measurement",),
+                    )
+                if mandatory_estimate.count > request.budget.usable_tokens or mandatory_estimate.byte_count > request.budget.hard_byte_limit:
+                    return self._result(
+                        "INSUFFICIENT_BUDGET",
+                        compilation_id,
+                        provisional_profile,
+                        request,
+                        revisions=snapshot.revisions,
+                        error="Rendered mandatory context exceeds budget; it was not truncated",
+                        warnings=("mandatory_context_not_silently_truncated",),
+                        omitted=tuple(sorted(omissions, key=lambda item: item.candidate_id)),
+                        telemetry={
+                            "mode": "SHADOW",
+                            "cache_hit": False,
+                            "audit_cache_hit": audit_cache_hit,
+                            "rendered_tokens": mandatory_estimate.count,
+                        },
+                    )
                 return self._result(
                     "INSUFFICIENT_BUDGET",
                     compilation_id,
