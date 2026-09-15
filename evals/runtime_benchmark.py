@@ -8,6 +8,7 @@ import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import time
+from collections import Counter
 
 from brain_eleven.memory import MemoryStore
 from brain_eleven.projects.registry import ProjectRegistry
@@ -22,6 +23,21 @@ from evals.runtime_eval import implementation_fingerprint
 
 def p95(values):
     return round(sorted(values)[math.ceil(len(values) * .95) - 1], 2)
+
+
+def _hook_status(stdout, returncode, *, event):
+    """Map launcher output to bounded benchmark status without persisting it."""
+    try:
+        payload = json.loads(stdout)
+    except (TypeError, ValueError):
+        return 'INVALID_OUTPUT'
+    if returncode != 0:
+        return 'NONZERO_EXIT'
+    if not isinstance(payload, dict):
+        return 'INVALID_OUTPUT'
+    if event == 'Stop':
+        return 'OK' if payload == {} else 'DEGRADED'
+    return 'OK' if 'hookSpecificOutput' in payload else 'DEGRADED'
 
 
 def run(samples=40, records=1000):
@@ -43,35 +59,59 @@ def run(samples=40, records=1000):
         cfg = RuntimeConfig(vault)
         # This disposable synthetic vault bypasses rollout only to exercise the
         # implementation. The production promotion command still enforces gates.
-        write_json(cfg.path, {'schema_version': 1, 'mode': 'CANARY', 'project_ids': [project], 'local_model': None})
+        # The synthetic transcript files below live outside the host native
+        # roots.  Bind both clients explicitly to this disposable directory
+        # so the benchmark exercises the queue path instead of failing at the
+        # provenance boundary before any timing is measured.
+        claude_root = Path(temporary) / 'claude-projects'
+        codex_root = Path(temporary) / 'codex-sessions'
+        claude_slug = str(vault.resolve()).replace(':', '-').replace('/', '-').replace('\\', '-')
+        claude_project_root = claude_root / claude_slug
+        claude_project_root.mkdir(parents=True)
+        codex_root.mkdir(parents=True)
+        write_json(cfg.path, {
+            'schema_version': 1,
+            'mode': 'CANARY',
+            'project_ids': [project],
+            'local_model': None,
+            'transcript_roots': {'claude': [str(claude_root.resolve())], 'codex': [str(codex_root.resolve())]},
+        })
         start = time.perf_counter()
         if not ensure_service(vault, wait=True):
             raise RuntimeError('Synthetic service did not start')
         cold_ms = (time.perf_counter() - start) * 1000
         launcher = Path(__file__).resolve().parents[1] / 'brain_eleven/runtime/launcher.py'
         stop_ms, prompt_ms = [], []
+        stop_status, prompt_status = [], []
         try:
             first_service = read_json(cfg.root / 'service.json')
             assert ensure_service(vault, wait=True)
             singleton = read_json(cfg.root / 'service.json') == first_service
             for index in range(samples):
                 client = 'claude' if index % 2 == 0 else 'codex'
-                path = Path(temporary) / f'source-{index}.jsonl'
+                raw_session = f'benchmark-{index}'
+                path = (claude_project_root if client == 'claude' else codex_root) / f'{raw_session}.jsonl'
                 message = {'role': 'user', 'content': f'We decided to use SQLite for persistent storage in component {index}.'}
-                event = {'type': 'user', 'message': message} if client == 'claude' else {'type': 'response_item', 'payload': {'type': 'message', **message}}
-                path.write_text(json.dumps(event) + '\n', encoding='utf-8')
-                payload = {'cwd': str(vault), 'session_id': f'benchmark-{index}', 'transcript_path': str(path)}
+                if client == 'claude':
+                    event = {'sessionId': raw_session, 'type': 'user', 'message': message}
+                else:
+                    event = {'type': 'session_meta', 'payload': {'session_id': raw_session, 'cwd': str(vault)}}
+                    message = {'type': 'response_item', 'payload': {'type': 'message', **message}}
+                path.write_text(json.dumps(event) + '\n' + (json.dumps(message) + '\n' if client == 'codex' else ''), encoding='utf-8')
+                payload = {'cwd': str(vault), 'session_id': raw_session, 'transcript_path': str(path)}
                 command = [sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'Stop']
                 start = time.perf_counter()
                 result = subprocess.run(command, input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
                                         creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 stop_ms.append((time.perf_counter() - start) * 1000)
-                if result.returncode or json.loads(result.stdout) != {}:
-                    raise RuntimeError('Native enqueue hook degraded')
-            deadline = time.monotonic() + 30
+                stop_status.append(_hook_status(result.stdout, result.returncode, event='Stop'))
+            deadline = time.monotonic() + 180
             while time.monotonic() < deadline:
-                status = request_service(vault, '/api/runtime/status', timeout=2)
-                if not status['queue']['queued'] and not status['queue']['processing']:
+                try:
+                    status = request_service(vault, '/api/runtime/status', timeout=5)
+                except (OSError, TimeoutError, ValueError):
+                    status = None
+                if status and not status['queue']['queued'] and not status['queue']['processing']:
                     break
                 time.sleep(.05)
             capture_root = vault / '.brain-eleven/capture'
@@ -89,16 +129,19 @@ def run(samples=40, records=1000):
                     input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 prompt_ms.append((time.perf_counter() - start) * 1000)
-                if result.returncode or 'hookSpecificOutput' not in json.loads(result.stdout):
-                    raise RuntimeError('Native context hook degraded')
+                prompt_status.append(_hook_status(result.stdout, result.returncode, event='UserPromptSubmit'))
             report = {'schema_version': 1, 'evidence_type': 'SYNTHETIC_PROCESS_BENCHMARK',
                       'implementation_fingerprint': implementation_fingerprint(), 'platform': sys.platform,
                       'records': records, 'samples_per_event': samples, 'cold_start_ms': round(cold_ms, 2),
                       'stop_hook_p95_ms': p95(stop_ms), 'prompt_hook_p95_ms': p95(prompt_ms),
                       'queue_p95_ms': p95(latencies) if latencies else None, 'queue_max_ms': round(max(latencies), 2) if latencies else None,
-                      'completed': len(latencies), 'singleton': singleton}
+                      'completed': len(latencies), 'singleton': singleton,
+                      'stop_status_counts': dict(sorted(Counter(stop_status).items())),
+                      'prompt_status_counts': dict(sorted(Counter(prompt_status).items()))}
+            all_hooks_ok = all(status == 'OK' for status in stop_status + prompt_status)
             report['gates'] = {'hook_p95_500ms': max(p95(stop_ms), p95(prompt_ms)) <= 500,
                                'queue_30s': len(latencies) == samples and max(latencies) <= 30000,
+                               'all_hooks_ok': all_hooks_ok,
                                'no_dead_letters': not any((capture_root / 'dead-letter').glob('*.json')), 'singleton': singleton}
             report['status'] = 'PASS' if all(report['gates'].values()) else 'FAIL'
             return report
