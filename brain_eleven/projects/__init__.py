@@ -1,5 +1,20 @@
 """Project identity services."""
 
+from .identity import (
+    LINEAGE_STATUSES,
+    ROOT_IDENTITY_PATTERN,
+    ROOT_IDENTITY_PREFIX,
+    ProjectLineageError,
+    RegistryLineage,
+    RegistrySnapshot,
+    compute_project_root_identity,
+    lineage_to_dict,
+    project_root_identity,
+    registry_snapshot_for_root,
+    root_identity,
+    validate_task_state_lineage,
+)
+
 from .registry import (
     BACKUP_SCHEMA_VERSION,
     REGISTRY_BACKUP_FILENAME,
@@ -16,6 +31,18 @@ from .registry import (
 )
 
 __all__ = [
+    "LINEAGE_STATUSES",
+    "ROOT_IDENTITY_PATTERN",
+    "ROOT_IDENTITY_PREFIX",
+    "ProjectLineageError",
+    "RegistryLineage",
+    "RegistrySnapshot",
+    "compute_project_root_identity",
+    "lineage_to_dict",
+    "project_root_identity",
+    "registry_snapshot_for_root",
+    "root_identity",
+    "validate_task_state_lineage",
     "ProjectRegistry",
     "ProjectRegistryError",
     "ProjectRegistryConflict",

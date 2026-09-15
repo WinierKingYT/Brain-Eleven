@@ -7,6 +7,8 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from brain_eleven.projects.identity import ProjectLineageError, validate_task_state_lineage
+
 from .adapters import GraphAdapter, MemoryAdapter, RawCandidate, StateAdapter, infer_memory_scope
 from .cache import RouterCache
 from .config import RouterConfig, RouterConfigError
@@ -17,6 +19,11 @@ from .policy import ScopePolicyError, lifecycle_allowed, resolve_history_mode, r
 
 class StaleTaskStateError(RuntimeError):
     """The caller-provided Phase 16 state snapshot no longer matches state."""
+
+
+def _lineage_status(error: ProjectLineageError) -> str:
+    """Map identity diagnostics into the stable Router result vocabulary."""
+    return error.code if error.code in {"STALE_INPUT", "SCOPE_ERROR"} else "STALE_INPUT"
 
 
 class ContextRouter:
@@ -268,6 +275,9 @@ class ContextRouter:
         try:
             states, degraded = self._validate_state_scope(task_state, scope, options)
             memory_revision, snapshot = self.memory.snapshot()
+            lineage = validate_task_state_lineage(self.vault_path, task_state)
+        except ProjectLineageError as exc:
+            return self._error(_lineage_status(exc), str(exc), plan)
         except ScopePolicyError as exc:
             return self._error("SCOPE_ERROR", str(exc), plan)
         except StaleTaskStateError as exc:
@@ -279,10 +289,35 @@ class ContextRouter:
             "memory": memory_revision,
             "state": self._state_revisions(states),
             "graph": memory_revision,
+            "registry": lineage.registry_revision,
         }
         if config.cache_enabled:
+            try:
+                before_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)
+            except ProjectLineageError as exc:
+                return self._error(_lineage_status(exc), str(exc), plan)
+            if before_cache_lineage != lineage:
+                return RouterResult(
+                    status="STALE_INPUT",
+                    plan=plan,
+                    input_revisions=revisions,
+                    error="TaskStateContext registry lineage changed before cache lookup",
+                    telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
+                )
             cached = self._cached_result(self.cache.load(plan.fingerprint, revisions) or {})
             if cached is not None:
+                try:
+                    after_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)
+                except ProjectLineageError as exc:
+                    return self._error(_lineage_status(exc), str(exc), plan)
+                if after_cache_lineage != lineage:
+                    return RouterResult(
+                        status="STALE_INPUT",
+                        plan=plan,
+                        input_revisions=revisions,
+                        error="TaskStateContext registry lineage changed during cache lookup",
+                        telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
+                    )
                 return cached
 
         raw_candidates: list[RawCandidate] = []
@@ -351,6 +386,19 @@ class ContextRouter:
                 telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
             )
 
+        try:
+            final_lineage = validate_task_state_lineage(self.vault_path, task_state)
+        except ProjectLineageError as exc:
+            return self._error(_lineage_status(exc), str(exc), plan)
+        if final_lineage != lineage:
+            return RouterResult(
+                status="STALE_INPUT",
+                plan=plan,
+                input_revisions=revisions,
+                error="TaskStateContext registry lineage changed during routing",
+                telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
+            )
+
         status = "EMPTY" if not candidates else ("DEGRADED" if degraded else "SUCCESS")
         telemetry = {
             "mode": options.mode,
@@ -371,6 +419,18 @@ class ContextRouter:
             telemetry=telemetry,
         )
         if config.cache_enabled:
+            try:
+                before_store_lineage = validate_task_state_lineage(self.vault_path, task_state)
+            except ProjectLineageError as exc:
+                return self._error(_lineage_status(exc), str(exc), plan)
+            if before_store_lineage != lineage:
+                return RouterResult(
+                    status="STALE_INPUT",
+                    plan=plan,
+                    input_revisions=revisions,
+                    error="TaskStateContext registry lineage changed before cache store",
+                    telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
+                )
             self.cache.store(plan.fingerprint, revisions, result.to_dict())
         return result
 

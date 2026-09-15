@@ -107,11 +107,19 @@ def task_state_from_dict(document: Mapping[str, Any]):
     """Decode task/state input, then rely on canonical reads for truth."""
     from brain_eleven.state.resolver import CurrentProjectState
     from scripts.task_model import TaskEnvelope
-    from scripts.task_state_context import TASK_STATE_CONTEXT_SCHEMA_VERSION, TaskStateContext
+    from scripts.task_state_context import (
+        TASK_STATE_CONTEXT_SCHEMA_VERSION,
+        TaskStateContext,
+        TaskStateLineage,
+    )
 
     document = _mapping(document, "task_state")
     if document.get("schema_version") != TASK_STATE_CONTEXT_SCHEMA_VERSION:
         raise ValueError("task_state schema_version is unsupported")
+    if "lineage" not in document:
+        raise ValueError("task_state.lineage is required")
+    if set(document) != {"schema_version", "task", "state", "lineage"}:
+        raise ValueError("task_state fields are invalid")
     task = TaskEnvelope.from_dict(_mapping(document.get("task"), "task_state.task"))
     state_data = _mapping(document.get("state"), "task_state.state")
     required = {
@@ -127,6 +135,15 @@ def task_state_from_dict(document: Mapping[str, Any]):
     revision = state_data["state_revision"]
     if revision is not None and (isinstance(revision, bool) or not isinstance(revision, int) or revision < 0):
         raise ValueError("task_state.state.state_revision is invalid")
+
+    lineage = TaskStateLineage.from_dict(document.get("lineage"))
+    task_project_id = task.project.project_id
+    if lineage.status == "resolved":
+        if lineage.project_id != task_project_id or lineage.project_id != project_id:
+            raise ValueError("task_state lineage project identity does not match task/state")
+    elif task_project_id is not None or project_id is not None:
+        raise ValueError("task_state non-resolved lineage must not carry project identity")
+
     def records(name: str) -> tuple[Mapping[str, Any], ...]:
         return tuple(_mapping(value, f"task_state.state.{name}") for value in _sequence(state_data[name], f"task_state.state.{name}"))
     return TaskStateContext(
@@ -147,6 +164,7 @@ def task_state_from_dict(document: Mapping[str, Any]):
             error=state_data["error"],
             archived=state_data["archived"],
         ),
+        lineage=lineage,
     )
 
 

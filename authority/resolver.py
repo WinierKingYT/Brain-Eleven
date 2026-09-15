@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import hashlib
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Mapping, Optional
+
+from brain_eleven.projects.identity import ProjectLineageError, validate_task_state_lineage
 
 from .adapters import AuthorityEvidenceAdapter, AuthorityEvidenceError, AuthorityStaleInput
 from .cache import AuthorityCache
@@ -19,6 +22,11 @@ class AuthorityScopeError(ValueError):
 
 class AuthorityInputError(ValueError):
     """Task/Router input does not meet the Phase 18 hand-off contract."""
+
+
+def _lineage_status(error: ProjectLineageError) -> str:
+    """Map identity diagnostics into the stable Authority result vocabulary."""
+    return error.code if error.code in {"STALE_INPUT", "SCOPE_ERROR"} else "STALE_INPUT"
 
 
 class AuthorityResolver:
@@ -148,6 +156,11 @@ class AuthorityResolver:
         except AuthorityConfigError as exc:
             return self._result("FAILED", "authority-v1", error=str(exc))
 
+        try:
+            lineage = validate_task_state_lineage(self.vault_path, task_state)
+        except ProjectLineageError as exc:
+            return self._result(_lineage_status(exc), config.policy_version, error=str(exc))
+
         if options.mode == "OFF":
             return self._result(
                 "EMPTY",
@@ -175,10 +188,37 @@ class AuthorityResolver:
         except AuthorityEvidenceError as exc:
             return self._result("FAILED", config.policy_version, error=str(exc))
 
+        snapshot = replace(
+            snapshot,
+            revisions={**snapshot.revisions, "registry": lineage.registry_revision},
+        )
+
         cache_key = self._cache_key(router_result, config.policy_version)
         if config.cache_enabled:
+            try:
+                before_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)
+            except ProjectLineageError as exc:
+                return self._result(_lineage_status(exc), config.policy_version, revisions=snapshot.revisions, error=str(exc))
+            if before_cache_lineage != lineage:
+                return self._result(
+                    "STALE_INPUT",
+                    config.policy_version,
+                    revisions=snapshot.revisions,
+                    error="TaskStateContext registry lineage changed before cache lookup",
+                )
             cached = self._cached_result(self.cache.load(cache_key, snapshot.revisions) or {})
             if cached is not None:
+                try:
+                    after_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)
+                except ProjectLineageError as exc:
+                    return self._result(_lineage_status(exc), config.policy_version, revisions=snapshot.revisions, error=str(exc))
+                if after_cache_lineage != lineage:
+                    return self._result(
+                        "STALE_INPUT",
+                        config.policy_version,
+                        revisions=snapshot.revisions,
+                        error="TaskStateContext registry lineage changed during cache lookup",
+                    )
                 return ResolutionResult(
                     status=cached.status,
                     policy_version=cached.policy_version,
@@ -208,6 +248,18 @@ class AuthorityResolver:
                 error="Canonical source changed during authority resolution",
             )
 
+        try:
+            final_lineage = validate_task_state_lineage(self.vault_path, task_state)
+        except ProjectLineageError as exc:
+            return self._result(_lineage_status(exc), config.policy_version, revisions=snapshot.revisions, error=str(exc))
+        if final_lineage != lineage:
+            return self._result(
+                "STALE_INPUT",
+                config.policy_version,
+                revisions=snapshot.revisions,
+                error="TaskStateContext registry lineage changed during authority resolution",
+            )
+
         degraded = tuple(router_result.degraded_reasons)
         status = "EMPTY" if not candidates else ("DEGRADED" if degraded else "SUCCESS")
         result = ResolutionResult(
@@ -228,6 +280,17 @@ class AuthorityResolver:
             },
         )
         if config.cache_enabled:
+            try:
+                before_store_lineage = validate_task_state_lineage(self.vault_path, task_state)
+            except ProjectLineageError as exc:
+                return self._result(_lineage_status(exc), config.policy_version, revisions=snapshot.revisions, error=str(exc))
+            if before_store_lineage != lineage:
+                return self._result(
+                    "STALE_INPUT",
+                    config.policy_version,
+                    revisions=snapshot.revisions,
+                    error="TaskStateContext registry lineage changed before cache store",
+                )
             try:
                 self.cache.store(cache_key, snapshot.revisions, result.to_dict())
             except OSError:
