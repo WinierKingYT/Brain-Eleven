@@ -725,8 +725,12 @@ class StateService:
         source: Mapping[str, Any],
         now: Optional[str] = None,
     ) -> dict[str, Any]:
-        self._require_active_project(project_id)
-        return self.store.init_project(project_id, source=self._source(source), now=now)
+        # Serialize the registry status check with ProjectRegistry mutations.
+        # Otherwise an archive can commit after this check but before the
+        # state-store transaction, leaving an archived project writable.
+        with file_lock(self.registry.path):
+            self._require_active_project(project_id)
+            return self.store.init_project(project_id, source=self._source(source), now=now)
 
     def _mutate(
         self,
@@ -739,16 +743,21 @@ class StateService:
         mutator,
         now: Optional[str] = None,
     ) -> tuple[Any, dict[str, Any]]:
-        self._require_active_project(project_id)
-        return self.store._transact_project(
-            project_id,
-            expected_revision=expected_revision,
-            operation=operation,
-            source=self._source(source),
-            record_ids=record_ids,
-            mutator=mutator,
-            now=now,
-        )
+        # Hold the existing registry sidecar lock across both the active
+        # check and the state transaction. ProjectRegistry status mutations
+        # use the same lock, giving archive/check/write one linearization
+        # boundary without introducing a second authority or lock primitive.
+        with file_lock(self.registry.path):
+            self._require_active_project(project_id)
+            return self.store._transact_project(
+                project_id,
+                expected_revision=expected_revision,
+                operation=operation,
+                source=self._source(source),
+                record_ids=record_ids,
+                mutator=mutator,
+                now=now,
+            )
 
     @staticmethod
     def _record(
