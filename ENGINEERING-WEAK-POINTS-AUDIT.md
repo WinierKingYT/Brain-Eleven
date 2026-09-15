@@ -272,9 +272,12 @@ the result as provider `V1`, while the rendered context carries the V2 marker.
 An isolated CANARY reproduction therefore delivered V2-shaped context to the
 client without a separate model-facing V2 gate. This is a rollout-boundary
 defect, not a retrieval-quality result. Status: **OPEN / FIX-FIRST**. The
-bounded successor must keep V2 comparison output out of client injection while
-SHADOW, expose provider metadata matching the delivered path, and test
-CANARY/ACTIVE explicitly. No V2 promotion is authorized by this finding.
+bounded contract is
+[`WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
+at `be7e218`; it defines the explicit legacy V1 source for normal turns,
+keeps the W06B path separate, and requires V2 comparison output to stay out of
+client injection while SHADOW. Independent contract review is still pending;
+no V2 promotion is authorized by this finding.
 
 ### W-11 — W-06B selector drops normalized global memories (P2)
 
