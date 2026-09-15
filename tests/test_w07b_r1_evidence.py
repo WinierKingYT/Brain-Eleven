@@ -107,3 +107,20 @@ def test_service_stop_bounds_http_protocol_errors(monkeypatch, tmp_path):
 
     monkeypatch.setattr(runtime_benchmark, "request_service", raise_protocol_error)
     assert runtime_benchmark._stop_service(tmp_path, object(), timeout=0.01) is True
+
+
+def test_queue_poll_bounds_protocol_and_schema_errors(monkeypatch, tmp_path):
+    responses = [
+        http.client.HTTPException("synthetic protocol failure"),
+        {"queue": []},
+        {"queue": {"queued": 0, "processing": 0}},
+    ]
+
+    def next_response(*_args, **_kwargs):
+        value = responses.pop(0)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    monkeypatch.setattr(runtime_benchmark, "request_service", next_response)
+    assert runtime_benchmark._wait_for_queue_drain(tmp_path, timeout=0.5) is True

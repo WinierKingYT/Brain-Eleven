@@ -89,6 +89,25 @@ def _stop_service(vault, cfg, *, timeout=8):
     return False
 
 
+def _wait_for_queue_drain(vault, *, timeout=180):
+    """Poll a disposable queue fail-closed without exposing response content."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            status = request_service(vault, '/api/runtime/status', timeout=5)
+            queue = status.get('queue') if isinstance(status, dict) else None
+            if (
+                isinstance(queue, dict)
+                and queue.get('queued') == 0
+                and queue.get('processing') == 0
+            ):
+                return True
+        except (OSError, TimeoutError, ValueError, http.client.HTTPException):
+            pass
+        time.sleep(.05)
+    return False
+
+
 def run(samples=40, records=1000):
     if samples < 20 or records < 1000:
         raise ValueError('At least 20 events and 1000 records are required')
@@ -154,15 +173,7 @@ def run(samples=40, records=1000):
                 elapsed, status = _run_hook(launcher, vault, client, 'Stop', payload)
                 stop_ms.append(elapsed)
                 stop_status.append(status)
-            deadline = time.monotonic() + 180
-            while time.monotonic() < deadline:
-                try:
-                    status = request_service(vault, '/api/runtime/status', timeout=5)
-                except (OSError, TimeoutError, ValueError):
-                    status = None
-                if status and not status['queue']['queued'] and not status['queue']['processing']:
-                    break
-                time.sleep(.05)
+            _wait_for_queue_drain(vault)
             capture_root = vault / '.brain-eleven/capture'
             from datetime import datetime
             latencies = []
@@ -251,17 +262,7 @@ def run(samples=40, records=1000):
                 for cell in latency_matrix.values()
             )
             matrix_p95_within_budget = bool(matrix_p95_values) and max(matrix_p95_values) <= 3000
-            matrix_deadline = time.monotonic() + 180
-            matrix_queue_drained = False
-            while time.monotonic() < matrix_deadline:
-                try:
-                    status = request_service(vault, '/api/runtime/status', timeout=5)
-                except (OSError, TimeoutError, ValueError):
-                    status = None
-                if status and not status['queue']['queued'] and not status['queue']['processing']:
-                    matrix_queue_drained = True
-                    break
-                time.sleep(.05)
+            matrix_queue_drained = _wait_for_queue_drain(vault)
             matrix_terminal_after = sum(
                 len(list((capture_root / name).glob('*.json')))
                 for name in ('completed', 'dead-letter')
