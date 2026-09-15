@@ -171,7 +171,10 @@ def run(samples=40, records=1000):
             report['status'] = 'PASS' if all(report['gates'].values()) else 'FAIL'
             return report
         finally:
-            request_service(vault, '/api/runtime/stop', {}, timeout=2)
+            try:
+                request_service(vault, '/api/runtime/stop', {}, timeout=2)
+            except (OSError, TimeoutError, ValueError):
+                pass
             deadline = time.monotonic() + 8
             while (cfg.root / 'service.json').exists() and time.monotonic() < deadline:
                 time.sleep(.1)
