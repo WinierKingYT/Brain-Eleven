@@ -36,15 +36,14 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-12A (AuthorityCache concurrency) is the
-latest closed package. Its lock/atomicity fix is independently `SHIP` at
-implementation `d33b38d`, with 1273 passed, 4 skipped and 2 pre-existing
-dependency warnings in the full suite. The package report and independent
-review are `WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md` and
-`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
-The next bounded weakness is W-07B native runtime acceptance evidence;
-retrieval quality and V2 promotion remain deferred, and Phase 20 stays
-FROZEN / LOCKED.
+**Engineering weak-point goal:** W-12A (AuthorityCache concurrency) remains
+the latest closed implementation package. W-07B native runtime acceptance
+evidence is active: deterministic process/restart recovery now has 18 passing
+repetitions and the committed full suite is 1291 passed, 4 skipped, 2
+warnings (`7707a1e`). Independent review still keeps W-07B
+`FIX-FIRST / NOT ACCEPTED` because authenticated Claude/Codex trust, the
+native latency matrix and multi-session dogfood are missing. Retrieval quality
+and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
 
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
@@ -206,6 +205,9 @@ in-file, not a functional finding.
 
 ## What's next
 
+- Finish W-07B's bounded acceptance evidence: authenticated isolated native
+  Claude/Codex smoke, the fixed latency matrix and privacy-safe multi-session
+  dogfood. Do not mark W-07B SHIP while any of those gates is absent.
 - IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
   highest blast-radius module in the whole inventory, 26/26 callers,
   deliberately excluded from every slice so far including 2E) — needs its
@@ -289,6 +291,9 @@ MemoryStore parent-directory durability and W-12A AuthorityCache
 concurrency. W-18 and W-12A both received independent `SHIP`; W-12A now
 serializes authority-cache read-modify-write and access refresh with the
 existing sidecar lock while preserving content-free fail-open behavior.
-Full suite at the W-12A head: 1273 passed, 4 skipped, 2 pre-existing
-dependency warnings. Next work is W-07B native runtime acceptance evidence;
-no V2 promotion or Phase 20 work is open.
+W-07B follow-up then added intent/claim/staging/publication/service restart
+evidence (18 passing repetitions), and full regression at committed head
+`78c5671` passed 1291 tests with 4 skips and 2 existing dependency warnings.
+Independent review kept W-07B `FIX-FIRST / NOT ACCEPTED`: native
+authenticated trust, latency and dogfood evidence remain open. No V2
+promotion or Phase 20 work is open.

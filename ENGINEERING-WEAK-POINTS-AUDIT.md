@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `587c72f` (W-12A final report; implementation `d33b38d`)
+**Evidence revision:** `7707a1e` (W-07B evidence report; process tests `b7f8ca3`)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,8 +12,11 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the W-12A implementation revision: **1273 passed, 4
+- Full local suite at the committed W-07B evidence revision: **1291 passed, 4
   skipped, 2 dependency deprecation warnings**.
+- W-07B process recovery evidence: **18 passed** across intent, claim,
+  staging, publication and service-restart boundaries; native authenticated
+  trust, latency and dogfood gates remain open.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
   directories; they were left untouched.
@@ -174,16 +177,16 @@ blockers, constraints and risks. Automatic markdown reminder writing remains
 open and is not implied by this package.
 
 **W-07B audit status:** The bounded runtime implementation is pushed at exact
-head `f322d2c`. It now schedules verified
-SessionEnd maintenance asynchronously, binds reports to project/source
-revisions, enforces content-free projections, reconciles enqueue/publication
-crash gaps, and fences active duplicate claims with an expiring lease.
-Independent read-only review at that exact head returned `FIX-FIRST`:
-real Claude/Codex executable smoke, process restart/kill, native latency and
-dogfood evidence remain open. Expired-lease owner fencing is covered by the
-reviewed hardening. The package remains
-`FIX-FIRST / NOT ACCEPTED`; no automatic
-markdown writes or Phase 20/V2 promotion were introduced.
+head `f322d2c`. It schedules verified SessionEnd maintenance asynchronously,
+binds reports to project/source revisions, enforces content-free projections,
+reconciles enqueue/publication crash gaps, and fences active duplicate claims
+with an expiring lease. Follow-up evidence at `7707a1e` adds 18 deterministic
+process/restart repetitions with canonical revision preservation and full
+regression (1291 passed). Independent read-only review remains
+`FIX-FIRST`: authenticated Claude/Codex trust, latency matrix and multi-
+session dogfood are still missing. The package remains `FIX-FIRST / NOT
+ACCEPTED`; no automatic markdown writes or Phase 20/V2 promotion were
+introduced.
 
 ### W-08 — Persistence consistency gaps (P1/P2)
 
@@ -249,9 +252,10 @@ split/report hashes. Retrieval quality, corpus labels, V2 and Phase 20 were
 unchanged.
 
 **W-07B evidence update:** The former P2 implementation gap has a bounded
-runtime package at exact head `f322d2c`, but
-the independent verdict remains `FIX-FIRST / NOT ACCEPTED` until native
-executable, restart/kill and latency/dogfood evidence are closed. Automatic
+runtime package at exact head `f322d2c`. Process/restart evidence is now
+covered at `7707a1e` (18 passed; full suite 1291 passed), but the independent
+verdict remains `FIX-FIRST / NOT ACCEPTED` until authenticated native
+executable, latency and dogfood evidence are closed. Automatic
 markdown writes remain deferred.
 
 **W-09A status:** Independently reviewed `SHIP` at exact review head
