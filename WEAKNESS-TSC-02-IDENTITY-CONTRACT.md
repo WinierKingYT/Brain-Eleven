@@ -1,6 +1,6 @@
 # TSC-02 — Project Identity and Registry-Lineage Contract
 
-**Status:** CONTRACT REVISION / IMPLEMENTATION NOT AUTHORIZED  
+**Status:** CONTRACT REVISION / IMPLEMENTATION NOT AUTHORIZED
 **Program:** Engineering Weak-Point Improvement Goal  
 **Baseline revision:** `5b1d1c7`  
 **Phase 20:** FROZEN / LOCKED  
