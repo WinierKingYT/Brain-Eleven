@@ -87,15 +87,15 @@ def _validate_record(record: Mapping) -> None:
             raise MemoryStoreRecordInvalid(f"Canonical memory {field} must be a string")
 
     status = record.get("status")
-    if status is not None and (not isinstance(status, str) or not status.strip()):
+    if "status" in record and (not isinstance(status, str) or not status.strip()):
         raise MemoryStoreRecordInvalid("Canonical memory status is invalid")
 
     scope = record.get("scope")
-    if scope is not None and (not isinstance(scope, str) or scope not in _VALID_RECORD_SCOPE):
+    if "scope" in record and (not isinstance(scope, str) or scope not in _VALID_RECORD_SCOPE):
         raise MemoryStoreRecordInvalid("Canonical memory scope is invalid")
     # A missing scope is legacy-global.  Do not silently attach project
     # identity to such a record.
-    effective_scope = scope or "global"
+    effective_scope = scope if scope is not None else "global"
     project_id = record.get("project_id", "")
     project = record.get("project", "")
     project_label = record.get("project_label", "")
