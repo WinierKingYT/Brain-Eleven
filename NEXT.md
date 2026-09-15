@@ -66,6 +66,13 @@ multi-session dogfood remain open. The independent read-only follow-up review
 recorded `FIX-FIRST` at `ca15e31` and found no remaining bounded-harness
 P0/P1/P2 defect; W-07B stays `FIX-FIRST / NOT ACCEPTED`.
 
+The next bounded remediation contract is **TSC-01 timezone-bound state
+resolution**, independently reviewed `SHIP` at `0eac731`. It will tighten
+explicit-offset state validation and map malformed timestamps to bounded
+`STATE_CORRUPT` results without changing native context translation, project
+identity lineage or serialized decoder behavior. Implementation is pending;
+W-07B's native trust/latency/dogfood acceptance gates remain open in parallel.
+
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
 `ATTENTION` without changing canonical data. Native client trust, latency and

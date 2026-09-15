@@ -635,3 +635,22 @@ recorded `FIX-FIRST` at `ca15e31` and found no remaining P0/P1/P2 defect in the
 bounded harness; the native acceptance gates are still open. W-07B is
 `FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2 remains
 SHADOW.
+
+## TSC-01 — timezone-bound state resolution (2026-09-15)
+
+The read-only task-state audit found a P1 temporal failure: `scripts/state_store.py:235-241`
+accepts timezone-naive ISO timestamps, while `scripts/state_resolver.py:30-31,175-180`
+subtracts them from an aware UTC clock. The resulting `TypeError` escapes
+`TaskStateComposer.compose` and can make the native context path fail. A focused
+state/context probe and the existing resolver suite establish the failure and
+38 valid-state regression tests pass. The task-state context surface is
+provisionally **6.5/10** (composition 7.0; scope/authority 7.5–8.0), below the
+goal threshold.
+
+`WEAKNESS-TSC-01-TIMEZONE-CONTRACT.md` is independently reviewed `SHIP` at
+contract revision `0eac731`. It requires explicit-offset validation, bounded
+`STATE_CORRUPT` mapping, path/content-free errors and no-write/no-rewrite
+behavior. Native `compile_context` exception translation, project identity
+lineage and strict serialized decoding are separate follow-up packages.
+Implementation has not started; Phase 20 remains FROZEN / LOCKED and V2
+remains SHADOW.
