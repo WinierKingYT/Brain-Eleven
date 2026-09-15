@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-12  
 **REVISION:** `4cde804c39ee0f6f316308d10a14034f153bef9f` (code/test head)  
-**CONTRACT:** `47d65cfacbbefcb486a0d8bbb6624eb3b2080da5`  
+**CONTRACT:** `051ca12ba80d4777c99cb4af856d247103082e7c`  
 **OBJECTIVE:** Preserve derived router/compiler cache entries under concurrent
 read-modify-write and make access-time refresh atomic.
 
