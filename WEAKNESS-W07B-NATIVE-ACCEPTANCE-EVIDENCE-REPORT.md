@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B evidence closure
 
-**REVISION:** `0c60dc3f0e3dd96b106851aed881a0f14467d34e`
+**REVISION:** `b7f8ca3`
 
 **IMPLEMENTATION UNDER TEST:** `f322d2c` (W-07B runtime package)
 
@@ -32,27 +32,31 @@ store or Phase 20/V2 setting was changed.
 
 The prior W-07B package had focused fault tests but no process-level proof that
 a worker/service restart after a durable intent boundary recovers exactly one
-report. The new harness uses named child-process seams rather than timing
-sleeps and verifies recovery after actual process termination.
+report. The harness uses named child-process seams rather than timing sleeps
+and verifies recovery after actual process termination.
 
 ## TESTS ADDED
 
-Four process-level tests cover:
+Five process-level scenarios cover:
 
-1. worker crash after lease/claim;
-2. worker crash after staging;
-3. worker crash after report publication before terminal move;
-4. restart after final receipt as a no-op.
+1. worker crash after durable intent write;
+2. worker crash after lease/claim;
+3. worker crash after staging;
+4. worker crash after report publication before terminal move;
+5. restart of the real service process after final receipt as a no-op.
 
-Each test asserts one eventual report/receipt, no staging residue and no
-canonical MemoryStore revision change. A controlled raw maintenance result is
-used only inside the test child; it is not a production path.
+Each crash boundary is exercised in three independent repetitions. Recovery
+asserts one eventual report/receipt and unchanged MemoryStore/StateStore
+revisions; staging recovery also asserts no staging residue. A controlled raw
+maintenance result is used only inside the test child; it is not a production
+path.
 
 ## TESTS EXECUTED
 
-- Process recovery harness: **4 passed**.
+- Process recovery harness: **18 passed** (five scenarios, three repetitions
+  for each boundary, plus the in-process final-receipt no-op coverage).
 - W-07B/native/capture/runtime focused suite at exact evidence head:
-  **119 passed, 2 warnings**.
+  **133 passed, 2 warnings**.
 - The warnings are existing FastAPI/Starlette deprecations.
 - Critical flake8 (`E9,F63,F7,F82`) on the new test: **PASS**.
 - `compileall` and `git diff --check`: **PASS**.
@@ -72,7 +76,7 @@ isolated configurations and record only content-free bounded telemetry.
 
 | Gate | Before | After this evidence step |
 | --- | --- | --- |
-| Process restart/kill recovery | Missing | 4 deterministic boundaries pass |
+| Process restart/kill recovery | Missing | 18 deterministic boundary repetitions pass |
 | Native authenticated Claude capture | Unverified | Unverified |
 | Native authenticated Codex capture | Unverified | Unverified |
 | Latency matrix | Missing | Missing |
