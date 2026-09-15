@@ -6,6 +6,8 @@ from pathlib import Path
 import tempfile
 from datetime import datetime, timezone
 
+from brain_eleven.infrastructure.locking import file_lock
+
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -35,6 +37,16 @@ def read_json(path, default=None):
     if not path.exists():
         return default
     return json.loads(path.read_text(encoding='utf-8'))
+
+
+class RuntimeConfigConflict(ValueError):
+    """Raised when a runtime-config mutation uses a stale snapshot."""
+
+
+def _config_fingerprint(value):
+    """Return a stable fingerprint for a validated runtime-config snapshot."""
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(payload.encode('utf-8')).hexdigest()
 
 
 class RuntimeConfig:
@@ -70,6 +82,7 @@ class RuntimeConfig:
         if mode not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid rollout mode')
         value = self.load()
+        snapshot = _config_fingerprint(value)
         if mode == 'CANARY':
             from brain_eleven.memory import MemoryStore
             from brain_eleven.state import StateStore
@@ -83,15 +96,39 @@ class RuntimeConfig:
         if mode == 'ACTIVE':
             from .graduation import verify
             verify(self.vault)
-        value['mode'] = mode
-        write_json(self.path, value)
-        return value
+
+        def mutate(current):
+            current['mode'] = mode
+
+        return self._commit(snapshot, mutate)
 
     def set_human_approval(self, enabled):
         """Enable or disable B1's human approval boundary explicitly."""
         if not isinstance(enabled, bool):
             raise ValueError('Human approval flag must be boolean')
         value = self.load()
-        value['b1_human_approval'] = enabled
-        write_json(self.path, value)
-        return value
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['b1_human_approval'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def _commit(self, expected_fingerprint, mutate):
+        """Apply one config mutation only if its validated snapshot is current."""
+        with file_lock(self.path):
+            current = self.load()
+            actual_fingerprint = _config_fingerprint(current)
+            if actual_fingerprint != expected_fingerprint:
+                raise RuntimeConfigConflict('Runtime configuration changed; retry')
+            mutate(current)
+            write_json(self.path, current)
+            return current
+
+    def _mutate_current(self, mutate):
+        """Atomically mutate the latest config for internal runtime callers."""
+        with file_lock(self.path):
+            current = self.load()
+            mutate(current)
+            write_json(self.path, current)
+            return current

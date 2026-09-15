@@ -137,11 +137,12 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
         if StateStore(vault).project_revision(project['project_id']) is None:
             StateService(vault).init_project(project['project_id'], source={'type': 'user', 'reference': 'runtime-install'})
         migrate(vault)
-        config = cfg.load()
-        config['project_ids'] = list(dict.fromkeys(config['project_ids'] + [project['project_id']]))
-        if config['mode'] == 'OFF':
-            config['mode'] = 'SHADOW'
-        write_json(cfg.path, config)
+        def update_runtime_config(config):
+            config['project_ids'] = list(dict.fromkeys(config['project_ids'] + [project['project_id']]))
+            if config['mode'] == 'OFF':
+                config['mode'] = 'SHADOW'
+
+        config = cfg._mutate_current(update_runtime_config)
         for client, path, before, entries, after, suspended in plans:
             # Journal before each replace permits recovery from partial installs.
             prior = manifest['clients'].get(client, {})

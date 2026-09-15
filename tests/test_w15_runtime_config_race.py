@@ -109,13 +109,13 @@ def test_same_field_contention_rejects_stale_writer(tmp_path):
     first.load = paused_load
     thread, errors = _run_thread(lambda: first.set_human_approval(True))
     assert loaded.wait(5)
-    second.set_human_approval(False)
+    second.set_human_approval(True)
     release.set()
     thread.join(5)
 
     assert len(errors) == 1
     assert isinstance(errors[0], RuntimeConfigConflict)
-    assert read_json(second.path)["b1_human_approval"] is False
+    assert read_json(second.path)["b1_human_approval"] is True
 
 
 def test_stale_canary_cannot_overwrite_intervening_off(tmp_path, monkeypatch):
@@ -164,11 +164,13 @@ def test_lock_failure_leaves_config_unchanged(tmp_path, monkeypatch):
     _seed(tmp_path)
     before = read_json(RuntimeConfig(tmp_path).path)
 
+    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
+
     def fail_lock(*_args, **_kwargs):
-        raise storage.MemoryStoreLockTimeout("busy")
+        raise MemoryStoreLockTimeout("busy")
 
     monkeypatch.setattr(storage, "file_lock", fail_lock)
-    with pytest.raises(storage.MemoryStoreLockTimeout):
+    with pytest.raises(MemoryStoreLockTimeout):
         RuntimeConfig(tmp_path).set_human_approval(True)
 
     assert read_json(RuntimeConfig(tmp_path).path) == before
