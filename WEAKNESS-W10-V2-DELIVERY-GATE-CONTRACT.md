@@ -86,7 +86,7 @@ The implementation must make the following outcomes explicit and testable.
 | --- | --- | --- | --- |
 | `OFF` | none required | no context | bounded `OFF`/empty result |
 | `SHADOW` | optional comparison only | SessionStart V1 bootstrap; normal UserPromptSubmit keeps the existing no-delivery behavior | `V1` for bootstrap; empty/no-delivery for normal prompt |
-| `CANARY` | comparison allowed | `V1_LEGACY` uses the named legacy `ContextCompiler.compile()` adapter; `W06B_TASK_AWARE` uses its existing V1 path | metadata matches delivered V1 path |
+| `CANARY` | comparison allowed | `V1_LEGACY` uses the named adapter built from legacy project-scoped primitives; `W06B_TASK_AWARE` uses its existing V1 path | metadata matches delivered V1 path |
 | `ACTIVE` | V2 still forbidden while product status is SHADOW; use the same V1 paths as CANARY | `V1_LEGACY` or explicitly selected W06B V1 path | metadata matches delivered V1 path |
 
 `CANARY` and `ACTIVE` must not silently turn the compiler’s internal
