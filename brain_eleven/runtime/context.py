@@ -16,6 +16,104 @@ from context_compiler_v2.tokenizer import ConservativeTokenEstimator
 from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapshot
 
 
+# V2 may be computed for comparison in a separately reviewed path, but it is
+# not a model-facing provider while the product remains in SHADOW.  Keep this
+# allow-list local to the delivery boundary so a provider label cannot drift
+# away from the text that is actually returned.
+MODEL_FACING_V1_PROVIDERS = frozenset({'V1', 'W06B_TASK_AWARE'})
+
+
+def _legacy_context_compiler():
+    """Load the legacy compiler without invoking its public Companion path."""
+    from brain_eleven._legacy import load_legacy_module
+    return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
+
+
+def _normalize_v1_state_identity(context, state):
+    """Retain the legacy projection's bounded state-record identity hints."""
+    if state is None:
+        return context
+    record_ids = []
+    for attribute in ('active_work_items', 'active_requirements', 'active_blockers', 'constraints', 'risks'):
+        records = getattr(state, attribute, ())
+        for record in records if isinstance(records, (list, tuple)) else ():
+            record_id = record.get('id') if isinstance(record, dict) else None
+            if isinstance(record_id, str) and record_id and record_id not in record_ids:
+                record_ids.append(record_id)
+    if not record_ids:
+        return context
+    return context + '\n\n## STATE RECORD IDS\n' + '\n'.join(f'- {item}' for item in record_ids)
+
+
+def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False):
+    """Render the project-scoped legacy V1 projection for one task.
+
+    The legacy public ``compile`` method reads Companion files and writes a
+    bootstrap projection.  Native normal turns must use only its existing
+    scoped primitives, so this adapter deliberately supplies empty related
+    and unscoped note inputs to ``_generate_context_block``.
+    """
+    from scripts.capture_safety import evaluate_capture
+
+    compiler = _legacy_context_compiler()(str(vault), project_id=project_id)
+    document = compiler.memory_store.load()
+    compiler.memories = document['validated_memory']
+    compiler.source_memory_revision = document['revision']
+    state = compiler._resolve_current_state()
+    lineage = {
+        'source_memory_revision': document['revision'],
+        'source_state_revision': compiler.source_state_revision,
+        'source_state_status': compiler.source_state_status,
+    }
+
+    def safe(text):
+        return isinstance(text, str) and not contains_secret(text) and evaluate_capture(text).accepted
+
+    memories = []
+    for item in compiler._rank_memories(limit=5):
+        content = item.get('content')
+        if (not human_approval or item.get('is_approved', True) is True) and safe(content):
+            memories.append(item)
+
+    estimator = ConservativeTokenEstimator()
+    context = _normalize_v1_state_identity(
+        compiler._generate_context_block(memories, {}, '', '', state), state,
+    )
+    while memories and estimator.estimate(context).count > budget:
+        memories.pop()
+        context = _normalize_v1_state_identity(
+            compiler._generate_context_block(memories, {}, '', '', state), state,
+        )
+    if not safe(context) or estimator.estimate(context).count > budget:
+        context = ''
+        status = 'DEGRADED'
+    else:
+        status = 'SUCCESS'
+
+    # The same source snapshot guard used by SessionStart is required before
+    # normal-turn V1 text becomes eligible for delivery.
+    compiler._ensure_output_is_current(lineage)
+    return {
+        'status': status,
+        'context': context,
+        'selected_ids': [item['id'] for item in memories] if context else [],
+        'project_id': project_id,
+        'provider': 'V1',
+        'delivery_approved': False,
+        'delivered': False,
+        'input_revisions': {
+            'memory': document['revision'],
+            'state': {
+                project_id: {
+                    'status': compiler.source_state_status,
+                    'revision': compiler.source_state_revision,
+                },
+            },
+        },
+        'estimated_tokens': estimator.estimate(context).count,
+    }
+
+
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
     from brain_eleven._legacy import load_legacy_module
@@ -41,10 +139,14 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.
-    context = compiler._generate_context_block(memories, {}, '', '', state)
+    context = _normalize_v1_state_identity(
+        compiler._generate_context_block(memories, {}, '', '', state), state,
+    )
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
-        context = compiler._generate_context_block(memories, {}, '', '', state)
+        context = _normalize_v1_state_identity(
+            compiler._generate_context_block(memories, {}, '', '', state), state,
+        )
     reminder_context = None
     reminder_record = None
     try:
@@ -77,7 +179,8 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
             delivered = False
         context = reminder_context if delivered else context
     return {'status': status, 'context': context, 'selected_ids': [item['id'] for item in memories] if context else [],
-            'project_id': project['project_id'], 'delivered': bool(context), 'provider': 'V1',
+            'project_id': project['project_id'], 'delivered': bool(context),
+            'delivery_approved': bool(context), 'provider': 'V1',
             'estimated_tokens': estimator.estimate(context).count}
 
 
@@ -90,7 +193,8 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     runtime = RuntimeConfig(vault)
     config = runtime.load()
     if config['mode'] == 'OFF':
-        return {'status': 'OFF', 'context': '', 'selected_ids': []}
+        return {'status': 'OFF', 'context': '', 'selected_ids': [], 'delivered': False,
+                'delivery_approved': False, 'provider': 'OFF'}
     project = allowed(vault, project_root)
     if not project:
         return {'status': 'SCOPE_DISABLED', 'context': '', 'selected_ids': []}
@@ -99,13 +203,19 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         result = compile_task_w06b(vault, task, budget=min(budget, 1024), human_approval=config.get('b1_human_approval', False))
         task_need = result.get('task_need', {})
         if task_need.get('status') in {'NO_NEED', 'AMBIGUOUS', 'UNAVAILABLE', 'INVALID'}:
-            legacy = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+            # The W06B fallback is also V1.  Keep the historical symbol
+            # injectable for existing callers/tests without routing the
+            # production fallback through the V2 compatibility function.
+            fallback = compile_task_v1 if compile_task is _V2_COMPAT_COMPILE_TASK else compile_task
+            legacy = fallback(vault, task, budget=budget,
+                              human_approval=config.get('b1_human_approval', False))
             legacy['provider'] = 'V1'
             legacy['task_need_status'] = task_need.get('status')
             legacy['task_need_error_code'] = task_need.get('error_code')
             result = legacy
     else:
-        result = compile_task(vault, task, routing=RoutingOptions(), budget=budget)
+        result = compile_task_v1(vault, task, budget=budget,
+                                 human_approval=config.get('b1_human_approval', False))
         result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
@@ -124,7 +234,19 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     elif (config.get('retrieval_mode') != 'W06B_TASK_AWARE' and result.get('input_revisions')
           and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ()) )):
         result.update(status='STALE_INPUT', context='', selected_ids=[])
-    result['delivered'] = current_config['mode'] in {'CANARY', 'ACTIVE'} and bool(result.get('context'))
+    # SHADOW computes no model-facing normal-turn context.  CANARY/ACTIVE
+    # still use V1 only while the product-level V2 status remains SHADOW.
+    if current_config['mode'] == 'SHADOW':
+        result.update(context='', selected_ids=[])
+    provider = result.get('provider')
+    approved = (
+        current_config['mode'] in {'CANARY', 'ACTIVE'}
+        and provider in MODEL_FACING_V1_PROVIDERS
+        and result.get('status') in {'SUCCESS', 'DEGRADED', 'EMPTY'}
+        and bool(result.get('context'))
+    )
+    result['delivery_approved'] = approved
+    result['delivered'] = approved
     telemetry = {key: value for key, value in result.items() if key != 'context'}
     telemetry.update(at=now(), client=client, session_hash=identity('session_', session), turn_hash=identity('turn_', turn),
                      elapsed_ms=round((perf_counter() - start) * 1000), project_id=project['project_id'])
@@ -164,8 +286,26 @@ def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     return {key: value for key, value in result.items() if key != 'selected'}
 
 
+def compile_task_v1(vault, task, *, budget=3000, human_approval=False):
+    """Named normal-turn V1 adapter; never invokes a V2 compiler."""
+    project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
+    if not project_id:
+        return {
+            'status': 'SCOPE_DISABLED', 'context': '', 'selected_ids': [],
+            'provider': 'V1', 'delivery_approved': False, 'delivered': False,
+        }
+    return _compile_project_scoped_v1(
+        vault, project_id, budget=budget, human_approval=human_approval,
+    )
+
+
 def compile_task(vault, task, *, routing=None, budget=3000):
-    """Exact read-only production chain, also used by offline evaluators."""
+    """Historical V2 compatibility API for offline evaluation only.
+
+    Native delivery never calls this function.  Keep the old name stable for
+    existing evaluation callers while the normal hook path uses the explicit
+    ``compile_task_v1`` adapter above.
+    """
     routing = routing or RoutingOptions()
     router = ContextRouter(vault).route(task, routing)
     authority = AuthorityResolver(vault).resolve(task, router, AuthorityOptions(scope_mode=routing.scope_mode,
@@ -201,3 +341,9 @@ def compile_task(vault, task, *, routing=None, budget=3000):
     return {'status': status, 'context': context, 'selected_ids': [item.candidate_id for item in bundle.selected] if context else [],
               'missing_critical_needs': missing, 'warnings': list(bundle.warnings), 'input_revisions': dict(snapshot.revisions),
               'estimated_tokens': estimator.estimate(context).count, 'density': dict(density.metrics)}
+
+
+# Explicit name for new diagnostic callers; the compatibility name above is
+# intentionally retained for the frozen evaluation provider.
+compile_task_v2_shadow = compile_task
+_V2_COMPAT_COMPILE_TASK = compile_task
