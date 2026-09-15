@@ -1,7 +1,7 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
 **PACKAGE:** W-17
-**REVISION:** `6302f30fc44bb4f21915b92dcea7ed796f6b2b59`
+**REVISION:** `6017255c3405dfdbc8d9d154498c7a5edd5f7649`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -43,10 +43,11 @@ symlinks and Windows `FILE_ATTRIBUTE_REPARSE_POINT`, creates missing regular
 ancestors one component at a time, validates lexical/resolved containment,
 rejects final-file links and path escapes, and records root/parent identities.
 Runtime writes revalidate the snapshot before replacement. Runtime-owned locks
-use target-scoped POSIX directory/file locks or Windows named mutexes, so no
-raceable sidecar marker is created; direct hook bootstrap paths use the same
-wrapper. The existing JSON temp-file flush/fsync/replace path and W-15
-fingerprint/CAS semantics remain intact for regular paths.
+  use target-scoped descriptor-relative POSIX lock markers or Windows named
+  mutexes, so no lexical path race can create a marker outside the runtime
+  root; direct hook bootstrap paths use the same wrapper. The existing JSON
+  temp-file flush/fsync/replace path and W-15 fingerprint/CAS semantics remain
+  intact for regular paths.
 
 ## TESTS ADDED
 
@@ -62,15 +63,16 @@ fingerprint/CAS semantics remain intact for regular paths.
 - Windows junction/reparse rejection;
 - runtime snapshot identity mismatch detection;
 - selected-vault validation, runtime-root creation and lock-boundary race
-  probes, including the no-sidecar-marker guarantee.
+  probes, including descriptor-relative lock-marker containment, distinct
+  target isolation and lexical-alias key parity.
 
 ## TESTS EXECUTED
 
 - W17 plus W15, IG-00 bootstrap, PRE-13 runtime, W-07B maintenance delivery
-  and capture provenance surfaces: **118 passed, 2 warnings**; the W17-only
-  set is **18 passed**.
-- Full suite at exact revision `6302f30`: **1262 passed, 2 warnings** in
-  291.14 seconds.
+  and capture provenance surfaces: **34 passed, 2 warnings**; the W17-only
+  set is **20 passed**.
+- Full suite at exact revision `6017255`: **1264 passed, 2 warnings** in
+  262.50 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
