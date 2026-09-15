@@ -55,22 +55,53 @@ def test_parent_directory_fsync_follows_replace(monkeypatch, tmp_path):
     )
 
     replace_index = events.index("replace")
+    assert events.index("fsync") < replace_index
     assert events[replace_index + 1 : replace_index + 4] == ["open", "fsync", "close"]
 
 
 @pytest.mark.skipif(os.name == "nt", reason="directory fsync is not supported on Windows")
-def test_parent_directory_fsync_failure_is_visible_and_cleans_temp(monkeypatch, tmp_path):
+@pytest.mark.parametrize("failure_point", ("open", "fsync", "close"))
+def test_parent_directory_sync_failures_are_visible_and_clean_temp(
+    monkeypatch, tmp_path, failure_point
+):
     vault = _vault(tmp_path)
     store = memory_store.MemoryStore(vault)
     store.append({"memory_id": "m1", "type": "lesson", "content": "seed"})
     original_fsync = memory_store.os.fsync
+    original_open = memory_store.os.open
+    original_close = memory_store.os.close
+
+    def fail_directory_open(path, *args, **kwargs):
+        if Path(path) == store.path.parent:
+            raise OSError("simulated parent directory open failure")
+        return original_open(path, *args, **kwargs)
 
     def fail_directory_fsync(descriptor):
         if stat.S_ISDIR(os.fstat(descriptor).st_mode):
             raise OSError("simulated parent directory fsync failure")
         return original_fsync(descriptor)
 
-    monkeypatch.setattr(memory_store.os, "fsync", fail_directory_fsync)
+    def fail_directory_close(descriptor):
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+            original_close(descriptor)
+            raise OSError("simulated parent directory close failure")
+        return original_close(descriptor)
+
+    monkeypatch.setattr(
+        memory_store.os,
+        "open",
+        fail_directory_open if failure_point == "open" else original_open,
+    )
+    monkeypatch.setattr(
+        memory_store.os,
+        "fsync",
+        fail_directory_fsync if failure_point == "fsync" else original_fsync,
+    )
+    monkeypatch.setattr(
+        memory_store.os,
+        "close",
+        fail_directory_close if failure_point == "close" else original_close,
+    )
     with pytest.raises(memory_store.MemoryStoreError, match="Cannot persist"):
         store.append({"memory_id": "m2", "type": "lesson", "content": "published"})
 
