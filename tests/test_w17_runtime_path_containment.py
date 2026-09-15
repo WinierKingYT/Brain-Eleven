@@ -50,6 +50,20 @@ def test_brain_eleven_ancestor_symlink_rejected_before_external_effect(tmp_path)
     assert list(outside.iterdir()) == []
 
 
+def test_selected_vault_symlink_rejected_before_external_effect(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    selected = tmp_path / "selected-vault"
+    _make_link(selected, outside)
+
+    with pytest.raises(RuntimePathError):
+        storage.RuntimeConfig(selected).set_human_approval(True)
+
+    assert list(outside.iterdir()) == []
+    assert not (outside / ".brain-eleven" / "runtime" / "config.json").exists()
+    assert not (outside / ".brain-eleven" / "runtime" / "config.json.lock").exists()
+
+
 def test_final_config_symlink_is_rejected_and_target_is_unchanged(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
@@ -151,6 +165,26 @@ def test_windows_junction_is_rejected_even_when_not_a_symlink(tmp_path):
 
     with pytest.raises(RuntimePathError):
         storage.RuntimeConfig(vault).set_human_approval(True)
+
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse evidence")
+def test_selected_vault_junction_is_rejected_even_when_not_a_symlink(tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    selected = tmp_path / "selected-vault"
+    completed = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(selected), str(outside)],
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0 or not selected.exists():
+        pytest.skip("junction creation unavailable")
+    assert not selected.is_symlink()
+
+    with pytest.raises(RuntimePathError):
+        storage.RuntimeConfig(selected).set_human_approval(True)
 
     assert list(outside.iterdir()) == []
 
