@@ -59,6 +59,38 @@ def _authority_candidates(result: Any) -> dict[str, Any]:
     return {str(_get(item, "candidate_id")): item for item in (_get(result, "candidates", ()) or ())}
 
 
+def _authority_rows(result: Any) -> tuple[Any, ...]:
+    """Return authority rows without collapsing duplicate candidate IDs."""
+    return tuple(_get(result, "candidates", ()) or ())
+
+
+def _coverage_failure(
+    *,
+    policy_version: str,
+    plan: NeedPlan,
+    revisions: Mapping[str, Any],
+    candidates_seen: int,
+    eligible_count: int,
+    authority_count: int,
+    coverage: str,
+) -> DecisionResult:
+    """Build a content-free authority coverage failure result."""
+    return DecisionResult(
+        status="FAILED",
+        policy_version=policy_version,
+        input_revisions=dict(revisions),
+        need_plan=plan,
+        error="AUTHORITY_COVERAGE_UNAVAILABLE",
+        telemetry={
+            "authority_used": False,
+            "authority_coverage": coverage,
+            "candidates_seen": candidates_seen,
+            "eligible_candidates": eligible_count,
+            "authority_rows": authority_count,
+        },
+    )
+
+
 def _revision_map(result: Any) -> Mapping[str, Any]:
     revisions = _get(result, "input_revisions", {})
     return revisions if isinstance(revisions, Mapping) else {}
@@ -206,6 +238,8 @@ class RetrievalDecisionEngine:
             return self._error("SCOPE_ERROR", "EMPTY_SELECTED_PROJECT_SCOPE", plan)
 
         revisions = _revision_map(router_result)
+        authority_status = ""
+        authority_rows: tuple[Any, ...] = ()
         if resolution_result is not None:
             authority_status = str(_get(resolution_result, "status", ""))
             if authority_status in {"STALE_INPUT", "INVALID_INPUT", "SCOPE_ERROR", "FAILED"}:
@@ -213,9 +247,8 @@ class RetrievalDecisionEngine:
             authority_revisions = _revision_map(resolution_result)
             if authority_revisions and revisions and not _same_revisions(revisions, authority_revisions):
                 return self._error("STALE_INPUT", "ROUTER_AUTHORITY_REVISION_MISMATCH", plan, revisions)
-            authorities = _authority_candidates(resolution_result)
-        else:
-            authorities = {}
+            authority_rows = _authority_rows(resolution_result)
+        authorities: dict[str, Any] = {}
 
         candidates = tuple(_get(router_result, "candidates", ()) or ())
         text_scores, has_query = _text_scores(_task_field(task_state, 'raw_request', ''), candidate_texts or {})
@@ -224,7 +257,11 @@ class RetrievalDecisionEngine:
             return DecisionResult(status="EMPTY", policy_version=self.policy_version, input_revisions=dict(revisions), need_plan=plan, telemetry={"mode": "OFF", "selected": 0})
 
         omitted: dict[str, str] = {}
-        ranked: list[_Ranked] = []
+        eligible: list[Any] = []
+        authority_rows_by_id: dict[str, list[Any]] = {}
+        for row in authority_rows:
+            row_id = str(_get(row, "candidate_id", ""))
+            authority_rows_by_id.setdefault(row_id, []).append(row)
         seen: set[str] = set()
         for candidate in candidates:
             candidate_id = str(_get(candidate, "candidate_id", ""))
@@ -243,6 +280,59 @@ class RetrievalDecisionEngine:
             if not _state_revision_matches(candidate, revisions):
                 omitted[candidate_id] = "STALE_CANDIDATE"
                 continue
+            # Preserve the existing hard authority scope filter before coverage
+            # validation. A foreign-project row can never satisfy this
+            # candidate, but it must not block other eligible candidates.
+            rows = authority_rows_by_id.get(candidate_id, [])
+            if len(rows) == 1:
+                candidate_project = _get(candidate, "project_id", None)
+                authority_project = _get(rows[0], "project_id", object())
+                if authority_project != candidate_project:
+                    omitted[candidate_id] = "AUTHORITY_SCOPE_MISMATCH"
+                    continue
+            eligible.append(candidate)
+
+        eligible_ids = {str(_get(candidate, "candidate_id", "")) for candidate in eligible}
+        rows_by_id = {row_id: rows for row_id, rows in authority_rows_by_id.items() if row_id in eligible_ids}
+
+        if eligible:
+            if resolution_result is None:
+                coverage = "missing"
+            elif authority_status == "EMPTY":
+                coverage = "empty"
+            elif any(len(rows) > 1 for rows in rows_by_id.values()):
+                coverage = "duplicate"
+            elif authority_status not in {"SUCCESS", "DEGRADED"}:
+                coverage = "empty" if not authority_rows else "partial"
+            else:
+                coverage = "full"
+                has_any_row = bool(rows_by_id)
+                for candidate in eligible:
+                    candidate_id = str(_get(candidate, "candidate_id", ""))
+                    rows = rows_by_id.get(candidate_id, [])
+                    candidate_project = _get(candidate, "project_id", None)
+                    if len(rows) != 1:
+                        coverage = "partial" if has_any_row else "missing"
+                        break
+                    authority_project = _get(rows[0], "project_id", object())
+                    if authority_project != candidate_project:
+                        coverage = "partial"
+                        break
+            if coverage != "full":
+                return _coverage_failure(
+                    policy_version=self.policy_version,
+                    plan=plan,
+                    revisions=revisions,
+                    candidates_seen=len(candidates),
+                    eligible_count=len(eligible),
+                    authority_count=len(authority_rows),
+                    coverage=coverage,
+                )
+            authorities = _authority_candidates(resolution_result)
+
+        ranked: list[_Ranked] = []
+        for candidate in eligible:
+            candidate_id = str(_get(candidate, "candidate_id", ""))
             authority = authorities.get(candidate_id)
             authority_status = str(_get(authority, "status", "")).upper() if authority else ""
             if authority_status in HARD_AUTHORITY_REJECTIONS:
@@ -324,6 +414,7 @@ class RetrievalDecisionEngine:
                 "candidates_seen": len(candidates),
                 "selected": len(selected),
                 "omitted": len(omitted),
-                "authority_used": resolution_result is not None,
+                "authority_used": bool(eligible),
+                "authority_coverage": "full" if eligible else "empty",
             },
         )
