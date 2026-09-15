@@ -8,6 +8,7 @@ import math
 import os
 import re
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -258,6 +259,19 @@ def _valid_report(report: Any, *, intent: Optional[Mapping[str, Any]] = None,
     return isinstance(report.get("surface_at_next_session"), bool)
 
 
+def _report_timestamp(value: Any) -> Optional[datetime]:
+    """Parse the timezone-aware timestamp used to order published reports."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed
+
+
 def _lease_active(intent: Mapping[str, Any]) -> bool:
     value = intent.get("lease_expires_at")
     try:
@@ -447,32 +461,51 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
 def latest_reminder(vault: str | Path, project_id: str, *, budget: int = 600,
                     delivery_key: Optional[str] = None) -> dict[str, Any]:
     """Return a bounded reminder only for a current project/revision report."""
-    directories = _ensure(vault)
-    reports = sorted((_root(vault) / "reports").glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    _ensure(vault)
     current_memory, current_state = _revisions(vault, project_id)
+    candidates = []
+    try:
+        reports = list((_root(vault) / "reports").glob("*.json"))
+    except OSError:
+        reports = []
     for path in reports:
         try:
             report = read_json(path)
         except (OSError, TypeError, ValueError):
             continue
         if not _valid_report(report, project_id=project_id, memory_revision=current_memory,
-                             state_revision=current_state, require_success=True):
+                             state_revision=current_state, require_success=False):
             continue
-        if report.get("surface_at_next_session") is not True:
+        # ``None`` is a meaningful current state revision: a report carrying
+        # any concrete state revision must not match a state-less project.
+        if report.get("source_state_revision") != current_state:
             continue
-        anomalies = report.get("anomalies", {})
-        digest = report.get("digest", {})
-        text = (f"Maintenance report: {anomalies.get('total_anomalies', 0)} anomalies; "
-                f"{digest.get('total_after_dedup', 0)} recent memories after dedup.")
-        if len(text.encode("utf-8")) > budget:
-            text = text.encode("utf-8")[:budget].decode("utf-8", "ignore")
+        generated_at = _report_timestamp(report.get("generated_at"))
         report_id = report.get("report_id")
-        if isinstance(delivery_key, str) and delivery_key:
-            if _delivery_path(vault, project_id, report_id, delivery_key).exists():
-                return {"status": "ALREADY_DELIVERED", "context": "", "report_id": report_id,
-                        "project_id": project_id}
-        return {"status": "FRESH", "context": text, "report_id": report_id, "project_id": project_id}
-    return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
+        if generated_at is None or not isinstance(report_id, str):
+            continue
+        candidates.append((generated_at, report_id, path.name, report))
+
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
+    if not candidates:
+        return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
+
+    report = candidates[0][3]
+    if report.get("status") != "SUCCESS" or report.get("surface_at_next_session") is not True:
+        return {"status": "STALE_OR_MISSING", "context": "", "project_id": project_id}
+
+    anomalies = report.get("anomalies", {})
+    digest = report.get("digest", {})
+    text = (f"Maintenance report: {anomalies.get('total_anomalies', 0)} anomalies; "
+            f"{digest.get('total_after_dedup', 0)} recent memories after dedup.")
+    if len(text.encode("utf-8")) > budget:
+        text = text.encode("utf-8")[:budget].decode("utf-8", "ignore")
+    report_id = report.get("report_id")
+    if isinstance(delivery_key, str) and delivery_key:
+        if _delivery_path(vault, project_id, report_id, delivery_key).exists():
+            return {"status": "ALREADY_DELIVERED", "context": "", "report_id": report_id,
+                    "project_id": project_id}
+    return {"status": "FRESH", "context": text, "report_id": report_id, "project_id": project_id}
 
 
 def ack_reminder(vault: str | Path, project_id: str, report_id: str, delivery_key: str) -> bool:
