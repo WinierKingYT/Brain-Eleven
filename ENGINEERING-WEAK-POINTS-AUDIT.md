@@ -325,9 +325,11 @@ recorded in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`.
 `StateService` checks project activity before taking the state lock, while a
 concurrent registry archive can commit between that check and the state
 transaction. A fault-injected probe archived a project and then observed a
-successful requirement write after archive. Sequential archived rejection is
-tested; the linearization race is not. Status: **OPEN / P1**. Registry status
-changes and state mutations need one lifecycle coordination boundary.
+successful requirement write after archive. Status: **IMPLEMENTED / REVIEW
+PENDING** at exact head `aef19b8`; the shared registry sidecar lock now spans
+the active check and state transaction. Archive-first/mutation-first race
+evidence, timeout mapping, and full regression are recorded in
+`WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md`.
 
 ### W-15 — Runtime rollout/config updates can lose concurrent operator changes (P1)
 
