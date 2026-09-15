@@ -1,7 +1,6 @@
 """W-17 fail-closed containment tests for vault-owned runtime state."""
 
 import os
-import importlib
 from pathlib import Path
 import subprocess
 
@@ -273,35 +272,16 @@ def test_runtime_lock_swap_fails_before_external_lock_marker(tmp_path, monkeypat
     assert not (outside / "report.lock").exists()
 
 
-def test_runtime_lock_swap_immediately_before_open_cleans_external_marker(tmp_path, monkeypatch):
+def test_runtime_lock_does_not_create_a_raceable_sidecar_marker(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
     target = cfg.root / "locks" / "report"
     storage.ensure_runtime_directory(cfg.root, target.parent)
-    outside = tmp_path / "outside-open"
-    outside.mkdir()
-    legacy = importlib.import_module("memory_store_lock")
-    original_open = legacy.os.open
-    swapped = []
     lock_path = target.with_name("report.lock")
+    with storage.runtime_file_lock(target):
+        assert not lock_path.exists()
 
-    def swap_before_open(path, flags, mode=0o777, *, dir_fd=None):
-        if Path(path) == lock_path and not swapped:
-            parent = lock_path.parent
-            moved = tmp_path / "moved-open-locks"
-            parent.rename(moved)
-            _make_link(parent, outside)
-            swapped.append(True)
-        kwargs = {} if dir_fd is None else {"dir_fd": dir_fd}
-        return original_open(path, flags, mode, **kwargs)
-
-    monkeypatch.setattr(legacy.os, "open", swap_before_open)
-    with pytest.raises(RuntimePathError):
-        with storage.runtime_file_lock(target):
-            pass
-
-    assert list(outside.iterdir()) == []
-    assert not (outside / "report.lock").exists()
+    assert not lock_path.exists()
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows junction/reparse evidence")
