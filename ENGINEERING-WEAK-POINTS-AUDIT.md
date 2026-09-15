@@ -284,8 +284,11 @@ regression. No V2 promotion is authorized by this finding.
 decision can therefore be present in the compiler ranking but disappear from
 the task-aware selection, producing an empty result. This affects the already
 rejected opt-in W-06B path and is not a default-path regression, but it would
-invalidate future evaluation. Status: **OPEN / DEFERRED behind retrieval
-contract**; use canonical scope normalization and add an isolation test.
+invalidate future evaluation. The bounded selector fix uses canonical
+`infer_memory_scope()` and preserves foreign-project exclusion. Status:
+**CLOSED / SHIP** at exact implementation revision `2efb943`; focused
+isolation and full-regression evidence are recorded in
+[`WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md`](WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md).
 
 ### W-12 — Derived router/compiler cache read-modify-write is unsynchronized (P2)
 
@@ -365,7 +368,7 @@ completed-folder terminal-state successor is independently `SHIP`ped at exact
 review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
 at exact head `f322d2c`. The next audit
-finding is W-11 (W-06B global-memory selector); W-06 retrieval work remains
+finding is W-12 (derived router/compiler cache synchronization); W-06 retrieval work remains
 evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.

@@ -74,7 +74,11 @@ project field, and a foreign project record in the same ranked input.
 
 ## Independent review
 
-**REVIEW PENDING.** The implementer does not self-declare `SHIP`.
+**SHIP** — independent read-only review at exact implementation revision
+`2efb9435062857b34facaf43dd8bd33b4faa1326`; report revision
+`5daca79bb65351bd37f956e30fc0548b2fdbb6ac`. The reviewer verified canonical
+scope use, global/foreign-project behavior, unchanged safety and ranking
+contracts, and the 1179-test evidence.
 
 ## Score before / after
 
@@ -85,4 +89,4 @@ project field, and a foreign project record in the same ranked input.
 
 ## Verdict
 
-**REVIEW PENDING**
+**SHIP**
