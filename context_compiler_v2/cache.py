@@ -9,6 +9,8 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from brain_eleven.infrastructure.locking import file_lock
+
 
 class CompilerCache:
     """A corrupt cache is ignored; canonical inputs are always revalidated."""
@@ -35,46 +37,53 @@ class CompilerCache:
 
     def load(self, key: str, revisions: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
         try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            with file_lock(self.path):
+                if not self.path.exists():
+                    return None
+                payload = json.loads(self.path.read_text(encoding="utf-8"))
+                if not isinstance(payload, Mapping) or payload.get("schema_version") != 1:
+                    return None
+                entries = payload.get("entries")
+                if not isinstance(entries, Mapping):
+                    return None
+                value = entries.get(key)
+                if not isinstance(value, Mapping) or value.get("revisions") != dict(revisions):
+                    return None
+                manifest = value.get("manifest")
+                if not isinstance(manifest, Mapping) or not self._content_safe(manifest):
+                    return None
+                value["last_access_ns"] = time.time_ns()
+                try:
+                    self._write_unlocked(payload)
+                except OSError:
+                    pass
+                return manifest
+        except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError):
             return None
-        if not isinstance(payload, Mapping) or payload.get("schema_version") != 1:
-            return None
-        entries = payload.get("entries")
-        if not isinstance(entries, Mapping):
-            return None
-        value = entries.get(key)
-        if not isinstance(value, Mapping) or value.get("revisions") != dict(revisions):
-            return None
-        manifest = value.get("manifest")
-        if not isinstance(manifest, Mapping) or not self._content_safe(manifest):
-            return None
-        value["last_access_ns"] = time.time_ns()
-        try:
-            self.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        except OSError:
-            pass
-        return manifest
 
     def store(self, key: str, revisions: Mapping[str, Any], manifest: Mapping[str, Any]) -> None:
         if not self._content_safe(manifest):
             raise ValueError("Compiler cache refuses context content")
-        entries: dict[str, Any] = {}
-        existing = self.load_all()
-        if isinstance(existing, Mapping):
-            entries.update(existing)
-        entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest), "last_access_ns": time.time_ns()}
-        # Keep derived cache bounded by least-recently-used access, not key
-        # spelling. The cache is an audit projection, never canonical truth.
-        if len(entries) > 32:
-            stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
-            for stale_key in stale:
-                entries.pop(stale_key, None)
+        with file_lock(self.path):
+            entries: dict[str, Any] = {}
+            existing = self._load_all_unlocked()
+            if isinstance(existing, Mapping):
+                entries.update(existing)
+            entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest), "last_access_ns": time.time_ns()}
+            # Keep derived cache bounded by least-recently-used access, not key
+            # spelling. The cache is an audit projection, never canonical truth.
+            if len(entries) > 32:
+                stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
+                for stale_key in stale:
+                    entries.pop(stale_key, None)
+            self._write_unlocked({"schema_version": 1, "entries": entries})
+
+    def _write_unlocked(self, payload: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         descriptor, temporary = tempfile.mkstemp(prefix=".compiler-cache-", suffix=".json", dir=self.path.parent)
         try:
             with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
-                json.dump({"schema_version": 1, "entries": entries}, handle, ensure_ascii=False, sort_keys=True)
+                json.dump(payload, handle, ensure_ascii=False, sort_keys=True)
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temporary, self.path)
@@ -84,8 +93,14 @@ class CompilerCache:
 
     def load_all(self) -> Optional[Mapping[str, Any]]:
         try:
-            payload = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            with file_lock(self.path):
+                return self._load_all_unlocked()
+        except (OSError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError):
             return None
+
+    def _load_all_unlocked(self) -> Optional[Mapping[str, Any]]:
+        if not self.path.exists():
+            return None
+        payload = json.loads(self.path.read_text(encoding="utf-8"))
         entries = payload.get("entries") if isinstance(payload, Mapping) else None
         return entries if isinstance(entries, Mapping) else None
