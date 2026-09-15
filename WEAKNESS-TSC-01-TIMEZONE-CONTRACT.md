@@ -35,30 +35,39 @@ Only these files may change:
 - `scripts/state_resolver.py` — keep `_utc_now` aware, make timestamp parsing
   reject naive values, and map persisted timestamp parse/type failures to the
   existing `STATE_CORRUPT` read-only result with a bounded, content-free error.
-  No automatic rewrite or timezone assumption is allowed.
+  No automatic rewrite or timezone assumption is allowed. The returned error
+  must be sanitized at this boundary so a `StateStoreCorrupt` path or raw
+  exception cannot escape.
 - Focused tests and the package evidence/report documents.
 
 The package must not change `scripts/task_state_context.py`,
 `brain_eleven/runtime/context.py`, `authority/serialization.py`, project
 registry behavior, MemoryStore/StateStore authority boundaries, retrieval,
-hooks, V2 or Phase 20. If a runtime caller needs a compatibility change beyond
-the bounded resolver mapping, stop and report `RETHINK` rather than widening
-this package.
+hooks, V2 or Phase 20. `TaskStateComposer` is exercised only to prove that it
+receives the bounded resolver result; native `compile_context` exception
+translation and context-telemetry policy are a separate follow-up contract.
+If a runtime caller needs a compatibility change beyond the bounded resolver
+mapping, stop and report `RETHINK` rather than widening this package.
 
 ## 3. Temporal contract
 
 1. **Accepted persisted value:** a non-empty string accepted by
    `datetime.fromisoformat` after the existing `Z` → `+00:00` handling, with
-   `tzinfo` and a non-`None` `utcoffset()`. The stored representation is not
+   `tzinfo` and a non-`None` `utcoffset()`. Parser-supported explicit offset
+   spellings (including `Z`, `+/-HH:MM` and equivalent aware forms) are
+   accepted; a timezone is never inferred. The stored representation is not
    rewritten.
 2. **Rejected persisted value:** missing, non-string, malformed, or timezone-
    naive `updated_at`. `StateService` must reject it before any canonical
    write; a pre-existing malformed record must resolve as `STATE_CORRUPT`.
 3. **Freshness:** age is computed only between aware datetimes. Offset-bearing
    values are compared correctly; no local-machine timezone is consulted.
-4. **Bounded error:** the corruption result may expose a stable error code or
-   short field-level message, but must not expose the raw timestamp, state
-   document, filesystem path, prompt, memory content or traceback.
+4. **Bounded error:** the corruption result exposes only a stable error code or
+   short field-level message such as `updated_at must include a timezone
+   offset`. It must not expose the raw timestamp, state document, filesystem
+   path, prompt, memory content, exception repr or traceback. The resolver
+   sanitizes errors from the underlying store before constructing
+   `CurrentProjectState`.
 5. **No effect:** reading malformed state creates no registry, state, memory,
    graph or context write and does not advance a revision.
 6. **Caller clock:** existing callers that pass `now` must continue to use an
@@ -78,9 +87,10 @@ this package.
 - `MemoryStore`, `ProjectRegistry` and `StateStore` remain the only canonical
   authorities; no second persistence path is introduced.
 - Existing lock, CAS, backup, and atomic-write behavior is untouched.
-- `TaskStateComposer` receives an explicit state result rather than an
-  uncaught timezone `TypeError`; no raw state content crosses the runtime
-  context boundary.
+- `TaskStateComposer` receives an explicit `STATE_CORRUPT` state result rather
+  than an uncaught timezone `TypeError`; no raw state content crosses the
+  composer boundary. Native `compile_context` translation is not an exit gate
+  for this package and is tracked separately.
 
 ## 5. Required evidence and tests
 
@@ -95,9 +105,12 @@ Add tests proving all of the following without changing existing tests:
   error.
 - `Z`, positive-offset and negative-offset timestamps resolve successfully
   and produce deterministic freshness at an aware reference time.
-- `TaskStateComposer.compose` and the native `compile_context` boundary expose
-  the bounded corruption outcome for malformed state; they do not write a
-  memory, registry, graph or context projection as a side effect.
+- `TaskStateComposer.compose` exposes the bounded corruption outcome for
+  malformed state without an uncaught `TypeError`; it does not write a memory,
+  registry or graph as a side effect. Native `compile_context` behavior is
+  explicitly out of scope and must not be claimed as fixed by this package.
+- The resolver's returned error is path-free and content-free even when the
+  underlying store raises a path-bearing corruption exception.
 - Existing valid-state behavior remains unchanged.
 
 ### 5.2 Verification gates
@@ -117,10 +130,10 @@ Add tests proving all of the following without changing existing tests:
 
 The package can be marked `SHIP` only when every required test and verification
 gate passes and independent review returns exactly `SHIP`. An uncaught naive
-timestamp exception, silent UTC assumption, raw-content error, revision/write
-side effect, or regression is `FIX-FIRST`. Any need to modify identity lineage,
-serialization, task-state callers or canonical authorities is `RETHINK` and
-requires a new contract.
+timestamp exception, silent UTC assumption, path/raw-content error, revision/
+write side effect, or regression is `FIX-FIRST`. Any need to modify native
+`compile_context`, identity lineage, serialization, task-state callers or
+canonical authorities is `RETHINK` and requires a new contract.
 
 This package does not close TSC-02 project identity/registry lineage, TSC-03
 strict serialized-state decoding, task_state_context package inversion or the
