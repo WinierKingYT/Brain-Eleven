@@ -32,6 +32,12 @@ except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
     from project_registry import ProjectRegistry, ProjectRegistryError
 
 
+# Keep the lifecycle lock bound to the original primitive. Existing callers
+# monkeypatch this module's ``file_lock`` to inject state-store lock failures;
+# that injection must not be mistaken for a registry-boundary failure.
+_registry_file_lock = file_lock
+
+
 STATE_SCHEMA_VERSION = 1
 STATE_FILENAME = "project-state.json"
 MAX_AUDIT_EVENTS = 1000
@@ -102,6 +108,16 @@ class StateProjectUnknown(StateError):
 
 class StateProjectArchived(StateError):
     """Raised when a state mutation targets a read-only archived project."""
+
+
+@contextmanager
+def _registry_lifecycle_lock(path):
+    """Map registry-boundary lock failures to the StateService error type."""
+    try:
+        with _registry_file_lock(path):
+            yield
+    except MemoryStoreLockTimeout as exc:
+        raise StateStoreLockTimeout(str(exc)) from exc
 
 
 class StateTransitionError(StateError):
@@ -728,7 +744,7 @@ class StateService:
         # Serialize the registry status check with ProjectRegistry mutations.
         # Otherwise an archive can commit after this check but before the
         # state-store transaction, leaving an archived project writable.
-        with file_lock(self.registry.path):
+        with _registry_lifecycle_lock(self.registry.path):
             self._require_active_project(project_id)
             return self.store.init_project(project_id, source=self._source(source), now=now)
 
@@ -747,7 +763,7 @@ class StateService:
         # check and the state transaction. ProjectRegistry status mutations
         # use the same lock, giving archive/check/write one linearization
         # boundary without introducing a second authority or lock primitive.
-        with file_lock(self.registry.path):
+        with _registry_lifecycle_lock(self.registry.path):
             self._require_active_project(project_id)
             return self.store._transact_project(
                 project_id,
