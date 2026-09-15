@@ -74,8 +74,10 @@ authorized.
 5. **Explicit ID without root:** preserve existing legacy behavior where scope
    is project and the caller supplies the namespace. This path has no root
    claim to validate.
-6. **Global scope:** continue rejecting any project, project ID, or root-derived
-   project metadata. Existing global behavior is unchanged.
+6. **Global scope:** continue rejecting project labels and project IDs. A root
+   alone remains ignored for explicit global captures because the CLI supplies
+   its working root by default; this existing behavior is unchanged. A root
+   plus an explicit project ID still rejects via the global metadata check.
 7. **Safety ordering:** `capture_safety.evaluate_capture()` remains before
    registry resolution and persistence. A rejected secret or malformed capture
    produces no registry, memory, or graph effect.
