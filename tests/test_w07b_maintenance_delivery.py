@@ -11,6 +11,7 @@ from scripts.capture_event import HookEvent
 from scripts.capture_queue import CaptureQueue
 import json
 import threading
+import time
 from pathlib import Path
 
 
@@ -289,6 +290,36 @@ def test_processing_lease_blocks_concurrent_duplicate_run(tmp_path, monkeypatch)
     assert not first.is_alive()
     assert first_result["value"] == 1
     assert calls == [1]
+
+
+def test_expired_lease_fences_old_worker_before_publication(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    delivery.enqueue(vault, _job(project_id), _result())
+    monkeypatch.setattr(delivery, "_LEASE_SECONDS", 0.01)
+    first_started = threading.Event()
+    first_release = threading.Event()
+    calls = []
+
+    def run_once(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            first_started.set()
+            assert first_release.wait(5)
+        return _raw_report()
+
+    monkeypatch.setattr(maintenance, "run_maintenance", run_once)
+    first_result = {}
+    first = threading.Thread(target=lambda: first_result.update(value=delivery.process_pending(vault)))
+    first.start()
+    assert first_started.wait(5)
+    time.sleep(0.05)
+    assert delivery.process_pending(vault) == 1
+    first_release.set()
+    first.join(5)
+    assert not first.is_alive()
+    assert first_result["value"] == 0
+    assert calls == [1, 1]
+    assert len(list((delivery._root(vault) / "completed").glob("*.json"))) == 1
 
 
 def test_crash_after_maintenance_result_is_retryable_without_canonical_effect(tmp_path, monkeypatch):
