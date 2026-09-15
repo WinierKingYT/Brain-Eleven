@@ -53,15 +53,16 @@ not a native-client substitute. Multi-session dogfood is also missing.
 Retrieval quality and V2 promotion remain deferred, and Phase 20 stays FROZEN
 / LOCKED.
 
-W-07B-R1 is the active evidence package at exact head `61ab6ce`: the synthetic
+W-07B-R1 is the active evidence package at exact head `0fe1625`: the synthetic
 benchmark binds disposable Claude/Codex transcript roots, verifies the
 canonical revision/count delta, records hook degradation instead of raising,
 and now emits the complete synthetic 2-client × 4-event × cold/warm matrix.
 Its focused suite is 45/45, the W06C0R1 scope suite is 36/36, and full
 regression is 1343 passed, 4 skipped, 2 warnings. The synthetic run completes
 20/20 canonical effects with no dead letters; the matrix is complete and its
-3-second p95 bound passes, while the hook, queue and all-hooks quality gates
-fail. Authenticated native trust and multi-session dogfood remain open. A
+3-second p95 bound, queue drain and 40/40 terminal delta pass, while the hook,
+queue latency and all-hooks quality gates fail. Authenticated native trust and
+multi-session dogfood remain open. A
 fresh independent read-only review is required for this revision; W-07B stays
 `FIX-FIRST / NOT ACCEPTED`.
 
@@ -236,7 +237,7 @@ in-file, not a functional finding.
 
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
   Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
-  latency matrix is complete at `61ab6ce`, but it cannot substitute for native
+  latency matrix is complete at `0fe1625`, but it cannot substitute for native
   evidence; do not mark W-07B SHIP while any native gate is absent.
 - IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
   highest blast-radius module in the whole inventory, 26/26 callers,
@@ -278,7 +279,7 @@ in-file, not a functional finding.
 ## Recent sessions
 
 **2026-09-15 (continued)** — W-07B-R1 extended the synthetic runtime evidence
-harness at `61ab6ce`. Disposable transcript roots and native-shaped fixtures
+harness at `0fe1625`. Disposable transcript roots and native-shaped fixtures
 exercise ownership successfully; hook degradation and latency failures are
 reported as bounded metrics, including canonical revision/count verification,
 and all 16 client/event/cold-warm cells now have five samples each. Full

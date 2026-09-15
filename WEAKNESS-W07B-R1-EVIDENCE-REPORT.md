@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `61ab6cee0759f83c5de4cc64318cd14c403092bb`
+**REVISION:** `0fe162557c03906f1069b9371a98cc0249b1f822`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -64,15 +64,17 @@ Only timings, counts and status codes were emitted:
 | singleton service | true |
 | canonical revision delta | +20 |
 | latency matrix cells | 16/16, 5 samples per cell |
-| maximum matrix p95 | 2,708.25 ms |
+| maximum matrix p95 | 2,704.27 ms |
 | cold SessionStart statuses | Claude 4 `DEGRADED`/1 `OK`; Codex 4 `DEGRADED`/1 `OK` |
-| cold UserPromptSubmit statuses | Claude 5 `DEGRADED`; Codex 4 `DEGRADED`/1 `OK` |
+| cold UserPromptSubmit statuses | Claude 5 `DEGRADED`; Codex 5 `DEGRADED` |
+| matrix queue terminal verification | drained `true`; expected/delta `40/40` |
 | queue p95 / max | gate remains `false` (over 30 s) |
 
 Gates: `no_dead_letters=true`, `singleton=true`,
-`canonical_effect_verified=true`, `latency_matrix_complete=true` and
-`latency_matrix_p95_3000ms=true`; `hook_p95_500ms=false`, `queue_30s=false`
-and `all_hooks_ok=false`. Overall synthetic benchmark status is **FAIL**,
+`canonical_effect_verified=true`, `latency_matrix_complete=true`,
+`latency_matrix_p95_3000ms=true`, `latency_matrix_queue_drained=true` and
+`latency_matrix_terminal_verified=true`; `hook_p95_500ms=false`,
+`queue_30s=false` and `all_hooks_ok=false`. Overall synthetic benchmark status is **FAIL**,
 which keeps the observed latency/degraded-hook condition visible. The matrix
 is complete as synthetic evidence; it is not authenticated native-client
 evidence.
@@ -123,12 +125,12 @@ is implied.
 
 ## INDEPENDENT REVIEW
 
-The first independent review returned `FIX-FIRST` with one P1: unhandled
-`TimeoutExpired` could still suppress a report. That path is now bounded as a
-`TIMEOUT` status. A subsequent bounded matrix implementation completed all
-16 synthetic cells at this revision; the prior review's native trust and
-dogfood gaps remain, and a fresh independent read-only review is required.
-Self-review is not an acceptance verdict.
+The independent review found two harness P1s: degraded responses could be
+misclassified as `OK`, and a failed cold stop could be counted as a valid cold
+sample. Both are now fail-closed; matrix queue drain and terminal deltas are
+also explicit gates. A fresh independent read-only review is required for
+this revision, while native trust and dogfood gaps remain. Self-review is not
+an acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 

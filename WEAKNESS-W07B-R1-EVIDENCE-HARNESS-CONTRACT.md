@@ -106,5 +106,5 @@ package remains **FIX-FIRST / NOT ACCEPTED** with the exact bounded failure
 code preserved.
 
 **Plan status: APPROVED — harness implementation extended at
-`61ab6cee0759f83c5de4cc64318cd14c403092bb`; package remains FIX-FIRST / NOT
+`0fe162557c03906f1069b9371a98cc0249b1f822`; package remains FIX-FIRST / NOT
 ACCEPTED pending authenticated native evidence, dogfood and independent review.**
