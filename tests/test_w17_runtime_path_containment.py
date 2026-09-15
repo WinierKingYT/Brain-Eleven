@@ -87,6 +87,16 @@ def test_missing_regular_runtime_directories_are_created_and_written(tmp_path):
     assert cfg.load()["b1_human_approval"] is True
 
 
+def test_nested_missing_vault_parents_preserve_recursive_mkdir_behavior(tmp_path):
+    vault = tmp_path / "missing" / "nested" / "vault"
+    cfg = storage.RuntimeConfig(vault)
+
+    cfg.set_human_approval(True)
+
+    assert cfg.root.is_dir()
+    assert cfg.load()["b1_human_approval"] is True
+
+
 def test_regular_runtime_write_keeps_atomic_json_behavior(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
