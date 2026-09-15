@@ -1,8 +1,8 @@
 # Engineering Weak-Points Audit — Initial Baseline
 
-**Audit date:** 2026-09-12  
+**Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Repository revision:** `32d158f`
+**Repository revision:** `a867f2d`
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite after W-09: **1062 passed, 2 dependency deprecation
+- Full local suite after W-10: **1178 passed, 2 dependency deprecation
   warnings**.
 - No production files were changed during the initial audit.
 - The current working tree already contained pre-existing untracked evidence
@@ -32,7 +32,7 @@ the behavior and operational evidence found in the current repository.
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
 | Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
-| V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall, and a separate delivery gate is still missing. |
+| V2 runtime readiness | 6.0 | W-10's explicit provider/approval delivery gate is independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
 | Reminder/continuity runtime | 5.0 | Native V1 reads bounded project state for continuity; automatic Daily/Last Session/open-loop maintenance remains legacy/manual. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
@@ -264,20 +264,17 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 
 ### W-10 — V2 shadow output reaches live client injection (P1)
 
-The repository documents V2 as `SHADOW`, but `brain_eleven/runtime/context.py`
-routes the normal `compile_task()` path through `ContextCompilerV2` and the
-launcher places any non-empty result in
-`hookSpecificOutput.additionalContext` for native clients. The same path labels
-the result as provider `V1`, while the rendered context carries the V2 marker.
-An isolated CANARY reproduction therefore delivered V2-shaped context to the
-client without a separate model-facing V2 gate. This is a rollout-boundary
-defect, not a retrieval-quality result. Status: **OPEN / FIX-FIRST**. The
-bounded contract is
+The repository previously allowed a normal V2-rendered result to cross the
+native model boundary while the product status was `SHADOW`. This was a
+rollout-boundary defect, not a retrieval-quality result. The bounded contract
+is
 [`WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
-at `be7e218`; it defines the explicit legacy V1 source for normal turns,
+at `a867f2d`; it defines the explicit legacy V1 source for normal turns,
 keeps the W06B path separate, and requires V2 comparison output to stay out of
-client injection while SHADOW. Independent contract review is still pending;
-no V2 promotion is authorized by this finding.
+client injection while SHADOW. Status: **CLOSED / SHIP** at exact code/test
+revision `911564a`; independent review verified the 64-marker cap, fail-closed
+metadata gate, no authority/canonical-write changes, and 1178-test full
+regression. No V2 promotion is authorized by this finding.
 
 ### W-11 — W-06B selector drops normalized global memories (P2)
 
@@ -368,8 +365,10 @@ completed-folder terminal-state successor is independently `SHIP`ped at exact
 review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
 revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
 at exact head `f322d2c`. The next audit
-finding is W-10 (V2 delivery gate); W-06 retrieval work remains
-evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20.
+finding is W-11 (W-06B global-memory selector); W-06 retrieval work remains
+evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20. W-10's
+delivery gate is independently SHIP at exact review head `911564a`; W-07B's
+runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in

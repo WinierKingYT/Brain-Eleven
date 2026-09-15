@@ -115,8 +115,11 @@ at the exact implementation revision above.
 
 ## Independent review
 
-**REVIEW PENDING after bounded-marker hardening.** The implementer does not
-self-declare `SHIP`.
+**SHIP** — independent read-only review at exact code/test revision
+`911564ae6c6d0fc3210c732269e9279aa6fce3fb`; contract/report evidence revision
+`a867f2d1424c934c41101da99419ba47a528caf8`. The reviewer verified the 64-ID
+cap, fail-closed launcher metadata, scope/authority boundaries, and the
+focused, W06C, and full-suite evidence.
 
 ## Score before / after
 
@@ -127,4 +130,4 @@ self-declare `SHIP`.
 
 ## Verdict
 
-**REVIEW PENDING**
+**SHIP**
