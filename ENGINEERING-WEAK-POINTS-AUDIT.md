@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `6017255` (W-17 implementation/test exact head)
+**Evidence revision:** `287c438` (W-18 final report; implementation `bc393e7`)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -22,7 +22,7 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, and W-16 append-boundary validation are independently shipped; lower-priority durability gaps remain open. |
+| Persistence and concurrency | 8.5 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, W-08D typed API lifecycle, W-14 archive/state linearization, W-15 runtime-config CAS, W-16 append-boundary validation and W-18 parent-directory durability are independently shipped; lower-priority durability gaps remain open. |
 | Scope and fail-closed safety | 8.5 | W-13 root/ID consistency, W-14 archived-state linearization, W-16 malformed-record rejection and W-17 runtime path containment are independently shipped. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
@@ -376,8 +376,12 @@ independent review in
 `scripts/memory_store.py` fsyncs its temporary file but not the containing
 directory after `replace()`, leaving rename durability weaker than the
 ProjectRegistry and coordinated backup paths after power loss. Status:
-**OPEN / P2 operational hardening**; add directory durability without changing
-the canonical schema or lock/CAS semantics.
+**CLOSED / SHIP** at exact implementation revision `bc393e7`; supported POSIX
+hosts now fsync the parent directory after replacement, while Windows keeps the
+explicit file-fsync-only behavior. Fault visibility, cleanup, ordering, full
+regression and independent review are recorded in
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
 
 ## Current package selection
 
@@ -395,8 +399,9 @@ at exact head `f322d2c`. W-06 retrieval work remains evaluation-only and must
 not tune HOLDOUT, promote V2 or open Phase 20. W-15 runtime-config lost-update
 protection is independently `SHIP`ped at exact package head `7fd9d5a`; W-16
 append-boundary validation is independently `SHIP`ped at exact review head
-`3406d7b`; W-17 runtime path containment is now independently `SHIP`ped and
-the next audit finding is W-18. W-10's
+`3406d7b`; W-17 runtime path containment and W-18 parent-directory durability
+are now independently `SHIP`ped. The next bounded candidates are W-12A and
+W-07B. W-10's
 delivery gate is independently SHIP at exact review head `911564a`; W-07B's
 runtime package remains FIX-FIRST / NOT ACCEPTED.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
@@ -404,6 +409,9 @@ mutation safety, and 8.0 for API lifecycle reliability.
 W-17 runtime-owned path containment is independently `SHIP`ped at exact
 implementation revision `6017255`, with final evidence documentation at
 `7c159a3`.
+W-18 MemoryStore parent-directory durability is independently `SHIP`ped at
+exact implementation revision `bc393e7`, with final evidence documentation at
+`287c438`.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
 `WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
 `SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
@@ -443,7 +451,10 @@ W-15 runtime-config lost-update protection — `SHIP` at exact package head
 independent review in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
 W-16 malformed canonical append validation — `SHIP` at exact review head
 `3406d7b`, report in `WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md` and
-independent review in `WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`.
+independent review in `WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`;
+W-18 MemoryStore parent-directory durability — `SHIP`, report in
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and independent review in
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without

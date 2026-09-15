@@ -6,7 +6,7 @@
 
 **TEST REVISION:** `214277a3448f673ef6b1ab3d39c01e6e14d0b548`
 
-**STATUS:** REVIEW PENDING
+**STATUS:** CLOSED / SHIP
 
 ## OBJECTIVE
 
@@ -91,24 +91,29 @@ atomic replace and stale-writer behavior remain unchanged.
 ## OPEN FAILURES
 
 No focused or full-suite failure remains. Independent read-only implementation
-review is pending. W-07B remains `FIX-FIRST / NOT ACCEPTED`, W-12A remains open,
-and Phase 20 remains `FROZEN / LOCKED` with V2 `SHADOW`.
+review returned **SHIP**. W-07B remains `FIX-FIRST / NOT ACCEPTED`, W-12A
+remains open, and Phase 20 remains `FROZEN / LOCKED` with V2 `SHADOW`.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** A separate read-only reviewer must inspect the exact code and
-test revisions, POSIX/Windows evidence, partial-publication semantics and
-preservation of canonical lock/CAS/backup behavior. The verdict must be exactly
-`SHIP`, `FIX-FIRST`, or `RETHINK`.
+A separate read-only reviewer `/root/w10_exact_review` inspected the exact code
+revision `bc393e746cd230631d7abc6a9b586599e3f3831a`, test revision
+`214277a3448f673ef6b1ab3d39c01e6e14d0b548` and package report revision
+`287c438353d32b59bbb7e0490845c083bde4899d`. The reviewer verified POSIX and
+Windows semantics, all three parent-sync fault paths, ordering, cleanup,
+partial publication, backup, lock/CAS, schema and identity parity.
+
+**SHIP** — independent review is recorded in
+`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
 
 ## SCORE BEFORE / AFTER
 
-Persistence/concurrency: **8.0 → pending independent review**
+Persistence/concurrency: **8.0 → 8.5**
 
 Operational durability: **parent-entry sync missing → bounded supported-host
 parent-entry sync with visible failure**
 
 ## VERDICT
 
-**REVIEW PENDING** — implementation and tests are pushed at their exact
-revisions; no self-issued acceptance decision is made.
+**SHIP** — implementation, tests and independent evidence are pushed at their
+exact revisions.
