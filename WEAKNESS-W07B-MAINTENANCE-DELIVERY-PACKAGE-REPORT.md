@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B  
 **REVISION:** `72e038a` (exact regression evidence head; code/test head `f322d2c`, implementation `94f331f`, hardening `facd5e1`)
-**STATUS:** FIX-FIRST / NOT ACCEPTED  
+**STATUS:** FIX-FIRST / NOT ACCEPTED
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
 
