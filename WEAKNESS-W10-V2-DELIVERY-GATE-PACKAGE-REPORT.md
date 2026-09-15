@@ -77,7 +77,7 @@ at the exact implementation revision above.
 | Normal V1_LEGACY model-facing source | V2 renderer relabeled V1 | Project-scoped V1 adapter |
 | V2 text delivered while product is SHADOW | Possible | Blocked by provider and approval gate |
 | Normal SHADOW context delivery | Non-empty internal result could be exposed by a caller | Empty context, `delivered=false` |
-| V1/bootstrap parity on focused fixture | Unspecified | Byte-equal context |
+| V1 memory/state parity on focused fixture | Unspecified | Legacy project-scoped rendering plus bounded state identity markers |
 | Full regression | Baseline prior to package | 1177 passed |
 
 ## Safety metrics
@@ -98,7 +98,8 @@ at the exact implementation revision above.
   W-07B acceptance gates and were not claimed here.
 - The normal-turn V1 adapter intentionally preserves the legacy state-record
   identity section required by the existing runtime suite; it does not read
-  unscoped Companion files.
+  unscoped Companion files. The W-10 contract was amended at `18090a7` to
+  make this bounded invariant explicit; independent re-review is pending.
 
 ## Open failures
 
