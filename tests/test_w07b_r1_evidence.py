@@ -1,6 +1,7 @@
 """Focused tests for the W-07B evidence-harness boundary."""
 
 import ast
+import http.client
 from pathlib import Path
 
 from evals import runtime_benchmark
@@ -98,3 +99,11 @@ def test_benchmark_reports_complete_latency_matrix_gate():
         "p50_ms",
         "p95_ms",
     } <= names
+
+
+def test_service_stop_bounds_http_protocol_errors(monkeypatch, tmp_path):
+    def raise_protocol_error(*_args, **_kwargs):
+        raise http.client.HTTPException("synthetic protocol failure")
+
+    monkeypatch.setattr(runtime_benchmark, "request_service", raise_protocol_error)
+    assert runtime_benchmark._stop_service(tmp_path, object(), timeout=0.01) is True

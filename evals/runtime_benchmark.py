@@ -1,5 +1,6 @@
 """Synthetic local process benchmark; never emits live graduation evidence."""
 import argparse
+import http.client
 import json
 import math
 import os
@@ -76,13 +77,13 @@ def _stop_service(vault, cfg, *, timeout=8):
     """Request a disposable service stop and wait for its endpoint to close."""
     try:
         request_service(vault, '/api/runtime/stop', {}, timeout=2)
-    except (OSError, TimeoutError, ValueError):
+    except (OSError, TimeoutError, ValueError, http.client.HTTPException):
         pass
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
             request_service(vault, '/api/runtime/status', timeout=.2)
-        except (OSError, TimeoutError, ValueError):
+        except (OSError, TimeoutError, ValueError, http.client.HTTPException):
             return True
         time.sleep(.05)
     return False
