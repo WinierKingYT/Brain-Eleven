@@ -1,7 +1,7 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
 **PACKAGE:** W-17
-**REVISION:** `6017255c3405dfdbc8d9d154498c7a5edd5f7649`
+**REVISION:** `3fb861fb8e5e24a5dc52df475e033fb44056ab2e`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -71,7 +71,7 @@ Runtime writes revalidate the snapshot before replacement. Runtime-owned locks
 - W17 plus W15, IG-00 bootstrap, PRE-13 runtime, W-07B maintenance delivery
   and capture provenance surfaces: **34 passed, 2 warnings**; the W17-only
   set is **20 passed**.
-- Full suite at exact revision `6017255`: **1264 passed, 2 warnings** in
+- Full suite at exact implementation revision `6017255`: **1264 passed, 2 warnings** in
   262.50 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
