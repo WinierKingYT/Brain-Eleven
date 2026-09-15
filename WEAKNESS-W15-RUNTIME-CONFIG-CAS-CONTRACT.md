@@ -32,7 +32,9 @@ lost operator intent.
 Make each runtime-config mutation linearizable with respect to other config
 mutations while preserving the schema, CLI behavior, rollout gates, and
 atomic-file durability.  A delayed writer must never silently overwrite a
-newer operator update.
+newer operator update.  The installer’s config update is included because it
+currently writes `config.json` directly and otherwise bypasses the same
+boundary.
 
 The preferred design is an optimistic compare-and-swap using the existing
 sidecar lock primitive:
@@ -58,13 +60,17 @@ contract explicitly authorizes it.  The lock must be the existing
 
 - `brain_eleven/runtime/storage.py`: `RuntimeConfig` mutation helpers, a
   private fingerprint/commit helper, and the typed conflict exception.
+- `brain_eleven/runtime/install.py`: only the existing config update that adds
+  the canary project and changes `OFF` to `SHADOW` may call the shared config
+  mutation primitive.  Hook merge, client-file locking, manifest journaling,
+  and project/state setup remain unchanged.
 - Focused W-15 tests and evidence/package documents.
 - A small package export only if required for stable exception identity.
 
 `read_json()`, `write_json()` atomic persistence, runtime schema, rollout
 quality gates, `MemoryStore`, `StateStore`, `ProjectRegistry`, worker/service
-behavior, retrieval, V2, Phase 20, and unrelated runtime files are out of
-scope.
+behavior, retrieval, V2, Phase 20, hook/client configuration, manifest
+journaling, and unrelated runtime files are out of scope.
 
 ## Required semantics
 
@@ -77,7 +83,8 @@ scope.
 3. **Field preservation:** successful `set_mode()` preserves unrelated current
    keys (including `b1_human_approval`, project scope, retrieval metadata and
    local model); successful `set_human_approval()` preserves mode and all
-   other keys.
+   other keys.  Installer updates preserve concurrent operator changes while
+   adding its project ID and requested `SHADOW` transition.
 4. **Schema/parity:** defaults, validation, invalid retrieval telemetry,
    CANARY holdout evidence, ACTIVE graduation checks, returned JSON shape and
    CLI exit/error behavior remain compatible.
@@ -110,12 +117,14 @@ Add tests without changing existing runtime/B1 coverage:
 - delayed CANARY/ACTIVE final commit versus an intervening `OFF`: conflict and
   final `OFF` remain visible (expensive validation is stubbed, not skipped);
 - same-field contention reports a typed conflict and leaves the winner intact;
+- installer config update versus approval/mode writer: no field is lost and
+  the installer’s project ID addition remains present;
 - lock timeout maps to the documented failure and causes no write;
 - successful updates preserve unrelated config keys and return the same shape;
 - atomic JSON remains parseable, and no temporary artifact is left behind;
 - existing `test_ig00_bootstrap.py`, `test_ig04_b1_human_approval.py`,
   `test_pre13_runtime.py`, `test_w06b_task_aware.py`, `test_ig02_capture_closure.py`
-  and `test_w10_v2_delivery_gate.py` pass unchanged.
+  `test_w10_v2_delivery_gate.py` and installer/runtime tests pass unchanged.
 
 ### Verification gates
 
