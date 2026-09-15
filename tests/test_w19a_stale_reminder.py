@@ -85,6 +85,25 @@ def test_invalid_foreign_and_stale_reports_are_skipped(tmp_path):
     assert reminder["report_id"] == current["report_id"]
 
 
+def test_report_disappearing_during_read_is_skipped(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    _, current = _report(vault, project_id, "current", "2026-09-15T10:00:00+00:00")
+    vanished = delivery._root(vault) / "reports" / "vanished.json"
+    vanished.write_text("{}", encoding="utf-8")
+    original_read_json = delivery.read_json
+
+    def read_with_disappearance(path):
+        if path == vanished:
+            raise OSError("report disappeared during enumeration")
+        return original_read_json(path)
+
+    monkeypatch.setattr(delivery, "read_json", read_with_disappearance)
+    reminder = delivery.latest_reminder(vault, project_id)
+
+    assert reminder["status"] == "FRESH"
+    assert reminder["report_id"] == current["report_id"]
+
+
 def test_equal_mtime_and_timestamp_use_report_id_tie_break(tmp_path):
     vault, project_id = _vault(tmp_path)
     timestamp = "2026-09-15T10:00:00+00:00"
