@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from context_compiler_v2 import BudgetContract, CompilationRequest, ContextCompilerV2
 from context_compiler_v2.models import TokenEstimate, UtilityProfile
 from context_compiler_v2.planner import choose
+from context_compiler_v2.serialization import compilation_request_from_dict
 from context_compiler_v2.utility import CandidateDraft
 
 from .test_context_compiler_v2 import _configured, _resolved
@@ -114,6 +115,56 @@ def test_false_flag_fails_final_render_overflow_before_removal(tmp_path):
     assert result.error == "OPTIONAL_OMISSION_DISALLOWED"
     assert result.rendered_context == ""
     assert result.telemetry["optional_candidates"] > 0
+
+
+def test_false_flag_preserves_mandatory_overflow_precedence(tmp_path):
+    context, state, project = _configured(tmp_path)
+    state.add_constraint(
+        "project-a", text="Durable data must never be lost.", expected_revision=2,
+        source={"type": "user", "reference": "w22"},
+        record_id="con_01J00000000000000000000000", now="2026-09-03T12:00:00Z",
+    )
+    from task_state_context import TaskStateComposer
+
+    context = TaskStateComposer(tmp_path, project).compose("Implement atomic SQLite persistence.")
+    resolution = _resolved(tmp_path, context)
+
+    class MandatoryOverflowEstimator:
+        def estimate(self, text):
+            is_fragment = text.startswith("- [")
+            count = 1 if is_fragment or "- [" not in text else 999
+            return TokenEstimate(count, "CONSERVATIVE_ESTIMATE", "test", "1", count)
+
+    result = ContextCompilerV2(tmp_path, estimator=MandatoryOverflowEstimator()).compile(
+        CompilationRequest(
+            context,
+            resolution,
+            BudgetContract(100, minimum_headroom_tokens=32, allow_optional_omission=False),
+        )
+    )
+
+    assert result.status == "INSUFFICIENT_BUDGET"
+    assert result.error == "Rendered mandatory context exceeds budget; it was not truncated"
+    assert result.rendered_context == ""
+
+
+def test_budget_flag_round_trips_through_request_serialization(tmp_path):
+    context, _state, _project = _configured(tmp_path)
+    resolution = _resolved(tmp_path, context)
+    budget = BudgetContract(1024, minimum_headroom_tokens=32, allow_optional_omission=False)
+
+    parsed = compilation_request_from_dict(
+        {
+            "schema_version": 1,
+            "task_state": context.to_dict(),
+            "resolution_result": resolution.to_dict(),
+            "budget": budget.to_dict(),
+        }
+    )
+
+    assert budget.to_dict()["allow_optional_omission"] is False
+    assert parsed.budget.allow_optional_omission is False
+    assert parsed.budget.usable_tokens == budget.usable_tokens
 
 
 def test_false_flag_all_fit_matches_default_context(tmp_path):
