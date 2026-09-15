@@ -4,7 +4,7 @@
 
 **IMPLEMENTATION REVISION:** `bc393e746cd230631d7abc6a9b586599e3f3831a`
 
-**TEST REVISION:** `8bdc9e613dc3a0683496a1899eda551df395a28c`
+**TEST REVISION:** `214277a3448f673ef6b1ab3d39c01e6e14d0b548`
 
 **STATUS:** REVIEW PENDING
 
@@ -51,8 +51,9 @@ the report does not claim rollback after a post-replace sync failure.
 
 ## TESTS EXECUTED
 
-- W18 plus existing canonical MemoryStore/validator tests: **29 passed, 2
-  skipped** on Windows (the two POSIX-only cases are skipped by platform).
+- W18 plus existing canonical MemoryStore/validator tests: **29 passed, 4
+  skipped** on Windows (the POSIX-only ordering and three fault cases are
+  skipped by platform).
 - Full Windows suite at implementation revision `bc393e7`: **1266 passed, 2
   skipped, 2 warnings**.
 - WSL Ubuntu direct parent-sync order smoke: **PASS**.
