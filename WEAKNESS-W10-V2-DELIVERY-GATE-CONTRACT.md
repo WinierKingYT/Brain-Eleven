@@ -2,7 +2,7 @@
 
 **Status:** CONTRACT / IMPLEMENTATION NOT AUTHORIZED
 
-**Contract revision:** `6c828b2` (exact parent revision for this amendment)
+**Contract revision:** `26c9722` (exact parent revision for this amendment)
 
 **Program boundary:** Intelligence Graduation engineering weakness remediation
 
@@ -58,6 +58,10 @@ compiler. The finding is recorded as W-10 in
   files. It must not invent new ranking or task-understanding behavior. The
   existing `W06B_TASK_AWARE` path remains a separate explicitly selected V1
   path.
+- The adapter may retain the existing runtime's bounded, content-free state
+  identity markers (for example active blocker or requirement IDs) after the
+  legacy memory/state rendering. These markers must not include raw state text
+  or unscoped Companion content.
 - A single explicit delivery gate/configuration contract that distinguishes
   model-facing V1 delivery from diagnostic V2 shadow computation.
 - Privacy-safe, content-free comparison metadata needed to prove which path
@@ -129,6 +133,10 @@ model-facing context.
    legacy project-scoped primitives, but it must not read unscoped Companion
    notes, write bootstrap files, or mutate canonical stores during a hook
    request.
+8. V1 memory/state rendering must remain equivalent to the legacy
+   project-scoped rendering. The only permitted normal-turn addition is the
+   bounded state identity marker section described above; SessionStart keeps
+   its established rendering.
 
 ## 6. Implementation constraints
 
@@ -156,9 +164,9 @@ model-facing context.
 1. Inject a sentinel V2-rendered bundle into the normal path and prove that
    `SHADOW`/`CANARY`/`ACTIVE` model-facing output never contains the sentinel
    while V2 remains SHADOW.
-2. Prove the delivered context for `V1_LEGACY` is byte-equivalent to the
-   existing project-scoped V1 bootstrap rendering (after the existing bounded
-   result normalization) and `provider == "V1"`.
+2. Prove the delivered context for `V1_LEGACY` preserves the legacy
+   project-scoped memory/state rendering, with only the explicitly permitted
+   bounded state identity marker addition, and `provider == "V1"`.
 3. Prove an explicit future-approved V2 delivery marker is required before
    any V2 text could be delivered; absence or mismatch fails closed.
 4. Prove V2 computation failure, malformed metadata, stale revisions,
@@ -171,6 +179,8 @@ model-facing context.
    delivery or telemetry. Also prove project isolation, existing SessionStart
    behavior, runtime `OFF`, normal `SHADOW` no-delivery behavior, W06B's
    explicit V1 path, and duplicate native delivery receipts remain unchanged.
+7. Prove active blocker/requirement identity markers remain available to the
+   task/state safety invariant without exposing raw state or Companion text.
 
 ### Regression and evidence
 
