@@ -99,7 +99,7 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
     missing = [name for name in ('fastapi', 'uvicorn', 'httpx', 'networkx') if importlib.util.find_spec(name) is None]
     if missing:
         raise ValueError('Install requirements.txt in this Python environment first: ' + ', '.join(missing))
-    cfg.root.mkdir(parents=True, exist_ok=True)
+    cfg.ensure_root()
     with file_lock(cfg.root / 'install'):
         manifest = read_json(cfg.root / 'installation.json', {'clients': {}})
         paths = client_paths(home)

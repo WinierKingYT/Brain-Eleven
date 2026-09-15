@@ -7,6 +7,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, Union
 
+from brain_eleven.runtime.path_safety import guard_runtime_path, runtime_root_for_path
+
 
 class MemoryStoreLockTimeout(TimeoutError):
     """Raised when the canonical store lock cannot be acquired in time."""
@@ -20,6 +22,13 @@ def file_lock(
 ) -> Iterator[None]:
     """Lock a persistent sidecar file until the mutation is complete."""
     target = Path(target_path)
+    # Runtime-owned locks share the storage writer's fail-closed path policy.
+    # Keep this in the legacy implementation so the package bridge preserves
+    # the historical object identity for ``file_lock``.
+    runtime_root = runtime_root_for_path(target)
+    if runtime_root is not None:
+        guard_runtime_path(runtime_root, target)
+        guard_runtime_path(runtime_root, target.with_name(f"{target.name}.lock"))
     lock_path = target.with_name(f"{target.name}.lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     handle = open(lock_path, "a+", encoding="utf-8")

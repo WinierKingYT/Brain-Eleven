@@ -7,6 +7,13 @@ import tempfile
 from datetime import datetime, timezone
 
 from brain_eleven.infrastructure.locking import file_lock
+from .path_safety import (
+    assert_runtime_snapshot,
+    ensure_runtime_directory,
+    guard_runtime_path,
+    runtime_root_for_path,
+    _existing_root_check,
+)
 
 
 def now():
@@ -19,13 +26,24 @@ def identity(prefix, *values):
 
 def write_json(path, value):
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    runtime_root = runtime_root_for_path(path)
+    snapshot = guard_runtime_path(runtime_root, path) if runtime_root else None
+    if runtime_root is None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        # guard_runtime_path has created only validated runtime components.
+        path.parent.mkdir(parents=True, exist_ok=True)
     fd, name = tempfile.mkstemp(prefix='.' + path.name, dir=path.parent)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as stream:
             json.dump(value, stream, ensure_ascii=False, sort_keys=True)
             stream.flush()
             os.fsync(stream.fileno())
+        if runtime_root:
+            # Detect a parent replacement after temp creation and immediately
+            # before publication.  The lock/atomic writer semantics remain
+            # unchanged for ordinary paths.
+            assert_runtime_snapshot(runtime_root, path, snapshot)
         os.replace(name, path)
     finally:
         if os.path.exists(name):
@@ -56,6 +74,9 @@ class RuntimeConfig:
         self.path = self.root / 'config.json'
 
     def load(self):
+        _existing_root_check(self.root)
+        if os.path.lexists(self.path):
+            guard_runtime_path(self.root, self.path, create=False)
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
                                       'b1_human_approval': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
@@ -77,6 +98,10 @@ class RuntimeConfig:
         if model is not None and (not isinstance(model, dict) or set(model) != {'url', 'model'} or not all(isinstance(x, str) and x for x in model.values())):
             raise ValueError('Invalid local model configuration')
         return value
+
+    def ensure_root(self):
+        """Create the vault-owned runtime root after no-follow validation."""
+        return ensure_runtime_directory(self.root, self.root)
 
     def set_mode(self, mode):
         if mode not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:

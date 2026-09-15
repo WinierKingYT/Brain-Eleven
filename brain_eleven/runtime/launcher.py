@@ -46,7 +46,7 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
         return True
     except (OSError, ValueError, KeyError, http.client.HTTPException):
         pass
-    cfg.root.mkdir(parents=True, exist_ok=True)
+    cfg.ensure_root()
     with file_lock(cfg.root / 'launch', timeout=.15):
         prior = read_json(cfg.root / 'launch.json', {})
         # Bounded throttle plus the server lock prevent concurrent hook starts.

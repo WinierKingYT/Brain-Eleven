@@ -16,6 +16,7 @@ from brain_eleven.memory import MemoryStore
 from brain_eleven.state import StateStore
 
 from .storage import identity, now, read_json, write_json
+from .path_safety import ensure_runtime_directory
 
 
 SCHEMA_VERSION = 1
@@ -42,11 +43,14 @@ def _dirs(vault: str | Path) -> dict[str, Path]:
 
 
 def _ensure(vault: str | Path) -> dict[str, Path]:
+    root = _root(vault)
+    runtime_root = root.parent
+    ensure_runtime_directory(runtime_root, root)
     directories = _dirs(vault)
     for path in directories.values():
-        path.mkdir(parents=True, exist_ok=True)
+        ensure_runtime_directory(runtime_root, path)
     for name in ("reports", "staging", "delivered"):
-        (_root(vault) / name).mkdir(parents=True, exist_ok=True)
+        ensure_runtime_directory(runtime_root, root / name)
     return directories
 
 

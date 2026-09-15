@@ -555,7 +555,7 @@ class Worker:
         )
 
     def once(self):
-        self.config.root.mkdir(parents=True, exist_ok=True)
+        self.config.ensure_root()
         with self._worker_lock() as lock_acquired:
             if not lock_acquired:
                 result = {'status': 'DEGRADED', 'error': 'WORKER_LOCK_TIMEOUT'}
