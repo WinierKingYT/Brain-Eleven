@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -239,6 +240,40 @@ def test_router_and_compiler_caches_preserve_concurrent_unique_writes(tmp_path):
         assert not errors
         payload = json.loads(cache.path.read_text(encoding="utf-8"))
         assert set(payload["entries"]) == {f"concurrent-{index:02d}" for index in range(16)}
+
+
+def test_cache_access_refresh_never_exposes_partial_json(tmp_path):
+    revisions = {"memory": 7}
+    reference = {"candidate_ids": ["seed"]}
+    for cache_type in (RouterCache, CompilerCache):
+        cache = cache_type(tmp_path / f"{cache_type.__name__}-reader")
+        cache.store("seed", revisions, reference)
+        stop = threading.Event()
+        malformed = []
+
+        def refresh():
+            while not stop.is_set():
+                assert cache.load("seed", revisions) == reference
+
+        def raw_reader():
+            while not stop.is_set():
+                try:
+                    json.loads(cache.path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    malformed.append(True)
+                except OSError:
+                    pass
+
+        threads = [threading.Thread(target=refresh) for _ in range(4)]
+        threads.append(threading.Thread(target=raw_reader))
+        for thread in threads:
+            thread.start()
+        time.sleep(0.2)
+        stop.set()
+        for thread in threads:
+            thread.join(timeout=10)
+
+        assert not malformed
 
 
 def test_shadow_runners_and_clis_remain_non_injecting_and_content_free(tmp_path, capsys):
