@@ -101,7 +101,7 @@ def test_required_record_fields_are_rejected_without_effect(vault, record):
 @pytest.mark.parametrize(
     "record",
     [
-        _sparse(status="pending"),
+        _sparse(status=" "),
         _sparse(status=1),
         _sparse(scope="workspace"),
         _sparse(scope="global", project_id="project-a"),

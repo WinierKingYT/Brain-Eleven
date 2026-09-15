@@ -33,7 +33,10 @@ The preferred narrow boundary is a structural validator invoked by `append()`:
 
 - `record` must be a mapping with non-empty string `memory_id`, `type`, and
   `content` fields;
-- if present, `status` must be one of `active`, `resolved`, `superseded`;
+- if present, `status` must be a non-empty string.  Known lifecycle values are
+  preserved, while unknown string values remain readable for downstream
+  lifecycle guards to classify (for example, `deleted` and `quarantined` are
+  intentional negative fixtures);
 - if present, `scope` must be `global` or `project`; project scope requires a
   non-empty `project_id`, while global scope rejects non-empty project
   metadata.  If `scope` is omitted for a legacy record, it is treated as
@@ -69,7 +72,7 @@ retrieval, V2, capture flow, and Phase 20 are out of scope.
 ## Required semantics
 
 1. **Malformed rejection:** non-mapping records, missing/blank required fields,
-   invalid field types, invalid lifecycle values and invalid scope metadata
+   invalid field types, blank lifecycle values and invalid scope metadata
    raise a stable `MemoryStoreRecordInvalid(MemoryStoreError)` exception before
    the transaction starts.  Revision, backup and canonical data remain
    unchanged.
@@ -79,11 +82,12 @@ retrieval, V2, capture flow, and Phase 20 are out of scope.
 3. **Scope safety:** global records cannot carry a non-empty project identity;
    project records cannot omit `project_id`.  No path or registry inference is
    added to `append()`.
-4. **Lifecycle safety:** supplied status values are explicit and supported;
-   absent optional legacy fields remain absent rather than being silently
-   invented.  Required string fields and `project_id` are rejected when empty
-   after whitespace stripping; valid stored values retain their original
-   bytes/field values.
+4. **Lifecycle safety:** supplied status values must be explicit non-empty
+   strings; unknown string statuses remain available for downstream guard
+   classification.  Absent optional legacy fields remain absent rather than
+   being silently invented.  Required string fields and `project_id` are
+   rejected when empty after whitespace stripping; valid stored values retain
+   their original bytes/field values.
 5. **Authority boundary:** all accepted writes still pass through the existing
    `transact()` lock/CAS/atomic path.  No direct file write or second store is
    allowed.
