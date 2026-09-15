@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B evidence closure
 
-**REVISION:** `377169c575f8d9074d82ec80dc055df8c11ea06c`
+**REVISION:** `78c5671`
 
 **PROCESS TEST REVISION:** `b7f8ca312a044aacf474ff404cb251e5bd0e33`
 
@@ -59,6 +59,8 @@ path.
   for each boundary, plus the in-process final-receipt no-op coverage).
 - W-07B/native/capture/runtime focused suite at exact evidence head:
   **133 passed, 2 warnings**.
+- Full regression at exact committed evidence head `78c5671`:
+  **1291 passed, 4 skipped, 2 warnings**.
 - The warnings are existing FastAPI/Starlette deprecations.
 - Critical flake8 (`E9,F63,F7,F82`) on the new test: **PASS**.
 - `compileall` and `git diff --check`: **PASS**.
