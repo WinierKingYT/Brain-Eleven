@@ -1,8 +1,8 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `f322d2c` (exact evidence head; implementation `94f331f`, hardening `facd5e1`, tests `f322d2c`)
-**STATUS:** REVIEW PENDING / NOT ACCEPTED  
+**REVISION:** `72e038a` (exact regression evidence head; code/test head `f322d2c`, implementation `94f331f`, hardening `facd5e1`)
+**STATUS:** FIX-FIRST / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
 
@@ -96,7 +96,8 @@ Fifteen focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
 
 - Focused W-07B: **15 passed**.
 - Existing native/maintenance/session/capture focus: **100 passed**.
-- Full regression at prior exact head `4e0f3fc`: **1171 passed, 2
+- Full regression at exact documentation head `72e038a` (code/test head
+  `f322d2c`): **1172 passed, 2
   warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on touched runtime/test files: PASS.
 - `compileall` on touched runtime/test files: PASS.
@@ -145,19 +146,17 @@ The core audit score is not promoted by local implementation tests alone.
 ## OPEN FAILURES
 
 - No known production test failure.
-- Independent read-only review at exact head `4e0f3fc9ed536060f085cb160961e9af083d8cfb`
-  returned `FIX-FIRST`; the subsequent owner-fencing hardening at `facd5e1`
-  and `f322d2c` is awaiting a fresh independent review.
-- Native executable smoke, process restart/kill evidence, latency/dogfood
-  evidence, and lease-owner fencing remain open acceptance gates.
+- Independent read-only review of code/test head `f322d2c3cc341f6e394b5d950d55f49c1322a1c1`
+  returned `FIX-FIRST`; the reviewer confirmed the owner-fencing hardening.
+- Native executable smoke, process restart/kill and latency/dogfood evidence
+  remain open acceptance gates.
 
 ## INDEPENDENT REVIEW
 
-Independent read-only review at exact head `4e0f3fc9ed536060f085cb160961e9af083d8cfb`
-returned **FIX-FIRST**. The reviewer confirmed the lease, strict report
-validation, bounded error logging, and new tests, while keeping the native,
-process and latency/dogfood gates open. The post-review owner-fencing change
-is bounded and awaits re-review.
+Independent read-only review of exact code/test head `f322d2c` returned
+**FIX-FIRST**. The reviewer confirmed the lease, strict report validation,
+bounded error logging, owner fencing and new tests, while keeping the native,
+process and latency/dogfood gates open.
 
 ## SCORE BEFORE / AFTER
 
@@ -170,7 +169,6 @@ is bounded and awaits re-review.
 **FIX-FIRST / NOT ACCEPTED**
 
 The implementation and evidence commits are pushed, but W-07B remains open
-because the last independent exact-head verdict is `FIX-FIRST` and
-native/process and latency/dogfood evidence plus re-review of the owner-fencing
-hardening are still required. Phase 20 remains FROZEN / LOCKED and V2 remains
-SHADOW.
+because the independent exact-head verdict is `FIX-FIRST` and native/process
+and latency/dogfood evidence are still required. Phase 20 remains FROZEN /
+LOCKED and V2 remains SHADOW.

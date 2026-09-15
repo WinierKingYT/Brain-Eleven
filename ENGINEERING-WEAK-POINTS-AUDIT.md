@@ -181,7 +181,7 @@ crash gaps, and fences active duplicate claims with an expiring lease.
 Independent read-only review at that exact head returned `FIX-FIRST`:
 real Claude/Codex executable smoke, process restart/kill, native latency and
 dogfood evidence remain open. Expired-lease owner fencing is covered by the
-post-review hardening, which awaits independent re-review. The package remains
+reviewed hardening. The package remains
 `FIX-FIRST / NOT ACCEPTED`; no automatic
 markdown writes or Phase 20/V2 promotion were introduced.
 
@@ -251,9 +251,8 @@ unchanged.
 **W-07B evidence update:** The former P2 implementation gap has a bounded
 runtime package at exact head `f322d2c`, but
 the independent verdict remains `FIX-FIRST / NOT ACCEPTED` until native
-executable, restart/kill and latency/dogfood evidence plus independent
-re-review of the owner-fencing hardening remain open. Automatic markdown
-writes remain deferred.
+executable, restart/kill and latency/dogfood evidence are closed. Automatic
+markdown writes remain deferred.
 
 **W-09A status:** Independently reviewed `SHIP` at exact review head
 `31a436c` in `WEAKNESS-W09A-INDEPENDENT-REVIEW.md` (review commit
