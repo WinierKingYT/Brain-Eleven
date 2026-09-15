@@ -34,17 +34,18 @@ currently clears memory without a durable disk deletion.
 3. A concurrent save must not silently lose entries written by another
    generator. Under the lock, load a valid current cache and merge compatible
    entries deterministically before publication; malformed entries remain
-   ignored by existing provenance validation.
-4. `clear_cache()` must have an explicit, tested durability contract. The
-   preferred bounded behavior is to persist an empty cache through the same
-   atomic path so a new generator cannot resurrect cleared vectors. If a
-   write fails, the in-memory clear may remain but the failure must be visible
-   and the prior valid file must remain intact.
+   ignored by existing provenance validation. If the same memory ID contains
+   incompatible content/provenance, fail visibly and leave the prior valid
+   file unchanged rather than choosing a silent winner.
+4. `clear_cache()` must persist an empty cache through the same atomic path so
+   a new generator cannot resurrect cleared vectors. A successful `save()` or
+   `clear_cache()` returns an explicit success result; a write failure is
+   visible to the caller and the prior valid file remains intact.
 5. Long-lived readers must not silently claim newly written vectors are
-   available. Either provide an explicit refresh operation and document that
-   callers use it after external generation, or detect a cache fingerprint
-   change at the existing read boundary. Do not add background polling or
-   alter search ranking in this package.
+   available. Add an explicit `refresh_cache()` operation and call it at the
+   existing semantic-search boundary before reading cached vectors. Refresh
+   may inspect a cache fingerprint and reload under the lock; it must not add
+   background polling or alter search ranking.
 6. Cache corruption or unavailable persistence remains explicit and bounded:
    no prompt, memory content, secret, API key or exception text is persisted.
    Canonical MemoryStore/StateStore/ProjectRegistry revisions are untouched.
@@ -53,11 +54,13 @@ currently clears memory without a durable disk deletion.
 
 - interrupted/failed save leaves the previous cache valid;
 - concurrent saves retain both compatible entries;
+- incompatible same-ID concurrent save is visible and preserves the prior
+  valid entry;
 - parent cache directory is created safely;
 - a newly constructed generator reads the atomically published cache;
-- durable `clear_cache()` remains cleared after reconstruction;
-- explicit reader refresh (or documented fingerprint detection) sees an
-  external update without process restart;
+- durable `clear_cache()` remains cleared after reconstruction and reports
+  write failure explicitly;
+- semantic-search refresh sees an external update without process restart;
 - malformed/provenance-mismatched entries remain rejected;
 - cache operations do not change canonical revisions or ranking outputs;
 - existing `tests/test_phase7_semantic_search.py` behavior remains unchanged.
