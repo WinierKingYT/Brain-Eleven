@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `ca15e31f3d33434a0b0e7fe1bbbd4f0d0fd716de`
+**REVISION:** `ca15e31eb5bf3ab987246b3f2b5ce8dd5bed06f3`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
