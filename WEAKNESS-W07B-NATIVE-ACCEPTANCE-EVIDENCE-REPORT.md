@@ -2,7 +2,9 @@
 
 **PACKAGE:** W-07B evidence closure
 
-**REVISION:** `b7f8ca3`
+**REVISION:** `377169c575f8d9074d82ec80dc055df8c11ea06c`
+
+**PROCESS TEST REVISION:** `b7f8ca312a044aacf474ff404cb251e5bd0e33`
 
 **IMPLEMENTATION UNDER TEST:** `f322d2c` (W-07B runtime package)
 
@@ -110,9 +112,13 @@ is implied.
 
 ## INDEPENDENT REVIEW
 
-**REVIEW PENDING.** A separate read-only reviewer must verify the process
-boundaries and keep the package open for the native gates above. Self-review
-is not acceptance.
+**FIX-FIRST.** Independent read-only review at report HEAD verified the
+process evidence and exact counts. The first four crash tests invoke the
+delivery API directly inside deterministic child processes rather than the
+full native `Worker` object path; existing W-07B worker tests cover that
+trigger path separately. This remains a bounded evidence limitation, not a
+new production failure. Native trust, latency and dogfood gates remain open;
+self-review is not acceptance.
 
 ## SCORE BEFORE / AFTER
 
