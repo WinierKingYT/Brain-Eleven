@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -212,6 +213,32 @@ def test_derived_caches_evict_by_recent_access_not_key_order(tmp_path):
 
         assert cache.load("key-00", revisions) == reference
         assert cache.load("key-01", revisions) is None
+
+
+def test_router_and_compiler_caches_preserve_concurrent_unique_writes(tmp_path):
+    revisions = {"memory": 7}
+    reference = {"candidate_ids": ["seed"]}
+    for cache_type in (RouterCache, CompilerCache):
+        cache = cache_type(tmp_path / cache_type.__name__)
+        barrier = threading.Barrier(16)
+        errors = []
+
+        def write(index):
+            try:
+                barrier.wait(timeout=5)
+                cache.store(f"concurrent-{index:02d}", revisions, reference)
+            except Exception as exc:  # pragma: no cover - failure is asserted below
+                errors.append(exc)
+
+        threads = [threading.Thread(target=write, args=(index,)) for index in range(16)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=10)
+
+        assert not errors
+        payload = json.loads(cache.path.read_text(encoding="utf-8"))
+        assert set(payload["entries"]) == {f"concurrent-{index:02d}" for index in range(16)}
 
 
 def test_shadow_runners_and_clis_remain_non_injecting_and_content_free(tmp_path, capsys):
