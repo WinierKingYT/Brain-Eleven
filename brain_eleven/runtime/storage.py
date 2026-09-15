@@ -28,12 +28,18 @@ _runtime_thread_locks = {}
 _runtime_thread_locks_guard = threading.Lock()
 
 
+def _runtime_lock_key(target):
+    """Normalize lexical aliases before deriving an OS lock identity."""
+    return os.path.normcase(os.path.normpath(os.fspath(Path(target).absolute())))
+
+
 def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
     import fcntl
 
-    # Open the validated runtime directory once, then create/open the lock
-    # registry relative to that descriptor.  A parent swap after this point
-    # cannot redirect the registry into an outside directory.
+    # Open the validated runtime directory once, then create/open a
+    # target-specific marker relative to that descriptor. A parent swap after
+    # this point cannot redirect the marker into an outside directory, and
+    # separate marker files keep POSIX flock ownership independent per target.
     root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
     root_descriptor = os.open(root, root_flags)
     root_identity = os.fstat(root_descriptor)
@@ -41,8 +47,9 @@ def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
         os.close(root_descriptor)
         raise RuntimePathError("Runtime root changed before lock registry open")
     try:
+        lock_name = ".runtime-lock-" + hashlib.sha256(_runtime_lock_key(target).encode()).hexdigest()
         registry_descriptor = os.open(
-            ".runtime-locks",
+            lock_name,
             os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0),
             0o600,
             dir_fd=root_descriptor,
@@ -52,8 +59,7 @@ def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
         raise
     acquired = False
     deadline = time.monotonic() + timeout
-    key = os.fspath(target)
-    offset = int(hashlib.sha256(key.encode()).hexdigest()[:12], 16)
+    key = _runtime_lock_key(target)
     with _runtime_thread_locks_guard:
         thread_lock = _runtime_thread_locks.setdefault(key, threading.Lock())
     try:
@@ -63,7 +69,7 @@ def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
         try:
             while not acquired:
                 try:
-                    fcntl.lockf(registry_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB, 1, offset, os.SEEK_SET)
+                    fcntl.flock(registry_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
                     acquired = True
                 except (BlockingIOError, OSError):
                     if time.monotonic() >= deadline:
@@ -72,7 +78,7 @@ def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
             yield
         finally:
             if acquired:
-                fcntl.lockf(registry_descriptor, fcntl.LOCK_UN, 1, offset, os.SEEK_SET)
+                fcntl.flock(registry_descriptor, fcntl.LOCK_UN)
             thread_lock.release()
     finally:
         os.close(registry_descriptor)
@@ -90,7 +96,7 @@ def _runtime_windows_mutex(target, timeout):
     kernel32.WaitForSingleObject.restype = ctypes.c_uint32
     kernel32.ReleaseMutex.argtypes = [ctypes.c_void_p]
     kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
-    name = "Local\\BrainElevenRuntime-" + hashlib.sha256(os.fspath(target).casefold().encode()).hexdigest()
+    name = "Local\\BrainElevenRuntime-" + hashlib.sha256(_runtime_lock_key(target).encode()).hexdigest()
     handle = kernel32.CreateMutexW(None, False, name)
     if not handle:
         raise OSError(ctypes.get_last_error(), "CreateMutexW failed")
