@@ -36,7 +36,22 @@ def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
             assert_runtime_snapshot(runtime_root, target, target_snapshot)
             assert_runtime_snapshot(runtime_root, lock_path, lock_snapshot)
 
-        lock_kwargs = {"before_open": validate_before_open, "create_parent": False}
+        def cleanup_invalid_lock(path):
+            # The legacy lock only calls this when its exclusive create
+            # succeeded and validation failed before the caller entered the
+            # critical section.  A regular marker can therefore be removed;
+            # links/reparse points are never followed for cleanup.
+            try:
+                if os.path.lexists(path) and not os.path.islink(path):
+                    os.unlink(path)
+            except OSError:
+                pass
+
+        lock_kwargs = {
+            "before_open": validate_before_open,
+            "create_parent": False,
+            "cleanup_on_error": cleanup_invalid_lock,
+        }
     with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval, **lock_kwargs):
         yield
 
