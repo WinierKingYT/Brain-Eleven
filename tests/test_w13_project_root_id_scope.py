@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from brain_eleven.memory.scope import resolve_capture_scope
+from brain_eleven.memory.scope import project_identity, resolve_capture_scope
 from brain_eleven.projects.registry import ProjectRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,6 +73,18 @@ def test_unregistered_root_with_explicit_id_rejects_without_registration(tmp_pat
         )
 
     assert not registry_file.exists()
+
+
+def test_root_and_id_without_registry_use_deterministic_identity(tmp_path):
+    root = tmp_path / "project"
+    root.mkdir()
+    expected_id, _ = project_identity(root)
+
+    assert resolve_capture_scope(
+        scope="project", project_root=root, project_id=expected_id
+    )[2] == expected_id
+    with pytest.raises(ValueError, match="PROJECT_ROOT_ID_MISMATCH"):
+        resolve_capture_scope(scope="project", project_root=root, project_id="other-id")
 
 
 def test_root_only_keeps_auto_registration_and_relocation_identity(tmp_path):

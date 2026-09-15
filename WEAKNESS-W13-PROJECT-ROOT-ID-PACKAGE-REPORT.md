@@ -45,7 +45,7 @@ for root-only calls.
 ## Tests executed
 
 - Pre-fix focused baseline: expected red — 4 mismatch/API cases failed.
-- W-13 focused: **7 passed, 2 warnings**.
+- W-13 focused: **8 passed, 2 warnings**.
 - Scope/capture/API/regression set: **156 passed, 2 warnings**.
 - Full suite at exact revision: **1189 passed, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`): PASS.
