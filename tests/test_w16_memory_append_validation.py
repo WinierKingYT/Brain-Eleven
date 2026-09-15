@@ -1,100 +1,190 @@
-"""W-16 tests for the canonical MemoryStore.append() boundary."""
+"""W-16 contract tests for the public canonical-memory append boundary."""
 
-from __future__ import annotations
-
-import importlib
 from pathlib import Path
 
 import pytest
 
-from brain_eleven.memory import MemoryStore, MemoryStoreError, MemoryStoreRecordInvalid
+import memory_store as legacy_memory_store  # noqa: E402
+from brain_eleven.memory import MemoryStore as PackageMemoryStore
+from brain_eleven.memory.store import MemoryStore as PackageStoreMemoryStore
 
 
-def _valid(**overrides):
-    value = {
-        "memory_id": "mem-valid",
+MemoryStore = legacy_memory_store.MemoryStore
+MemoryStoreConflict = legacy_memory_store.MemoryStoreConflict
+MemoryStoreError = legacy_memory_store.MemoryStoreError
+# The production validator is intentionally outside this test-only step. The
+# fallback keeps the red baseline executable before that bounded implementation
+# lands, while a future stable subclass is picked up automatically.
+MemoryStoreRecordInvalid = getattr(
+    legacy_memory_store, "MemoryStoreRecordInvalid", MemoryStoreError
+)
+
+
+@pytest.fixture
+def vault(tmp_path: Path) -> Path:
+    (tmp_path / ".claude").mkdir(parents=True)
+    return tmp_path
+
+
+def _sparse(memory_id: str = "mem-sparse", **changes) -> dict:
+    record = {
+        "memory_id": memory_id,
         "type": "lesson",
-        "content": "A valid canonical fixture.",
+        "content": "A minimally valid canonical memory.",
     }
-    value.update(overrides)
-    return value
+    record.update(changes)
+    return record
+
+
+def _full(memory_id: str = "mem-full") -> dict:
+    return {
+        "memory_id": memory_id,
+        "type": "decision",
+        "content": "Use SQLite for the local runtime cache.",
+        "status": "active",
+        "scope": "project",
+        "project_id": "project-a",
+        "project": "PromtGen",
+        "project_label": "PromtGen",
+        "timestamp": "2026-09-15T10:00:00Z",
+        "source_id": "session-001",
+        "source": "user",
+        "dedup_fingerprint": "a" * 64,
+        "is_approved": False,
+        "issues": [],
+        "related_notes": [],
+        "future_extension": {"version": 1},
+    }
 
 
 @pytest.mark.parametrize(
     "record",
     [
+        None,
+        [],
+        "not-a-record",
         {},
-        {"memory_id": "only-id"},
+        {"type": "lesson", "content": "missing identity"},
+        {"memory_id": "m", "content": "missing type"},
         {"memory_id": "m", "type": "lesson"},
-        {"memory_id": " ", "type": "lesson", "content": "text"},
-        {"memory_id": "m", "type": " ", "content": "text"},
-        {"memory_id": "m", "type": "lesson", "content": " "},
-        {"memory_id": "m", "type": "lesson", "content": 42},
-        {"memory_id": "m", "type": 42, "content": "text"},
+        _sparse(memory_id=""),
+        _sparse(memory_id="   "),
+        _sparse(type=""),
+        _sparse(type="   "),
+        _sparse(content=""),
+        _sparse(content="   "),
+        _sparse(memory_id=7),
+        _sparse(type=7),
+        _sparse(content=7),
     ],
 )
-def test_malformed_required_record_is_rejected_without_effect(tmp_path: Path, record: dict):
-    store = MemoryStore(tmp_path)
-    store.append(_valid())
-    before_bytes = store.path.read_bytes()
-    before_revision = store.revision()
-    before_backup = store.backup_path.read_bytes()
+def test_required_record_fields_are_rejected_without_effect(vault, record):
+    store = MemoryStore(vault)
+    store.append(_sparse("seed"))
+    store.append(_sparse("second"))
+    canonical_before = store.path.read_bytes()
+    backup_before = store.backup_path.read_bytes()
+    revision_before = store.revision()
 
     with pytest.raises(MemoryStoreRecordInvalid):
         store.append(record)
 
-    assert store.path.read_bytes() == before_bytes
-    assert store.revision() == before_revision
-    assert store.backup_path.read_bytes() == before_backup
+    assert store.path.read_bytes() == canonical_before
+    assert store.backup_path.read_bytes() == backup_before
+    assert store.revision() == revision_before
+    assert {item["memory_id"] for item in store.load()["validated_memory"]} == {
+        "seed",
+        "second",
+    }
 
 
 @pytest.mark.parametrize(
     "record",
     [
-        _valid(status="unknown"),
-        _valid(scope="unsupported"),
-        _valid(scope="project"),
-        _valid(scope="project", project_id=" "),
-        _valid(scope="global", project_id="project-a"),
-        _valid(project_id="project-a"),
-        _valid(is_approved="yes"),
-        _valid(related_notes="not-a-list"),
-        _valid(timestamp=123),
+        _sparse(status="pending"),
+        _sparse(status=1),
+        _sparse(scope="workspace"),
+        _sparse(scope="global", project_id="project-a"),
+        _sparse(scope="global", project="PromtGen"),
+        _sparse(scope="global", project_label="PromtGen"),
+        _sparse(scope="project"),
+        _sparse(scope="project", project_id=""),
+        _sparse(scope="project", project_id="   "),
+        _sparse(timestamp=123),
+        _sparse(source_id=123),
+        _sparse(source={"type": "user"}),
+        _sparse(dedup_fingerprint=123),
+        _sparse(project=123),
+        _sparse(project_label=123),
+        _sparse(is_approved="false"),
+        _sparse(issues={}),
+        _sparse(related_notes={}),
+        _sparse(project_id=123),
+        _sparse(project_id="project-a"),
     ],
 )
-def test_invalid_optional_lifecycle_scope_or_provenance_fields_are_rejected(tmp_path: Path, record: dict):
+def test_lifecycle_optional_types_and_scope_metadata_are_rejected(vault, record):
+    store = MemoryStore(vault)
+    store.append(_sparse("seed"))
+    canonical_before = store.path.read_bytes()
+    backup_before = store.backup_path.read_bytes() if store.backup_path.exists() else None
+
     with pytest.raises(MemoryStoreRecordInvalid):
-        MemoryStore(tmp_path).append(record)
-    assert not (tmp_path / ".claude" / "validated-memory.json").exists()
+        store.append(record)
 
-
-def test_valid_sparse_legacy_record_keeps_fields_and_revision(tmp_path: Path):
-    record = _valid()
-    persisted = MemoryStore(tmp_path).append(record)
-    assert persisted["revision"] == 1
-    assert persisted["validated_memory"] == [record]
-
-
-def test_valid_scoped_records_preserve_scope_rules(tmp_path: Path):
-    store = MemoryStore(tmp_path)
-    store.append(_valid(memory_id="global", scope="global"))
-    store.append(_valid(memory_id="project", scope="project", project_id="project-a"))
-    records = store.load()["validated_memory"]
-    assert records[0]["scope"] == "global"
-    assert records[1]["project_id"] == "project-a"
-
-
-def test_expected_revision_conflict_still_uses_existing_memory_store_error(tmp_path: Path):
-    store = MemoryStore(tmp_path)
-    store.append(_valid())
-    with pytest.raises(MemoryStoreError) as error:
-        store.append(_valid(memory_id="stale"), expected_revision=0)
-    assert type(error.value).__name__ == "MemoryStoreConflict"
+    assert store.path.read_bytes() == canonical_before
+    assert (store.backup_path.read_bytes() if store.backup_path.exists() else None) == backup_before
     assert store.revision() == 1
 
 
-def test_package_legacy_and_bare_memory_store_keep_identity():
-    legacy = importlib.import_module("memory_store")
-    package = importlib.import_module("brain_eleven.memory.store")
-    assert MemoryStore is legacy.MemoryStore is package.MemoryStore
-    assert MemoryStoreRecordInvalid is legacy.MemoryStoreRecordInvalid is package.MemoryStoreRecordInvalid
+def test_valid_sparse_and_full_records_preserve_values_and_transaction_parity(vault):
+    store = MemoryStore(vault)
+    sparse = _sparse("sparse")
+    full = _full("full")
+
+    first = store.append(sparse)
+    second = store.append(full)
+
+    assert first["revision"] == 1
+    assert second["revision"] == 2
+    assert second["validated_memory"] == [sparse, full]
+    assert store.backup_path.exists()
+
+
+def test_stale_expected_revision_rejects_valid_record_without_effect(vault):
+    store = MemoryStore(vault)
+    store.append(_sparse("seed"))
+    canonical_before = store.path.read_bytes()
+    backup_before = store.backup_path.read_bytes() if store.backup_path.exists() else None
+
+    with pytest.raises(MemoryStoreConflict) as error:
+        store.append(_sparse("stale"), expected_revision=0)
+
+    assert error.value.expected_revision == 0
+    assert error.value.actual_revision == 1
+    assert store.path.read_bytes() == canonical_before
+    assert (store.backup_path.read_bytes() if store.backup_path.exists() else None) == backup_before
+    assert store.revision() == 1
+
+
+def test_package_and_legacy_surfaces_preserve_memory_store_identity():
+    assert PackageMemoryStore is PackageStoreMemoryStore is legacy_memory_store.MemoryStore
+
+
+def test_record_invalid_error_is_a_stable_memory_store_error():
+    assert issubclass(MemoryStoreRecordInvalid, MemoryStoreError)
+    assert MemoryStoreRecordInvalid.__name__ == "MemoryStoreRecordInvalid"
+
+
+def test_valid_global_record_has_no_project_identity(vault):
+    store = MemoryStore(vault)
+    record = _sparse("global", scope="global")
+    persisted = store.append(record)
+    assert persisted["validated_memory"] == [record]
+
+
+def test_valid_project_record_requires_and_preserves_project_identity(vault):
+    store = MemoryStore(vault)
+    record = _sparse("project", scope="project", project_id="project-a")
+    persisted = store.append(record)
+    assert persisted["validated_memory"] == [record]
