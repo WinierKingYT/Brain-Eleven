@@ -113,6 +113,22 @@ def _existing_root_check(root: Path) -> None:
         _check_component(component, directory=True)
 
 
+def validate_vault_path(vault: str | Path) -> Path:
+    """Validate the selected vault lexically before any ``resolve()`` call."""
+    candidate = Path(vault).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    current = candidate.absolute()
+    while True:
+        if _lexists(current):
+            _check_component(current, directory=True)
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return candidate
+
+
 def _relative(root: Path, target: Path) -> Path:
     root = Path(root).absolute()
     target = Path(target).absolute()
@@ -210,4 +226,5 @@ __all__ = [
     "ensure_runtime_directory",
     "guard_runtime_path",
     "runtime_root_for_path",
+    "validate_vault_path",
 ]

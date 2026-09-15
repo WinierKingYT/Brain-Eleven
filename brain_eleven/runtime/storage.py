@@ -13,6 +13,7 @@ from .path_safety import (
     ensure_runtime_directory,
     guard_runtime_path,
     runtime_root_for_path,
+    validate_vault_path,
     _existing_root_check,
 )
 
@@ -87,7 +88,10 @@ def _config_fingerprint(value):
 
 class RuntimeConfig:
     def __init__(self, vault):
-        self.vault = Path(vault).resolve()
+        # Validate the caller-selected path before resolving it.  Otherwise a
+        # vault symlink/junction would be silently promoted to the containment
+        # root and runtime writes could escape the selected vault.
+        self.vault = validate_vault_path(vault).resolve()
         self.root = self.vault / '.brain-eleven' / 'runtime'
         self.path = self.root / 'config.json'
 
