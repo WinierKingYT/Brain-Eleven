@@ -104,10 +104,15 @@ def run(samples=40, records=1000):
                 payload = {'cwd': str(vault), 'session_id': raw_session, 'transcript_path': str(path)}
                 command = [sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'Stop']
                 start = time.perf_counter()
-                result = subprocess.run(command, input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
-                                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                try:
+                    result = subprocess.run(command, input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
+                                            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                except subprocess.TimeoutExpired:
+                    status = 'TIMEOUT'
+                else:
+                    status = _hook_status(result.stdout, result.returncode, event='Stop')
                 stop_ms.append((time.perf_counter() - start) * 1000)
-                stop_status.append(_hook_status(result.stdout, result.returncode, event='Stop'))
+                stop_status.append(status)
             deadline = time.monotonic() + 180
             while time.monotonic() < deadline:
                 try:
@@ -136,11 +141,16 @@ def run(samples=40, records=1000):
                            'prompt': 'Which database did we decide to use for persistent storage?'}
                 client = 'claude' if index % 2 == 0 else 'codex'
                 start = time.perf_counter()
-                result = subprocess.run([sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'UserPromptSubmit'],
-                    input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                try:
+                    result = subprocess.run([sys.executable, str(launcher), '--vault', str(vault), '--client', client, '--event', 'UserPromptSubmit'],
+                        input=json.dumps(payload), text=True, encoding='utf-8', capture_output=True, timeout=5,
+                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+                except subprocess.TimeoutExpired:
+                    status = 'TIMEOUT'
+                else:
+                    status = _hook_status(result.stdout, result.returncode, event='UserPromptSubmit')
                 prompt_ms.append((time.perf_counter() - start) * 1000)
-                prompt_status.append(_hook_status(result.stdout, result.returncode, event='UserPromptSubmit'))
+                prompt_status.append(status)
             report = {'schema_version': 1, 'evidence_type': 'SYNTHETIC_PROCESS_BENCHMARK',
                       'implementation_fingerprint': implementation_fingerprint(), 'platform': sys.platform,
                       'records': records, 'samples_per_event': samples, 'cold_start_ms': round(cold_ms, 2),

@@ -59,3 +59,21 @@ def test_benchmark_failure_is_visible_instead_of_raising_on_hook_degradation():
         isinstance(node, ast.Name) and node.id == "all_hooks_ok"
         for node in ast.walk(run)
     )
+
+
+def test_benchmark_timeout_is_recorded_as_bounded_status():
+    source = Path(runtime_benchmark.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    timeout_handlers = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ExceptHandler)
+        and isinstance(node.type, ast.Attribute)
+        and isinstance(node.type.value, ast.Name)
+        and node.type.value.id == "subprocess"
+        and node.type.attr == "TimeoutExpired"
+    ]
+    assert len(timeout_handlers) == 2
+    assert {node.id for handler in timeout_handlers for node in ast.walk(handler) if isinstance(node, ast.Name)} >= {
+        "status",
+    }
