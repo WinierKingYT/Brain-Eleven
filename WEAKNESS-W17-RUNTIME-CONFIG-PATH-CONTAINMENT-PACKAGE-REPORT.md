@@ -1,7 +1,7 @@
 # W-17 Runtime-Owned Path Containment Package Report
 
 **PACKAGE:** W-17
-**REVISION:** `676f09d46f6af06f8a899d4ac2673b01463310b9`
+**REVISION:** `6302f30bd7a2c0abddaf22d2d9a4c1cd30b0b5b4`
 **STATUS:** REVIEW PENDING
 
 ## OBJECTIVE
@@ -66,11 +66,11 @@ fingerprint/CAS semantics remain intact for regular paths.
 
 ## TESTS EXECUTED
 
-- W17 plus W15, native bootstrap, runtime, maintenance, terminal-state and
-  provenance surfaces: **32 passed, 2 warnings**; the W17-only set is
-  **18 passed**.
-- Full suite at exact revision `676f09d`: **1262 passed, 2 warnings** in
-  263.35 seconds.
+- W17 plus W15, IG-00 bootstrap, PRE-13 runtime, W-07B maintenance delivery
+  and capture provenance surfaces: **118 passed, 2 warnings**; the W17-only
+  set is **18 passed**.
+- Full suite at exact revision `6302f30`: **1262 passed, 2 warnings** in
+  291.14 seconds.
 - Critical flake8 (`E9,F63,F7,F82`) on all touched Python files: **PASS**.
 - `compileall` on all touched Python files: **PASS**.
 - `git diff --check`: **PASS**.
