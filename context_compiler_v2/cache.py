@@ -64,19 +64,22 @@ class CompilerCache:
     def store(self, key: str, revisions: Mapping[str, Any], manifest: Mapping[str, Any]) -> None:
         if not self._content_safe(manifest):
             raise ValueError("Compiler cache refuses context content")
-        with file_lock(self.path):
-            entries: dict[str, Any] = {}
-            existing = self._load_all_unlocked()
-            if isinstance(existing, Mapping):
-                entries.update(existing)
-            entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest), "last_access_ns": time.time_ns()}
-            # Keep derived cache bounded by least-recently-used access, not key
-            # spelling. The cache is an audit projection, never canonical truth.
-            if len(entries) > 32:
-                stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
-                for stale_key in stale:
-                    entries.pop(stale_key, None)
-            self._write_unlocked({"schema_version": 1, "entries": entries})
+        try:
+            with file_lock(self.path):
+                entries: dict[str, Any] = {}
+                existing = self._load_all_unlocked()
+                if isinstance(existing, Mapping):
+                    entries.update(existing)
+                entries[key] = {"revisions": dict(revisions), "manifest": dict(manifest), "last_access_ns": time.time_ns()}
+                # Keep derived cache bounded by least-recently-used access, not key
+                # spelling. The cache is an audit projection, never canonical truth.
+                if len(entries) > 32:
+                    stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
+                    for stale_key in stale:
+                        entries.pop(stale_key, None)
+                self._write_unlocked({"schema_version": 1, "entries": entries})
+        except (OSError, TimeoutError):
+            return
 
     def _write_unlocked(self, payload: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

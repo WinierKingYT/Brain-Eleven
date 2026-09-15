@@ -43,23 +43,26 @@ class RouterCache:
             return None
 
     def store(self, key: str, revisions: Mapping[str, Any], result: Mapping[str, Any]) -> None:
-        with file_lock(self.path):
-            document: dict[str, Any] = {"schema_version": CACHE_SCHEMA_VERSION, "entries": {}}
-            if self.path.exists():
-                try:
-                    existing = json.loads(self.path.read_text(encoding="utf-8"))
-                    if isinstance(existing, dict) and existing.get("schema_version") == CACHE_SCHEMA_VERSION:
-                        document = existing
-                except (OSError, json.JSONDecodeError):
-                    pass
-            entries = document.setdefault("entries", {})
-            entries[key] = {"input_revisions": dict(revisions), "result": dict(result), "last_access_ns": time.time_ns()}
-            # Bound derived state; cache is never canonical authority.
-            if len(entries) > 32:
-                stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
-                for stale_key in stale:
-                    entries.pop(stale_key, None)
-            self._write_unlocked(document)
+        try:
+            with file_lock(self.path):
+                document: dict[str, Any] = {"schema_version": CACHE_SCHEMA_VERSION, "entries": {}}
+                if self.path.exists():
+                    try:
+                        existing = json.loads(self.path.read_text(encoding="utf-8"))
+                        if isinstance(existing, dict) and existing.get("schema_version") == CACHE_SCHEMA_VERSION:
+                            document = existing
+                    except (OSError, json.JSONDecodeError):
+                        pass
+                entries = document.setdefault("entries", {})
+                entries[key] = {"input_revisions": dict(revisions), "result": dict(result), "last_access_ns": time.time_ns()}
+                # Bound derived state; cache is never canonical authority.
+                if len(entries) > 32:
+                    stale = sorted(entries, key=lambda item: (entries[item].get("last_access_ns", 0), item))[:-32]
+                    for stale_key in stale:
+                        entries.pop(stale_key, None)
+                self._write_unlocked(document)
+        except (OSError, TimeoutError):
+            return
 
     def _write_unlocked(self, document: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
