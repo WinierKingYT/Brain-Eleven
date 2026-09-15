@@ -618,14 +618,14 @@ unchanged.
 
 The original synthetic runtime benchmark wrote transcripts outside the
 configured ownership roots and raised before producing any timing evidence.
-At exact head `6acfe9e`, the evidence-only repair binds disposable Claude and
+At exact head `c17fd84`, the evidence-only repair binds disposable Claude and
 Codex roots, uses client-shaped synthetic records and records bounded hook
 status counts and verifies the canonical effect by revision/count delta. The
 focused W-07B suite passes 37/37; the full regression passes 1342 tests with 4
 skips and 2 existing dependency warnings. A 20-event,
 1000-record synthetic run completes 20/20 canonical effects with no dead
 letters and a singleton service, but Stop/UserPromptSubmit p95 and queue
-latency gates fail (541.95 ms, 959.08 ms and 75.18 s maximum respectively;
+latency gates fail (544.47 ms, 537.79 ms and 71.00 s maximum respectively;
 six prompt events are `DEGRADED`). This improves evidence truthfulness without
 closing W-07B: authenticated native trust, the complete 2×4 cold/warm matrix,
 multi-session dogfood and independent review remain open. W-07B is

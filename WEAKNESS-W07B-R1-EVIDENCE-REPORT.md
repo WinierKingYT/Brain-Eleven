@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-07B-R1 evidence harness repair
 
-**REVISION:** `6acfe9e0a71636a6dcaf406c31f32964be2bbc54`
+**REVISION:** `c17fd84ac95742088c60fc4ec250dbd26db37fd7`
 
 **IMPLEMENTATION UNDER TEST:** W-07B runtime at `f322d2c`
 
@@ -45,7 +45,7 @@ disposable transcript-root configuration for both clients, and the explicit
 ## TESTS EXECUTED
 
 - W-07B focused suite (`test_w07b_r1_evidence.py`, process recovery and
-  maintenance delivery): **36 passed**.
+  maintenance delivery): **37 passed**.
 - W-06C0R1 scope contract suite: **23 passed**.
 - Full regression at this exact revision: **1342 passed, 4 skipped, 2
   existing dependency warnings**.
@@ -62,10 +62,10 @@ Only timings, counts and status codes were emitted:
 | completed canonical effects | 20/20 |
 | dead-letter files | 0 |
 | singleton service | true |
-| Stop p95 | 541.95 ms |
-| UserPromptSubmit p95 | 959.08 ms |
-| queue p95 | 70,106.58 ms |
-| queue max | 75,177.31 ms |
+| Stop p95 | 544.47 ms |
+| UserPromptSubmit p95 | 537.79 ms |
+| queue p95 | 66,370.20 ms |
+| queue max | 70,999.83 ms |
 | Stop statuses | 20 `OK` |
 | UserPromptSubmit statuses | 18 `OK`, 2 `DEGRADED` |
 
@@ -120,8 +120,10 @@ is implied.
 
 The first independent review returned `FIX-FIRST` with one P1: unhandled
 `TimeoutExpired` could still suppress a report. That path is now bounded as a
-`TIMEOUT` status at this revision; a fresh read-only re-review is pending.
-Self-review is not an acceptance verdict.
+`TIMEOUT` status at this revision. The follow-up review confirmed the timeout
+fix and returned `FIX-FIRST` because the required native trust, full latency
+matrix and dogfood evidence are still absent. Self-review is not an
+acceptance verdict.
 
 ## SCORE BEFORE / AFTER
 

@@ -1,6 +1,6 @@
 # W-07B-R1 Contract — Native Evidence Harness Repair
 
-**Status:** CONTRACT REVIEW PENDING  
+**Status:** APPROVED CONTRACT / implementation complete; independent review pending
 **Package:** W-07B-R1 evidence-only closure  
 **Priority:** P2 evidence integrity  
 **Phase 20:** FROZEN / LOCKED  
@@ -105,4 +105,6 @@ dogfood gates. If any required cell or native client is unavailable, the
 package remains **FIX-FIRST / NOT ACCEPTED** with the exact bounded failure
 code preserved.
 
-**Plan status: REVIEW PENDING — implementation has not started.**
+**Plan status: APPROVED — implementation executed at `c17fd84`; package remains
+FIX-FIRST / NOT ACCEPTED pending the required native evidence and independent
+review.**

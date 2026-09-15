@@ -51,7 +51,7 @@ review still keeps W-07B
 native latency matrix and multi-session dogfood are missing. Retrieval quality
 and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
 
-W-07B-R1 is the active evidence package at exact head `6acfe9e`: the synthetic
+W-07B-R1 is the active evidence package at exact head `c17fd84`: the synthetic
 benchmark now binds disposable Claude/Codex transcript roots, verifies the
 canonical revision/count delta and records hook degradation instead of raising.
 Its focused suite is 37/37 and full regression is 1342 passed, 4 skipped, 2
@@ -273,7 +273,7 @@ in-file, not a functional finding.
 ## Recent sessions
 
 **2026-09-15 (continued)** — W-07B-R1 repaired the synthetic runtime evidence
-harness at `6acfe9e`. Disposable transcript roots and native-shaped fixtures
+harness at `c17fd84`. Disposable transcript roots and native-shaped fixtures
 now exercise ownership successfully; hook degradation and latency failures are
 reported as bounded metrics, including canonical revision/count verification.
 Full regression is 1342 passed, 4 skipped, and

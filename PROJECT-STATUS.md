@@ -5,7 +5,7 @@
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: IG-04 B2 Review Queue Usability — CLOSED / SHIPPED** (independent review `SHIP`, 2026-09-10; remote CI remains an open bounded follow-up, see `IG04-B2-INDEPENDENT-REVIEW.md`).
 **ACTIVE PACKAGE: W-07B-R1 evidence harness — FIX-FIRST / NOT ACCEPTED** (exact
-head `4568da9`; native trust, complete latency matrix and dogfood remain open).
+head `c17fd84`; native trust, complete latency matrix and dogfood remain open).
 
 The engineering weak-point goal is active alongside the frozen IG program.
 W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority
@@ -14,7 +14,7 @@ coverage (`02c05c0`) and W-22 optional-omission enforcement
 These bounded reliability/safety changes do not promote V2 or unlock Phase 20.
 
 W-07B-R1 repaired the disposable synthetic runtime benchmark and added bounded
-status reporting plus canonical-effect verification. At exact head `6acfe9e`,
+status reporting plus canonical-effect verification. At exact head `c17fd84`,
 its focused suite is 37/37 and the full regression is 1342 passed, 4 skipped, 2
 existing dependency warnings.
 The synthetic run completes 20/20 canonical effects with no dead letters, but
