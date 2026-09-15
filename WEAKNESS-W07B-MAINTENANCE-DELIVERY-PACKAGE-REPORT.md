@@ -1,7 +1,7 @@
 # W-07B Native Maintenance and Reminder Delivery — Package Report
 
 **PACKAGE:** W-07B  
-**REVISION:** `e1512e9` (final evidence head; implementation `94f331f`, recovery `44dfe43`)
+**REVISION:** `f322d2c` (exact evidence head; implementation `94f331f`, hardening `facd5e1`, tests `f322d2c`)
 **STATUS:** REVIEW PENDING / NOT ACCEPTED  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -49,6 +49,13 @@ atomic delivery receipt.
 Reconciliation fairness commit `e1512e9` scans past already-reconciled
 completed jobs so a later enqueue gap cannot be starved by the bounded batch.
 
+Exact-head hardening commit `6d40011` adds an expiring processing lease so a
+second worker cannot claim a live intent, validates every report envelope
+before reminder delivery, and keeps canonical revision failures out of logs.
+Test commits `4e0f3fc` and `f322d2c` add lease-concurrency, structurally
+incomplete report, post-maintenance-crash retry, and expired-lease fencing
+coverage.
+
 ## ROOT CAUSES ADDRESSED
 
 - Native `SessionEnd` previously stopped at capture delivery and did not
@@ -64,7 +71,7 @@ completed jobs so a later enqueue gap cannot be starved by the bounded batch.
 
 ## TESTS ADDED
 
-Eleven focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
+Fifteen focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
 
 1. SessionEnd-only intent creation and duplicate idempotence; Stop exclusion.
 2. Worker scheduling after a terminal capture result.
@@ -78,12 +85,18 @@ Eleven focused tests in `tests/test_w07b_maintenance_delivery.py` cover:
 10. Surface flag and session-keyed delivery receipt behavior.
 11. Bounded retry/failure, content-free error persistence, and unchanged
    MemoryStore/StateStore revisions.
+12. Structurally incomplete success reports are rejected before reminder
+   delivery.
+13. A live processing lease blocks a concurrent duplicate maintenance run.
+14. A crash after derived work but before staging is retryable without any
+   canonical effect.
+15. An expired lease fences the old worker before report publication.
 
 ## TESTS EXECUTED
 
-- Focused W-07B: **11 passed**.
-- Existing native/maintenance/session/capture focus: **66 passed**.
-- Full regression at implementation + test exact head: **1168 passed, 2
+- Focused W-07B: **15 passed**.
+- Existing native/maintenance/session/capture focus: **100 passed**.
+- Full regression at prior exact head `4e0f3fc`: **1171 passed, 2
   warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on touched runtime/test files: PASS.
 - `compileall` on touched runtime/test files: PASS.
@@ -115,38 +128,49 @@ The core audit score is not promoted by local implementation tests alone.
 
 ## KNOWN LIMITATIONS
 
-- The focused suite uses deterministic worker/runtime fixtures; a real Claude
-  and Codex executable run with an isolated vault has not yet been attached to
-  this package evidence.
+- A real Claude and Codex executable run with an isolated vault has not yet
+  been attached to this package evidence.
 - Service-loop asynchronous execution is covered structurally and through the
   delivery worker tests, but a process-level restart/kill harness is still
   required for final acceptance.
 - Native latency and a multi-session dogfood sample are not measured here.
+- Lease expiry fencing is covered at exact implementation head `f322d2c`; a
+  stale worker cannot publish after a second worker recovers the intent.
+- A crash after `run_maintenance()` returns but before safe staging causes a
+  retry of derived work; the retry is bounded and canonical-store safe, but
+  exactly-once derived execution across that window is not yet proven.
 - The manual `session_pipeline.py` path remains intentionally separate and is
   covered only by its existing parity suite.
 
 ## OPEN FAILURES
 
 - No known production test failure.
-- Native executable smoke, process restart/kill evidence, latency evidence,
-  and independent read-only review remain open acceptance gates.
+- Independent read-only review at exact head `4e0f3fc9ed536060f085cb160961e9af083d8cfb`
+  returned `FIX-FIRST`; the subsequent owner-fencing hardening at `facd5e1`
+  and `f322d2c` is awaiting a fresh independent review.
+- Native executable smoke, process restart/kill evidence, latency/dogfood
+  evidence, and lease-owner fencing remain open acceptance gates.
 
 ## INDEPENDENT REVIEW
 
-Not yet performed. A self-review is not an independent review and cannot
-close this package.
+Independent read-only review at exact head `4e0f3fc9ed536060f085cb160961e9af083d8cfb`
+returned **FIX-FIRST**. The reviewer confirmed the lease, strict report
+validation, bounded error logging, and new tests, while keeping the native,
+process and latency/dogfood gates open. The post-review owner-fencing change
+is bounded and awaits re-review.
 
 ## SCORE BEFORE / AFTER
 
-- Capture runtime: **8.5 → 8.5 pending review**
-- W-07B maintenance delivery: **unscored → provisional 7.5/10**
-- Daily-use reminder delivery: **unscored → provisional 7.0/10**
+- Capture runtime: **8.5 → 8.5 pending native evidence**
+- W-07B maintenance delivery: **unscored → provisional 8.0/10**
+- Daily-use reminder delivery: **unscored → provisional 7.5/10**
 
 ## VERDICT
 
-**REVIEW PENDING / NOT ACCEPTED**
+**FIX-FIRST / NOT ACCEPTED**
 
 The implementation and evidence commits are pushed, but W-07B remains open
-until exact final head `8468b32` receives an independent read-only verdict of
-`SHIP`, `FIX-FIRST`, or `RETHINK` and the remaining native/process evidence is
-addressed.
+because the last independent exact-head verdict is `FIX-FIRST` and
+native/process and latency/dogfood evidence plus re-review of the owner-fencing
+hardening are still required. Phase 20 remains FROZEN / LOCKED and V2 remains
+SHADOW.

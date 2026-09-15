@@ -22,8 +22,8 @@ the behavior and operational evidence found in the current repository.
 
 | Area | Score | Evidence / status |
 |---|---:|---|
-| Persistence and concurrency | 8.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped. |
-| Scope and fail-closed safety | 7.5 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; transcript session/project ownership is still unverified. |
+| Persistence and concurrency | 7.0 | W-08A registry durability/revision/CAS, W-08B coordinated backup, W-08C state-reference TOCTOU, and W-08D typed API lifecycle are independently shipped; archived-state mutation and runtime-config races remain open. |
+| Scope and fail-closed safety | 6.5 | Related-note, native transcript path, W-08C state-reference, and W-08D API project-scope boundaries are independently shipped; root/ID disagreement remains a P1 leakage path. |
 | Capture runtime | 8.5 | Claim/retry/lease crash-loss, late known-locator durability, transcript ownership and completed-folder terminal-state recovery are independently shipped; native end-to-end trust and broader daily-use behavior remain separate concerns. |
 | Evaluation quality | 9.0 | W-09 and W-09A independently shipped explicit gate semantics, source/corpus/candidate reconciliation, same-input V1/V2 measurement, content-free reports and hard safety counters. Retrieval quality itself remains low and visible. |
 | Semantic retrieval correctness | 6.0 | Active search still depends on legacy embedding path and lexical fallback; provider abstraction is not the active authority. |
@@ -32,7 +32,7 @@ the behavior and operational evidence found in the current repository.
 | Extraction intelligence | 7.0* | Safety and semantic layers exist, but full real-use quality is not yet independently measured. |
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
 | Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
-| V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall. |
+| V2 runtime readiness | 4.0 | V2 is implemented and measured but not promoted; current shadow comparison remains below V1 on relevance recall, and a separate delivery gate is still missing. |
 | Reminder/continuity runtime | 5.0 | Native V1 reads bounded project state for continuity; automatic Daily/Last Session/open-loop maintenance remains legacy/manual. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
@@ -173,12 +173,17 @@ renders bounded, deterministic, project-scoped work items, requirements,
 blockers, constraints and risks. Automatic markdown reminder writing remains
 open and is not implied by this package.
 
-**W-07B audit status:** Read-only runtime audit keeps this package at
-`FIX-FIRST / NOT ACCEPTED`. Native SessionEnd currently queues capture and
-the worker does not invoke maintenance; native SessionStart does not consume
-the legacy maintenance report. The report also lacks revision/project
-freshness binding, durable idempotence and content-free privacy boundaries.
-These are P2 follow-ups and remain separate from W-03B capture ownership.
+**W-07B audit status:** The bounded runtime implementation is pushed at exact
+head `f322d2c`. It now schedules verified
+SessionEnd maintenance asynchronously, binds reports to project/source
+revisions, enforces content-free projections, reconciles enqueue/publication
+crash gaps, and fences active duplicate claims with an expiring lease.
+Independent read-only review at that exact head returned `FIX-FIRST`:
+real Claude/Codex executable smoke, process restart/kill, native latency and
+dogfood evidence remain open. Expired-lease owner fencing is covered by the
+post-review hardening, which awaits independent re-review. The package remains
+`FIX-FIRST / NOT ACCEPTED`; no automatic
+markdown writes or Phase 20/V2 promotion were introduced.
 
 ### W-08 — Persistence consistency gaps (P1/P2)
 
@@ -243,12 +248,12 @@ generic identifiers and content-free errors, and records reproducible public
 split/report hashes. Retrieval quality, corpus labels, V2 and Phase 20 were
 unchanged.
 
-**W-07B audit finding:** Native maintenance/reminder delivery remains a P2
-weakness. Native SessionEnd/worker paths do not invoke post-session maintenance,
-and native SessionStart does not consume the derived report. A future bounded
-contract must define trigger, revision/freshness, idempotence, project scope and
-privacy-safe signals before implementation; automatic markdown writes remain
-deferred.
+**W-07B evidence update:** The former P2 implementation gap has a bounded
+runtime package at exact head `f322d2c`, but
+the independent verdict remains `FIX-FIRST / NOT ACCEPTED` until native
+executable, restart/kill and latency/dogfood evidence plus independent
+re-review of the owner-fencing hardening remain open. Automatic markdown
+writes remain deferred.
 
 **W-09A status:** Independently reviewed `SHIP` at exact review head
 `31a436c` in `WEAKNESS-W09A-INDEPENDENT-REVIEW.md` (review commit
@@ -257,6 +262,96 @@ deferred.
 snapshots, enforces K/label/safety gates, and keeps HOLDOUT separate. Public
 quality is measured but weak (V1 precision 0.1723, V2 0.1472; V2 remains
 below V1), so no retrieval tuning or V2 promotion is implied.
+
+### W-10 — V2 shadow output reaches live client injection (P1)
+
+The repository documents V2 as `SHADOW`, but `brain_eleven/runtime/context.py`
+routes the normal `compile_task()` path through `ContextCompilerV2` and the
+launcher places any non-empty result in
+`hookSpecificOutput.additionalContext` for native clients. The same path labels
+the result as provider `V1`, while the rendered context carries the V2 marker.
+An isolated CANARY reproduction therefore delivered V2-shaped context to the
+client without a separate model-facing V2 gate. This is a rollout-boundary
+defect, not a retrieval-quality result. Status: **OPEN / FIX-FIRST**. The
+bounded successor must keep V2 comparison output out of client injection while
+SHADOW, expose provider metadata matching the delivered path, and test
+CANARY/ACTIVE explicitly. No V2 promotion is authorized by this finding.
+
+### W-11 — W-06B selector drops normalized global memories (P2)
+
+`brain_eleven/runtime/task_aware.py` admits global candidates only when
+`project_id is None`, while canonical global records are normalized by
+`scripts/memory_scope.py` to `scope="global", project_id=""`. A relevant global
+decision can therefore be present in the compiler ranking but disappear from
+the task-aware selection, producing an empty result. This affects the already
+rejected opt-in W-06B path and is not a default-path regression, but it would
+invalidate future evaluation. Status: **OPEN / DEFERRED behind retrieval
+contract**; use canonical scope normalization and add an isolation test.
+
+### W-12 — Derived router/compiler cache read-modify-write is unsynchronized (P2)
+
+`context_router/cache.py` and `context_compiler_v2/cache.py` rewrite access
+timestamps and read-modify-write cache snapshots without a shared lock; some
+paths use direct `write_text()` rather than atomic replacement. A 16-writer
+temporary-vault stress probe retained only one completed entry in repeated
+runs and observed replacement errors. Canonical stores are unaffected, but
+cache loss causes misses, latency spikes and unstable operational behavior.
+Status: **OPEN**. The bounded fix is a shared lock plus atomic writes and a
+concurrent preservation test; it must not alter retrieval ranking.
+
+### W-13 — Supplied project root and project ID can disagree (P1)
+
+`scripts/memory_scope.py` derives the registered identity from `project_root`
+but retains a caller-supplied `project_id`; `brain_eleven/memory/capture.py`
+and `scripts/search-api.py` accept both values. A capture using project A's
+root with project B's ID persisted project-A-labelled content under project B.
+This violates the zero wrong-project-leakage invariant. Status: **OPEN / P1**;
+when both values are supplied, require an exact registry match or derive the
+opaque ID exclusively from the registered root, with capture/API regression
+tests.
+
+### W-14 — Archived project can race a state mutation (P1)
+
+`StateService` checks project activity before taking the state lock, while a
+concurrent registry archive can commit between that check and the state
+transaction. A fault-injected probe archived a project and then observed a
+successful requirement write after archive. Sequential archived rejection is
+tested; the linearization race is not. Status: **OPEN / P1**. Registry status
+changes and state mutations need one lifecycle coordination boundary.
+
+### W-15 — Runtime rollout/config updates can lose concurrent operator changes (P1)
+
+`RuntimeConfig.set_mode()` and `set_human_approval()` load and rewrite the
+whole config without a shared lock or revision/CAS. A delayed mode write can
+erase a later approval change, and a delayed CANARY/ACTIVE write can override
+a later operator `OFF`. Status: **OPEN / P1**. The final commit needs one
+config lock with reload or a revision guard; long validation may remain
+outside the commit lock.
+
+### W-16 — Public `MemoryStore.append()` accepts malformed canonical records (P2)
+
+The public append surface validates the document envelope but accepts arbitrary
+dictionaries without record type, scope, lifecycle, fingerprint or provenance
+validation. A malformed record can therefore be persisted directly, even
+though no current production caller was found. Status: **OPEN / P2 dormant
+authority surface**; either make raw append private or enforce the canonical
+record schema and add a malformed-record test.
+
+### W-17 — Runtime config writes follow symlinked/reparse runtime paths (P2)
+
+`brain_eleven/runtime/storage.py::write_json()` creates directories and
+replaces files without rejecting symlink/reparse path components. A temporary
+vault with `.brain-eleven/runtime` redirected caused an approval update to
+write outside the vault. Status: **OPEN / P2**; apply the existing no-follow
+and containment policy used by backup publication.
+
+### W-18 — MemoryStore replacement does not fsync the parent directory (P2)
+
+`scripts/memory_store.py` fsyncs its temporary file but not the containing
+directory after `replace()`, leaving rename durability weaker than the
+ProjectRegistry and coordinated backup paths after power loss. Status:
+**OPEN / P2 operational hardening**; add directory durability without changing
+the canonical schema or lock/CAS semantics.
 
 ## Current package selection
 
@@ -268,14 +363,11 @@ below V1), so no retrieval tuning or V2 promotion is implied.
 at exact implementation head `942aee8`, W-03B transcript ownership/provenance
 is independently `SHIP`ped at exact review head `f1d8896`, and the W-02
 completed-folder terminal-state successor is independently `SHIP`ped at exact
-review head `ed54bfa`. The next bounded work is a W-07B native
-maintenance/reminder delivery contract review; its trigger, freshness,
-idempotence, project scope and privacy boundaries must be frozen before any
-runtime change. The W-06 retrieval successor remains evaluation-only and must
-not tune HOLDOUT, promote V2 or open Phase 20. The W-07B contract is
-independently `SHIP` at exact revision `acebec1`; its bounded runtime
-implementation is now authorized, while package acceptance remains pending
-implementation evidence and independent review.
+review head `ed54bfa`. W-07B's contract is independently `SHIP` at exact
+revision `acebec1`, but its runtime package remains `FIX-FIRST / NOT ACCEPTED`
+at exact head `f322d2c`. The next audit
+finding is W-10 (V2 delivery gate); W-06 retrieval work remains
+evaluation-only and must not tune HOLDOUT, promote V2 or open Phase 20.
 W-08D is closed at 8.0 for persistence/concurrency, 8.0 for scope/fail-closed
 mutation safety, and 8.0 for API lifecycle reliability.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
@@ -309,8 +401,8 @@ independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without
 tuning HOLDOUT, leaking scope, promoting V2, or opening Phase 20.
-W-07B automatic reminder delivery remains explicit deferred work rather than
-being treated as complete.
+W-07B automatic markdown maintenance remains deferred; bounded native delivery
+is implemented but not accepted until its remaining evidence gates pass.
 **Explicitly deferred:** V2 promotion, ranking changes, Phase 20, and all
 canonical persistence changes.
 
