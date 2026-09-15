@@ -147,6 +147,28 @@ def test_nested_missing_vault_parents_preserve_recursive_mkdir_behavior(tmp_path
     assert cfg.load()["b1_human_approval"] is True
 
 
+def test_vault_swap_during_runtime_root_creation_leaves_no_external_directory(tmp_path, monkeypatch):
+    vault = _vault(tmp_path)
+    outside = tmp_path / "outside-create"
+    outside.mkdir()
+    original_mkdir = Path.mkdir
+    swapped = []
+
+    def swap_before_root_mkdir(path, *args, **kwargs):
+        if path == vault / ".brain-eleven" and not swapped:
+            moved = tmp_path / "moved-vault"
+            vault.rename(moved)
+            _make_link(vault, outside)
+            swapped.append(True)
+        return original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", swap_before_root_mkdir)
+    with pytest.raises(RuntimePathError):
+        storage.RuntimeConfig(vault).set_human_approval(True)
+
+    assert list(outside.iterdir()) == []
+
+
 def test_regular_runtime_write_keeps_atomic_json_behavior(tmp_path):
     vault = _vault(tmp_path)
     cfg = storage.RuntimeConfig(vault)
