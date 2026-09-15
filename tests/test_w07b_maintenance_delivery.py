@@ -10,6 +10,7 @@ from brain_eleven.state import StateStore
 from scripts.capture_event import HookEvent
 from scripts.capture_queue import CaptureQueue
 import json
+import threading
 from pathlib import Path
 
 
@@ -232,7 +233,6 @@ def test_corrupt_or_foreign_report_is_never_delivered(tmp_path):
     (root / "reports").mkdir(parents=True)
     (root / "reports" / "corrupt.json").write_text("{not json", encoding="utf-8")
     assert delivery.latest_reminder(vault, project_id)["status"] == "STALE_OR_MISSING"
-
     foreign = {
         "schema_version": delivery.SCHEMA_VERSION,
         "status": "SUCCESS",
@@ -243,6 +243,81 @@ def test_corrupt_or_foreign_report_is_never_delivered(tmp_path):
     }
     (root / "reports" / "foreign.json").write_text(json.dumps(foreign), encoding="utf-8")
     assert delivery.latest_reminder(vault, project_id)["status"] == "STALE_OR_MISSING"
+
+
+def test_structurally_incomplete_success_report_is_never_delivered(tmp_path):
+    vault, project_id = _vault(tmp_path)
+    root = delivery._root(vault)
+    (root / "reports").mkdir(parents=True)
+    incomplete = {
+        "schema_version": delivery.SCHEMA_VERSION,
+        "status": "SUCCESS",
+        "report_id": "report-incomplete",
+        "intent_id": "intent-incomplete",
+        "event_id_hash": "0" * 64,
+        "project_id": project_id,
+        "source_memory_revision": 0,
+        "source_state_revision": 0,
+        "source_graph_revision": 0,
+        "surface_at_next_session": True,
+    }
+    (root / "reports" / "incomplete.json").write_text(json.dumps(incomplete), encoding="utf-8")
+    assert delivery.latest_reminder(vault, project_id)["status"] == "STALE_OR_MISSING"
+
+
+def test_processing_lease_blocks_concurrent_duplicate_run(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    delivery.enqueue(vault, _job(project_id), _result())
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    def run_once(*args, **kwargs):
+        calls.append(1)
+        started.set()
+        assert release.wait(5)
+        return _raw_report()
+
+    monkeypatch.setattr(maintenance, "run_maintenance", run_once)
+    first_result = {}
+    first = threading.Thread(target=lambda: first_result.update(value=delivery.process_pending(vault)))
+    first.start()
+    assert started.wait(5)
+    assert delivery.process_pending(vault) == 0
+    release.set()
+    first.join(5)
+    assert not first.is_alive()
+    assert first_result["value"] == 1
+    assert calls == [1]
+
+
+def test_crash_after_maintenance_result_is_retryable_without_canonical_effect(tmp_path, monkeypatch):
+    vault, project_id = _vault(tmp_path)
+    delivery.enqueue(vault, _job(project_id), _result())
+    before_memory = MemoryStore(vault).revision()
+    before_state = StateStore(vault).project_revision(project_id)
+    calls = []
+    original_safe_report = delivery._safe_report
+    crashed = {"value": False}
+
+    def run_once(*args, **kwargs):
+        calls.append(1)
+        return _raw_report()
+
+    def crash_once(*args, **kwargs):
+        if not crashed["value"]:
+            crashed["value"] = True
+            raise RuntimeError("simulated post-run crash")
+        return original_safe_report(*args, **kwargs)
+
+    monkeypatch.setattr(maintenance, "run_maintenance", run_once)
+    monkeypatch.setattr(delivery, "_safe_report", crash_once)
+    assert delivery.process_pending(vault) == 0
+    monkeypatch.setattr(delivery, "_safe_report", original_safe_report)
+    assert delivery.process_pending(vault) == 1
+    assert len(calls) == 2
+    assert MemoryStore(vault).revision() == before_memory
+    assert StateStore(vault).project_revision(project_id) == before_state
 
 
 def test_surface_flag_and_delivery_receipt_bound_reminders(tmp_path, monkeypatch):
