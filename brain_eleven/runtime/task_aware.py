@@ -11,6 +11,7 @@ from typing import Any
 
 from context_compiler_v2.safety import contains_secret
 from context_compiler_v2.tokenizer import ConservativeTokenEstimator
+from brain_eleven.memory.scope import infer_memory_scope
 
 INTENTS = frozenset({"IMPLEMENT", "MIGRATE", "TEST", "DEBUG", "REVIEW", "PLAN", "DESIGN", "RESEARCH", "GENERAL"})
 STATUSES = frozenset({"READY", "NO_NEED", "AMBIGUOUS", "UNAVAILABLE", "INVALID"})
@@ -62,6 +63,12 @@ def task_need(task: Any) -> tuple[TaskNeedInput, TaskNeedResult]:
     return item, TaskNeedResult("READY", profile, needs, project)
 
 
+def _scope_is_eligible(memory: dict[str, Any], project_id: str | None) -> bool:
+    """Apply the canonical global/project scope rule to a ranked record."""
+    scope, _, memory_project_id = infer_memory_scope(memory)
+    return scope == "global" or (scope == "project" and memory_project_id == project_id)
+
+
 def select(compiler: Any, task: Any, *, budget: int = 1024, human_approval: bool = False) -> dict[str, Any]:
     """Rerank already eligible V1 records and render within hard bounds."""
     need, result = task_need(task)
@@ -71,7 +78,7 @@ def select(compiler: Any, task: Any, *, budget: int = 1024, human_approval: bool
         from scripts.capture_safety import evaluate_capture
         safe = lambda text: not contains_secret(text) and evaluate_capture(text).accepted
         records = [x for x in compiler._rank_memories(limit=MAX_ITEMS * 8)
-                   if x.get("project_id") in {None, result.project_id} and safe(x.get("content", ""))
+                   if _scope_is_eligible(x, result.project_id) and safe(x.get("content", ""))
                    and (not human_approval or x.get("is_approved", True) is True)]
         terms = set(_WORD.findall((need.raw_prompt + " " + " ".join(need.entities) + " " + " ".join(need.needs)).casefold()))
         def key(item):
