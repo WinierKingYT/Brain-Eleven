@@ -14,6 +14,7 @@ from brain_eleven.infrastructure.locking import (
     file_lock as _base_file_lock,
 )
 from .path_safety import (
+    RuntimePathError,
     assert_runtime_snapshot,
     ensure_runtime_directory,
     guard_runtime_path,
@@ -27,21 +28,32 @@ _runtime_thread_locks = {}
 _runtime_thread_locks_guard = threading.Lock()
 
 
-def _runtime_posix_lock(root, target, timeout, poll_interval):
+def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
     import fcntl
 
-    # Existing runtime files can carry a target-specific cross-process flock.
-    # A first write has no file to lock yet, so use the validated runtime root
-    # as a conservative creation lock and supplement it with a thread lock.
-    lock_target = target if os.path.isfile(target) else root
-    if lock_target == root:
-        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    else:
-        flags = os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
-    descriptor = os.open(lock_target, flags)
+    # Open the validated runtime directory once, then create/open the lock
+    # registry relative to that descriptor.  A parent swap after this point
+    # cannot redirect the registry into an outside directory.
+    root_flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    root_descriptor = os.open(root, root_flags)
+    root_identity = os.fstat(root_descriptor)
+    if (root_identity.st_dev, root_identity.st_ino, root_identity.st_mode, getattr(root_identity, "st_file_attributes", 0)) != snapshot.root:
+        os.close(root_descriptor)
+        raise RuntimePathError("Runtime root changed before lock registry open")
+    try:
+        registry_descriptor = os.open(
+            ".runtime-locks",
+            os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=root_descriptor,
+        )
+    except Exception:
+        os.close(root_descriptor)
+        raise
     acquired = False
     deadline = time.monotonic() + timeout
     key = os.fspath(target)
+    offset = int(hashlib.sha256(key.encode()).hexdigest()[:12], 16)
     with _runtime_thread_locks_guard:
         thread_lock = _runtime_thread_locks.setdefault(key, threading.Lock())
     try:
@@ -51,7 +63,7 @@ def _runtime_posix_lock(root, target, timeout, poll_interval):
         try:
             while not acquired:
                 try:
-                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    fcntl.lockf(registry_descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB, 1, offset, os.SEEK_SET)
                     acquired = True
                 except (BlockingIOError, OSError):
                     if time.monotonic() >= deadline:
@@ -60,10 +72,11 @@ def _runtime_posix_lock(root, target, timeout, poll_interval):
             yield
         finally:
             if acquired:
-                fcntl.flock(descriptor, fcntl.LOCK_UN)
+                fcntl.lockf(registry_descriptor, fcntl.LOCK_UN, 1, offset, os.SEEK_SET)
             thread_lock.release()
     finally:
-        os.close(descriptor)
+        os.close(registry_descriptor)
+        os.close(root_descriptor)
 
 
 @contextmanager
@@ -71,6 +84,7 @@ def _runtime_windows_mutex(target, timeout):
     import ctypes
 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
     kernel32.CreateMutexW.restype = ctypes.c_void_p
     kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
     kernel32.WaitForSingleObject.restype = ctypes.c_uint32
@@ -115,7 +129,7 @@ def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
             assert_runtime_snapshot(runtime_root, target, snapshot)
             yield
     else:
-        with _runtime_posix_lock(runtime_root, target, timeout, poll_interval):
+        with _runtime_posix_lock(runtime_root, target, snapshot, timeout, poll_interval):
             assert_runtime_snapshot(runtime_root, target, snapshot)
             yield
 
