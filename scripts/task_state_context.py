@@ -12,7 +12,6 @@ from typing import Any, Mapping, Optional, Sequence
 from brain_eleven.projects.identity import (
     ROOT_IDENTITY_PATTERN,
     ProjectLineageError,
-    project_root_identity,
     registry_snapshot_for_root,
 )
 from brain_eleven.state.resolver import CurrentProjectState, StateResolver
@@ -173,7 +172,7 @@ class TaskStateComposer:
                 lineage = TaskStateLineage(
                     project_id=initial.project_id,
                     registry_revision=final.registry_revision,
-                    root_identity=project_root_identity(final.normalized_root or self.project_root),
+                    root_identity=final.root_identity,
                 )
             except (TypeError, ValueError, ProjectLineageError) as exc:
                 raise TaskStateLineageError("Project lineage is invalid") from exc
