@@ -115,6 +115,19 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _fsync_parent_directory(path: Path) -> None:
+    """Persist the directory entry after replacement where supported."""
+    if os.name == "nt":
+        # Directory handles are not consistently openable for fsync on the
+        # supported Windows versions; the file handle was already fsynced.
+        return
+    descriptor = os.open(str(path.parent), os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 class MemoryStore:
     """Read and mutate the canonical store with lock/reload/revision semantics."""
 
@@ -201,6 +214,7 @@ class MemoryStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             temporary.replace(self.path)
+            _fsync_parent_directory(self.path)
         except OSError as exc:
             raise MemoryStoreError(f"Cannot persist canonical memory store: {self.path}") from exc
         finally:
