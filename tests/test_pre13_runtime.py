@@ -428,7 +428,7 @@ def test_hook_delivery_and_warn_continue(runtime, monkeypatch):
     from brain_eleven.runtime import launcher
     vault, _ = runtime
     monkeypatch.setattr(launcher, 'ensure_service', lambda *args, **kwargs: True)
-    monkeypatch.setattr(launcher, 'request_service', lambda *args, **kwargs: {'status':'DEGRADED','context':'Safe context','delivered':True,'missing_critical_needs':['blocker']})
+    monkeypatch.setattr(launcher, 'request_service', lambda *args, **kwargs: {'status':'DEGRADED','context':'Safe context','delivered':True,'delivery_approved':True,'provider':'V1','missing_critical_needs':['blocker']})
     payload = {'cwd':str(vault),'session_id':'s','turn_id':'1','prompt':'Continue'}
     output, path, record = launcher.hook(vault, 'codex', 'UserPromptSubmit', payload)
     assert output['hookSpecificOutput']['additionalContext'] == 'Safe context'

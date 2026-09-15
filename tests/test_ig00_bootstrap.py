@@ -64,7 +64,8 @@ def test_native_bootstrap_flush_receipt_deduplicates(runtime, monkeypatch, capsy
     calls = []
     def request(vault, route, payload, **kwargs):
         calls.append(payload)
-        return {'status': 'SUCCESS', 'context': 'Türkçe bağlam', 'delivered': True}
+        return {'status': 'SUCCESS', 'context': 'Türkçe bağlam', 'delivered': True,
+                'delivery_approved': True, 'provider': 'V1'}
     monkeypatch.setattr(launcher, 'request_service', request)
     for index in range(2):
         monkeypatch.setattr(sys, 'stdin', type('Input', (), {'buffer': io.BytesIO(json.dumps({'cwd': str(vault), 'session_id': 'same'}).encode())})())

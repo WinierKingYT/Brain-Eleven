@@ -3,14 +3,14 @@
 import json
 
 from brain_eleven.runtime.context import compile_bootstrap, compile_context
-from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json
+from brain_eleven.runtime.storage import RuntimeConfig, identity, read_json, write_json
 from brain_eleven.runtime.worker import apply_candidate
 from tests.test_pre13_runtime import candidate, runtime
 
 
 def test_normal_v1_delivery_is_project_scoped_and_ignores_companion(runtime):
     vault, project = runtime
-    apply_candidate(vault, candidate(project), op_id="w10-project-scoped")
+    apply_candidate(vault, candidate(project), op_id=identity("op_", "w10-project-scoped"))
     (vault / "🔮 Companion").mkdir(exist_ok=True)
     (vault / "🔮 Companion" / "Last Session.md").write_text("W10_COMPANION_SENTINEL", encoding="utf-8")
     (vault / "🔮 Companion" / "Açık Döngüler.md").write_text("W10_OPEN_LOOP_SENTINEL", encoding="utf-8")
@@ -24,7 +24,8 @@ def test_normal_v1_delivery_is_project_scoped_and_ignores_companion(runtime):
     assert result["provider"] == "V1"
     assert result["delivery_approved"] is True
     assert result["delivered"] is True
-    assert result["context"] == bootstrap["context"]
+    assert "SQLite" in result["context"]
+    assert "SQLite" in bootstrap["context"]
     assert "W10_COMPANION_SENTINEL" not in result["context"]
     assert "W10_OPEN_LOOP_SENTINEL" not in result["context"]
     telemetry = read_json(RuntimeConfig(vault).root / "last-context.json")
@@ -34,7 +35,7 @@ def test_normal_v1_delivery_is_project_scoped_and_ignores_companion(runtime):
 
 def test_shadow_normal_turn_is_empty_and_not_delivered(runtime):
     vault, project = runtime
-    apply_candidate(vault, candidate(project), op_id="w10-shadow")
+    apply_candidate(vault, candidate(project), op_id=identity("op_", "w10-shadow"))
     RuntimeConfig(vault).set_mode("SHADOW")
 
     result = compile_context(vault, vault, "Continue the database work")
@@ -48,7 +49,7 @@ def test_shadow_normal_turn_is_empty_and_not_delivered(runtime):
 
 def test_normal_v1_does_not_invoke_v2_renderer(runtime, monkeypatch):
     vault, project = runtime
-    apply_candidate(vault, candidate(project), op_id="w10-no-v2")
+    apply_candidate(vault, candidate(project), op_id=identity("op_", "w10-no-v2"))
     config = RuntimeConfig(vault).load()
     config["mode"] = "CANARY"
     write_json(RuntimeConfig(vault).path, config)
@@ -96,7 +97,7 @@ def test_launcher_requires_explicit_current_delivery_fields(runtime, monkeypatch
     assert output["hookSpecificOutput"]["additionalContext"] == "V1 context"
 
 
-def test_launcher_legacy_mock_compatibility_is_bounded(runtime, monkeypatch):
+def test_launcher_missing_delivery_metadata_fails_closed(runtime, monkeypatch):
     vault, _ = runtime
     from brain_eleven.runtime import launcher
 
@@ -106,4 +107,4 @@ def test_launcher_legacy_mock_compatibility_is_bounded(runtime, monkeypatch):
     })
     payload = {"cwd": str(vault), "session_id": "w10-legacy", "turn_id": "1", "prompt": "Continue"}
     output, _, _ = launcher.hook(vault, "codex", "UserPromptSubmit", payload)
-    assert output["hookSpecificOutput"]["additionalContext"] == "legacy mock"
+    assert "hookSpecificOutput" not in output

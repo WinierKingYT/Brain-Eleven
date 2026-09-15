@@ -23,14 +23,8 @@ from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapsh
 MODEL_FACING_V1_PROVIDERS = frozenset({'V1', 'W06B_TASK_AWARE'})
 
 
-def _legacy_context_compiler():
-    """Load the legacy compiler without invoking its public Companion path."""
-    from brain_eleven._legacy import load_legacy_module
-    return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
-
-
 def _normalize_v1_state_identity(context, state):
-    """Retain the legacy projection's bounded state-record identity hints."""
+    """Retain the legacy normal-turn state identity markers."""
     if state is None:
         return context
     record_ids = []
@@ -43,6 +37,12 @@ def _normalize_v1_state_identity(context, state):
     if not record_ids:
         return context
     return context + '\n\n## STATE RECORD IDS\n' + '\n'.join(f'- {item}' for item in record_ids)
+
+
+def _legacy_context_compiler():
+    """Load the legacy compiler without invoking its public Companion path."""
+    from brain_eleven._legacy import load_legacy_module
+    return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
 
 
 def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False):
@@ -139,14 +139,10 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.
-    context = _normalize_v1_state_identity(
-        compiler._generate_context_block(memories, {}, '', '', state), state,
-    )
+    context = compiler._generate_context_block(memories, {}, '', '', state)
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
-        context = _normalize_v1_state_identity(
-            compiler._generate_context_block(memories, {}, '', '', state), state,
-        )
+        context = compiler._generate_context_block(memories, {}, '', '', state)
     reminder_context = None
     reminder_record = None
     try:

@@ -104,24 +104,12 @@ def hook(vault, client, event, payload):
                                  'client': client, 'session': session, 'turn': str(turn), 'event': event},
                                  timeout=max(.05, min(2, deadline - time.monotonic())))
         output = {}
-        # ``delivered`` is the explicit server-side approval marker.  New
-        # responses also carry ``delivery_approved`` and a provider; the
-        # fallback below preserves compatibility with older test/service
-        # responses that predate those bounded fields.  An explicitly
-        # mismatched provider is always rejected, so V2 text cannot be
-        # relabeled as V1 at this boundary.
+        # ``delivery_approved`` and provider are mandatory at the native
+        # model-facing boundary.  Missing metadata fails closed so a stale or
+        # malformed service response cannot be relabeled as V1.
         provider = result.get('provider')
-        if 'delivery_approved' in result or 'provider' in result:
-            # Current service responses must carry both fields.  A missing or
-            # mismatched field is fail-closed, even if ``delivered`` is true.
-            approved = result.get('delivery_approved') is True
-            provider_allowed = provider in {'V1', 'W06B_TASK_AWARE'}
-        else:
-            # Bounded compatibility for pre-gate mocked/older service
-            # responses only; production compile_context always emits the
-            # explicit fields above.
-            approved = result.get('delivered') is True
-            provider_allowed = True
+        approved = result.get('delivery_approved') is True
+        provider_allowed = provider in {'V1', 'W06B_TASK_AWARE'}
         if approved and provider_allowed and result.get('delivered') is True and result.get('context'):
             output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': result['context']}
         if result.get('missing_critical_needs') or result.get('status') not in {'SUCCESS', 'EMPTY', 'OFF', 'SCOPE_DISABLED'}:
