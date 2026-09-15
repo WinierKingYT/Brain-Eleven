@@ -102,8 +102,10 @@ def test_required_record_fields_are_rejected_without_effect(vault, record):
     "record",
     [
         _sparse(status=" "),
+        _sparse(status=None),
         _sparse(status=1),
         _sparse(scope="workspace"),
+        _sparse(scope=None),
         _sparse(scope="global", project_id="project-a"),
         _sparse(scope="global", project="PromtGen"),
         _sparse(scope="global", project_label="PromtGen"),
