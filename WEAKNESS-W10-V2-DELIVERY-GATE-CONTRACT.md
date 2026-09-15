@@ -2,7 +2,7 @@
 
 **Status:** CONTRACT / IMPLEMENTATION NOT AUTHORIZED
 
-**Contract revision:** `26c9722` (exact parent revision for this amendment)
+**Contract revision:** `65627e1` (exact parent revision for this amendment)
 
 **Program boundary:** Intelligence Graduation engineering weakness remediation
 
@@ -61,7 +61,7 @@ compiler. The finding is recorded as W-10 in
 - The adapter may retain the existing runtime's bounded, content-free state
   identity markers (for example active blocker or requirement IDs) after the
   legacy memory/state rendering. These markers must not include raw state text
-  or unscoped Companion content.
+  or unscoped Companion content, and the total marker count is capped at 64.
 - A single explicit delivery gate/configuration contract that distinguishes
   model-facing V1 delivery from diagnostic V2 shadow computation.
 - Privacy-safe, content-free comparison metadata needed to prove which path
@@ -180,7 +180,8 @@ model-facing context.
    behavior, runtime `OFF`, normal `SHADOW` no-delivery behavior, W06B's
    explicit V1 path, and duplicate native delivery receipts remain unchanged.
 7. Prove active blocker/requirement identity markers remain available to the
-   task/state safety invariant without exposing raw state or Companion text.
+   task/state safety invariant without exposing raw state or Companion text;
+   prove a state input with 10,000 IDs still emits at most 64 bounded markers.
 
 ### Regression and evidence
 

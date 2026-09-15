@@ -1,7 +1,7 @@
 # W-10 — V2 Shadow Delivery Gate Package Report
 
 **PACKAGE:** W-10  
-**REVISION:** `29aa519b60b09e16d92d709dee70cb9529b8cc81`
+**REVISION:** `911564ae6c6d0fc3210c732269e9279aa6fce3fb`
 **OBJECTIVE:** Restore the non-injecting V2 `SHADOW` boundary and make the
 model-facing provider explicit.
 
@@ -44,8 +44,8 @@ store, retrieval weight, or Phase 20 file changed.
   explicit `delivered == true`, and non-empty context for every current
   service response. Missing approval/provider metadata fails closed.
 - Normal-turn V1 preserves the existing bounded state identity markers needed
-  by the task/state runtime; SessionStart's established V1 bootstrap rendering
-  remains unchanged.
+  by the task/state runtime; the marker projection is capped at 64 total IDs.
+  SessionStart's established V1 bootstrap rendering remains unchanged.
 
 ## Tests added
 
@@ -57,12 +57,14 @@ store, retrieval weight, or Phase 20 file changed.
 - `SHADOW` no-delivery behavior;
 - launcher rejection of V2 provider, missing approval, mismatched metadata,
   and missing delivery fields;
+- bounded, content-free state identity markers when the source state contains
+  10,000 IDs;
 - explicit V1 delivery through the current service contract.
 
 ## Tests executed
 
-- `python -m pytest tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_w06b_task_aware.py tests/test_pre13_runtime.py -q` — **82 passed, 2 warnings**
-- `python -m pytest tests -q` — **1177 passed, 2 warnings** at this exact revision
+- `python -m pytest tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_w06b_task_aware.py tests/test_pre13_runtime.py -q` — **83 passed, 2 warnings**
+- `python -m pytest tests -q` — **1178 passed, 2 warnings** at this exact revision
 - `python -m flake8 --select=E9,F63,F7,F82 brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_pre13_runtime.py` — **passed**
 - `python -m compileall -q brain_eleven/runtime/context.py brain_eleven/runtime/launcher.py tests/test_w10_v2_delivery_gate.py tests/test_ig00_bootstrap.py tests/test_pre13_runtime.py` — **passed**
 - `git diff --check` — **passed**
@@ -78,7 +80,7 @@ at the exact implementation revision above.
 | V2 text delivered while product is SHADOW | Possible | Blocked by provider and approval gate |
 | Normal SHADOW context delivery | Non-empty internal result could be exposed by a caller | Empty context, `delivered=false` |
 | V1 memory/state parity on focused fixture | Unspecified | Legacy project-scoped rendering plus bounded state identity markers |
-| Full regression | Baseline prior to package | 1177 passed |
+| Full regression | Baseline prior to package | 1178 passed |
 
 ## Safety metrics
 
@@ -88,6 +90,7 @@ at the exact implementation revision above.
 - Missing approval/provider metadata delivered through current gate: **0**.
 - Project/state snapshot revalidation: preserved and covered by existing full
   runtime suite.
+- State identity marker count: **64 maximum** for a 10,000-ID input.
 - Canonical writes or model-output-to-truth paths introduced: **0**.
 
 ## Known limitations
@@ -103,15 +106,17 @@ at the exact implementation revision above.
 
 ## Open failures
 
-- No W-10 test or full-suite failure remains.
+- No W-10 test or full-suite failure remains after the bounded-marker fix.
 - The first independent review found a P1 metadata bypass; it was removed in
   `29aa519`, with missing metadata now rejected and the focused/full suites
-  rerun. Independent read-only re-review is still required.
+  rerun. The second independent review found an unbounded state-marker path;
+  it is bounded by `911564a`. Independent read-only re-review is still
+  required.
 
 ## Independent review
 
-**REVIEW PENDING after hardening.** The implementer does not self-declare
-`SHIP`.
+**REVIEW PENDING after bounded-marker hardening.** The implementer does not
+self-declare `SHIP`.
 
 ## Score before / after
 
