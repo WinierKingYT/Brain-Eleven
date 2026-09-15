@@ -28,11 +28,13 @@ The current runtime has two distinct paths:
 
 1. `compile_bootstrap()` in `brain_eleven/runtime/context.py` loads the legacy
    `context-compiler.py`, renders a V1 bootstrap, and labels the result `V1`.
-2. Normal `compile_context()` calls `compile_task()`. `compile_task()` builds
-   `ContextCompilerV2` and returns `bundle.rendered_context`. When runtime mode
-   is `CANARY` or `ACTIVE`, `compile_context()` sets `delivered` from the
-   non-empty result, and `brain_eleven/runtime/launcher.py` copies that context
-   into `hookSpecificOutput.additionalContext`.
+2. Normal `compile_context()` calls `compile_task()` for the default
+   `V1_LEGACY` retrieval mode. `compile_task()` builds `ContextCompilerV2` and
+   returns `bundle.rendered_context`; there is currently no named normal-turn
+   legacy V1 renderer. When runtime mode is `CANARY` or `ACTIVE`,
+   `compile_context()` sets `delivered` from the non-empty result, and
+   `brain_eleven/runtime/launcher.py` copies that context into
+   `hookSpecificOutput.additionalContext`.
 
 The normal result can therefore carry the V2 renderer marker while being
 reported as `provider: V1`. This contradicts the current Phase 19 contract,
@@ -47,6 +49,11 @@ compiler. The finding is recorded as W-10 in
 - The model-facing decision in `brain_eleven/runtime/context.py`.
 - The native output boundary in `brain_eleven/runtime/launcher.py` if a small
   guard is required there.
+- A named, testable V1 normal-turn adapter for `V1_LEGACY`. This adapter must
+  delegate to the existing legacy `ContextCompiler.compile()` projection,
+  preserve its project scope and safety checks, and must not invent new
+  ranking or task-understanding behavior. The existing `W06B_TASK_AWARE`
+  path remains a separate explicitly selected V1 path.
 - A single explicit delivery gate/configuration contract that distinguishes
   model-facing V1 delivery from diagnostic V2 shadow computation.
 - Privacy-safe, content-free comparison metadata needed to prove which path
@@ -74,13 +81,16 @@ The implementation must make the following outcomes explicit and testable.
 | Runtime mode | V2 computation | Model-facing delivery | Provider metadata |
 | --- | --- | --- | --- |
 | `OFF` | none required | no context | bounded `OFF`/empty result |
-| `SHADOW` | optional comparison only | approved V1 path only | `V1` when V1 is delivered |
-| `CANARY` | comparison allowed | V1 until a separately approved V2 promotion gate exists | metadata matches delivered V1 |
-| `ACTIVE` | forbidden while V2 remains SHADOW, or fail closed to V1 | approved V1 path only | metadata matches delivered V1 |
+| `SHADOW` | optional comparison only | SessionStart V1 bootstrap; normal UserPromptSubmit keeps the existing no-delivery behavior | `V1` for bootstrap; empty/no-delivery for normal prompt |
+| `CANARY` | comparison allowed | `V1_LEGACY` uses the named legacy `ContextCompiler.compile()` adapter; `W06B_TASK_AWARE` uses its existing V1 path | metadata matches delivered V1 path |
+| `ACTIVE` | V2 still forbidden while product status is SHADOW; use the same V1 paths as CANARY | `V1_LEGACY` or explicitly selected W06B V1 path | metadata matches delivered V1 path |
 
 `CANARY` and `ACTIVE` must not silently turn the compiler’s internal
-`SHADOW` option into model-facing V2 promotion. If a future contract changes
-that policy, it must be a separate reviewed promotion package.
+`SHADOW` option into model-facing V2 promotion. `ACTIVE` is a valid persisted
+runtime mode only after its existing graduation checks, but while the product
+V2 status remains `SHADOW` its model-facing source is still the V1 adapter
+above. If a future contract changes that policy, it must be a separate
+reviewed promotion package.
 
 When V2 is computed in shadow, its output may be retained only as bounded
 comparison metadata: provider/version identifiers, status, selected opaque
@@ -110,10 +120,20 @@ model-facing context.
    not include raw prompts, transcripts, memory text, rendered V2 context, or
    exception text.
 6. Existing SessionStart V1 bootstrap ownership remains unchanged.
+7. The normal-turn V1 adapter must be revision-bound to the same canonical
+   memory/state snapshot checks as the current runtime result. It may reuse the
+   legacy compiler projection, but it must not write bootstrap files or mutate
+   canonical stores during a hook request.
 
 ## 6. Implementation constraints
 
 - Prefer a small explicit gate/helper over changing V2 internals.
+- The normal `V1_LEGACY` implementation must have one explicit function name
+  (for example `compile_task_v1`) and provenance `V1`; it must call the legacy
+  `ContextCompiler.compile()` projection rather than `ContextCompilerV2`.
+- The adapter may return an empty/fail-closed result when the legacy projection
+  is unavailable, stale, unsafe, or over budget. It must never substitute V2
+  text and relabel it as V1.
 - Preserve existing public result keys and compatibility fields unless a new
   bounded field is required to distinguish `computed_provider` from
   `delivered_provider`.
@@ -130,7 +150,9 @@ model-facing context.
 1. Inject a sentinel V2-rendered bundle into the normal path and prove that
    `SHADOW`/`CANARY`/`ACTIVE` model-facing output never contains the sentinel
    while V2 remains SHADOW.
-2. Prove the delivered context is the legacy V1 output and `provider == "V1"`.
+2. Prove the delivered context for `V1_LEGACY` is byte-equivalent to the
+   legacy `ContextCompiler.compile()` projection (after the existing bounded
+   result normalization) and `provider == "V1"`.
 3. Prove an explicit future-approved V2 delivery marker is required before
    any V2 text could be delivered; absence or mismatch fails closed.
 4. Prove V2 computation failure, malformed metadata, stale revisions,
@@ -139,7 +161,8 @@ model-facing context.
 5. Prove launcher output contains `additionalContext` only when the explicit
    delivery marker, provider metadata, and non-empty safe context agree.
 6. Prove project isolation, existing SessionStart behavior, runtime `OFF`,
-   and duplicate native delivery receipts remain unchanged.
+   normal `SHADOW` no-delivery behavior, W06B's explicit V1 path, and duplicate
+   native delivery receipts remain unchanged.
 
 ### Regression and evidence
 
