@@ -9,7 +9,7 @@ the end of a work session; keep entries to a few lines.
 Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed package: **IG-04 B2** (review queue
 dedup + deterministic ordering) — independent review `SHIP` on 2026-09-10.
-B1 and B2 are both closed; no package is currently active.
+B1 and B2 are both closed; W-07B-R1 is the active evidence package.
 `INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
 the Branch B track, not the original reference/correction scope (deferred,
 not deleted). The earlier D0/R0 feasibility probes remain evaluation-only
@@ -62,9 +62,9 @@ regression is 1345 passed, 4 skipped, 2 warnings. The synthetic run completes
 20/20 canonical effects with no dead letters; the matrix is complete and its
 3-second p95 bound, queue drain and 40/40 terminal delta pass, while the hook,
 queue latency and all-hooks quality gates fail. Authenticated native trust and
-multi-session dogfood remain open. A
-fresh independent read-only review is required for this revision; W-07B stays
-`FIX-FIRST / NOT ACCEPTED`.
+multi-session dogfood remain open. The independent read-only follow-up review
+recorded `FIX-FIRST` at `ca15e31` and found no remaining bounded-harness
+P0/P1/P2 defect; W-07B stays `FIX-FIRST / NOT ACCEPTED`.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as

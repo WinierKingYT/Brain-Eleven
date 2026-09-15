@@ -628,8 +628,10 @@ full regression passes 1345 tests with 4 skips and 2 existing dependency
 warnings. A 20-event, 1000-record synthetic run completes 20/20 canonical
 effects with no dead letters and a singleton service. Matrix completeness, the
 3-second cell p95 bound, queue drain and the 40/40 terminal delta pass, while
-the 500 ms hook, 30 s queue and all-hooks quality gates fail. This improves evidence truthfulness without
-closing W-07B: authenticated native trust and multi-session dogfood remain
-open. A fresh independent read-only review of this exact revision is pending;
-W-07B is `FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2
-remains SHADOW.
+the 500 ms hook, 30 s queue and all-hooks quality gates fail. This improves
+evidence truthfulness without closing W-07B: authenticated native trust and
+multi-session dogfood remain open. The independent read-only follow-up review
+recorded `FIX-FIRST` at `ca15e31` and found no remaining P0/P1/P2 defect in the
+bounded harness; the native acceptance gates are still open. W-07B is
+`FIX-FIRST / NOT ACCEPTED`; Phase 20 remains FROZEN / LOCKED and V2 remains
+SHADOW.
