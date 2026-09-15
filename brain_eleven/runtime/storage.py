@@ -2,11 +2,12 @@
 import hashlib
 import json
 import os
+from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 from datetime import datetime, timezone
 
-from brain_eleven.infrastructure.locking import file_lock
+from brain_eleven.infrastructure.locking import file_lock as _base_file_lock
 from .path_safety import (
     assert_runtime_snapshot,
     ensure_runtime_directory,
@@ -14,6 +15,23 @@ from .path_safety import (
     runtime_root_for_path,
     _existing_root_check,
 )
+
+
+@contextmanager
+def runtime_file_lock(target, timeout=10.0, poll_interval=0.05):
+    """Acquire a lock only after validating a vault-owned runtime path."""
+    target = Path(target)
+    runtime_root = runtime_root_for_path(target)
+    if runtime_root is not None:
+        guard_runtime_path(runtime_root, target)
+        guard_runtime_path(runtime_root, target.with_name(f"{target.name}.lock"))
+    with _base_file_lock(target, timeout=timeout, poll_interval=poll_interval):
+        yield
+
+
+# Keep the historical storage module patch point used by W-15 tests while
+# routing runtime locks through the guarded wrapper.
+file_lock = runtime_file_lock
 
 
 def now():

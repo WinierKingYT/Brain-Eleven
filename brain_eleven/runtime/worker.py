@@ -9,7 +9,7 @@ import threading
 from brain_eleven.memory import MemoryStore, MemoryStoreConflict
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateStore, StateStoreConflict
-from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
 from brain_eleven.operations import operation, operation_result
 from scripts.capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
 from scripts.capture_provenance import TranscriptProvenanceError, resolve_transcript_path
@@ -18,7 +18,7 @@ from scripts.evidence import EvidenceStore, EvidenceBatch
 from scripts.extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
 from scripts.memory_truth import MemoryTruthEngine, TruthCandidate
 from scripts.state_boundary import StateBoundary
-from .storage import RuntimeConfig, read_json, write_json, identity, now
+from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
 from .evidence import read_increment
 from .ownership import TranscriptOwnershipError, verify_transcript_ownership
 from .review import ReviewStore

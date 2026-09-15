@@ -11,11 +11,10 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from brain_eleven.infrastructure.locking import file_lock
 from brain_eleven.memory import MemoryStore
 from brain_eleven.state import StateStore
 
-from .storage import identity, now, read_json, write_json
+from .storage import identity, now, read_json, write_json, runtime_file_lock as file_lock
 from .path_safety import ensure_runtime_directory
 
 

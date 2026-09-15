@@ -9,9 +9,8 @@ import json
 from datetime import datetime, timedelta, timezone
 import math
 import re
-from brain_eleven.infrastructure.locking import file_lock
 from context_compiler_v2.safety import contains_secret
-from .storage import read_json, write_json, identity, now, RuntimeConfig
+from .storage import read_json, write_json, identity, now, RuntimeConfig, runtime_file_lock as file_lock
 
 _REVIEW_CANDIDATE_TYPE_ORDER = {
     'STATE_MUTATION': 0,

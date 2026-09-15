@@ -1,8 +1,8 @@
 """Explicit, resumable receipt-schema migration with immutable local backups."""
 from brain_eleven.memory import MemoryStore
 from brain_eleven.state import StateStore
-from brain_eleven.infrastructure.locking import file_lock, memory_store_lock
-from .storage import write_json, read_json, identity, now
+from brain_eleven.infrastructure.locking import memory_store_lock
+from .storage import write_json, read_json, identity, now, runtime_file_lock as file_lock
 from pathlib import Path
 
 

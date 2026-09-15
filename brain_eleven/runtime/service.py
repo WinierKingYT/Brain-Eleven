@@ -7,10 +7,9 @@ import secrets
 import time
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from brain_eleven.infrastructure.locking import file_lock
 from brain_eleven.memory import MemoryStore
 from brain_eleven.state import StateStore
-from .storage import RuntimeConfig, read_json, write_json, identity, now
+from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
 from .review import ReviewStore
 from .worker import Worker, apply_candidate
 from .context import compile_context

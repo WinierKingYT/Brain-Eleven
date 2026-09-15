@@ -14,8 +14,7 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity, now
-from brain_eleven.infrastructure.locking import file_lock
+from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
 
 
 def request_service(vault, route, payload=None, timeout=.35):

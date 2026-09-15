@@ -5,8 +5,7 @@ import os
 from pathlib import Path
 import shlex
 import sys
-from brain_eleven.infrastructure.locking import file_lock
-from .storage import RuntimeConfig, read_json, write_json, now
+from .storage import RuntimeConfig, read_json, write_json, now, runtime_file_lock as file_lock
 
 EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')
 
