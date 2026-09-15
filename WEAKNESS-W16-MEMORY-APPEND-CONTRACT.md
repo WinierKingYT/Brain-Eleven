@@ -36,7 +36,9 @@ The preferred narrow boundary is a structural validator invoked by `append()`:
 - if present, `status` must be one of `active`, `resolved`, `superseded`;
 - if present, `scope` must be `global` or `project`; project scope requires a
   non-empty `project_id`, while global scope rejects non-empty project
-  metadata;
+  metadata.  If `scope` is omitted for a legacy record, it is treated as
+  legacy-global for this validation, so a non-empty `project_id` or project
+  label is rejected rather than silently reclassified;
 - if present, `timestamp`, `source_id`, `source`, `dedup_fingerprint`,
   `project`, and `project_label` must be strings; `is_approved` must be a
   boolean; nested `issues` and `related_notes` must be lists;
@@ -68,9 +70,9 @@ retrieval, V2, capture flow, and Phase 20 are out of scope.
 
 1. **Malformed rejection:** non-mapping records, missing/blank required fields,
    invalid field types, invalid lifecycle values and invalid scope metadata
-   raise a stable `MemoryStoreError` subclass (or a `ValueError` compatible
-   with existing callers) before the transaction starts.  Revision, backup and
-   canonical data remain unchanged.
+   raise a stable `MemoryStoreRecordInvalid(MemoryStoreError)` exception before
+   the transaction starts.  Revision, backup and canonical data remain
+   unchanged.
 2. **Valid parity:** records already accepted by current tests and canonical
    validator/truth paths append with identical field values, revision changes,
    backup creation and expected-revision conflict behavior.
