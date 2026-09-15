@@ -14,6 +14,15 @@ coverage (`02c05c0`) and W-22 optional-omission enforcement
 (`736c6c9`) are independently shipped; see the corresponding package reports.
 These bounded reliability/safety changes do not promote V2 or unlock Phase 20.
 
+The engineering weak-point package **TSC-01 timezone-bound state resolution**
+is independently **SHIP**ped at exact tip `6225d4f` (implementation `9bb24d8`,
+review `SHIP` in `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`). Explicit
+timezone offsets are now required for persisted state timestamps; malformed
+reads return bounded `STATE_CORRUPT` results without writes or path/content
+leakage. TSC-02 project identity/registry lineage and TSC-03 strict state
+decoding remain separate follow-up packages. This closure does not promote V2
+or unlock Phase 20.
+
 W-07B-R1 repaired the disposable synthetic runtime benchmark, added bounded
 status reporting plus canonical-effect verification, and now records the full
 synthetic 2-client × 4-event × cold/warm latency matrix. At exact head

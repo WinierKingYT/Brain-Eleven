@@ -654,3 +654,17 @@ behavior. Native `compile_context` exception translation, project identity
 lineage and strict serialized decoding are separate follow-up packages.
 Implementation has not started; Phase 20 remains FROZEN / LOCKED and V2
 remains SHADOW.
+
+TSC-01 implementation is now independently **SHIP**ped at exact tip
+`6225d4f` (implementation `9bb24d8`, formatting correction `6225d4f`). The
+focused state/context suite is **47 passed** and the full regression is
+**1354 passed, 4 skipped, 2 warnings**; critical flake8, compileall and
+`git diff --check` pass. Naive timestamps are rejected before canonical write,
+valid explicit offsets preserve their stored form, and malformed reads return
+bounded `STATE_CORRUPT` without path/content leakage or side effects. See
+`WEAKNESS-TSC-01-TIMEZONE-PACKAGE-REPORT.md` and the independent review
+`WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md` (`SHIP`, review commit
+`1cb524c`). TSC-02 project identity/registry lineage, TSC-03 strict decoding,
+native `compile_context` translation and `task_state_context.py` inversion
+remain open follow-up findings; Phase 20 remains FROZEN / LOCKED and V2
+remains SHADOW.

@@ -1,8 +1,8 @@
 # TSC-01 — Timezone-Bound State Resolution Package Report
 
 **PACKAGE:** TSC-01
-**REVISION:** `9bb24d8c3a5ff3595975f26fc1b826c114ba1314`
-**STATUS:** REVIEW PENDING — implementation and verification are complete; independent acceptance has not been performed.
+**REVISION:** `6225d4f` (implementation `9bb24d8c3a5ff3595975f26fc1b826c114ba1314`)
+**STATUS:** SHIPPED — independent read-only review `SHIP` at exact tip `6225d4f`.
 **Phase 20:** FROZEN / LOCKED
 **V2 runtime:** SHADOW
 
@@ -60,7 +60,10 @@ All commands used the repository `.venv` interpreter.
   `python -m pytest tests/test_task_state_context.py tests/test_state_resolver.py tests/test_context_router.py tests/test_authority_resolver.py -q`
   — **38 passed**
 - Extended state/boundary regression including the focused tests — **61 passed**
-- `python -m pytest tests -q` at the exact revision above — **1354 passed, 4 skipped, 2 warnings**
+- `python -m pytest tests -q` at implementation revision `9bb24d8` (same
+  Python code as formatting-only tip `6225d4f`) — **1354 passed, 4 skipped,
+  2 warnings**; the independent reviewer repeated the full suite at tip
+  `6225d4f` with the same result.
 - `python -m flake8 --select E9,F63,F7,F82 scripts/state_store.py scripts/state_resolver.py tests/test_tsc01_timezone.py` — **passed**
 - `python -m compileall -q scripts/state_store.py scripts/state_resolver.py tests/test_tsc01_timezone.py` — **passed**
 - `git diff --check` — **passed**
@@ -81,8 +84,8 @@ The bounded failure is covered and no longer escapes the resolver: malformed
 state produces `STATE_CORRUPT`, while valid `Z`, `+03:00` and `-02:00`
 timestamps preserve their exact stored representation and resolve with
 deterministic freshness. The existing suite remains green. The broader
-task-state/context score is **not increased before independent review** and
-remains provisionally **6.5–7.0/10**.
+task-state/context score remains provisionally **6.5–7.0/10**; no unsupported
+aggregate score increase is claimed.
 
 ## SAFETY METRICS
 
@@ -107,14 +110,16 @@ clock contract still requires callers that pass `now` to provide an aware
 ## OPEN FAILURES
 
 - No bounded TSC-01 P0/P1 failure remains after the exact-head verification.
-- Independent read-only review is still required; this report does not grant
-  acceptance and does not mark the package `SHIP`.
+- Independent read-only review is recorded in
+  `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md` (review document commit
+  `1cb524c`); it returned exactly `SHIP` at the exact tip `6225d4f`.
 
 ## INDEPENDENT REVIEW
 
-**PENDING.** A separate read-only reviewer must inspect the exact revision,
-exception mapping, no-write evidence, privacy boundary and scope. Self-review
-is not an acceptance verdict.
+Independent read-only review is recorded in
+`WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`, commit `1cb524c`. The
+reviewer inspected the exact tip `6225d4f`, exception mapping, no-write
+evidence, privacy boundary and scope, and returned exactly **SHIP**.
 
 ## SCORE BEFORE
 
@@ -122,11 +127,11 @@ Task-state/context surface: **6.5–7.0/10** (audit estimate).
 
 ## SCORE AFTER
 
-**Not re-scored pending independent review.** The focused behavioral evidence
-improves the measured timezone failure mode, but no unsupported aggregate score
-increase is claimed.
+The bounded timezone failure is closed with the evidence above. The broader
+task-state/context score remains provisionally **6.5–7.0/10** until the
+separate TSC-02 identity and TSC-03 decoder packages are evaluated; no
+unsupported aggregate score increase is claimed.
 
 ## VERDICT
 
-**REVIEW PENDING — do not treat as SHIP until independent review returns exactly
-`SHIP`.**
+**SHIP**

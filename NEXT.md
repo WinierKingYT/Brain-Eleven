@@ -66,12 +66,15 @@ multi-session dogfood remain open. The independent read-only follow-up review
 recorded `FIX-FIRST` at `ca15e31` and found no remaining bounded-harness
 P0/P1/P2 defect; W-07B stays `FIX-FIRST / NOT ACCEPTED`.
 
-The next bounded remediation contract is **TSC-01 timezone-bound state
-resolution**, independently reviewed `SHIP` at `0eac731`. It will tighten
-explicit-offset state validation and map malformed timestamps to bounded
-`STATE_CORRUPT` results without changing native context translation, project
-identity lineage or serialized decoder behavior. Implementation is pending;
-W-07B's native trust/latency/dogfood acceptance gates remain open in parallel.
+The bounded remediation **TSC-01 timezone-bound state resolution** is now
+independently `SHIP`ped at exact tip `6225d4f` (implementation `9bb24d8`;
+review `SHIP` in `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`). Explicit
+offset validation and bounded `STATE_CORRUPT` mapping are in place without
+changing native context translation, project identity lineage or serialized
+decoder behavior. The next engineering weakness candidates are TSC-02
+project identity/registry lineage and TSC-03 strict state decoding; each needs
+its own bounded contract before implementation. W-07B's native
+trust/latency/dogfood acceptance gates remain open in parallel.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
