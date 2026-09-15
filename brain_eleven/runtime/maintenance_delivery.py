@@ -28,6 +28,10 @@ _MAX_ATTEMPTS = 3
 _LEASE_SECONDS = 300
 
 
+class _LeaseLost(RuntimeError):
+    """Raised when a worker no longer owns an intent lease."""
+
+
 def _root(vault: str | Path) -> Path:
     return Path(vault) / ".brain-eleven" / "runtime" / "maintenance-delivery"
 
@@ -259,6 +263,52 @@ def _lease_active(intent: Mapping[str, Any]) -> bool:
         return False
 
 
+def _owned_path(directories: Mapping[str, Path], intent_id: str, owner: str) -> Path:
+    current = _find(directories, intent_id)
+    if not current:
+        raise _LeaseLost("MAINTENANCE_LEASE_LOST")
+    current_intent = read_json(current[1])
+    if (not isinstance(current_intent, dict) or current_intent.get("status") != PROCESSING or
+            current_intent.get("lease_owner") != owner or not _lease_active(current_intent)):
+        raise _LeaseLost("MAINTENANCE_LEASE_LOST")
+    return current[1]
+
+
+def _owned_write(vault: str | Path, directories: Mapping[str, Path], intent_id: str,
+                 owner: str, path: Path, value: Mapping[str, Any]) -> None:
+    with file_lock(_root(vault) / "index", timeout=.5):
+        _owned_path(directories, intent_id, owner)
+        write_json(path, value)
+
+
+def _owned_finalize(vault: str | Path, directories: Mapping[str, Path], intent: dict[str, Any],
+                    owner: str, claimed_path: Path, *, report_path: Optional[Path] = None,
+                    report: Optional[Mapping[str, Any]] = None,
+                    staged_path: Optional[Path] = None) -> None:
+    with file_lock(_root(vault) / "index", timeout=.5):
+        _owned_path(directories, intent["intent_id"], owner)
+        if report_path is not None and report is not None:
+            write_json(report_path, report)
+        write_json(_intent_path(directories, COMPLETED, intent["intent_id"]), intent)
+        if staged_path is not None:
+            staged_path.unlink(missing_ok=True)
+        claimed_path.unlink(missing_ok=True)
+
+
+def _owned_failure(vault: str | Path, directories: Mapping[str, Path], intent: dict[str, Any],
+                   owner: str, claimed_path: Path) -> bool:
+    with file_lock(_root(vault) / "index", timeout=.5):
+        try:
+            _owned_path(directories, intent["intent_id"], owner)
+        except _LeaseLost:
+            return False
+        destination = _intent_path(directories, intent["status"], intent["intent_id"])
+        write_json(destination, intent)
+        if destination != claimed_path:
+            claimed_path.unlink(missing_ok=True)
+        return True
+
+
 def _stage_path(vault: str | Path, intent_id: str) -> Path:
     return _root(vault) / "staging" / (intent_id + ".json")
 
@@ -340,6 +390,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
             # work.  A crash leaves a recoverable PROCESSING record instead
             # of a disappearing queued document.
             write_json(claimed_path, intent)
+        owner = intent["lease_owner"]
         try:
             report_path = _root(vault) / "reports" / (intent_id + ".json")
             published = _published_report(report_path, intent)
@@ -348,8 +399,7 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
                 # terminal intent move must not rerun derived work.
                 intent.update({"status": COMPLETED, "completed_at": now(),
                                "report_path": str(report_path.name)})
-                write_json(_intent_path(directories, COMPLETED, intent_id), intent)
-                claimed_path.unlink(missing_ok=True)
+                _owned_finalize(vault, directories, intent, owner, claimed_path)
                 processed += 1
                 continue
             staged_path = _stage_path(vault, intent_id)
@@ -357,12 +407,10 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
             if staged is not None:
                 # A crash between staging and public report replacement is
                 # recoverable without rerunning graph/anomaly/digest work.
-                write_json(report_path, staged)
                 intent.update({"status": COMPLETED, "completed_at": now(),
                                "report_path": str(report_path.name)})
-                write_json(_intent_path(directories, COMPLETED, intent_id), intent)
-                staged_path.unlink(missing_ok=True)
-                claimed_path.unlink(missing_ok=True)
+                _owned_finalize(vault, directories, intent, owner, claimed_path,
+                                report_path=report_path, report=staged, staged_path=staged_path)
                 processed += 1
                 continue
             from .maintenance import run_maintenance
@@ -374,22 +422,21 @@ def process_pending(vault: str | Path, *, limit: int = 1) -> int:
             report = _safe_report(raw, intent, memory_revision=current_memory, state_revision=current_state)
             if report.get("source_graph_revision") != current_memory:
                 raise RuntimeError("MAINTENANCE_GRAPH_STALE")
-            write_json(staged_path, report)
-            write_json(report_path, report)
+            _owned_write(vault, directories, intent_id, owner, staged_path, report)
             intent.update({"status": COMPLETED, "completed_at": now(), "report_path": str(report_path.name)})
-            write_json(_intent_path(directories, COMPLETED, intent_id), intent)
-            staged_path.unlink(missing_ok=True)
-            claimed_path.unlink(missing_ok=True)
+            _owned_finalize(vault, directories, intent, owner, claimed_path,
+                            report_path=report_path, report=report, staged_path=staged_path)
             processed += 1
+        except _LeaseLost:
+            # A recovered worker owns the intent now; never overwrite its
+            # report or failure state with this stale worker's result.
+            continue
         except Exception as exc:
             attempts = int(intent.get("attempt", 1))
             intent.update({"status": FAILED if attempts >= _MAX_ATTEMPTS else QUEUED,
                            "error_code": _error_code(exc), "finished_at": now()})
-            destination = _intent_path(directories, intent["status"], intent_id)
-            write_json(destination, intent)
-            if destination != claimed_path:
-                claimed_path.unlink(missing_ok=True)
-            if intent["status"] == FAILED:
+            owned = _owned_failure(vault, directories, intent, owner, claimed_path)
+            if owned and intent["status"] == FAILED:
                 processed += 1
     return processed
 
