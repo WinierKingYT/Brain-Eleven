@@ -2,7 +2,7 @@
 
 **Status:** CONTRACT / IMPLEMENTATION NOT AUTHORIZED
 
-**Contract revision:** `511ebf2f1d12494ca6ae0eaa29934a12de32433a`
+**Contract revision:** `6c828b2` (exact parent revision for this amendment)
 
 **Program boundary:** Intelligence Graduation engineering weakness remediation
 
@@ -50,10 +50,14 @@ compiler. The finding is recorded as W-10 in
 - The native output boundary in `brain_eleven/runtime/launcher.py` if a small
   guard is required there.
 - A named, testable V1 normal-turn adapter for `V1_LEGACY`. This adapter must
-  delegate to the existing legacy `ContextCompiler.compile()` projection,
-  preserve its project scope and safety checks, and must not invent new
-  ranking or task-understanding behavior. The existing `W06B_TASK_AWARE`
-  path remains a separate explicitly selected V1 path.
+  reuse only the existing legacy `ContextCompiler` project-scoped primitives
+  (`_rank_memories`, `_resolve_current_state`, and
+  `_generate_context_block` with related/unscoped notes empty), preserve its
+  project scope and safety checks, and must not call the legacy public
+  `compile()` projection because that method also reads unscoped Companion
+  files. It must not invent new ranking or task-understanding behavior. The
+  existing `W06B_TASK_AWARE` path remains a separate explicitly selected V1
+  path.
 - A single explicit delivery gate/configuration contract that distinguishes
   model-facing V1 delivery from diagnostic V2 shadow computation.
 - Privacy-safe, content-free comparison metadata needed to prove which path
@@ -122,15 +126,17 @@ model-facing context.
 6. Existing SessionStart V1 bootstrap ownership remains unchanged.
 7. The normal-turn V1 adapter must be revision-bound to the same canonical
    memory/state snapshot checks as the current runtime result. It may reuse the
-   legacy compiler projection, but it must not write bootstrap files or mutate
-   canonical stores during a hook request.
+   legacy project-scoped primitives, but it must not read unscoped Companion
+   notes, write bootstrap files, or mutate canonical stores during a hook
+   request.
 
 ## 6. Implementation constraints
 
 - Prefer a small explicit gate/helper over changing V2 internals.
 - The normal `V1_LEGACY` implementation must have one explicit function name
   (for example `compile_task_v1`) and provenance `V1`; it must call the legacy
-  `ContextCompiler.compile()` projection rather than `ContextCompilerV2`.
+  project-scoped primitives rather than `ContextCompiler.compile()` or
+  `ContextCompilerV2`.
 - The adapter may return an empty/fail-closed result when the legacy projection
   is unavailable, stale, unsafe, or over budget. It must never substitute V2
   text and relabel it as V1.
@@ -151,7 +157,7 @@ model-facing context.
    `SHADOW`/`CANARY`/`ACTIVE` model-facing output never contains the sentinel
    while V2 remains SHADOW.
 2. Prove the delivered context for `V1_LEGACY` is byte-equivalent to the
-   legacy `ContextCompiler.compile()` projection (after the existing bounded
+   existing project-scoped V1 bootstrap rendering (after the existing bounded
    result normalization) and `provider == "V1"`.
 3. Prove an explicit future-approved V2 delivery marker is required before
    any V2 text could be delivered; absence or mismatch fails closed.
@@ -160,9 +166,11 @@ model-facing context.
    output without leakage.
 5. Prove launcher output contains `additionalContext` only when the explicit
    delivery marker, provider metadata, and non-empty safe context agree.
-6. Prove project isolation, existing SessionStart behavior, runtime `OFF`,
-   normal `SHADOW` no-delivery behavior, W06B's explicit V1 path, and duplicate
-   native delivery receipts remain unchanged.
+6. Seed `Companion/Last Session.md` and `Companion/Açık Döngüler.md` with
+   unique sentinel text and prove neither sentinel appears in normal-turn V1
+   delivery or telemetry. Also prove project isolation, existing SessionStart
+   behavior, runtime `OFF`, normal `SHADOW` no-delivery behavior, W06B's
+   explicit V1 path, and duplicate native delivery receipts remain unchanged.
 
 ### Regression and evidence
 
