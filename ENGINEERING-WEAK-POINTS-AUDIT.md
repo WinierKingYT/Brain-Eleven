@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `352f51b` (W-19A exact implementation/review head)
+**Evidence revision:** `5555318` (W-19B exact implementation/review head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
@@ -12,7 +12,7 @@ the behavior and operational evidence found in the current repository.
 
 ## Baseline verification
 
-- Full local suite at the committed W-19A evidence revision: **1298 passed, 4
+- Full local suite at the committed W-19B evidence revision: **1304 passed, 4
   skipped, 2 dependency deprecation warnings**.
 - W-07B process recovery evidence: **18 passed** across intent, claim,
   staging, publication and service-restart boundaries; native authenticated
@@ -39,7 +39,7 @@ the behavior and operational evidence found in the current repository.
 | Correction/lifecycle | 8.0* | B1/B2 package reviews are shipped; natural-reference quality and real-use evidence remain incomplete. |
 | Context compilation | 6.8 | Related-note boundary, V1 bootstrap relevance/order and bounded structured native continuity are shipped; V2 is shadow-only. |
 | V2 runtime readiness | 6.0 | W-10's explicit provider/approval delivery gate is independently shipped; V2 remains SHADOW and current quality comparison remains below V1, so promotion is still blocked. |
-| Reminder/continuity runtime | 6.0 | W-19A now makes the newest valid maintenance report authoritative and prevents stale reminder fallback; native trust, health telemetry and broader dogfood remain open. |
+| Reminder/continuity runtime | 6.5 | W-19A makes the newest valid maintenance report authoritative and W-19B exposes native warning/error health; authenticated trust, latency and broader dogfood remain open. |
 | Architecture cleanliness | 7.0 | IG-07 slices reduced compatibility debt, but canonical implementation still spans legacy script surfaces. |
 | Daily-use reliability | 4.5 | Native client trust is not fully verified and active user delivery remains V1. |
 
@@ -417,9 +417,17 @@ recorded in `WEAKNESS-W19A-STALE-REMINDER-CONTRACT.md`.
 The native launcher records `last-hook.status="OK"` when its service-unavailable
 warning returns normally, while doctor and runtime status primarily inspect a
 legacy breadcrumb. SessionStart can also return before writing current
-privacy-safe context telemetry. This can make a failed or stale native path
-look healthy. It remains a separate bounded package because W-07B's native
-trust gate is already open; no implementation has started.
+privacy-safe context telemetry. This could make a failed or stale native path
+look healthy. The bounded launcher/doctor diagnostics fix now derives
+`DEGRADED` from warning-bearing output, safely reads missing/corrupt
+`last-hook.json`, and surfaces native degradation as `ATTENTION`.
+
+**Status:** Independently reviewed **SHIP** at exact head `5555318`. Focused
+launcher/install/session-start evidence has 67 passing tests and the full suite
+has 1304 passed, 4 skipped and 2 dependency warnings. Native client trust,
+latency and dogfood remain W-07B gates; SessionStart context telemetry remains
+separate. Evidence is recorded in
+`WEAKNESS-W19B-NATIVE-HEALTH-PACKAGE-REPORT.md`.
 
 ### W-20 — Legacy embedding cache is non-atomic and stale in long-lived readers (P2)
 
@@ -453,10 +461,11 @@ not being tuned during the current W-07B acceptance work.
 **Current package:** W-07B native runtime acceptance remains `FIX-FIRST / NOT
 ACCEPTED` at exact evidence head `7707a1e`; its authenticated native trust,
 latency matrix and multi-session dogfood gates are still open. W-19A stale
-reminder authority is independently `SHIP`ped at exact head `352f51b`.
-The next bounded candidates after W-07B are W-19B native health/continuity,
-W-20 legacy embedding-cache durability, W-21 V2 authority coverage and W-22
-optional-omission contract repair; each requires its own reviewed contract.
+reminder authority and W-19B native health diagnostics are independently
+`SHIP`ped at exact heads `352f51b` and `5555318`.
+The next bounded candidates after W-07B are W-20 legacy embedding-cache
+durability, W-21 V2 authority coverage and W-22 optional-omission contract
+repair; each requires its own reviewed contract.
 W-06C0R1 scope-drift maintenance is independently `SHIP`ped
 at exact implementation head `942aee8`, W-03B transcript ownership/provenance
 is independently `SHIP`ped at exact review head `f1d8896`, and the W-02

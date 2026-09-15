@@ -48,11 +48,14 @@ review still keeps W-07B
 native latency matrix and multi-session dogfood are missing. Retrieval quality
 and V2 promotion remain deferred, and Phase 20 stays FROZEN / LOCKED.
 
-The next read-only findings are recorded in
-`ENGINEERING-WEAK-POINTS-AUDIT.md`: native hook false-green health (W-19B),
-legacy embedding-cache durability/staleness (W-20), missing V2 authority
-coverage (W-21) and an ignored V2 optional-omission flag (W-22). Each needs a
-separate reviewed contract; none has started implementation.
+W-19B is now independently `SHIP`ped at `5555318`: warning-bearing native
+hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
+`ATTENTION` without changing canonical data. Native client trust, latency and
+dogfood still belong to W-07B. The remaining read-only findings are recorded
+in `ENGINEERING-WEAK-POINTS-AUDIT.md`: legacy embedding-cache
+durability/staleness (W-20), missing V2 authority coverage (W-21) and an
+ignored V2 optional-omission flag (W-22). Each needs a separate reviewed
+contract; none has started implementation.
 
 **IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
