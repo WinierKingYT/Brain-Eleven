@@ -1,6 +1,6 @@
 # W-25 HTTP Project-Scope and Authorization Contract
 
-**Status:** CONTRACT REVIEW PENDING — implementation is not authorized by this document  
+**Status:** CONTRACT ACCEPTED — implementation bounded by this document  
 **Finding:** the HTTP API exposes the whole memory corpus when an unauthenticated
 request selects `retrieval_scope=all`, and the direct memory-ID route does not
 apply any project-scope check.  The current API-key middleware is optional, so
