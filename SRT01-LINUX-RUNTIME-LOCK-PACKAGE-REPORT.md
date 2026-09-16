@@ -108,9 +108,16 @@ retains the historical holdout failure. The report-only follow-up head
 `35134323509` and PRE-13 run `35134323406`; its runtime annotations likewise
 contain no POSIX-lock `TypeError`. The next report-only head `3349f7c`
 reproduced the same identities in Validation run `35134984200` and PRE-13
-run `35134984024`, again with no lock-specific annotation. These runs are
-evidence for the reviewed implementation and its report-only rechecks, and
-do not constitute a whole-workflow green claim.
+run `35134984024`, again with no lock-specific annotation. The current
+report-only head `bdb549a` then reached terminal status as Validation run
+`35135589646` and PRE-13 run `35135589665`: Validation failed after both unit
+jobs completed, retaining only the two W-03B Ubuntu identities and the two
+documented Windows identities (task-model CLI parity and MemoryBackup);
+PRE-13 failed its Ubuntu and Windows runtime jobs and its quality job still
+had no `pre13-holdout.json` artifact. None of these terminal annotations
+contains the POSIX-lock `TypeError`. These runs are evidence for the reviewed
+implementation and its report-only rechecks, and do not constitute a
+whole-workflow green claim.
 
 ## Scope confirmation
 
@@ -158,7 +165,7 @@ FILES CHANGED: one storage decorator, one focused test file, this report, and th
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
 TESTS EXECUTED: 9 focused pytest tests on Windows and Ubuntu 24.04 WSL; real POSIX fcntl smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; implementation-head Validation run 35133592063 (jobs 104920302310, 104920302391), PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); report-only follow-up Validation run 35134323509 (Ubuntu job 104922761215, Windows job 104922761076), PRE-13 run 35134323406 (jobs 104922760481, 104922760571, 104922760209); second report-only Validation run 35134984200 (Ubuntu job 104924998546, Windows job 104924998574), PRE-13 run 35134984024 (jobs 104924997061, 104924996971, 104924996643); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; implementation-head Validation run 35133592063 (jobs 104920302310, 104920302391), PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); report-only follow-up Validation run 35134323509 (Ubuntu job 104922761215, Windows job 104922761076), PRE-13 run 35134323406 (jobs 104922760481, 104922760571, 104922760209); second report-only Validation run 35134984200 (Ubuntu job 104924998546, Windows job 104924998574), PRE-13 run 35134984024 (jobs 104924997061, 104924996971, 104924996643); current report-only Validation run 35135589646 (head bdb549a, 2 unit jobs complete) and PRE-13 run 35135589665 (head bdb549a, Ubuntu/Windows runtime plus quality complete); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
