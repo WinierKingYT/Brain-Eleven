@@ -1,12 +1,12 @@
 # SRT-01 — POSIX Runtime Lock Package Report
 
-**Package:** SRT-01 Linux runtime lock protocol repair  
-**Contract:** [SRT01-LINUX-RUNTIME-LOCK-CONTRACT.md](SRT01-LINUX-RUNTIME-LOCK-CONTRACT.md)  
-**Implementation SHA:** `335b6df7dd895b868cb32c1f50e81fa8f8568e55`  
-**Test SHA:** `498e72b39e28b231b1e20c78eabd6e58e1e6064f`  
-**Pre-package SHA:** `e6ecd1407b07d9ecb381751216a647b63e870238`  
-**Status:** REVIEW PENDING  
-**Verdict:** REVIEW PENDING — not SHIP  
+**Package:** SRT-01 Linux runtime lock protocol repair
+**Contract:** [SRT01-LINUX-RUNTIME-LOCK-CONTRACT.md](SRT01-LINUX-RUNTIME-LOCK-CONTRACT.md)
+**Implementation SHA:** `335b6df7dd895b868cb32c1f50e81fa8f8568e55`
+**Test SHA:** `f0866b69a2645e90e29fa87034da2688fb15d6fa`
+**Pre-package SHA:** `e6ecd1407b07d9ecb381751216a647b63e870238`
+**Status:** REVIEW PENDING
+**Verdict:** REVIEW PENDING — not SHIP
 
 ## Objective and root cause addressed
 
@@ -25,17 +25,17 @@ file was changed.
 ## Files changed
 
 - `brain_eleven/runtime/storage.py`: one decorator line.
-- `tests/test_srt01_runtime_lock.py`: three focused behavior tests.
+- `tests/test_srt01_runtime_lock.py`: five focused behavior tests.
 - This package report.
 
 ## Tests and checks executed
 
-The focused host command exercised the three new tests and the four existing
+The focused host command exercised the five new tests and the four existing
 W-17 runtime-lock tests:
 
 ```text
 python -m pytest -q tests/test_srt01_runtime_lock.py tests/test_w17_runtime_path_containment.py -k "runtime_lock or distinct_runtime_targets or lock_key_normalizes"
-7 passed, 16 deselected in 0.30s
+9 passed, 16 deselected in 0.82s
 ```
 
 The available Ubuntu-24.04 WSL image ran a direct POSIX smoke against the real
@@ -122,19 +122,19 @@ markers, or unrelated fixes during rollback.
 
 ```text
 PACKAGE: SRT-01 Linux runtime lock protocol repair
-REVISION: implementation 335b6df7dd895b868cb32c1f50e81fa8f8568e55; tests 498e72b39e28b231b1e20c78eabd6e58e1e6064f
+REVISION: implementation 335b6df7dd895b868cb32c1f50e81fa8f8568e55; tests f0866b69a2645e90e29fa87034da2688fb15d6fa
 OBJECTIVE: Adapt the existing POSIX runtime lock generator to the context-manager protocol
 FILES CHANGED: one storage decorator, one focused test file, this report
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
-TESTS ADDED: three behavioral tests for reuse, exception cleanup, and distinct-target concurrency
-TESTS EXECUTED: 7 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push pending
+TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
+TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push runs 35131684181 and 35131684240; final conclusions pending
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
-QUALITY METRICS AFTER: local focused 7/7; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
+QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, exception cleanup, and distinct-target entry pass on POSIX smoke
 KNOWN LIMITATIONS: post-push remote verification pending; unrelated coverage, quality, Windows and cold-start failures remain
 OUT-OF-SCOPE FAILURES: STALE_INPUT, coverage threshold, W-03B, MemoryBackup, task-model, and other unrelated identities
-ROLLBACK: revert 498e72b and 335b6df; preserve the evidence and original gates
+ROLLBACK: revert f0866b6, 498e72b, and 335b6df; preserve the evidence and original gates
 INDEPENDENT REVIEW: contract SHIP; implementation review pending
 SCORE BEFORE: not assigned
 SCORE AFTER: not assigned pending independent review

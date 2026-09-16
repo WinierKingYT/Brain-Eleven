@@ -119,6 +119,10 @@ set used by Validation produced **1436 passed, 4 skipped** and **83%** total
 coverage over `brain_eleven/runtime`. The gap is therefore the selected-test
 denominator, not a missing package-wide test capability.
 
+This coverage mismatch is outside the lock-only SRT-01 package. It requires a
+separate bounded PRE-13 coverage contract; the existing workflow threshold and
+test selection remain unchanged until that contract is reviewed.
+
 ## Required next evidence
 
 1. Re-run the exact SHA on both runner images with a content-safe, retrievable
@@ -127,8 +131,10 @@ denominator, not a missing package-wide test capability.
    payload).
 2. Compare runner Python/dependency versions and relevant environment values
    against the local invocation.
-3. Define a bounded SRT-01 contract for the confirmed PRE-13 coverage-gate
-   mismatch; preserve a meaningful, revision-bound coverage claim.
+3. Define and independently review a separate bounded PRE-13 coverage contract
+   for the confirmed coverage-gate mismatch; preserve a meaningful,
+   revision-bound coverage claim. SRT-01 remains limited to the POSIX runtime
+   lock context-manager defect.
 4. Reproduce each remaining Validation failure class before changing
    production or workflow code.
 
