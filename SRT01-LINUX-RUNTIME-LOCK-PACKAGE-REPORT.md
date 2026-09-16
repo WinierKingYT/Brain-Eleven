@@ -125,11 +125,11 @@ markers, or unrelated fixes during rollback.
 PACKAGE: SRT-01 Linux runtime lock protocol repair
 REVISION: implementation 335b6df7dd895b868cb32c1f50e81fa8f8568e55; tests f0866b69a2645e90e29fa87034da2688fb15d6fa
 OBJECTIVE: Adapt the existing POSIX runtime lock generator to the context-manager protocol
-FILES CHANGED: one storage decorator, one focused test file, this report
+FILES CHANGED: one storage decorator, one focused test file, this report, and the SRT00 coverage-boundary clarification
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
 TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push run 35131684181/35131684240 at pre-remediation report head; exact current-head result pending
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push run 35131684181/35131684240 at the pre-review-remediation report head; exact current-head result pending
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
