@@ -22,25 +22,45 @@ class RouterCache:
     def load(self, key: str, revisions: Mapping[str, Any]) -> Optional[dict[str, Any]]:
         try:
             with file_lock(self.path):
-                if not self.path.exists():
+                loaded = self._read_entry_unlocked(key, revisions)
+                if loaded is None:
                     return None
-                document = json.loads(self.path.read_text(encoding="utf-8"))
-                if not isinstance(document, dict) or document.get("schema_version") != CACHE_SCHEMA_VERSION:
-                    return None
-                entry = document.get("entries", {}).get(key)
-                if not isinstance(entry, dict) or entry.get("input_revisions") != dict(revisions):
-                    return None
-                result = entry.get("result")
-                if not isinstance(result, dict):
-                    return None
+                _document, _entry, result = loaded
+                return result
+        except (OSError, TimeoutError, json.JSONDecodeError):
+            return None
+
+    def touch(self, key: str, revisions: Mapping[str, Any]) -> None:
+        """Refresh access metadata after the caller validates its input."""
+        try:
+            with file_lock(self.path):
+                loaded = self._read_entry_unlocked(key, revisions)
+                if loaded is None:
+                    return
+                document, entry, _result = loaded
                 entry["last_access_ns"] = time.time_ns()
                 try:
                     self._write_unlocked(document)
                 except OSError:
                     pass
-                return result
         except (OSError, TimeoutError, json.JSONDecodeError):
+            return
+
+    def _read_entry_unlocked(
+        self, key: str, revisions: Mapping[str, Any]
+    ) -> Optional[tuple[dict[str, Any], dict[str, Any], dict[str, Any]]]:
+        if not self.path.exists():
             return None
+        document = json.loads(self.path.read_text(encoding="utf-8"))
+        if not isinstance(document, dict) or document.get("schema_version") != CACHE_SCHEMA_VERSION:
+            return None
+        entry = document.get("entries", {}).get(key)
+        if not isinstance(entry, dict) or entry.get("input_revisions") != dict(revisions):
+            return None
+        result = entry.get("result")
+        if not isinstance(result, dict):
+            return None
+        return document, entry, result
 
     def store(self, key: str, revisions: Mapping[str, Any], result: Mapping[str, Any]) -> None:
         try:

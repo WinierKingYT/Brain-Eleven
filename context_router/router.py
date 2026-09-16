@@ -318,6 +318,7 @@ class ContextRouter:
                         error="TaskStateContext registry lineage changed during cache lookup",
                         telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
                     )
+                self.cache.touch(plan.fingerprint, revisions)
                 return cached
 
         raw_candidates: list[RawCandidate] = []

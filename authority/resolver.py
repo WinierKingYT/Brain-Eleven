@@ -219,6 +219,7 @@ class AuthorityResolver:
                         revisions=snapshot.revisions,
                         error="TaskStateContext registry lineage changed during cache lookup",
                     )
+                self.cache.touch(cache_key, snapshot.revisions)
                 return ResolutionResult(
                     status=cached.status,
                     policy_version=cached.policy_version,
