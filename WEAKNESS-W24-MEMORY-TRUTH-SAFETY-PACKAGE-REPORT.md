@@ -12,9 +12,10 @@
 
 **PRE-IMPLEMENTATION HEAD:** `4651173f1118406853f563f96639a8623ea07e1f`
 
-**IMPLEMENTATION REVISION:** code `525b116`; tests `e912f44`
+**IMPLEMENTATION REVISION:** initial code `525b116`; remediation code
+`d78295c`; initial tests `e912f44`; remediation tests `4f1fd9e`
 
-**EXACT VERIFICATION HEAD:** `e912f44b50ccac3ebf87f8c93d748ea2970f031d`
+**EXACT VERIFICATION HEAD:** `4f1fd9eaebd9f1c38bfad2ff21d325f52aba79d2`
 
 **OBJECTIVE:** Apply the shared capture-safety policy, registered project
 authority and derived provenance to the direct `MemoryTruthEngine` path while
@@ -32,7 +33,7 @@ canonical transaction boundary and existing lifecycle semantics.
   the active registry authority required by the W-24 contract; the old short
   secret control uses a shared-policy secret class.
 - `tests/test_w24_memory_truth_safety.py` — focused safety, scope, provenance,
-  replay, identity, worker-transition and CLI evidence.
+  replay, identity, worker-transition, policy-change and CLI evidence.
 
 No `MemoryStore`, `StateStore`, `ProjectRegistry`, worker, capture-safety
 implementation, queue, review, extraction, graph or retrieval implementation
@@ -52,6 +53,29 @@ was changed.
   field projection; new provenance is carried only by an additive receipt
   `provenance_hash`.
 
+## FIX-FIRST remediation
+
+The independent implementation review at `95dcba7` found three issues. The
+remediation keeps the same bounded files and preserves the contract boundaries:
+
+- A readable project-policy rejection now enters the existing canonical
+  transaction when an operation identity is present. The receipt is checked
+  under the MemoryStore lock before the current registry policy can reject an
+  already completed operation. Matching request/provenance replays the prior
+  effect; changed content or provenance returns
+  `OPERATION_REPLAY_MISMATCH`; a new operation still returns the current
+  registry rejection. Safety content/note checks still happen before this
+  store read, while unavailable or corrupt registry reads retain the no-load
+  `PROJECT_REGISTRY_UNAVAILABLE` path.
+- Preflight-only readable rejections now report the current canonical revision
+  in both public revision fields without writing a receipt, backup or memory.
+  Registry-unavailable results retain null revisions because the canonical
+  store is deliberately not loaded.
+- The focused W-24 suite adds 13 parameter-expanded regression cases for
+  archived/disabled replay, new-operation rejection, registry-read `OSError`,
+  `RESOLVE_EXISTING` note safety, invalid provenance, global metadata,
+  direct privileged calls, and accepted ReviewStore/worker verifier replay.
+
 ## Tests and verification
 
 ### Baseline
@@ -68,7 +92,8 @@ At exact pre-implementation head `4651173`:
 
 ### Tests added
 
-- **25 focused W-24 test cases** in `tests/test_w24_memory_truth_safety.py`.
+- **38 focused W-24 test cases** in `tests/test_w24_memory_truth_safety.py`
+  (25 initial cases plus 13 remediation cases).
 - Coverage includes all eight shared secret classes, lifecycle-note safety,
   size/line/transcript limits, negative and unavailable registry states,
   global metadata, registry-owned labels, provenance/approval gates, legacy
@@ -78,15 +103,16 @@ At exact pre-implementation head `4651173`:
 ### Focused after verification
 
 - Truth, capture-safety, worker/B1/B2 and W-24 focused tests: **54 passed, 2
+  warnings** before remediation; the remediation-focused set passed **67, 2
   warnings**.
 - Additional capture-closure/runtime regression slice: **170 passed, 2
   warnings**.
 
 ### Exact full verification
 
-Using the repository `.venv` interpreter at exact head `e912f44`:
+Using the repository `.venv` interpreter at exact head `4f1fd9e`:
 
-- `python -m pytest tests -q`: **1391 passed, 4 skipped, 2 warnings**.
+- `python -m pytest tests -q`: **1404 passed, 4 skipped, 2 warnings**.
 - Critical flake8 (`E9,F63,F7,F82`) on all changed Python files: **PASS**.
 - `compileall` on changed Python files: **PASS**.
 - `git diff --check`: **PASS**.
@@ -107,6 +133,8 @@ receipt shape; the additive provenance field did not alter `request_hash`.
 | Hardcoded source/approval values | 2 literals | 0 |
 | Rejected-candidate canonical writes | not bounded by preflight | 0 |
 | Registry-unavailable path leaks | collapsed/unspecified | bounded `SCOPE_ERROR` mapping |
+| Matching operation replay after archive/disable | policy rejection | 2 states replayed idempotently |
+| Readable preflight revision lineage | null revisions | current revision preserved |
 | Public `TruthCandidate` fields changed | 0 | 0 |
 | Worker legacy `request_hash` changes | 0 | 0 |
 
@@ -137,18 +165,19 @@ direct truth surface now enforces global memory-ID uniqueness.
 
 - Direct API/CLI callers are trusted privileged callers; this package does not
   authenticate their process or add an approval token.
-- The substantive contract and implementation have not yet received the
-  required independent implementation review.
+- The initial implementation review was `FIX-FIRST` at `95dcba7`; this
+  remediation has not yet received the required independent re-review.
 - Phase 20 remains `FROZEN / LOCKED`; V2 remains `SHADOW`.
 - No new P0 was observed. The deferred memory-ID collision is an open P2 by
   design.
 
 ## Independent review
 
-Implementation review: **PENDING**. A separate read-only reviewer must inspect
-the exact implementation head, source/approval derivation, registry authority,
-no-write behavior, request-hash compatibility, worker/B1 boundary, focused
-evidence and changed-file scope. This package does not self-SHIP.
+Implementation review: initial result **FIX-FIRST** (`95dcba7`). Remediation
+review: **PENDING**. A separate read-only reviewer must inspect the exact
+remediation head, policy-invalid replay ordering, source/approval derivation,
+registry authority, no-write behavior, request-hash compatibility, worker/B1
+boundary, focused evidence and changed-file scope. This package does not
+self-SHIP.
 
 **VERDICT:** `REVIEW PENDING`
-
