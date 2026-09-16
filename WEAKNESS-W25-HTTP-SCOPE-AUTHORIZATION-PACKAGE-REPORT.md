@@ -2,6 +2,7 @@
 
 **PACKAGE:** W-25 HTTP project-scope/authorization  
 **REVISION:** `39e3c7b87fc8aba588b8cad5b2ae9f5beaf454f7` (remediated code/test head)  
+**REVIEW HEAD:** `9496b3eac39b29a3ad8ceb9b09687ddae4441cd3`  
 **OBJECTIVE:** Close the unauthenticated `retrieval_scope=all` and direct
 memory-ID scope leaks at the HTTP boundary while preserving canonical stores,
 registry authority, lifecycle writes, retrieval behavior, and Phase 20 freeze.
@@ -84,21 +85,23 @@ acceptance remain separate packages.
 
 ## OPEN FAILURES
 
-The first independent implementation review (`e6b3523`) found a P1 graph
-provenance leak and returned `FIX-FIRST`. The remediation is in
-`1f428d3`/`39e3c7b`; fresh independent review of that exact head is pending.
+None in the bounded W-25 scope. The prior P1 graph provenance leak found by
+`e6b3523` was remediated in `1f428d3`/`39e3c7b` and re-reviewed at the exact
+review head above.
 
 ## INDEPENDENT REVIEW
 
 Previous review: `e6b3523` — **FIX-FIRST** (project-derived graph entity leak).
-Remediation review: **PENDING** — self-review is not acceptance.
+Remediation review: `fe1318b` — **SHIP**, independent read-only review in
+`WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-REMEDIATION-INDEPENDENT-REVIEW.md`.
 
 ## SCORE BEFORE / AFTER
 
 Scope/fail-closed safety was approximately **8.9/10** before this package.
-The bounded after-score is **provisional 9.1/10 pending remediation review**;
+The bounded after-score is **9.1/10** after independent remediation review;
 other intelligence dimensions are unchanged.
 
 ## VERDICT
 
-**REVIEW PENDING — do not self-SHIP.**
+**SHIP** — bounded W-25 scope and authorization package accepted after
+independent read-only remediation review.
