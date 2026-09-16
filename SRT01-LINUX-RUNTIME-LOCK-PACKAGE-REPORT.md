@@ -48,6 +48,21 @@ entry:
 SRT01 POSIX smoke: PASS
 ```
 
+The same Ubuntu-24.04 WSL environment then ran the focused pytest command
+with the repository requirements installed into an isolated temporary target:
+
+```text
+PYTHONPATH=/tmp/srt01-pydeps:/mnt/c/Users/faruk/Documents/Brain-Eleven \
+python3 -m pytest -q tests/test_srt01_runtime_lock.py \
+  tests/test_w17_runtime_path_containment.py \
+  -k "runtime_lock or distinct_runtime_targets or lock_key_normalizes"
+9 passed, 16 deselected in 1.81s
+```
+
+This is a real POSIX `fcntl` runner check on Ubuntu 24.04 WSL; GitHub's
+`ubuntu-latest` unit matrix also ran the same tests as part of its full unit
+command, with no SRT-01 identity in its failure annotations.
+
 The requested static checks passed:
 
 ```text
@@ -91,9 +106,11 @@ the runtime annotations contain no POSIX-lock `TypeError`; the quality job
 retains the historical holdout failure. The report-only follow-up head
 `7db5e64` reproduced the same bounded identities in Validation run
 `35134323509` and PRE-13 run `35134323406`; its runtime annotations likewise
-contain no POSIX-lock `TypeError`. These runs are evidence for the reviewed
-implementation and its report-only follow-up, and do not constitute a
-whole-workflow green claim.
+contain no POSIX-lock `TypeError`. The next report-only head `3349f7c`
+reproduced the same identities in Validation run `35134984200` and PRE-13
+run `35134984024`, again with no lock-specific annotation. These runs are
+evidence for the reviewed implementation and its report-only rechecks, and
+do not constitute a whole-workflow green claim.
 
 ## Scope confirmation
 
@@ -140,12 +157,12 @@ OBJECTIVE: Adapt the existing POSIX runtime lock generator to the context-manage
 FILES CHANGED: one storage decorator, one focused test file, this report, and the SRT00 coverage-boundary clarification
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
-TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; implementation-head Validation run 35133592063 (jobs 104920302310, 104920302391), PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); report-only follow-up Validation run 35134323509 (Ubuntu job 104922761215, Windows job 104922761076), PRE-13 run 35134323406 (jobs 104922760481, 104922760571, 104922760209); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
+TESTS EXECUTED: 9 focused pytest tests on Windows and Ubuntu 24.04 WSL; real POSIX fcntl smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; implementation-head Validation run 35133592063 (jobs 104920302310, 104920302391), PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); report-only follow-up Validation run 35134323509 (Ubuntu job 104922761215, Windows job 104922761076), PRE-13 run 35134323406 (jobs 104922760481, 104922760571, 104922760209); second report-only Validation run 35134984200 (Ubuntu job 104924998546, Windows job 104924998574), PRE-13 run 35134984024 (jobs 104924997061, 104924996971, 104924996643); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
-KNOWN LIMITATIONS: exact-head remote workflows remain red for unrelated coverage, quality, Windows and cold-start/runtime identities; protected JUnit logs are unavailable anonymously
+KNOWN LIMITATIONS: exact-head remote workflows remain red for unrelated coverage, quality, Windows and cold-start/runtime identities; protected JUnit logs are unavailable anonymously; the focused Linux pytest evidence is Ubuntu 24.04 WSL while GitHub ubuntu-latest ran it within the full unit command
 OUT-OF-SCOPE FAILURES: STALE_INPUT, coverage threshold, W-03B, MemoryBackup, task-model, and other unrelated identities
 ROLLBACK: revert f0866b6, 498e72b, and 335b6df; preserve the evidence and original gates
 INDEPENDENT REVIEW: contract SHIP; implementation review pending final exact-head assessment
