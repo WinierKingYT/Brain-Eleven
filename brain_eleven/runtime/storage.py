@@ -33,6 +33,7 @@ def _runtime_lock_key(target):
     return os.path.normcase(os.path.normpath(os.fspath(Path(target).absolute())))
 
 
+@contextmanager
 def _runtime_posix_lock(root, target, snapshot, timeout, poll_interval):
     import fcntl
 
