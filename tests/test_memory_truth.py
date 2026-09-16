@@ -5,12 +5,23 @@ from __future__ import annotations
 import json
 
 from brain_eleven.memory.truth import MemoryTruthEngine, TruthAction, TruthStatus
+from brain_eleven.projects.registry import ProjectRegistry
 
 
 def _store(vault, memories, revision=4):
     path = vault / ".claude" / "validated-memory.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"schema_version": 2, "revision": revision, "validated_memory": memories, "rejected_memory": []}), encoding="utf-8")
+    registry = ProjectRegistry(vault)
+    project_ids = {
+        memory.get("project_id")
+        for memory in memories
+        if memory.get("scope") == "project" and memory.get("project_id")
+    }
+    for project_id in project_ids:
+        root = vault / ("root-" + project_id)
+        root.mkdir(parents=True, exist_ok=True)
+        registry.register(root, project_id=project_id, proactive_capture=True)
     return path
 
 
@@ -29,6 +40,9 @@ def _memory(memory_id, content, *, project_id="brain-eleven", status="active", f
 
 def test_duplicate_is_scoped_and_does_not_cross_project(tmp_path):
     _store(tmp_path, [_memory("mem_a", "Use Redis", fingerprint="same", project_id="project-a")])
+    root = tmp_path / "root-project-b"
+    root.mkdir()
+    ProjectRegistry(tmp_path).register(root, project_id="project-b", proactive_capture=True)
     engine = MemoryTruthEngine(tmp_path)
     result = engine.process([{"candidate_id": "cand-b", "content": "Use Redis", "memory_type": "decision", "scope": "project", "project_id": "project-b", "dedup_fingerprint": "same", "confidence": 1.0}])
     assert result.status == TruthStatus.SUCCESS.value
@@ -56,7 +70,7 @@ def test_ambiguous_lifecycle_target_is_review_and_secret_is_rejected(tmp_path):
     _store(tmp_path, [])
     result = MemoryTruthEngine(tmp_path).process([
         {"candidate_id": "missing-target", "content": "Use SQLite", "operation": "SUPERSEDE_EXISTING", "confidence": 1.0},
-        {"candidate_id": "secret", "content": "API_KEY=not-for-memory", "confidence": 1.0},
+        {"candidate_id": "secret", "content": "client_secret=" + "a" * 20, "confidence": 1.0},
     ])
     assert result.decisions[0].action == TruthAction.REVIEW_REQUIRED.value
     assert result.decisions[1].action == TruthAction.REJECT.value
