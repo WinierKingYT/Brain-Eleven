@@ -21,6 +21,7 @@ import re
 import sys
 import importlib.util
 import uuid
+import copy
 from pathlib import Path
 import logging
 
@@ -449,6 +450,124 @@ def _load_http_memories(context: _HttpScopeContext) -> tuple[List[Dict], Dict]:
         ),
         data,
     )
+
+
+_GRAPH_MEMORY_NODE_TYPES = frozenset({"DECISION", "LESSON", "OPEN_LOOP", "OBSERVATION"})
+
+
+class _HttpScopedGraphView:
+    """Read-only graph view that restores provenance for derived nodes.
+
+    The persisted projection predates HTTP scope authorization: technology and
+    phase nodes are shared IDs and carry no project field.  Their incoming
+    ``source_memory`` edges are the available provenance boundary.  A scoped
+    view therefore admits such a node only when at least one source memory is
+    in the already-filtered HTTP corpus.  The canonical graph object is never
+    mutated.
+    """
+
+    def __init__(self, graph: KnowledgeGraph, context: _HttpScopeContext):
+        self._graph = graph
+        self._context = context
+        self._allowed_memory_ids = self._load_allowed_memory_ids()
+
+    def _load_allowed_memory_ids(self):
+        if self._context.admin and self._context.retrieval_scope == "all":
+            return None
+        memories, _data = _load_http_memories(self._context)
+        return {
+            str(memory.get("memory_id"))
+            for memory in memories
+            if memory.get("memory_id")
+        }
+
+    def _node_visible(self, node_id: str) -> bool:
+        if not self._graph.is_entity_visible(
+            node_id,
+            self._context.project_id,
+            self._context.retrieval_scope,
+        ):
+            return False
+        if self._allowed_memory_ids is None:
+            return True
+        data = self._graph.graph.nodes.get(node_id, {})
+        if data.get("type") in _GRAPH_MEMORY_NODE_TYPES or data.get("type") == "PROJECT":
+            return True
+        return any(
+            str(edge_data.get("source_memory", "")) in self._allowed_memory_ids
+            for _source, _target, edge_data in self._graph.graph.in_edges(
+                node_id, data=True
+            )
+        )
+
+    def find_entities(self, **kwargs):
+        return [
+            entity
+            for entity in self._graph.find_entities(**kwargs)
+            if self._node_visible(entity["id"])
+        ]
+
+    def is_entity_visible(self, entity_id: str, *args, **kwargs) -> bool:
+        return self._node_visible(entity_id)
+
+    def get_entity(self, entity_id: str):
+        if not self._node_visible(entity_id):
+            return None
+        return self._graph.get_entity(entity_id)
+
+    def get_relationships(self, entity_id: str, **kwargs):
+        if not self._node_visible(entity_id):
+            return []
+        return [
+            relationship
+            for relationship in self._graph.get_relationships(entity_id, **kwargs)
+            if self._node_visible(relationship["source"])
+            and self._node_visible(relationship["target"])
+        ]
+
+    def traverse(self, entity_id: str, **kwargs):
+        if not self._node_visible(entity_id):
+            return {"nodes": [], "edges": []}
+        subgraph = self._graph.traverse(entity_id, **kwargs)
+        visible_ids = {
+            node["id"] for node in subgraph.get("nodes", []) if self._node_visible(node["id"])
+        }
+        return {
+            "nodes": [node for node in subgraph.get("nodes", []) if node["id"] in visible_ids],
+            "edges": [
+                edge
+                for edge in subgraph.get("edges", [])
+                if edge["source"] in visible_ids and edge["target"] in visible_ids
+            ],
+        }
+
+    def stats(self):
+        visible_nodes = [
+            (node_id, data)
+            for node_id, data in self._graph.graph.nodes(data=True)
+            if self._node_visible(node_id)
+        ]
+        visible_ids = {node_id for node_id, _data in visible_nodes}
+        visible_edges = [
+            (source, target, data)
+            for source, target, data in self._graph.graph.edges(data=True)
+            if source in visible_ids and target in visible_ids
+        ]
+        entities_by_type = {}
+        for _node_id, data in visible_nodes:
+            node_type = data.get("type", "unknown")
+            entities_by_type[node_type] = entities_by_type.get(node_type, 0) + 1
+        relationships_by_type = {}
+        for _source, _target, data in visible_edges:
+            rel_type = data.get("rel_type", "unknown")
+            relationships_by_type[rel_type] = relationships_by_type.get(rel_type, 0) + 1
+        return {
+            "total_entities": len(visible_nodes),
+            "total_relationships": len(visible_edges),
+            "entities_by_type": entities_by_type,
+            "relationships_by_type": relationships_by_type,
+            "projection": self._graph.projection_status(),
+        }
 
 
 def _http_admin_key_is_valid(request: Request) -> bool:
@@ -1222,8 +1341,9 @@ async def graph_entities(
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
+    scoped_graph = _HttpScopedGraphView(current_graph, scope_context)
     return {
-        "entities": current_graph.find_entities(
+        "entities": scoped_graph.find_entities(
             entity_type=type,
             name_contains=name_contains,
             project_id=scope_context.project_id,
@@ -1244,13 +1364,12 @@ async def graph_entity_relationships(
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
-    if not current_graph.is_entity_visible(
-        entity_id, scope_context.project_id, scope_context.retrieval_scope
-    ):
+    scoped_graph = _HttpScopedGraphView(current_graph, scope_context)
+    if not scoped_graph.is_entity_visible(entity_id):
         raise HTTPException(status_code=404, detail="Entity not found")
     return {
         "entity_id": entity_id,
-        "relationships": current_graph.get_relationships(
+        "relationships": scoped_graph.get_relationships(
             entity_id,
             direction=direction,
             project_id=scope_context.project_id,
@@ -1271,11 +1390,10 @@ async def graph_traverse(
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
-    if not current_graph.is_entity_visible(
-        entity_id, scope_context.project_id, scope_context.retrieval_scope
-    ):
+    scoped_graph = _HttpScopedGraphView(current_graph, scope_context)
+    if not scoped_graph.is_entity_visible(entity_id):
         raise HTTPException(status_code=404, detail="Entity not found")
-    return current_graph.traverse(
+    return scoped_graph.traverse(
         entity_id,
         max_depth=depth,
         project_id=scope_context.project_id,
@@ -1331,8 +1449,15 @@ async def chat(http_request: Request, request: ChatRequest):
                 "intent": "ANOMALY",
                 "follow_ups": [],
             }
-        _ensure_graph_current()
-        return chat_agent.chat(
+        current_graph = _ensure_graph_current()
+        chat_target = chat_agent
+        if not scope_context.admin:
+            # ChatAgent's graph handlers use the graph object directly. Give
+            # them a request-local filtered view so derived technology/phase
+            # nodes cannot disclose a foreign project's names.
+            chat_target = copy.copy(chat_agent)
+            chat_target.graph = _HttpScopedGraphView(current_graph, scope_context)
+        return chat_target.chat(
             request.message,
             conversation_id=request.conversation_id,
             project_id=scope_context.project_id,
