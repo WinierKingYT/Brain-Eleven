@@ -88,8 +88,12 @@ W-03B Ubuntu fixture identities and the two Windows identities
 POSIX-lock `TypeError` appears in its failure annotations. PRE-13 run
 `35133591987` (head `e117893`) still fails its runtime and quality jobs, but
 the runtime annotations contain no POSIX-lock `TypeError`; the quality job
-retains the historical holdout failure. These runs are evidence for this
-exact revision and do not constitute a whole-workflow green claim.
+retains the historical holdout failure. The report-only follow-up head
+`7db5e64` reproduced the same bounded identities in Validation run
+`35134323509` and PRE-13 run `35134323406`; its runtime annotations likewise
+contain no POSIX-lock `TypeError`. These runs are evidence for the reviewed
+implementation and its report-only follow-up, and do not constitute a
+whole-workflow green claim.
 
 ## Scope confirmation
 
@@ -137,7 +141,7 @@ FILES CHANGED: one storage decorator, one focused test file, this report, and th
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
 TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; exact-head Validation run 35133592063 (jobs 104920302310, 104920302391); exact-head PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; implementation-head Validation run 35133592063 (jobs 104920302310, 104920302391), PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); report-only follow-up Validation run 35134323509 (Ubuntu job 104922761215, Windows job 104922761076), PRE-13 run 35134323406 (jobs 104922760481, 104922760571, 104922760209); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
