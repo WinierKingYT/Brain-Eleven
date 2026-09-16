@@ -3,7 +3,7 @@
 **Program:** Stabilization & Runtime Truth (proposed)  
 **Package:** SRT-00 Baseline Freeze & Failure Reproduction  
 **Status:** **FIX-FIRST / NOT ACCEPTED**  
-**Exact HEAD:** `6ccae17a538fdf0996d936e43ed49235a7650b47`  
+**Exact HEAD:** `6ccae17a538fdf0996d936e43ed49235a7650b47`
 **Phase 20:** FROZEN / LOCKED  
 **V2:** SHADOW
 
