@@ -6,7 +6,8 @@ check than the shared capture policy, accepts any non-empty project ID without
 checking `ProjectRegistry`, and writes fixed `source`/`is_approved` values
 instead of caller-derived provenance.
 **Priority:** P1 canonical-memory safety and scope authority
-**Contract revision:** `09dbb76fca00004c4e7c2ef68690bf8a650fe71c` (audit baseline)
+**Audit baseline:** `09dbb76fca00004c4e7c2ef68690bf8a650fe71c`
+**Contract revision:** `<revision commit SHA recorded after this review fix>`
 
 ## Boundary and evidence
 
@@ -23,12 +24,24 @@ gaps without moving canonical authority.
    checks that a project-scoped ID is non-empty.
 3. `scripts/memory_truth.py:270-301` sets `source` to the literal
    `extraction-v2` at line 281 and `is_approved` to the literal `True` at line
-   288.  Candidate provenance cannot affect either persisted field.
+   288.  Candidate provenance cannot affect either persisted field.  The
+   additive fields proposed below also have a replay compatibility hazard:
+   `scripts/memory_truth.py:322-324` hashes `asdict(candidate)`, while
+   `:338-342` compares that hash byte-for-byte against an existing operation
+   receipt.
 4. `scripts/memory_truth.py:303-432` owns the dry-run/commit decision flow and
    delegates committed effects to `MemoryStore.transact()`.  The direct path
    has no registry lookup, so a project ID is treated as an authority merely
    because it is present.
-5. `brain_eleven/memory/truth.py:1-24` is a loader/re-export adapter.  Its
+5. `scripts/memory_truth.py:364-375` writes `candidate.note` into
+   `supersession_note`/`resolution_note` without passing that note through the
+   secret policy; checking only `content` would leave a lifecycle-note secret
+   path.
+6. `scripts/memory_truth.py:295-300` persists project metadata even for a
+   global candidate, and `:399-401` accepts a caller-supplied
+   `successor_memory_id` for `NEW`, which can collide with an existing memory
+   ID.  The latter is a separate deferred P2 below.
+7. `brain_eleven/memory/truth.py:1-24` is a loader/re-export adapter.  Its
    `MemoryTruthEngine`, `TruthCandidate`, `TruthAction` and `TruthStatus` must
    remain the same objects as the legacy surface.
 
@@ -81,15 +94,26 @@ this direct truth surface is authorized by this contract.
 
 ### Required target behavior
 
-1. **One safety policy.** Before truth evaluation or any registry/store effect,
-   evaluate candidate content with the existing shared
-   `capture_safety.evaluate_capture()` object.  Do not copy or tune its regular
-   expressions.  Apply it in dry-run and commit paths, and to lifecycle text
-   as well as `NEW` content.  The existing `SECRET_CONTENT` reason remains the
-   compatibility mapping for `potential_secret`; other shared-policy failures
-   use deterministic bounded reason codes (`CAPTURE_TOO_LARGE`,
+1. **One safety policy and exact text inputs.** Before truth evaluation or any
+   registry/store effect, evaluate `candidate.content` after the existing
+   string normalization with the shared `capture_safety.evaluate_capture()`
+   object.  `content` is required and is checked for every operation: it is
+   the proposed memory text for `NEW` and the successor text for
+   `SUPERSEDE_EXISTING`; it is still checked for `CONFIRM_EXISTING` and
+   `RESOLVE_EXISTING` even when no new record is written.  `candidate.note` is
+   a separate optional text field.  When non-empty, check the normalized note
+   with the same policy before it can influence a lifecycle mutation; for
+   `SUPERSEDE_EXISTING` it is the only value written to `supersession_note`,
+   and for `RESOLVE_EXISTING` it is the only value written to
+   `resolution_note`.  An empty note is normalized to empty and is not
+   persisted.  A rejected content or note maps `potential_secret` to the
+   compatibility reason `SECRET_CONTENT`; other shared-policy failures use
+   deterministic bounded reasons (`CAPTURE_TOO_LARGE`,
    `CAPTURE_TOO_MANY_LINES`, `CAPTURE_TRANSCRIPT_LIKE`, or
-   `CAPTURE_SAFETY_REJECTED` for an unknown policy reason).
+   `CAPTURE_SAFETY_REJECTED` for an unknown policy reason).  Do not copy or
+   tune the shared regular expressions.  Apply this policy in dry-run and
+   commit paths, before registry lookup and before the MemoryStore
+   transaction.
 2. **Project authority.** For `scope == project`, resolve the supplied opaque
    ID with the existing `ProjectRegistry.get()` read path.  A missing record
    returns `REJECT / PROJECT_UNREGISTERED`; an archived record returns
@@ -97,16 +121,21 @@ this direct truth surface is authorized by this contract.
    `proactive_capture == False` returns `REJECT / PROJECT_CAPTURE_DISABLED`.
    The registry is never auto-registered, repaired or mutated by truth
    evaluation.  An active, enabled record is the only project candidate that
-   may continue.  Global candidates retain their current global behavior and
-   do not require a registry lookup.
-3. **Registry-owned identity.** For an accepted project candidate, the
+   may continue.  Global candidates do not require a registry lookup.
+3. **Deterministic global metadata rule.** Global scope rejects any non-empty
+   `project_id`, `project` or accepted `project_label` alias with
+   `REJECT / GLOBAL_PROJECT_METADATA`.  It never normalizes that metadata into
+   a global record and never performs a registry lookup.  Project scope may
+   carry a caller label, but the label is normalized from the registry below.
+4. **Registry-owned identity.** For an accepted project candidate, the
    persisted `project_id` must be the exact registry ID.  The registry's
    project label is the authority for `project`/`project_label`; a caller label
-   is display input only and cannot select, rename or widen the namespace.  No
-   filesystem root is persisted or inferred in this package.  A registry read
-   or registry corruption failure maps to a stable content-free scope failure
-   and cannot fall back to the candidate's claim.
-4. **Explicit, bounded provenance.** The candidate mapping may carry additive
+   is display input only and is replaced by the registry label when it differs.
+   It cannot select, rename or widen the namespace.  No filesystem root is
+   persisted or inferred in this package.  A registry read or registry
+   corruption failure maps to the explicit availability result below and
+   cannot fall back to the candidate's claim.
+5. **Explicit, bounded provenance.** The candidate mapping may carry additive
    `source` and `is_approved` values.  `source` is a bounded provenance label
    from `user`, `worker`, `review` or the legacy `extraction-v2` value; an
    explicit invalid or blank value is rejected before evaluation.  The source
@@ -116,7 +145,18 @@ this direct truth surface is authorized by this contract.
    `commitment == COMMITTED` gate.  A missing value is a compatibility input
    and derives approval from that typed commitment gate; no value may elevate
    an uncommitted candidate.
-5. **Compatibility provenance fallback.** Existing worker payloads currently
+6. **Direct privileged path and B1 boundary.** The direct
+   `MemoryTruthEngine.process()` API and `scripts/memory_truth.py` CLI
+   `--commit --commit-new` are trusted privileged write surfaces in this
+   package.  Their caller is responsible for supplying structured,
+   `COMMITTED` input and valid provenance; W-24 does not authenticate that
+   caller or add an approval token.  Therefore W-24 makes no claim that B1 is
+   the only approval route for direct API/CLI calls.  B1 remains the sole
+   approval transition for worker-generated proposals while B1 is enabled:
+   those proposals remain pending until the existing review action invokes the
+   worker apply path.  This distinction is testable and preserves the current
+   privileged direct surface.
+7. **Compatibility provenance fallback.** Existing worker payloads currently
    omit both additive fields.  They remain valid: a call carrying the existing
    worker operation identity receives the bounded `worker` source label, and a
    direct/CLI call without that identity receives `user`.  This fallback is
@@ -125,12 +165,42 @@ this direct truth surface is authorized by this contract.
    normalized value rather than contain a fixed source literal.  The persisted
    `is_approved` value is the normalized result of the commitment/approval
    check, rather than an unconditional literal.
-6. **Existing truth semantics.** Exact scoped fingerprint deduplication,
+8. **Receipt/replay compatibility.** Adding `source` and `is_approved` to
+   `TruthCandidate` must not change the existing operation identity for a
+   legacy-shaped request.  Define `legacy_request_projection(candidate)` as
+   the exact pre-W-24 ordered field allowlist from
+   `candidate_id` through `note` (the fields currently present at
+   `scripts/memory_truth.py:78-94`), excluding `source` and `is_approved`, and
+   compute the existing `request_hash` as
+   `identity("request_", [legacy_request_projection(candidate)])`.  Keep this
+   projection for worker-shaped calls and existing receipts.  Add an optional
+   `provenance_hash` receipt field over the ordered normalized
+   `(source, is_approved)` pair for each candidate, so a changed provenance
+   envelope cannot replay merely because the legacy request hash is equal.  A
+   pre-W-24 receipt without `provenance_hash` may
+   replay only when the incoming mapping omits both additive fields; supplying
+   either field against that receipt returns `INVALID_INPUT /
+   OPERATION_REPLAY_MISMATCH` and performs no write.  New receipts compare both
+   the legacy request hash and `provenance_hash`.  The existing worker effect
+   verifier must continue to observe the legacy request hash for its current
+   worker-shaped payload; no receipt replay may fail solely because the
+   additive fields were introduced.
+
+   The allowlist is explicit and ordered for review purposes:
+   `candidate_id`, `content`, `memory_type`, `scope`, `project_id`, `project`,
+   `dedup_fingerprint`, `claim_key`, `commitment`, `confidence`,
+   `evidence_refs`, `occurred_at`, `operation`, `target_memory_id`,
+   `successor_memory_id`, `resolved_by`, `note`.  The new provenance fields
+   are never silently inserted into this legacy projection.  The normalized
+   source/approval pair is hashed separately in `provenance_hash` for every
+   newly written receipt.
+9. **Existing truth semantics.** Exact scoped fingerprint deduplication,
    claim-key conflict, explicit confirmation, supersession and resolution
    continue to use the current `TruthAction`/`TruthStatus` values and target
-   checks.  New scope/provenance rejections are decisions, not lifecycle
-   mutations.  `commit_new`, `expected_revision`, `operation_id`, request-hash
-   replay and the existing error mappings retain their public shapes.
+   checks.  New safety, scope or provenance rejections are decisions, not
+   lifecycle mutations.  `commit_new`, `expected_revision`, `operation_id`,
+   receipt replay and the existing success/degraded/stale mappings retain their
+   public shapes.
 
 ## Authority, transaction and no-write invariants
 
@@ -144,27 +214,53 @@ this direct truth surface is authorized by this contract.
   registry identity/status/policy; it never writes state or registers a
   project.
 - A model proposal, uncertain/quoted/question content, or missing B1 approval
-  cannot become canonical merely by setting `source` or `is_approved`.  The
-  existing B1 review action remains the approval transition, and B2 remains
-  deterministic grouping/order only.  The worker still calls the same truth
-  engine with the same operation IDs and validates the same canonical effect
-  (`brain_eleven/runtime/worker.py:137-163` and `:733-790`).
-- On a safety, scope or provenance rejection, the rejected candidate produces
-  no canonical memory, lifecycle mutation, revision increment, backup,
-  operation receipt, registry mutation, state mutation, graph/retrieval
-  effect, queue effect or review write.  A mixed batch may retain the existing
-  per-candidate decision semantics; the rejected candidate itself must have
-  zero effect, and a receipt is written only under the existing all-eligible
-  receipt rule.
-- Exact operation replay remains idempotent: the same operation ID and request
-  hash return the existing content-free receipt/effect without a second memory.
-  A changed candidate or provenance envelope under that operation ID remains a
-  replay mismatch.  A stale `expected_revision` remains `STALE_INPUT` with no
-  write.
+  cannot become canonical merely by setting `source` or `is_approved` on the
+  worker path.  B1 remains the approval transition for worker-generated
+  proposals while enabled; direct API/CLI writes are the separately documented
+  trusted privileged surface.  B2 remains deterministic grouping/order only.
+  The worker still calls the same truth engine with the same operation IDs and
+  validates the same canonical effect (`brain_eleven/runtime/worker.py:137-163`
+  and `:733-790`).
+- On a direct truth safety, scope or provenance rejection, the rejected
+  candidate produces no canonical memory, lifecycle mutation, revision
+  increment, backup, operation receipt, registry mutation, state mutation,
+  graph/retrieval effect or direct-truth review write.  A mixed batch may retain
+  the existing per-candidate decision semantics; the rejected candidate itself
+  must have zero effect, and a receipt is written only under the existing
+  all-eligible receipt rule.  The worker may continue its existing policy of
+  routing a returned non-success outcome to B1 review; that worker-side review
+  effect is outside this direct no-write assertion.
+- Exact operation replay remains idempotent: the same operation ID, legacy
+  request hash and (when present) provenance hash return the existing
+  content-free receipt/effect without a second memory.  A changed candidate or
+  provenance envelope under that operation ID remains a replay mismatch.  A
+  stale `expected_revision` remains `STALE_INPUT` with no write.
 - Rejected decisions and review decisions remain content-free.  Diagnostics
   may include IDs, status, reason, policy name, registry state and revisions,
   but never candidate text, secret values, raw transcript material or full
   filesystem paths.
+
+### Registry failure result contract
+
+Missing, archived and disabled identities are candidate policy decisions.  A
+registry read failure is an authority-availability failure and must not be
+collapsed into `PROJECT_UNREGISTERED`.
+
+| Registry condition | `TruthResult.status` (dry-run / commit) | `error_code` | Per-candidate decision |
+|---|---|---|---|
+| ID absent from a valid registry | `SUCCESS / DEGRADED` | `None` | `REJECT / PROJECT_UNREGISTERED` |
+| ID present with `status=archived` | `SUCCESS / DEGRADED` | `None` | `REJECT / PROJECT_ARCHIVED` |
+| ID present, active, `proactive_capture=False` | `SUCCESS / DEGRADED` | `None` | `REJECT / PROJECT_CAPTURE_DISABLED` |
+| `ProjectRegistryError`, malformed JSON/schema, or registry read `OSError` | `SCOPE_ERROR / SCOPE_ERROR` | `PROJECT_REGISTRY_UNAVAILABLE` | `REJECT / PROJECT_REGISTRY_UNAVAILABLE` |
+
+For the last row, the result contains one bounded decision for each affected
+project candidate, `source_memory_revision=None` and
+`produced_memory_revision=None`; no MemoryStore load or commit is needed to
+report an unavailable registry.  Global candidates do not trigger this row.
+The mapping is content-free and stable even when the underlying exception
+contains a path or OS message.  A `MemoryStoreCorrupt` remains the existing
+`FAILED / MEMORY_STORE_CORRUPT` result and is not relabeled as a registry
+failure.
 
 ## Compatibility and preserved surfaces
 
@@ -175,6 +271,11 @@ this direct truth surface is authorized by this contract.
 - Existing canonical records are not rewritten or reclassified.  The
   deterministic `source_id` shape `truth:<candidate_id>`, record schema,
   lifecycle fields, scope fields and retrieval inputs remain available.
+- Existing operation receipts keep their `request_hash` meaning through the
+  explicit legacy projection above.  New `provenance_hash` is additive; an
+  old receipt without it is replayable only for a legacy-shaped request that
+  omits `source` and `is_approved`.  No receipt migration write is performed
+  during replay.
 - `brain_eleven.memory.truth` remains an adapter, not a second implementation;
   package/legacy/bare-loader object identity tests continue to pass
   (`tests/test_pre12_memory_state_caller_migration.py:250-265`).
@@ -186,10 +287,27 @@ this direct truth surface is authorized by this contract.
   user capture path.  Its shared safety ordering and validator/store ownership
   (`brain_eleven/memory/capture.py:78-127`) are regression surfaces, not a new
   truth call or proactive-policy rewrite.
+- The direct API/CLI trust assumption is explicit: W-24 tests prove the
+  privileged caller contract and record provenance mapping, but do not claim
+  to authenticate a process or prove that a direct caller passed through B1.
 - Existing `tests/test_memory_truth.py` fixtures that use synthetic project IDs
   must register those IDs as active/enabled temporary projects, or use global
   scope, so the tests describe the new authority boundary.  No production
   fixture, registry, or historical canonical record is migrated.
+
+## Deferred P2: `NEW` memory-ID uniqueness
+
+The audit also identified a separate identity weakness at
+`scripts/memory_truth.py:399-401`: a `NEW` candidate's caller-supplied
+`successor_memory_id` is used as the new `memory_id` without a general
+existing-ID collision check.  W-24 records this finding but does not fix it,
+because changing ID allocation or canonical uniqueness would reopen the
+MemoryStore/transaction boundary.  **Owner:** canonical-memory/truth
+maintainer.  **Next package:** `W-24A-MEMORY-ID-UNIQUENESS-CONTRACT`.
+
+The W-24 implementation report must include this item under deferred/open
+findings and must not claim that the direct truth surface has full memory-ID
+uniqueness until that next package is independently reviewed and shipped.
 
 ## Required tests and metrics
 
@@ -202,6 +320,12 @@ this direct truth surface is authorized by this contract.
   prefix, named client secret, password assignment, Basic authorization,
   session cookie and credential-bearing connection URL.  Every class must
   return a bounded rejection and produce zero memory/receipt/revision effect.
+- Test an ordinary lifecycle content value with a secret-bearing
+  `supersession`/`resolution` `note`.  The decision must be
+  `REJECT / SECRET_CONTENT`, the target status/note/revision and canonical
+  bytes must remain unchanged, and no successor or operation receipt may be
+  created.  Repeat the test for a non-secret note control and for each shared
+  non-secret policy limit.
 - Include safe security discussion, ordinary user decision text and a valid
   worker commitment as accepted controls; shared-policy size, line-count and
   transcript-like failures must reject as well.
@@ -220,7 +344,28 @@ this direct truth surface is authorized by this contract.
   pending proposal.
 - Missing/invalid source, non-boolean approval, explicit approval false,
   non-`COMMITTED` commitment, contradictory project label and global/project
-  identity cases are covered.  None may bypass safety or registry authority.
+  identity cases are covered.  A contradictory project label is normalized to
+  the registry label; a global `project_id`, `project` or `project_label` is
+  rejected with `GLOBAL_PROJECT_METADATA`.  None may bypass safety or registry
+  authority.
+- Malformed registry JSON, an unsupported registry schema and a simulated
+  registry read `OSError` each produce `SCOPE_ERROR /
+  PROJECT_REGISTRY_UNAVAILABLE` with a per-project
+  `REJECT / PROJECT_REGISTRY_UNAVAILABLE` decision, no path/exception text,
+  and no MemoryStore read/write side effect.  Missing, archived and disabled
+  projects retain their distinct per-candidate reasons and dry-run/commit
+  statuses from the result table.
+- Build a schema-version-3 pre-W-24 canonical receipt with the exact legacy
+  request hash and no `provenance_hash`.  Replaying the same legacy-shaped
+  candidate and operation ID must return the existing decision/effect with no
+  revision, byte or receipt change.  Supplying `source` or `is_approved` to
+  that old receipt must return `INVALID_INPUT /
+  OPERATION_REPLAY_MISMATCH` with no write.
+- Commit a new candidate with explicit user provenance, replay it unchanged,
+  then change only `source` or `is_approved`; the unchanged call replays once,
+  while the changed envelope mismatches through `provenance_hash` and cannot
+  create a second effect.  The worker-shaped legacy payload must continue to
+  satisfy the existing worker effect-verification hash.
 - Package adapter identity, direct/CLI dry-run, lifecycle target checks,
   cross-project target rejection, exact-fingerprint deduplication and
   content-free results remain covered.
@@ -247,14 +392,17 @@ this direct truth surface is authorized by this contract.
    contains no copied secret policy, no direct file write and no second truth
    or provenance authority.  The changed-file list is limited to this package's
    truth surface and focused tests.
-2. **Safety/scope proof:** all eight secret classes and all three negative
-   registry states reject with zero canonical, registry, receipt, review,
-   state, graph or retrieval effects; active/enabled user and worker controls
-   commit exactly once with the expected provenance.
+2. **Safety/scope proof:** all eight secret classes, lifecycle-note secret
+   cases and all three negative registry states reject with zero canonical,
+   registry, receipt, direct-truth review, state, graph or retrieval effects;
+   malformed/read-failed registries use the explicit unavailable mapping;
+   active/enabled user and worker controls commit exactly once with the
+   expected provenance.
 3. **Compatibility proof:** focused truth, package identity, migration,
    capture-safety, manual capture, worker/B1 and B2 tests pass; existing
-   lifecycle, dedup, retrieval and Phase 20 frozen/V2 shadow assertions remain
-   unchanged.
+   lifecycle, dedup, retrieval, pre-upgrade receipt replay and Phase 20
+   frozen/V2 shadow assertions remain unchanged.  The direct API/CLI privileged
+   assumption is reported as a boundary limitation, not a failed B1 proof.
 4. **Full verification:** at one exact revision, run `pytest tests -q`,
    critical flake8 (`E9,F63,F7,F82`), Python compile/import sanity and
    `git diff --check`.  Record pass/fail counts and any pre-existing failure
@@ -273,9 +421,15 @@ this direct truth surface is authorized by this contract.
 - No second safety regex, secret-pattern tuning, source authentication system,
   transcript provenance redesign or project-root/ID migration.  Root/ID
   mismatch work remains W-13 scope.
+- No direct API/CLI caller authentication or ReviewStore approval-token proof;
+  those calls remain a trusted privileged boundary by contract, while B1
+  governs worker-generated proposals only when enabled.
 - No rewrite, repair or backfill of historical records with the old source or
   approval values; no canonical schema migration is introduced for additive
   provenance inputs.
+- No closure of the deferred `NEW` memory-ID collision finding; that belongs to
+  owner `canonical-memory/truth maintainer` in
+  `W-24A-MEMORY-ID-UNIQUENESS-CONTRACT`.
 - No change to lifecycle policy, dedup ranking, claim conflict rules, API
   response design, CLI flags, V2 promotion/default rollout or Phase 20.
 - No automatic project registration, archive reactivation, proactive opt-in
@@ -285,7 +439,8 @@ this direct truth surface is authorized by this contract.
 
 ```text
 PACKAGE: W-24
-CONTRACT REVISION: 09dbb76fca00004c4e7c2ef68690bf8a650fe71c
+CONTRACT REVISION: <exact revision commit SHA recorded in the header>
+AUDIT BASELINE: 09dbb76fca00004c4e7c2ef68690bf8a650fe71c
 IMPLEMENTATION REVISION: <exact SHA, only after authorization>
 OBJECTIVE: Apply shared capture safety, registered project authority and
            derived provenance to the direct MemoryTruthEngine commit path.
@@ -298,14 +453,18 @@ BASELINE EVIDENCE: 8 secret classes (<baseline rejected>/<8> direct truth
 TESTS ADDED: ...
 TESTS EXECUTED: ...
 QUALITY METRICS BEFORE: secret bypass count, unregistered effect count,
-                        hardcoded provenance count
+                        hardcoded provenance count, lifecycle-note bypass count
 QUALITY METRICS AFTER: 0 secret bypasses, 0 unregistered/archived/disabled
-                       effects, normalized user/worker provenance
+                       effects, 0 lifecycle-note secret effects, normalized
+                       user/worker provenance
 SAFETY METRICS: zero rejected-candidate writes; zero sensitive output; zero
                 registry/state/review/receipt side effects on rejection
 SCOPE METRICS: active/enabled acceptance; negative registry reason counts;
-               cross-project and global controls
-IDEMPOTENCE/CAS: replay/effect IDs, revision deltas, mismatch and stale counts
+               registry-unavailable mappings; cross-project and global controls
+IDEMPOTENCE/CAS: legacy pre-upgrade replay, provenance mismatch, replay/effect
+                 IDs, revision deltas, mismatch and stale counts
+DEFERRED P2: NEW caller-supplied memory-ID collision — owner canonical-memory/
+             truth maintainer; next package W-24A-MEMORY-ID-UNIQUENESS-CONTRACT
 KNOWN LIMITATIONS: ...
 OPEN FAILURES: ...
 INDEPENDENT REVIEW: SHIP / FIX-FIRST / RETHINK
