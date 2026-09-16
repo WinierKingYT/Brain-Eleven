@@ -21,9 +21,12 @@ Claude's instructions; Claude has no direct connection to Codex in this
 environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 
 Canonical branch: **master**. The exact baseline snapshot check passes.
-**Remote CI is confirmed green** (fixed 2026-09-10) except the long-standing,
-already-documented PRE-13 quality gate. V2 remains SHADOW and Phase 20
-remains FROZEN / LOCKED.
+W-25 HTTP scope/authorization is now independently **SHIP**ped at review
+head `9496b3e` (remediation review `fe1318b`). SRT-00 is active because exact
+head remote Validation and PRE-13 runs `35084029380`/`35126442600`/`35127040607`
+and `35127238073` have failed while local regression remains green; the
+protected JUnit details and root cause are still being investigated. V2
+remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 **Pilot status: blocked by design, not by accident.** Ahmet's real install
 (`C:\Users\faruk\Documents\Brain-Eleven`) has `b1_human_approval=true`
@@ -36,8 +39,11 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-24 is the latest closed implementation
-package. It closes the direct memory-truth safety/provenance boundary at exact
+**Engineering weak-point goal:** W-25 is the latest closed implementation
+package; its package report and independent remediation review record
+zero wrong-project graph leakage after the bounded HTTP fix. W-24 remains
+closed as the preceding direct memory-truth safety/provenance package. Its
+closure covers the direct memory-truth safety/provenance boundary at exact
 code/test head `4f1fd9e` (initial code `525b116`, remediation `d78295c`,
 tests `e912f44`/`4f1fd9e`); package report `80846d1` and independent review
 `9048ca5` are `SHIP`. Shared capture safety covers truth content and
@@ -263,15 +269,19 @@ in-file, not a functional finding.
 
 ## What's next
 
+- Finish SRT-00 exact-head CI failure reproduction: obtain content-safe
+  remote failure evidence and identify the runner/environment cause before
+  changing any test or workflow behavior. The latest exact-head local suite
+  remains green while Validation and PRE-13 remote runs are red.
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
   Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
   latency matrix is complete at `ca15e31`, but it cannot substitute for native
   evidence; do not mark W-07B SHIP while any native gate is absent.
-- W-24 is closed. Before opening another implementation, the next P1 must be
-  selected from the read-only findings and given its own contract. Current
-  candidates are the native `Stop`/`SESSION_END` distinction, `doctor` health
-  truthfulness, HTTP project-scope authorization, and canonical `.claude`
-  reparse containment. These remain separate bounded packages.
+- W-25 HTTP scope/authorization is closed at bounded score 9.1/10 after
+  independent remediation review. Before opening another implementation, the
+  next P1 must be selected from the read-only findings and given its own
+  contract. Current candidates are native `Stop`/`SESSION_END` distinction,
+  `doctor` health truthfulness, and canonical `.claude` reparse containment.
 - IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
   highest blast-radius module in the whole inventory, 26/26 callers,
   deliberately excluded from every slice so far including 2E) — needs its

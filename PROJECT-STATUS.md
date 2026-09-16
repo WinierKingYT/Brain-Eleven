@@ -8,6 +8,13 @@
 head `ca15e31`; synthetic matrix complete, authenticated native trust and
 dogfood remain open).
 
+**LATEST ENGINEERING WEAK-POINT CLOSURE:** W-25 HTTP project-scope/
+authorization — **SHIP** after independent remediation review `fe1318b`;
+the bounded graph provenance leak is closed. **ACTIVE STABILIZATION PACKAGE:**
+SRT-00 exact-head CI failure reproduction at `92fa1a0` (current-head remote
+Validation and PRE-13 runs remain under investigation; no threshold or skip
+change is authorized).
+
 The engineering weak-point goal is active alongside the frozen IG program.
 W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority
 coverage (`02c05c0`), W-22 optional-omission enforcement (`736c6c9`) and
