@@ -7,9 +7,11 @@ the end of a work session; keep entries to a few lines.
 ## Where we are
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
-"Phase 20" plan (frozen). Last closed package: **IG-04 B2** (review queue
-dedup + deterministic ordering) — independent review `SHIP` on 2026-09-10.
-B1 and B2 are both closed; W-07B-R1 is the active evidence package.
+"Phase 20" plan (frozen). Last closed engineering weak-point package:
+**SRT-01 Linux runtime lock protocol repair** — independent review `SHIP` at
+review head `775d0d2`; implementation `335b6df`, focused tests `f0866b6`.
+B1 and B2 are both closed; the earlier IG-04 B2 review queue package remains
+closed as well. SRT-00 is the active stabilization package.
 `INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
 the Branch B track, not the original reference/correction scope (deferred,
 not deleted). The earlier D0/R0 feasibility probes remain evaluation-only
@@ -21,12 +23,13 @@ Claude's instructions; Claude has no direct connection to Codex in this
 environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 
 Canonical branch: **master**. The exact baseline snapshot check passes.
-W-25 HTTP scope/authorization is now independently **SHIP**ped at review
-head `9496b3e` (remediation review `fe1318b`). SRT-00 is active because exact
-head remote Validation and PRE-13 runs `35084029380`/`35126442600`/`35127040607`
-and `35127238073` have failed while local regression remains green; the
-protected JUnit details and root cause are still being investigated. V2
-remains SHADOW and Phase 20 remains FROZEN / LOCKED.
+SRT-01 closed the Linux POSIX lock protocol defect; exact implementation-head
+evidence and terminal report-only checks are recorded in
+`SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md`. SRT-00 remains active because
+remote Validation #800 (`35135589646`) and PRE-13 #654 (`35135589665`) are
+red for W-03B, task-model/MemoryBackup, runtime, quality and coverage
+identities unrelated to SRT-01. V2 remains SHADOW and Phase 20 remains
+FROZEN / LOCKED.
 
 **Pilot status: blocked by design, not by accident.** Ahmet's real install
 (`C:\Users\faruk\Documents\Brain-Eleven`) has `b1_human_approval=true`

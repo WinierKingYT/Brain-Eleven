@@ -3,17 +3,21 @@
 **Last updated:** 2026-09-16
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
-**LAST CLOSED PACKAGE: IG-04 B2 Review Queue Usability — CLOSED / SHIPPED** (independent review `SHIP`, 2026-09-10; remote CI remains an open bounded follow-up, see `IG04-B2-INDEPENDENT-REVIEW.md`).
-**ACTIVE PACKAGE: W-07B-R1 evidence harness — FIX-FIRST / NOT ACCEPTED** (exact
-head `ca15e31`; synthetic matrix complete, authenticated native trust and
-dogfood remain open).
+**LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
+(independent review `SHIP` at review head `775d0d2`; bounded implementation
+`335b6df` plus focused tests `f0866b6`).
+**ACTIVE PACKAGE: SRT-00 exact-head CI failure stabilization — ACTIVE / OPEN**
+(SRT-01 is closed; unrelated runtime, quality, Windows and W-03B failures
+remain open and are tracked separately).
 
-**LATEST ENGINEERING WEAK-POINT CLOSURE:** W-25 HTTP project-scope/
-authorization — **SHIP** after independent remediation review `fe1318b`;
-the bounded graph provenance leak is closed. **ACTIVE STABILIZATION PACKAGE:**
-SRT-00 exact-head CI failure reproduction at `92fa1a0` (current-head remote
-Validation and PRE-13 runs remain under investigation; no threshold or skip
-change is authorized).
+**LATEST ENGINEERING WEAK-POINT CLOSURE:** SRT-01 Linux runtime lock protocol
+repair — **SHIP** after fresh independent review recorded in
+`SRT01-LINUX-RUNTIME-LOCK-INDEPENDENT-REVIEW.md`; the POSIX context-manager
+defect is closed without changing workflow gates. W-25 HTTP project-scope/
+authorization remains the preceding application closure (`fe1318b`).
+**ACTIVE STABILIZATION PACKAGE:** SRT-00 exact-head CI failure reproduction at
+`92fa1a0` (current-head remote Validation and PRE-13 remain red for unrelated
+failures; no threshold or skip change is authorized).
 
 The engineering weak-point goal is active alongside the frozen IG program.
 W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority

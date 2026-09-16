@@ -5,8 +5,8 @@
 **Implementation SHA:** `335b6df7dd895b868cb32c1f50e81fa8f8568e55`
 **Test SHA:** `f0866b69a2645e90e29fa87034da2688fb15d6fa`
 **Pre-package SHA:** `e6ecd1407b07d9ecb381751216a647b63e870238`
-**Status:** REVIEW PENDING
-**Verdict:** REVIEW PENDING — not SHIP
+**Status:** SHIPPED
+**Verdict:** SHIP — SRT-01 only
 
 ## Objective and root cause addressed
 
@@ -172,12 +172,13 @@ LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, p
 KNOWN LIMITATIONS: exact-head remote workflows remain red for unrelated coverage, quality, Windows and cold-start/runtime identities; protected JUnit logs are unavailable anonymously; the focused Linux pytest evidence is Ubuntu 24.04 WSL while GitHub ubuntu-latest ran it within the full unit command
 OUT-OF-SCOPE FAILURES: STALE_INPUT, coverage threshold, W-03B, MemoryBackup, task-model, and other unrelated identities
 ROLLBACK: revert f0866b6, 498e72b, and 335b6df; preserve the evidence and original gates
-INDEPENDENT REVIEW: contract SHIP; implementation review pending final exact-head assessment
+INDEPENDENT REVIEW: `SRT01-LINUX-RUNTIME-LOCK-INDEPENDENT-REVIEW.md`, review head `775d0d2`, verdict SHIP for SRT-01 only
 SCORE BEFORE: not assigned
-SCORE AFTER: not assigned pending independent review
-VERDICT: REVIEW PENDING
+SCORE AFTER: SRT-01 bounded lock reliability gate passed; overall runtime score remains governed by SRT-00 failures
+VERDICT: SHIP — SRT-01 only
 ```
 
-**Implementation status: complete for the approved bounded diff; independent
-review remains pending. Exact-head remote evidence is recorded above, with
-out-of-scope failures retained rather than hidden.**
+**Implementation status:** complete for the approved bounded diff; independent
+review returned SHIP for SRT-01 only. Exact-head and terminal report-only
+remote evidence is recorded above, with out-of-scope failures retained rather
+than hidden.
