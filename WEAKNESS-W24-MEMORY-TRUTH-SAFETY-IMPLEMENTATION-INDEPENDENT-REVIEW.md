@@ -10,6 +10,10 @@
 **PHASE 20:** FROZEN / LOCKED
 **V2:** SHADOW
 
+**FINAL REVIEW STATUS:** The historical implementation review below was
+`FIX-FIRST`; the remediation re-review and final decision are recorded at the
+end of this document.
+
 ## Scope
 
 This review independently inspected the W-24 contract, the implementation
@@ -142,3 +146,110 @@ substantially aligned with the contract, and the full regression is green.
 The exact replay regression, mandatory evidence gaps and failed diff-check
 gate leave W-24 open. This review does not modify the implementation and does
 not grant SHIP.
+
+## Remediation re-review
+
+**REVIEW TYPE:** independent, read-only remediation re-review
+
+**CONTRACT REVIEWED:** `4651173f1118406853f563f96639a8623ea07e1f` — `SHIP`
+
+**INITIAL IMPLEMENTATION REVIEW:** `95dcba7d5788c7d3e6dbbdd347998faa5bcfb2bd`
+— `FIX-FIRST`
+
+**REMEDIATION CODE COMMIT:** `d78295cfd855ff3220b5c180b9167059f1678c20`
+
+**REMEDIATION TEST COMMIT:** `4f1fd9eaebd9f1c38bfad2ff21d325f52aba79d2`
+
+**EXACT CODE/TEST HEAD REVIEWED:**
+`4f1fd9eaebd9f1c38bfad2ff21d325f52aba79d2`
+
+**CURRENT DOCUMENTATION HEAD:** `80846d1e5203b40155381446edf858e011d11d67`
+
+The code and test blobs under review are unchanged between the exact
+verification head and the current documentation head; the intervening commit
+only updates the package report. No production code was changed during this
+re-review.
+
+### Scope and source checks
+
+I independently inspected the remediation diff, the final contract, the
+initial FIX-FIRST findings, the worker/service boundary, the canonical store
+transaction, the registry and shared capture policy. The implementation scope
+is limited to the declared truth surface and focused tests:
+
+- `scripts/memory_truth.py`
+- `brain_eleven/memory/truth.py`
+- `tests/test_memory_truth.py`
+- `tests/test_w24_memory_truth_safety.py`
+
+`MemoryStore`, `ProjectRegistry`, `capture_safety`, `brain_eleven/runtime/worker.py`,
+queue, review, state, graph, retrieval and `evals/` are byte-unchanged from
+the contract review head. The truth path has no direct JSON/file writer; its
+accepted mutations still enter `MemoryStore.transact()` at
+`scripts/memory_truth.py:619-725`. The only new package-surface change is the
+identity-preserving `legacy_request_projection` re-export.
+
+### Remediation findings rechecked
+
+- The shared safety preflight runs before project lookup and before the store
+  transaction (`scripts/memory_truth.py:247-257`, `:341-420`). Content and
+  lifecycle notes use the existing `capture_safety.evaluate_capture` object;
+  no second secret policy exists.
+- A readable unregistered, archived or disabled project policy result with a
+  supplied operation ID enters the canonical transaction. The receipt is
+  checked under the MemoryStore lock at `:621-632` before the current policy
+  rejection is returned. Matching request/provenance replays the existing
+  effect; changed content or provenance returns
+  `OPERATION_REPLAY_MISMATCH`; a new operation still returns the current
+  registry rejection. I additionally exercised all three policy transitions,
+  including removal of the registry entry, in isolated temporary vaults.
+- Registry parse/read failures remain the no-load
+  `SCOPE_ERROR / PROJECT_REGISTRY_UNAVAILABLE` path. The focused tests patch
+  `MemoryStore.load()` to fail if a registry-unavailable path attempts to load
+  canonical memory, and those controls pass.
+- Readable preflight-only rejection returns the current revision in both public
+  result fields without creating a receipt, backup or canonical effect.
+  Registry-unavailable results retain null revisions as required by the
+  contract.
+- The accepted B1 control reaches the unchanged
+  `ReviewStore → review_action → apply_candidate(approved=True)` boundary.
+  The focused test verifies the worker provenance, committed approval,
+  canonical receipt request hash, unchanged `Worker._verify_canonical_effect`
+  result and idempotent replay. The worker source blob is identical to the
+  pre-W-24 review head.
+- `TruthCandidate` fields/order and `dataclasses.asdict()` shape remain the
+  historical shape. `legacy_request_projection` uses the exact pre-W-24
+  allowlist, and JSON identity serialization preserves the old tuple/list
+  representation. The worker request-hash formula remains unchanged.
+- The deferred caller-supplied `NEW` memory-ID collision remains explicitly
+  listed as W-24A P2. It is not claimed as fixed by this review.
+
+### Verification independently executed
+
+- Focused truth, capture-safety, B1/B2 and W-24 suite: **67 passed, 2
+  warnings**.
+- Full repository suite at the current HEAD: **1404 passed, 4 skipped, 2
+  warnings**.
+- Critical flake8 selection `E9,F63,F7,F82`: **PASS**.
+- `compileall` for the changed Python files: **PASS**.
+- `git diff 4651173..HEAD --check`: **PASS**.
+- Package/legacy/bare-module identity checks: **PASS**.
+- Additional isolated replay controls for unregistered, archived and disabled
+  projects: **PASS**; changed request/provenance inputs mismatched without a
+  second effect, and new operations remained registry-gated.
+
+The exact package report claims match the independently observed current
+results. Review and package evidence contain only bounded statuses, reason
+codes, IDs, revisions and counts. Synthetic secret patterns remain confined
+to focused test fixtures; no real secret, raw transcript or full host path is
+included in the review evidence.
+
+### Re-review decision
+
+No new P0, P1 or contract-blocking P2 was found in the remediation. The
+initial replay-order defect, missing worker/failure evidence and revision-lineage
+defect are corrected and independently verified. The direct API/CLI privileged
+caller assumption and the deferred memory-ID uniqueness item remain the
+contracted limitations.
+
+**FINAL VERDICT: SHIP**
