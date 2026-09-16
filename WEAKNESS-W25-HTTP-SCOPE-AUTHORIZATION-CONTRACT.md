@@ -88,7 +88,7 @@ minimum it is:
 | Method/path | Boundary class | W-25 requirement |
 |---|---|---|
 | `GET /health`, `/docs`, `/redoc`, `/openapi.json` | public liveness/docs | no memory content; remain public |
-| `GET /status`, `/metrics`, `/cache/stats` | aggregate/operational read | no new memory content; non-loopback key policy still applies |
+| `GET /status`, `/metrics`, `/cache/stats`, `/graph/stats` | aggregate/operational read | no new memory content; non-loopback key policy still applies |
 | `POST /search`, `POST /rank`, `GET /memories`, `GET /memories/{id}`, `GET /digest`, `GET /anomalies`, `GET /graph/entities`, graph relationships/traverse, `POST /chat` | content-bearing scoped read | one helper; `all` admin-only; project context validated |
 | `POST /memories`, `PUT /memories/{id}`, `DELETE /memories/{id}` | canonical mutation | preserve existing validation, scope, transaction/CAS and key policy; reject unauthorized project context before mutation |
 | `POST /embed` (`:452-488`) | query/content processing | no memory corpus disclosure; include in non-loopback/key matrix |
