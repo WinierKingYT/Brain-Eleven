@@ -71,12 +71,13 @@ independently `SHIP`ped at exact tip `6225d4f` (implementation `9bb24d8`;
 review `SHIP` in `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`). Explicit
 offset validation and bounded `STATE_CORRUPT` mapping are in place without
 changing native context translation, project identity lineage or serialized
-decoder behavior. The next bounded package is **TSC-02 project identity and
-registry lineage**: its contract is independently `SHIP`ped at `62dfedf`
-(review `90fd416`), while implementation is still pending. It must prove
-root-reuse rejection, valid relocation with stable project IDs, registry race
-detection, lineage privacy, cache ordering and unchanged holdout inputs.
-TSC-03 strict state decoding is deferred until TSC-02 closes. W-07B's native
+decoder behavior. **TSC-02 project identity and registry lineage** is now
+independently `SHIP`ped at reviewed code head `709a9c2` (review `79120f4`):
+root-reuse and registry races are rejected before delivery, valid relocation
+preserves stable project IDs, and the cache-access correction leaves bytes
+unchanged on stale lineage races. TSC-03 strict state decoding is deferred
+until its own bounded contract; `task_state_context.py` package inversion
+remains a separate IG-07 slice. W-07B's native
 trust/latency/dogfood acceptance gates remain open in parallel.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native

@@ -1,10 +1,11 @@
 # TSC-02 — Cache Access Refresh Correction Follow-up
 
 **PACKAGE:** TSC-02  
-**STATUS:** IMPLEMENTED CORRECTION / INDEPENDENT REVIEW PENDING  
+**STATUS:** IMPLEMENTED CORRECTION / INDEPENDENTLY SHIPPED
 **BASELINE REVIEW HEAD:** `56ddd43`  
 **IMPLEMENTATION REVISIONS:** `b107a05`, `4297a91`  
 **TEST REVISION:** `c8d71ed`  
+**INDEPENDENT REVIEW:** `79120f4f59b5ddf5f3c2984188510f97b4c7932d`
 **PROGRAM:** Engineering Weak-Point Improvement Goal  
 **PHASE 20:** FROZEN / LOCKED  
 **V2 RUNTIME:** SHADOW
@@ -81,9 +82,11 @@ no broader registry/cache atomicity claim is made.
 
 ## Open status
 
-No focused or full-regression failure remains for this correction. An
-independent read-only implementation review of the final exact revision is
-still required. This note does not self-accept the package.
+No focused or full-regression failure remains for this correction. The
+independent read-only re-review at exact code head
+`709a9c2fe39fad78c6c4a1ae075a412c8e18db6b` returned **SHIP** and found no
+further bounded issue. This note records that evidence; it does not promote
+V2 or unlock Phase 20.
 
-**INDEPENDENT REVIEW:** REVIEW PENDING  
-**VERDICT:** REVIEW PENDING
+**INDEPENDENT REVIEW:** `SHIP`
+**VERDICT:** `SHIP`

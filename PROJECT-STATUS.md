@@ -1,6 +1,6 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-15
+**Last updated:** 2026-09-16
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: IG-04 B2 Review Queue Usability — CLOSED / SHIPPED** (independent review `SHIP`, 2026-09-10; remote CI remains an open bounded follow-up, see `IG04-B2-INDEPENDENT-REVIEW.md`).
@@ -23,11 +23,15 @@ leakage. TSC-02 project identity/registry lineage and TSC-03 strict state
 decoding remain separate follow-up packages. This closure does not promote V2
 or unlock Phase 20.
 
-TSC-02's bounded identity/registry-lineage contract is independently accepted
-(`SHIP`) at `62dfedf` with review `90fd416`; implementation is pending and must
-remain separate from the `task_state_context.py` architecture inversion. The
-root-reuse leakage found by the audit remains open until that implementation
-passes its own independent review.
+TSC-02's bounded identity/registry-lineage package is independently **SHIP**ped
+at reviewed code head `709a9c2` (implementation `5083bcf`/`b2e80d0`, cache
+correction `b107a05`/`c8d71ed`/`4297a91`, review
+`79120f4f59b5ddf5f3c2984188510f97b4c7932d`). It rejects root reuse and
+registry races before Router/Authority delivery, preserves relocation identity,
+and leaves cache bytes unchanged on stale lineage races. The separate cache
+correction review closed the initial FIX-FIRST finding. `task_state_context.py`
+package inversion and TSC-03 strict decoding remain separate; this bounded
+closure does not promote V2 or unlock Phase 20.
 
 W-07B-R1 repaired the disposable synthetic runtime benchmark, added bounded
 status reporting plus canonical-effect verification, and now records the full

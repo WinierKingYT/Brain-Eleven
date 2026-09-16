@@ -1,8 +1,10 @@
 # TSC-02 — Project Identity and Registry-Lineage Package Report
 
 **PACKAGE:** TSC-02
-**REVISION:** `b2e80d0cd7f21ff7a960ceeaaace8eac608526a0` (implementation and
-focused-test revisions: `5083bcf`, `f69ac0e`, `b2e80d0`)
+**REVISION:** `709a9c2fe39fad78c6c4a1ae075a412c8e18db6b` (reviewed code head;
+identity implementation/test revisions: `5083bcf`, `f69ac0e`, `b2e80d0`; cache
+correction revisions: `b107a05`, `c8d71ed`, `4297a91`)
+**REVIEW COMMIT:** `79120f4f59b5ddf5f3c2984188510f97b4c7932d`
 **BASELINE:** `4bf07478db02002971ad108192c553a9beb35967`
 **PROGRAM:** Engineering Weak-Point Improvement Goal
 **PHASE 20:** FROZEN / LOCKED
@@ -32,7 +34,14 @@ reuse and registry races without changing canonical persistence authorities.
 - `authority/serialization.py` — strict lineage encode/decode checks.
 - `tests/test_tsc02_identity.py` — focused identity, race, serialization,
   isolation and privacy evidence.
+- `context_router/cache.py`, `authority/cache.py` — read-only cache loading
+  and post-validation access refresh for lineage-sensitive lookups.
+- `context_router/router.py`, `authority/resolver.py` — lineage-safe cache
+  lookup integration.
 - `WEAKNESS-TSC-02-IDENTITY-PACKAGE-REPORT.md` — this evidence report.
+- `WEAKNESS-TSC-02-IDENTITY-CACHE-ACCESS-CORRECTION.md` — correction evidence.
+- `WEAKNESS-TSC-02-IDENTITY-CACHE-ACCESS-INDEPENDENT-REVIEW.md` — independent
+  correction re-review.
 
 No `runtime/context.py`, `MemoryStore`, `StateStore`, `ProjectRegistry`
 persistence implementation, retrieval/V2 path, eval labels, holdout inputs or
@@ -66,7 +75,7 @@ Phase 20 file was changed.
 
 ## TESTS ADDED
 
-`tests/test_tsc02_identity.py` contains 11 focused tests covering:
+`tests/test_tsc02_identity.py` contains 12 focused tests covering:
 
 - opaque fixed-format identity and path privacy;
 - composer lineage shape and field order;
@@ -77,8 +86,8 @@ Phase 20 file was changed.
   project-mismatch rejection;
 - explicit unresolved/global project-free forms;
 - validation before Router cache lookup;
-- Router cache race rejection;
-- Authority cache race rejection.
+- Router and Authority cache race rejection with byte-preserving stale paths;
+- normal cache-hit result parity with post-validation access refresh.
 
 ## TESTS EXECUTED
 
@@ -91,10 +100,10 @@ All commands used the repository `.venv` interpreter.
   `tests/test_context_compiler.py`, `tests/test_phase14_scope.py`,
   `tests/test_task_model.py`, `tests/test_pre12_memory_state_caller_migration.py`
   — **161 passed**.
-- `python -m pytest tests -q` at exact revision `f69ac0e` after the bounded
-  implementation/test commits — **1365 passed, 4 skipped, 2 warnings** in
-  294.51 seconds. The final `b2e80d0` change is covered by the focused
-  composition tests above.
+- `python -m pytest tests -q` at corrected exact code head `709a9c2` — **1366
+  passed, 4 skipped, 2 warnings** in approximately 296 seconds.
+- Cache correction focused suite (including both cache classes and operational
+  cache tests) — **64 passed**.
 - Critical flake8:
   `python -m flake8 --select E9,F63,F7,F82 authority/resolver.py
   authority/serialization.py brain_eleven/projects/__init__.py
@@ -123,8 +132,9 @@ measure that identity failure.
 The bounded root-reuse, relocation, compose-race, cache-race, serialization
 and isolation behaviors are now executable and passing at the exact revision.
 The broader task-state/context score is **not rescored here**; no unsupported
-aggregate intelligence or daily-use score increase is claimed pending
-independent implementation review.
+aggregate intelligence or daily-use score increase is claimed. The cache
+ordering correction closes the independent review's bounded FIX-FIRST finding
+without changing those broader scores.
 
 ## SAFETY METRICS
 
@@ -157,16 +167,19 @@ independent implementation review.
 
 ## OPEN FAILURES
 
-No failure was observed within the bounded TSC-02 focused or full regression
-surfaces. Implementation acceptance remains open until an independent
-read-only implementation reviewer checks the contract, diff, race ordering,
-privacy and authority boundaries.
+No failure remains within the bounded TSC-02 focused or full regression
+surfaces. The initial independent review found and the correction closed one
+cache-byte mutation during a stale lineage race; the correction re-review found
+no further bounded failure.
 
 ## INDEPENDENT REVIEW
 
-The **contract** was independently reviewed and accepted as `SHIP` at
-`90fd416` for contract revision `62dfedf`. The implementation has not been
-independently reviewed in this report. Self-review is not acceptance.
+The contract was independently reviewed and accepted as `SHIP` at `90fd416`
+for contract revision `62dfedf`. The implementation and cache correction were
+independently reviewed read-only at `79120f4f59b5ddf5f3c2984188510f97b4c7932d`;
+the reviewer returned **SHIP** against corrected code head
+`709a9c2fe39fad78c6c4a1ae075a412c8e18db6b`. The prior `FIX-FIRST` finding and
+its byte-preserving correction are recorded in the paired correction artifacts.
 
 ## SCORE BEFORE
 
@@ -175,10 +188,12 @@ independently reviewed in this report. Self-review is not acceptance.
 
 ## SCORE AFTER
 
-**Not rescored pending independent implementation review.** The focused
-identity and lineage evidence is green; broader intelligence and daily-use
-quality are unaffected claims for this bounded package.
+**Task-state surface:** approximately **7.5/10** for the bounded identity
+surface after the correction; broader task-state/context intelligence and
+daily-use quality remain unchanged and are not rescored by this package.
 
 ## VERDICT
 
-**REVIEW PENDING** — this package intentionally does not self-ship.
+**SHIP** — all bounded identity, lineage, cache-ordering, serialization,
+privacy, isolation, holdout and regression gates passed at the independently
+reviewed code head. This package does not promote V2 or unlock Phase 20.

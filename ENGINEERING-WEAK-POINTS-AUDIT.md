@@ -651,9 +651,9 @@ goal threshold.
 contract revision `0eac731`. It requires explicit-offset validation, bounded
 `STATE_CORRUPT` mapping, path/content-free errors and no-write/no-rewrite
 behavior. Native `compile_context` exception translation, project identity
-lineage and strict serialized decoding are separate follow-up packages.
-Implementation has not started; Phase 20 remains FROZEN / LOCKED and V2
-remains SHADOW.
+lineage and strict serialized decoding are separate follow-up packages; the
+TSC-02 identity/lineage package is now closed at its reviewed code head.
+Phase 20 remains FROZEN / LOCKED and V2 remains SHADOW.
 
 TSC-01 implementation is now independently **SHIP**ped at exact tip
 `6225d4f` (implementation `9bb24d8`, formatting correction `6225d4f`). The
@@ -664,10 +664,11 @@ valid explicit offsets preserve their stored form, and malformed reads return
 bounded `STATE_CORRUPT` without path/content leakage or side effects. See
 `WEAKNESS-TSC-01-TIMEZONE-PACKAGE-REPORT.md` and the independent review
 `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md` (`SHIP`, review commit
-`1cb524c`). TSC-02 project identity/registry lineage, TSC-03 strict decoding,
-native `compile_context` translation and `task_state_context.py` inversion
-remain open follow-up findings; Phase 20 remains FROZEN / LOCKED and V2
-remains SHADOW.
+`1cb524c`). TSC-03 strict decoding, native `compile_context` translation and
+`task_state_context.py` inversion remain open follow-up findings; TSC-02
+identity/lineage is independently closed at reviewed code head `709a9c2`
+with review `79120f4`. Phase 20 remains FROZEN / LOCKED and V2 remains
+SHADOW.
 
 ## TSC-02 — project identity and registry lineage (2026-09-15)
 
@@ -686,5 +687,11 @@ requires an opaque normalized-root identity, registry revision, two-phase
 composer revalidation, pre-cache Router/Authority checks, explicit unresolved/
 global lineage forms, strict serialization policy and zero project candidates
 after root reuse. It does not change ProjectRegistry persistence, canonical
-MemoryStore/StateStore authorities, retrieval, V2 or Phase 20. Implementation
-has not started; TSC-02 remains **CONTRACT ACCEPTED / IMPLEMENTATION PENDING**.
+MemoryStore/StateStore authorities, retrieval, V2 or Phase 20. The implementation
+and cache-ordering correction are independently **SHIP**ped at reviewed code
+head `709a9c2` (review artifact `WEAKNESS-TSC-02-IDENTITY-CACHE-ACCESS-
+INDEPENDENT-REVIEW.md`, commit `79120f4`). The reviewer reproduced stale-load
+races for Router and Authority, confirmed zero candidates and byte-for-byte
+unchanged cache files, and found no further bounded issue. TSC-02 is closed;
+TSC-03 strict decoding and the `task_state_context.py` package inversion remain
+separate packages.
