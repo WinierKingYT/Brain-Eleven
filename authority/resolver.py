@@ -206,7 +206,7 @@ class AuthorityResolver:
                     revisions=snapshot.revisions,
                     error="TaskStateContext registry lineage changed before cache lookup",
                 )
-            cached = self._cached_result(self.cache.load(cache_key, snapshot.revisions) or {})
+            cached = self._cached_result(self.cache.load_read_only(cache_key, snapshot.revisions) or {})
             if cached is not None:
                 try:
                     after_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)

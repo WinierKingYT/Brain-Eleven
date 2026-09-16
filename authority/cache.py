@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextvars import ContextVar
 import json
 import os
 import tempfile
@@ -13,6 +14,7 @@ from brain_eleven.infrastructure.locking import file_lock
 
 
 CACHE_SCHEMA_VERSION = 1
+_ACCESS_REFRESH_ENABLED = ContextVar("authority_cache_access_refresh_enabled", default=True)
 
 
 class AuthorityCache:
@@ -25,10 +27,24 @@ class AuthorityCache:
                 loaded = self._read_entry_unlocked(key, revisions)
                 if loaded is None:
                     return None
-                _document, _entry, result = loaded
+                document, entry, result = loaded
+                if _ACCESS_REFRESH_ENABLED.get():
+                    entry["last_access_ns"] = time.time_ns()
+                    try:
+                        self._write_unlocked(document)
+                    except OSError:
+                        pass
                 return result
         except (OSError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError):
             return None
+
+    def load_read_only(self, key: str, revisions: Mapping[str, Any]) -> Optional[dict[str, Any]]:
+        """Load a hit without refreshing bytes before the caller validates lineage."""
+        token = _ACCESS_REFRESH_ENABLED.set(False)
+        try:
+            return self.load(key, revisions)
+        finally:
+            _ACCESS_REFRESH_ENABLED.reset(token)
 
     def touch(self, key: str, revisions: Mapping[str, Any]) -> None:
         """Refresh access metadata after the caller validates its input."""

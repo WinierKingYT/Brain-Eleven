@@ -304,7 +304,7 @@ class ContextRouter:
                     error="TaskStateContext registry lineage changed before cache lookup",
                     telemetry={"mode": options.mode, "attempt": attempt + 1, "cache_hit": False},
                 )
-            cached = self._cached_result(self.cache.load(plan.fingerprint, revisions) or {})
+            cached = self._cached_result(self.cache.load_read_only(plan.fingerprint, revisions) or {})
             if cached is not None:
                 try:
                     after_cache_lineage = validate_task_state_lineage(self.vault_path, task_state)
