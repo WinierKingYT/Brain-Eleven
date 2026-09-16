@@ -21,6 +21,7 @@ TruthCandidate = _legacy.TruthCandidate
 TruthDecision = _legacy.TruthDecision
 TruthResult = _legacy.TruthResult
 MemoryTruthEngine = _legacy.MemoryTruthEngine
+legacy_request_projection = _legacy.legacy_request_projection
 main = _legacy.main
 
 __all__ = [
@@ -33,5 +34,6 @@ __all__ = [
     "TruthDecision",
     "TruthResult",
     "MemoryTruthEngine",
+    "legacy_request_projection",
     "main",
 ]

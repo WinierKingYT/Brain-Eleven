@@ -11,16 +11,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
+from brain_eleven._legacy import load_legacy_module
 from brain_eleven.memory import GLOBAL_SCOPE, infer_memory_scope, scoped_fingerprint
 from brain_eleven.memory import MemoryStore, MemoryStoreConflict, MemoryStoreCorrupt, no_change
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+
+
+_capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
+evaluate_capture = _capture_safety.evaluate_capture
 
 
 class TruthError(RuntimeError):
@@ -31,6 +36,18 @@ class TruthError(RuntimeError):
 
 class TruthInputError(TruthError):
     code = "MEMORY_TRUTH_INVALID"
+
+
+class _TruthReplayMismatch(TruthInputError):
+    code = "OPERATION_REPLAY_MISMATCH"
+
+
+class _TruthProvenanceError(TruthInputError):
+    code = "INVALID_PROVENANCE"
+
+
+class _TruthApprovalError(TruthInputError):
+    code = "INVALID_APPROVAL"
 
 
 class TruthCorruptError(TruthError):
@@ -58,9 +75,28 @@ class TruthStatus(str, Enum):
     FAILED = "FAILED"
 
 
-_SECRET = re.compile(r"(?i)(api[_-]?key|secret|password|token|private[_-]?key)\s*[:=]")
 _ALLOWED_STATUS = {"active", "resolved", "superseded"}
 _ALLOWED_SCOPE = {GLOBAL_SCOPE, "project"}
+_ALLOWED_PROVENANCE_SOURCES = frozenset({"user", "worker", "review", "extraction-v2"})
+_LEGACY_REQUEST_FIELDS = (
+    "candidate_id",
+    "content",
+    "memory_type",
+    "scope",
+    "project_id",
+    "project",
+    "dedup_fingerprint",
+    "claim_key",
+    "commitment",
+    "confidence",
+    "evidence_refs",
+    "occurred_at",
+    "operation",
+    "target_memory_id",
+    "successor_memory_id",
+    "resolved_by",
+    "note",
+)
 
 
 def _utc_now() -> str:
@@ -106,13 +142,16 @@ class TruthCandidate:
             confidence = float(value.get("confidence", 0.0))
         except (TypeError, ValueError) as exc:
             raise TruthInputError("confidence must be numeric") from exc
+        project_label = str(value.get("project") or "").strip()
+        if not project_label:
+            project_label = str(value.get("project_label") or "").strip()
         candidate = cls(
             candidate_id=str(value.get("candidate_id") or "").strip(),
             content=str(value.get("content") or "").strip(),
             memory_type=str(value.get("memory_type", value.get("type", "")) or "").strip().lower(),
             scope=str(value.get("scope") or GLOBAL_SCOPE).strip().lower(),
             project_id=str(value.get("project_id") or "").strip(),
-            project=str(value.get("project") or "").strip(),
+            project=project_label,
             dedup_fingerprint=str(value.get("dedup_fingerprint") or "").strip(),
             claim_key=str(value.get("claim_key") or "").strip(),
             commitment=str(value.get("commitment") or "COMMITTED").strip().upper(),
@@ -136,6 +175,81 @@ class TruthCandidate:
         if candidate.operation not in {action.value for action in TruthAction}:
             raise TruthInputError("unsupported truth operation")
         return candidate
+
+
+@dataclass(frozen=True)
+class _CandidateEnvelope:
+    """Private mapping metadata kept outside the historical candidate shape."""
+
+    candidate: TruthCandidate
+    source: str
+    is_approved: bool
+    has_source: bool = False
+    has_approval: bool = False
+
+
+def legacy_request_projection(candidate: TruthCandidate) -> dict[str, Any]:
+    """Return the exact pre-W-24 request projection in stable field order."""
+    return {field_name: getattr(candidate, field_name) for field_name in _LEGACY_REQUEST_FIELDS}
+
+
+def _normalize_candidate_envelope(
+    value: TruthCandidate | Mapping[str, Any],
+    *,
+    operation_id: Optional[str],
+) -> _CandidateEnvelope:
+    """Normalize mapping-only provenance without changing ``TruthCandidate``."""
+    if isinstance(value, TruthCandidate):
+        candidate = value
+        mapping: Optional[Mapping[str, Any]] = None
+    else:
+        if not isinstance(value, Mapping):
+            raise TruthInputError("candidate must be an object")
+        mapping = value
+        candidate = TruthCandidate.from_mapping(value)
+
+    has_source = mapping is not None and "source" in mapping
+    if has_source:
+        raw_source = mapping.get("source")
+        if not isinstance(raw_source, str) or not raw_source.strip():
+            raise _TruthProvenanceError("source must be a bounded provenance label")
+        source = raw_source.strip().lower()
+        if source not in _ALLOWED_PROVENANCE_SOURCES:
+            raise _TruthProvenanceError("source must be a bounded provenance label")
+    else:
+        # Existing worker payloads have no mapping metadata.  Their operation
+        # identity is the only compatibility signal available at this layer.
+        source = "worker" if operation_id else "user"
+
+    has_approval = mapping is not None and "is_approved" in mapping
+    if has_approval:
+        raw_approval = mapping.get("is_approved")
+        if not isinstance(raw_approval, bool):
+            raise _TruthApprovalError("is_approved must be boolean")
+        is_approved = raw_approval
+    else:
+        is_approved = candidate.commitment == "COMMITTED"
+
+    return _CandidateEnvelope(
+        candidate=candidate,
+        source=source,
+        is_approved=is_approved,
+        has_source=has_source,
+        has_approval=has_approval,
+    )
+
+
+def _capture_rejection_reason(content: str) -> Optional[str]:
+    """Map the shared policy's content-free reason to truth compatibility codes."""
+    result = evaluate_capture(content)
+    if result.accepted:
+        return None
+    return {
+        "potential_secret": "SECRET_CONTENT",
+        "payload_too_large": "CAPTURE_TOO_LARGE",
+        "too_many_lines": "CAPTURE_TOO_MANY_LINES",
+        "transcript_like": "CAPTURE_TRANSCRIPT_LIKE",
+    }.get(result.reason, "CAPTURE_SAFETY_REJECTED")
 
 
 @dataclass(frozen=True)
@@ -210,19 +324,133 @@ class MemoryTruthEngine:
                 return memory
         return None
 
-    def _validate_candidate(self, candidate: TruthCandidate) -> Optional[TruthDecision]:
-        if _SECRET.search(candidate.content):
-            return TruthDecision(candidate.candidate_id, TruthAction.REJECT.value, "SECRET_CONTENT", evidence_refs=candidate.evidence_refs)
+    @staticmethod
+    def _decision(candidate: TruthCandidate, action: str, reason: str) -> TruthDecision:
+        return TruthDecision(
+            candidate.candidate_id,
+            action,
+            reason,
+            evidence_refs=candidate.evidence_refs,
+        )
+
+    def _preflight(
+        self,
+        envelopes: Sequence[_CandidateEnvelope],
+    ) -> tuple[list[_CandidateEnvelope], list[Optional[TruthDecision]]]:
+        """Run safety and project authority checks before loading the store."""
+        resolved = list(envelopes)
+        decisions: list[Optional[TruthDecision]] = [None] * len(envelopes)
+        registry: Optional[ProjectRegistry] = None
+
+        for index, envelope in enumerate(envelopes):
+            candidate = envelope.candidate
+            reason = _capture_rejection_reason(candidate.content)
+            if reason is None and candidate.note:
+                reason = _capture_rejection_reason(candidate.note)
+            if reason is not None:
+                decisions[index] = self._decision(candidate, TruthAction.REJECT.value, reason)
+                continue
+
+            if candidate.scope == GLOBAL_SCOPE:
+                if candidate.project_id or candidate.project:
+                    decisions[index] = self._decision(
+                        candidate,
+                        TruthAction.REJECT.value,
+                        "GLOBAL_PROJECT_METADATA",
+                    )
+                continue
+
+            if not candidate.project_id:
+                decisions[index] = self._decision(
+                    candidate,
+                    TruthAction.REJECT.value,
+                    "SCOPE_UNRESOLVED",
+                )
+                continue
+
+            if registry is None:
+                registry = ProjectRegistry(self.store.vault_path)
+            try:
+                project = registry.get(candidate.project_id)
+                if project is None:
+                    decisions[index] = self._decision(
+                        candidate,
+                        TruthAction.REJECT.value,
+                        "PROJECT_UNREGISTERED",
+                    )
+                    continue
+                if project.get("status") == "archived":
+                    decisions[index] = self._decision(
+                        candidate,
+                        TruthAction.REJECT.value,
+                        "PROJECT_ARCHIVED",
+                    )
+                    continue
+                if project.get("status") != "active" or not project.get("proactive_capture"):
+                    decisions[index] = self._decision(
+                        candidate,
+                        TruthAction.REJECT.value,
+                        "PROJECT_CAPTURE_DISABLED",
+                    )
+                    continue
+                label = project.get("project_label")
+                if not isinstance(label, str) or not label.strip():
+                    raise ProjectRegistryError("Project registry label is unavailable")
+                # The registry owns the display label and opaque ID.  The
+                # caller's label is never used to select or widen a project.
+                resolved[index] = replace(
+                    envelope,
+                    candidate=replace(
+                        candidate,
+                        project_id=str(project["project_id"]),
+                        project=label.strip(),
+                    ),
+                )
+            except (ProjectRegistryError, OSError, TypeError, KeyError):
+                decisions[index] = self._decision(
+                    candidate,
+                    TruthAction.REJECT.value,
+                    "PROJECT_REGISTRY_UNAVAILABLE",
+                )
+        return resolved, decisions
+
+    def _validate_candidate(
+        self,
+        candidate: TruthCandidate,
+        envelope: Optional[_CandidateEnvelope] = None,
+    ) -> Optional[TruthDecision]:
+        envelope = envelope or _CandidateEnvelope(
+            candidate=candidate,
+            source="user",
+            is_approved=candidate.commitment == "COMMITTED",
+        )
+        reason = _capture_rejection_reason(candidate.content)
+        if reason is not None:
+            return self._decision(candidate, TruthAction.REJECT.value, reason)
+        if candidate.note:
+            reason = _capture_rejection_reason(candidate.note)
+            if reason is not None:
+                return self._decision(candidate, TruthAction.REJECT.value, reason)
+        if envelope.has_approval and not envelope.is_approved:
+            return self._decision(candidate, TruthAction.REVIEW_REQUIRED.value, "UNAPPROVED_CANDIDATE")
         if candidate.commitment != "COMMITTED":
-            return TruthDecision(candidate.candidate_id, TruthAction.REVIEW_REQUIRED.value, "UNCOMMITTED_CANDIDATE", evidence_refs=candidate.evidence_refs)
+            return self._decision(candidate, TruthAction.REVIEW_REQUIRED.value, "UNCOMMITTED_CANDIDATE")
+        if not envelope.is_approved:
+            return self._decision(candidate, TruthAction.REVIEW_REQUIRED.value, "UNAPPROVED_CANDIDATE")
         if candidate.scope == "project" and not candidate.project_id:
-            return TruthDecision(candidate.candidate_id, TruthAction.REJECT.value, "SCOPE_UNRESOLVED", evidence_refs=candidate.evidence_refs)
+            return self._decision(candidate, TruthAction.REJECT.value, "SCOPE_UNRESOLVED")
         if candidate.operation in {TruthAction.SUPERSEDE_EXISTING.value, TruthAction.RESOLVE_EXISTING.value, TruthAction.CONFIRM_EXISTING.value} and not candidate.target_memory_id:
-            return TruthDecision(candidate.candidate_id, TruthAction.REVIEW_REQUIRED.value, "LIFECYCLE_TARGET_UNKNOWN", evidence_refs=candidate.evidence_refs)
+            return self._decision(candidate, TruthAction.REVIEW_REQUIRED.value, "LIFECYCLE_TARGET_UNKNOWN")
         return None
 
-    def _evaluate_one(self, candidate: TruthCandidate, memories: list[Mapping[str, Any]], revision: int) -> TruthDecision:
-        invalid = self._validate_candidate(candidate)
+    def _evaluate_one(
+        self,
+        candidate: TruthCandidate,
+        memories: list[Mapping[str, Any]],
+        revision: int,
+        envelope: Optional[_CandidateEnvelope] = None,
+    ) -> TruthDecision:
+        invalid = self._validate_candidate(candidate, envelope)
         if invalid is not None:
             return TruthDecision(
                 invalid.candidate_id,
@@ -268,9 +496,15 @@ class MemoryTruthEngine:
         return TruthDecision(candidate.candidate_id, TruthAction.NEW.value, "NO_SCOPED_MATCH", source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
 
     @staticmethod
-    def _new_record(candidate: TruthCandidate, memory_id: str) -> dict[str, Any]:
+    def _new_record(
+        candidate: TruthCandidate,
+        memory_id: str,
+        envelope: Optional[_CandidateEnvelope] = None,
+    ) -> dict[str, Any]:
         timestamp = candidate.occurred_at or _utc_now()
         fingerprint = candidate.dedup_fingerprint or scoped_fingerprint(candidate.content, candidate.scope, candidate.project_id, candidate.memory_type)
+        source = envelope.source if envelope is not None else "extraction-v2"
+        is_approved = envelope.is_approved if envelope is not None else candidate.commitment == "COMMITTED"
         return {
             "memory_id": memory_id,
             "id": -1,
@@ -278,14 +512,14 @@ class MemoryTruthEngine:
             "type": candidate.memory_type or "observation",
             "content": candidate.content,
             "confidence": candidate.confidence,
-            "source": "extraction-v2",
+            "source": source,
             "timestamp": timestamp,
             "related_notes": [],
             "section": "",
             "issues": [],
             "quality_score": candidate.confidence,
             "novelty": 1.0,
-            "is_approved": True,
+            "is_approved": is_approved,
             "status": "active",
             "resolved_at": "",
             "resolved_by": "",
@@ -294,8 +528,8 @@ class MemoryTruthEngine:
             "supersession_note": "",
             "dedup_fingerprint": fingerprint,
             "scope": candidate.scope,
-            "project": candidate.project or candidate.project_id,
-            "project_label": candidate.project or candidate.project_id,
+            "project": candidate.project if candidate.scope == "project" else "",
+            "project_label": candidate.project if candidate.scope == "project" else "",
             "project_id": candidate.project_id,
             "claim_key": candidate.claim_key,
         }
@@ -319,8 +553,21 @@ class MemoryTruthEngine:
                 return TruthResult(TruthStatus.INVALID_INPUT.value, None, None, error_code="INVALID_OPERATION_ID")
         from brain_eleven.runtime.storage import identity
         try:
-            normalized = tuple(candidate if isinstance(candidate, TruthCandidate) else TruthCandidate.from_mapping(candidate) for candidate in candidates)
-            request_hash = identity("request_", [asdict(c) for c in normalized])
+            envelopes = tuple(
+                _normalize_candidate_envelope(candidate, operation_id=operation_id)
+                for candidate in candidates
+            )
+            legacy_candidates = tuple(envelope.candidate for envelope in envelopes)
+            envelopes, preflight_decisions = self._preflight(envelopes)
+            normalized = tuple(envelope.candidate for envelope in envelopes)
+            request_hash = identity(
+                "request_",
+                [legacy_request_projection(candidate) for candidate in legacy_candidates],
+            )
+            provenance_hash = identity(
+                "provenance_",
+                [[envelope.source, envelope.is_approved] for envelope in envelopes],
+            )
         except TruthError as exc:
             return TruthResult(TruthStatus.INVALID_INPUT.value, None, None, error_code=exc.code)
         if not normalized:
@@ -330,20 +577,60 @@ class MemoryTruthEngine:
                 return TruthResult(TruthStatus.FAILED.value, None, None, error_code="MEMORY_STORE_CORRUPT")
             return TruthResult(TruthStatus.EMPTY.value, revision, revision)
 
+        if all(decision is not None for decision in preflight_decisions):
+            unavailable = any(
+                decision is not None
+                and decision.reason_code == "PROJECT_REGISTRY_UNAVAILABLE"
+                for decision in preflight_decisions
+            )
+            status = TruthStatus.SCOPE_ERROR.value if unavailable else (
+                TruthStatus.DEGRADED.value if commit else TruthStatus.SUCCESS.value
+            )
+            error_code = "PROJECT_REGISTRY_UNAVAILABLE" if unavailable else None
+            return TruthResult(
+                status,
+                None,
+                None,
+                tuple(preflight_decisions),
+                error_code=error_code,
+            )
+
         def transact(latest: dict[str, Any]):
             revision = int(latest["revision"])
             if operation_id and commit:
                 if latest.get("schema_version") != 3:
                     raise TruthInputError("Runtime receipt migration required")
-                prior = latest["operation_receipts"].get(operation_id)
+                prior = latest.get("operation_receipts", {}).get(operation_id)
                 if prior is not None:
                     if prior.get("request_hash") != request_hash:
-                        raise TruthInputError("Operation identity mismatch")
+                        raise _TruthReplayMismatch("Operation identity mismatch")
+                    metadata_present = any(
+                        envelope.has_source or envelope.has_approval
+                        for envelope in envelopes
+                    )
+                    prior_provenance = prior.get("provenance_hash")
+                    if prior_provenance is None:
+                        if metadata_present:
+                            raise _TruthReplayMismatch("Operation provenance identity mismatch")
+                    elif prior_provenance != provenance_hash:
+                        raise _TruthReplayMismatch("Operation provenance identity mismatch")
                     return no_change(([TruthDecision(**item) for item in prior["decisions"]], False))
             if commit and expected_revision is not None and expected_revision != revision:
                 raise MemoryStoreConflict(expected_revision, revision)
             memories = [memory for memory in latest.get("validated_memory", []) if isinstance(memory, Mapping)]
-            decisions = [self._evaluate_one(candidate, memories, revision) for candidate in normalized]
+            decisions = []
+            for index, envelope in enumerate(envelopes):
+                decision = preflight_decisions[index]
+                if decision is None:
+                    decision = self._evaluate_one(
+                        envelope.candidate,
+                        memories,
+                        revision,
+                        envelope,
+                    )
+                elif decision.reason_code != "PROJECT_REGISTRY_UNAVAILABLE":
+                    decision = replace(decision, source_memory_revision=revision)
+                decisions.append(decision)
             if not commit:
                 return decisions
             mutated = False
@@ -351,12 +638,13 @@ class MemoryTruthEngine:
                 (*_memory_scope(memory), str(memory.get("dedup_fingerprint") or ""))
                 for memory in memories
             }
-            for index, (decision, candidate) in enumerate(zip(decisions, normalized)):
+            for index, (decision, envelope) in enumerate(zip(decisions, envelopes)):
+                candidate = envelope.candidate
                 if decision.action == TruthAction.SUPERSEDE_EXISTING.value:
                     target = self._find_by_id(memories, decision.target_memory_id or "")
                     if target is None:
                         continue
-                    successor = self._new_record(candidate, decision.successor_memory_id)
+                    successor = self._new_record(candidate, decision.successor_memory_id, envelope)
                     latest.setdefault("validated_memory", []).append(successor)
                     memories.append(successor)
                     target["status"] = "superseded"
@@ -397,7 +685,7 @@ class MemoryTruthEngine:
                         )
                         continue
                     memory_id = candidate.successor_memory_id or _new_memory_id()
-                    record = self._new_record(candidate, memory_id)
+                    record = self._new_record(candidate, memory_id, envelope)
                     latest.setdefault("validated_memory", []).append(record)
                     memories.append(record)
                     seen_fingerprints.add(fingerprint_key)
@@ -411,7 +699,11 @@ class MemoryTruthEngine:
                     )
                     mutated = True
             if operation_id and all(item.action not in {"REJECT", "REVIEW_REQUIRED", "CONFLICT"} for item in decisions):
-                latest["operation_receipts"][operation_id] = {"request_hash": request_hash, "decisions": [asdict(item) for item in decisions]}
+                latest["operation_receipts"][operation_id] = {
+                    "request_hash": request_hash,
+                    "provenance_hash": provenance_hash,
+                    "decisions": [asdict(item) for item in decisions],
+                }
                 mutated = True
             if not mutated:
                 return no_change((decisions, False))
