@@ -554,3 +554,91 @@ class TestW25RouteMatrix:
     ):
         module = _load_search_api(w25_vault, host=host)
         assert module._IS_LOOPBACK_HOST is expected
+
+
+def test_graph_derived_entities_follow_source_memory_scope(tmp_path):
+    """Technology/phase nodes must inherit the scope of their source memory."""
+    vault = tmp_path / "graph_provenance"
+    registry = ProjectRegistry(vault)
+    registry.register(vault / "project-a", project_id="project-a", proactive_capture=True)
+    registry.register(vault / "project-b", project_id="project-b", proactive_capture=True)
+    _write_memories(
+        vault,
+        [
+            _memory("global-redis", "Global cache uses Redis."),
+            _memory(
+                "project-a-redis",
+                "Project A uses Redis in Phase 7.",
+                scope="project",
+                project_id="project-a",
+                project="Project A",
+            ),
+            _memory(
+                "project-b-postgres",
+                "Project B uses PostgreSQL in Phase 9.",
+                scope="project",
+                project_id="project-b",
+                project="Project B",
+            ),
+        ],
+    )
+
+    module = _load_search_api(vault)
+    with TestClient(module.app) as client:
+        default_entities = client.get("/graph/entities")
+        assert default_entities.status_code == 200
+        default_ids = {entity["id"] for entity in default_entities.json()["entities"]}
+        assert "tech_redis" in default_ids
+        assert "phase_7" not in default_ids
+        assert "tech_postgresql" not in default_ids
+        assert "phase_9" not in default_ids
+
+        project_entities = client.get(
+            "/graph/entities", params={"project_id": "project-a"}
+        )
+        assert project_entities.status_code == 200
+        project_ids = {entity["id"] for entity in project_entities.json()["entities"]}
+        assert "tech_redis" in project_ids
+        assert "phase_7" in project_ids
+        assert "tech_postgresql" not in project_ids
+        assert "phase_9" not in project_ids
+
+        foreign_name = client.get(
+            "/graph/entities",
+            params={"project_id": "project-a", "name_contains": "PostgreSQL"},
+        )
+        assert foreign_name.status_code == 200
+        assert foreign_name.json()["entities"] == []
+
+        foreign_relationships = client.get(
+            "/graph/entities/tech_postgresql/relationships",
+            params={"project_id": "project-a"},
+        )
+        assert foreign_relationships.status_code == 404
+
+        scoped_chat = client.post(
+            "/chat",
+            json={"message": "what is connected to PostgreSQL?", "project_id": "project-a"},
+        )
+        assert scoped_chat.status_code == 200
+        assert "PostgreSQL" not in scoped_chat.text
+        assert "tech_postgresql" not in scoped_chat.text
+
+        scoped_analysis = client.post(
+            "/chat",
+            json={"message": "analyze PostgreSQL", "project_id": "project-a"},
+        )
+        assert scoped_analysis.status_code == 200
+        assert "PostgreSQL" not in scoped_analysis.text
+        assert "tech_postgresql" not in scoped_analysis.text
+
+    admin_module = _load_search_api(vault, api_key="w25-admin-key")
+    with TestClient(admin_module.app) as admin_client:
+        admin_entities = admin_client.get(
+            "/graph/entities",
+            params={"retrieval_scope": "all"},
+            headers={"X-API-Key": "w25-admin-key"},
+        )
+        assert admin_entities.status_code == 200
+        admin_ids = {entity["id"] for entity in admin_entities.json()["entities"]}
+        assert "tech_postgresql" in admin_ids
