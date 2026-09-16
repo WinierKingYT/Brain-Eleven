@@ -3,7 +3,7 @@
 **Program:** Stabilization & Runtime Truth (proposed)  
 **Package:** SRT-00 Baseline Freeze & Failure Reproduction  
 **Status:** **FIX-FIRST / NOT ACCEPTED**  
-**Exact HEAD:** `9496b3eac39b29a3ad8ceb9b09687ddae4441cd3`  
+**Exact HEAD:** `6ccae17a538fdf0996d936e43ed49235a7650b47`  
 **Phase 20:** FROZEN / LOCKED  
 **V2:** SHADOW
 
@@ -12,8 +12,10 @@ authorize a feature, runtime, workflow, or architecture change.
 
 ## Remote evidence
 
-GitHub Actions Validation run `35084029380` was triggered by a push to
-`master` at the exact SHA above on 2026-09-16.
+The original GitHub Actions Validation run `35084029380` was triggered by a
+push to `master` at `9496b3eac39b29a3ad8ceb9b09687ddae4441cd3` on
+2026-09-16. A later exact-head Validation run is `35127450230` at the current
+`6ccae17a538fdf0996d936e43ed49235a7650b47`.
 
 | Job | Result | Evidence |
 |---|---|---|
@@ -22,6 +24,11 @@ GitHub Actions Validation run `35084029380` was triggered by a push to
 | IG01-B corpus integrity | PASS | run `35084029380` |
 | IG01-C evaluator/anti-gaming gates | PASS | run `35084029380` |
 | Downstream integration, coverage, runtime and security jobs | SKIPPED | blocked by `needs: unit` |
+
+For the later current-head run `35127450230`, IG01-B and IG01-C again passed;
+the Ubuntu unit job `104899877710` failed with the same ten annotated test
+identities while the Windows unit job was still running when this evidence was
+captured. The separate current-head PRE-13 run is recorded below.
 
 The workflow definition at `.github/workflows/test.yml` installs and runs
 Python **3.13** (`setup-python` lines 26–29), while the supplied audit summary
@@ -89,15 +96,36 @@ cause. Native startup latency, filesystem behavior and CI dependency/runtime
 differences are hypotheses only until a fresh run exposes bounded failure
 details.
 
+## Confirmed PRE-13 coverage failure
+
+The exact-head PRE-13 run `35127450234` (head `6ccae17`) failed both runtime
+matrix jobs and the quality job. Its workflow command is:
+
+```text
+python -m pytest tests/test_pre13_runtime.py tests/test_ig00_bootstrap.py tests/test_ig02_capture_closure.py -q --cov=brain_eleven/runtime --cov-fail-under=80
+```
+
+Running that same command locally with the repository's Python 3.13.7
+environment produced **100 passed**, but coverage failed at **65.57%**
+(1,144 missed of 3,323 runtime statements). This confirms that the PRE-13
+runtime gate is currently unsatisfiable by its selected test set; it is a
+coverage-gate failure, not evidence that those 100 tests failed. The workflow
+must retain the failure until a separately bounded SRT contract defines a
+truthful coverage scope or adds meaningful coverage. No threshold was lowered
+and no test was skipped.
+
 ## Required next evidence
 
 1. Re-run the exact SHA on both runner images with a content-safe, retrievable
-   failure summary (test identity, exception class/code and bounded timing;
-   no prompt, transcript or memory payload).
+   failure summary for the 12 Validation unit identities (test identity,
+   exception class/code and bounded timing; no prompt, transcript or memory
+   payload).
 2. Compare runner Python/dependency versions and relevant environment values
    against the local invocation.
-3. Reproduce each failure class before changing production or workflow code.
-4. Record the first verified root cause and a bounded SRT-01 fix contract.
+3. Define a bounded SRT-01 contract for the confirmed PRE-13 coverage-gate
+   mismatch; preserve a meaningful, revision-bound coverage claim.
+4. Reproduce each remaining Validation failure class before changing
+   production or workflow code.
 
 Until those steps produce a known cause and same-SHA green mandatory gates:
 
@@ -110,17 +138,21 @@ Release disposition = FIX-FIRST
 
 ```text
 PACKAGE: SRT-00 Baseline Freeze & Failure Reproduction
-REVISION: 9496b3eac39b29a3ad8ceb9b09687ddae4441cd3
+REVISION: 6ccae17a538fdf0996d936e43ed49235a7650b47
 OBJECTIVE: Freeze and reproduce current-head CI failures
 FILES CHANGED: this evidence document only
-ROOT CAUSES ADDRESSED: none yet; remote failures enumerated
+ROOT CAUSES ADDRESSED: PRE-13 runtime coverage gate failure confirmed;
+Validation unit assertion causes remain unknown
 TESTS ADDED: none
 TESTS EXECUTED: exact workflow unit command, 14 annotated tests, full local regression
 QUALITY METRICS BEFORE: current remote Validation = FAIL
-QUALITY METRICS AFTER: root cause not established; no quality claim
+QUALITY METRICS AFTER: PRE-13 coverage failure reproduced at 65.57%; no
+Validation unit quality claim
 SAFETY METRICS: no production/runtime mutation
 KNOWN LIMITATIONS: authenticated JUnit assertion bodies unavailable
-OPEN FAILURES: 12 remote unit failures; downstream gates skipped
+OPEN FAILURES: 12 remote Validation unit failures with protected assertion
+bodies; PRE-13 coverage gate remains below its 80% threshold; downstream
+Validation gates skipped
 INDEPENDENT REVIEW: pending
 SCORE BEFORE: build health / release confidence = 2.5/10 (audit estimate)
 SCORE AFTER: unchanged pending reproduction
