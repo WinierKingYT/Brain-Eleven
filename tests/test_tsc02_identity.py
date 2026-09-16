@@ -169,6 +169,7 @@ def test_router_cache_race_is_rejected_after_lookup_without_delivery(tmp_path, m
     project, context = _configured(tmp_path)
     router = ContextRouter(tmp_path)
     assert router.route(context).status in {"EMPTY", "SUCCESS", "DEGRADED"}
+    cache_before = router.cache.path.read_bytes()
     moved = tmp_path / "moved-project"
     moved.mkdir()
     original_load = router.cache.load
@@ -182,6 +183,7 @@ def test_router_cache_race_is_rejected_after_lookup_without_delivery(tmp_path, m
 
     assert result.status == "STALE_INPUT"
     assert result.candidates == ()
+    assert router.cache.path.read_bytes() == cache_before
     assert project.exists()
 
 
@@ -190,6 +192,7 @@ def test_authority_cache_race_is_rejected_before_cached_delivery(tmp_path, monke
     router_result = ContextRouter(tmp_path).route(context)
     resolver = AuthorityResolver(tmp_path)
     assert resolver.resolve(context, router_result).status in {"EMPTY", "SUCCESS", "DEGRADED"}
+    cache_before = resolver.cache.path.read_bytes()
     moved = tmp_path / "moved-project"
     moved.mkdir()
     original_load = resolver.cache.load
@@ -203,4 +206,37 @@ def test_authority_cache_race_is_rejected_before_cached_delivery(tmp_path, monke
 
     assert result.status == "STALE_INPUT"
     assert result.candidates == ()
+    assert resolver.cache.path.read_bytes() == cache_before
     assert project.exists()
+
+
+def test_current_cache_hits_refresh_access_metadata_and_preserve_result(tmp_path):
+    _project, context = _configured(tmp_path)
+    router = ContextRouter(tmp_path)
+    cold_router_result = router.route(context)
+    router_document = json.loads(router.cache.path.read_text(encoding="utf-8"))
+    router_document["entries"][cold_router_result.plan.fingerprint]["last_access_ns"] = 1
+    router.cache.path.write_text(json.dumps(router_document, indent=2) + "\n", encoding="utf-8")
+
+    cached_router_result = router.route(context)
+    refreshed_router_document = json.loads(router.cache.path.read_text(encoding="utf-8"))
+
+    assert cached_router_result.status == cold_router_result.status
+    assert cached_router_result.plan == cold_router_result.plan
+    assert cached_router_result.candidates == cold_router_result.candidates
+    assert refreshed_router_document["entries"][cold_router_result.plan.fingerprint]["last_access_ns"] > 1
+
+    resolver = AuthorityResolver(tmp_path)
+    cold_authority_result = resolver.resolve(context, cold_router_result)
+    authority_document = json.loads(resolver.cache.path.read_text(encoding="utf-8"))
+    authority_key = next(iter(authority_document["entries"]))
+    authority_document["entries"][authority_key]["last_access_ns"] = 1
+    resolver.cache.path.write_text(json.dumps(authority_document, indent=2) + "\n", encoding="utf-8")
+
+    cached_authority_result = resolver.resolve(context, cold_router_result)
+    refreshed_authority_document = json.loads(resolver.cache.path.read_text(encoding="utf-8"))
+
+    assert cached_authority_result.status == cold_authority_result.status
+    assert cached_authority_result.candidates == cold_authority_result.candidates
+    assert cached_authority_result.telemetry["cache_hit"] is True
+    assert refreshed_authority_document["entries"][authority_key]["last_access_ns"] > 1
