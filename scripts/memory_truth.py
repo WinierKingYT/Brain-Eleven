@@ -78,6 +78,11 @@ class TruthStatus(str, Enum):
 _ALLOWED_STATUS = {"active", "resolved", "superseded"}
 _ALLOWED_SCOPE = {GLOBAL_SCOPE, "project"}
 _ALLOWED_PROVENANCE_SOURCES = frozenset({"user", "worker", "review", "extraction-v2"})
+_REPLAYABLE_PREFLIGHT_REASONS = frozenset({
+    "PROJECT_UNREGISTERED",
+    "PROJECT_ARCHIVED",
+    "PROJECT_CAPTURE_DISABLED",
+})
 _LEGACY_REQUEST_FIELDS = (
     "candidate_id",
     "content",
@@ -534,6 +539,40 @@ class MemoryTruthEngine:
             "claim_key": candidate.claim_key,
         }
 
+    @staticmethod
+    def _replay_decisions(
+        latest: Mapping[str, Any],
+        operation_id: Optional[str],
+        request_hash: str,
+        provenance_hash: str,
+        envelopes: Sequence[_CandidateEnvelope],
+    ) -> Optional[list[TruthDecision]]:
+        """Return an existing operation effect after checking its identity.
+
+        This check runs inside the canonical store transaction.  A readable
+        project-policy change may therefore not turn an already committed
+        operation into a new policy rejection, while changed request or
+        provenance metadata still fails closed.
+        """
+        if not operation_id:
+            return None
+        prior = latest.get("operation_receipts", {}).get(operation_id)
+        if prior is None:
+            return None
+        if prior.get("request_hash") != request_hash:
+            raise _TruthReplayMismatch("Operation identity mismatch")
+        metadata_present = any(
+            envelope.has_source or envelope.has_approval
+            for envelope in envelopes
+        )
+        prior_provenance = prior.get("provenance_hash")
+        if prior_provenance is None:
+            if metadata_present:
+                raise _TruthReplayMismatch("Operation provenance identity mismatch")
+        elif prior_provenance != provenance_hash:
+            raise _TruthReplayMismatch("Operation provenance identity mismatch")
+        return [TruthDecision(**item) for item in prior["decisions"]]
+
     def process(
         self,
         candidates: Sequence[TruthCandidate | Mapping[str, Any]],
@@ -577,44 +616,20 @@ class MemoryTruthEngine:
                 return TruthResult(TruthStatus.FAILED.value, None, None, error_code="MEMORY_STORE_CORRUPT")
             return TruthResult(TruthStatus.EMPTY.value, revision, revision)
 
-        if all(decision is not None for decision in preflight_decisions):
-            unavailable = any(
-                decision is not None
-                and decision.reason_code == "PROJECT_REGISTRY_UNAVAILABLE"
-                for decision in preflight_decisions
-            )
-            status = TruthStatus.SCOPE_ERROR.value if unavailable else (
-                TruthStatus.DEGRADED.value if commit else TruthStatus.SUCCESS.value
-            )
-            error_code = "PROJECT_REGISTRY_UNAVAILABLE" if unavailable else None
-            return TruthResult(
-                status,
-                None,
-                None,
-                tuple(preflight_decisions),
-                error_code=error_code,
-            )
-
         def transact(latest: dict[str, Any]):
             revision = int(latest["revision"])
             if operation_id and commit:
                 if latest.get("schema_version") != 3:
                     raise TruthInputError("Runtime receipt migration required")
-                prior = latest.get("operation_receipts", {}).get(operation_id)
-                if prior is not None:
-                    if prior.get("request_hash") != request_hash:
-                        raise _TruthReplayMismatch("Operation identity mismatch")
-                    metadata_present = any(
-                        envelope.has_source or envelope.has_approval
-                        for envelope in envelopes
-                    )
-                    prior_provenance = prior.get("provenance_hash")
-                    if prior_provenance is None:
-                        if metadata_present:
-                            raise _TruthReplayMismatch("Operation provenance identity mismatch")
-                    elif prior_provenance != provenance_hash:
-                        raise _TruthReplayMismatch("Operation provenance identity mismatch")
-                    return no_change(([TruthDecision(**item) for item in prior["decisions"]], False))
+                replay = self._replay_decisions(
+                    latest,
+                    operation_id,
+                    request_hash,
+                    provenance_hash,
+                    envelopes,
+                )
+                if replay is not None:
+                    return no_change((replay, False))
             if commit and expected_revision is not None and expected_revision != revision:
                 raise MemoryStoreConflict(expected_revision, revision)
             memories = [memory for memory in latest.get("validated_memory", []) if isinstance(memory, Mapping)]
@@ -708,6 +723,56 @@ class MemoryTruthEngine:
             if not mutated:
                 return no_change((decisions, False))
             return decisions, True
+
+        if all(decision is not None for decision in preflight_decisions):
+            unavailable = any(
+                decision is not None
+                and decision.reason_code == "PROJECT_REGISTRY_UNAVAILABLE"
+                for decision in preflight_decisions
+            )
+            replayable_policy = all(
+                decision is not None
+                and decision.reason_code in _REPLAYABLE_PREFLIGHT_REASONS
+                for decision in preflight_decisions
+            )
+            if commit and operation_id and replayable_policy and not unavailable:
+                try:
+                    payload, persisted = self.store.transact(transact)
+                    decisions, _mutated = payload
+                    revision = int(persisted["revision"])
+                    status = TruthStatus.SUCCESS.value
+                    if any(
+                        decision.action in {
+                            TruthAction.CONFLICT.value,
+                            TruthAction.REVIEW_REQUIRED.value,
+                            TruthAction.REJECT.value,
+                        }
+                        for decision in decisions
+                    ):
+                        status = TruthStatus.DEGRADED.value
+                    return TruthResult(status, revision, revision, tuple(decisions))
+                except MemoryStoreConflict:
+                    return TruthResult(TruthStatus.STALE_INPUT.value, None, None, error_code="MEMORY_STORE_CONFLICT")
+                except MemoryStoreCorrupt:
+                    return TruthResult(TruthStatus.FAILED.value, None, None, error_code="MEMORY_STORE_CORRUPT")
+                except TruthError as exc:
+                    return TruthResult(TruthStatus.INVALID_INPUT.value, None, None, error_code=exc.code)
+                except (OSError, ValueError, TypeError):
+                    return TruthResult(TruthStatus.FAILED.value, None, None, error_code="MEMORY_TRUTH_FAILED")
+            if unavailable:
+                return TruthResult(
+                    TruthStatus.SCOPE_ERROR.value,
+                    None,
+                    None,
+                    tuple(preflight_decisions),
+                    error_code="PROJECT_REGISTRY_UNAVAILABLE",
+                )
+            try:
+                revision = self.store.revision()
+            except MemoryStoreCorrupt:
+                return TruthResult(TruthStatus.FAILED.value, None, None, error_code="MEMORY_STORE_CORRUPT")
+            status = TruthStatus.DEGRADED.value if commit else TruthStatus.SUCCESS.value
+            return TruthResult(status, revision, revision, tuple(preflight_decisions))
 
         try:
             if commit:
