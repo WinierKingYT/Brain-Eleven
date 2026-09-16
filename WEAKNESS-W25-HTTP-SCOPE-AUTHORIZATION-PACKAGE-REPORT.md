@@ -2,7 +2,7 @@
 
 **PACKAGE:** W-25 HTTP project-scope/authorization  
 **REVISION:** `39e3c7b87fc8aba588b8cad5b2ae9f5beaf454f7` (remediated code/test head)  
-**REVIEW HEAD:** `9496b3eac39b29a3ad8ceb9b09687ddae4441cd3`  
+**REVIEW HEAD:** `9496b3eac39b29a3ad8ceb9b09687ddae4441cd3`
 **OBJECTIVE:** Close the unauthenticated `retrieval_scope=all` and direct
 memory-ID scope leaks at the HTTP boundary while preserving canonical stores,
 registry authority, lifecycle writes, retrieval behavior, and Phase 20 freeze.
