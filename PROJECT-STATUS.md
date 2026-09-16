@@ -10,8 +10,9 @@ dogfood remain open).
 
 The engineering weak-point goal is active alongside the frozen IG program.
 W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority
-coverage (`02c05c0`) and W-22 optional-omission enforcement
-(`736c6c9`) are independently shipped; see the corresponding package reports.
+coverage (`02c05c0`), W-22 optional-omission enforcement (`736c6c9`) and
+W-24 direct memory-truth safety/provenance (`4f1fd9e`, review `9048ca5`) are
+independently shipped; see the corresponding package reports.
 These bounded reliability/safety changes do not promote V2 or unlock Phase 20.
 
 The engineering weak-point package **TSC-01 timezone-bound state resolution**
@@ -32,6 +33,20 @@ and leaves cache bytes unchanged on stale lineage races. The separate cache
 correction review closed the initial FIX-FIRST finding. `task_state_context.py`
 package inversion and TSC-03 strict decoding remain separate; this bounded
 closure does not promote V2 or unlock Phase 20.
+
+W-24's direct memory-truth safety and provenance package is independently
+**SHIP**ped at exact code/test head `4f1fd9e` (implementation `525b116`,
+remediation `d78295c`, tests `e912f44`/`4f1fd9e`; package report
+`80846d1`; independent implementation review `9048ca5`). The direct truth
+path now uses the shared capture-safety policy for content and lifecycle notes,
+requires an active registry-enabled project identity, rejects misleading global
+project metadata, and records bounded provenance without changing the public
+`TruthCandidate`/worker request-hash shape. Policy-invalid operation replays
+remain idempotent under the canonical transaction, readable preflight
+rejections preserve revision lineage, and registry-unavailable errors remain
+content/path-free with no memory load. The caller-supplied NEW memory-ID
+collision remains explicitly deferred to W-24A. This closure does not alter
+the worker, canonical store implementation, V2, or the Phase 20 lock.
 
 W-07B-R1 repaired the disposable synthetic runtime benchmark, added bounded
 status reporting plus canonical-effect verification, and now records the full

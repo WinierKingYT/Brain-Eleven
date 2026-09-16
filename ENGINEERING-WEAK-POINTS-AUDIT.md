@@ -56,6 +56,31 @@ the behavior and operational evidence found in the current repository.
 Scores marked with `*` are provisional and require a dedicated audit before
 they are treated as final.
 
+## Current bounded package update — W-24 (2026-09-16)
+
+W-24 direct memory-truth safety and provenance is independently **SHIP**ped at
+reviewed code/test head `4f1fd9e` (initial code `525b116`, remediation
+`d78295c`, tests `e912f44`/`4f1fd9e`; package report `80846d1`, independent
+implementation review `9048ca5`). The direct path now delegates content,
+size, line-count, transcript and lifecycle-note checks to the shared
+`capture_safety` policy before registry or canonical effects; project scope
+requires an active registry-enabled identity; global project metadata is
+rejected; and source/approval provenance is carried in a private sidecar so
+the historical `TruthCandidate` and worker request hash remain unchanged.
+Matching operation receipts replay after archive/disable policy changes under
+the canonical lock, readable preflight rejections retain current revision
+fields, and registry-unavailable failures remain content/path-free without a
+memory load. The caller-supplied NEW memory-ID collision is explicitly
+deferred to W-24A. No worker, MemoryStore, ProjectRegistry implementation,
+retrieval, V2 or Phase 20 code changed. Exact verification reported 1404
+passed, 4 skipped and 2 warnings; focused W-24 evidence reported 67 passed.
+
+For the covered direct-truth boundary, **Scope and fail-closed safety** moves
+from 8.7 to **8.9/10**. This is a bounded score update, not a broad safety
+graduation: HTTP scope authorization, canonical-path reparse containment,
+strict nested load validation and cache semantic validation remain separate
+open findings.
+
 ## Confirmed weaknesses and bounded follow-ups
 
 ### W-01 — V1 related-note path boundary (P1, selected first)

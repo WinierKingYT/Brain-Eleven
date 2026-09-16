@@ -36,11 +36,17 @@ to leave it as-is** — the pilot stays blocked until PRE-13 quality genuinely
 improves, rather than bypassing the gate. Current safe state:
 `mode=SHADOW`, `b1_human_approval=true`.
 
-**Engineering weak-point goal:** W-22 is the latest closed implementation
-package. It enforces the V2 optional-omission flag with visible budget
-failures and preserves mandatory-overflow precedence; its independent review
-is `SHIP` at `736c6c9`, with 27 focused tests and a full suite of 1338 passed,
-4 skipped, 2 warnings. W-21 remains closed at `02c05c0` with complete
+**Engineering weak-point goal:** W-24 is the latest closed implementation
+package. It closes the direct memory-truth safety/provenance boundary at exact
+code/test head `4f1fd9e` (initial code `525b116`, remediation `d78295c`,
+tests `e912f44`/`4f1fd9e`); package report `80846d1` and independent review
+`9048ca5` are `SHIP`. Shared capture safety covers truth content and
+lifecycle notes, active registry authority gates project scope, global
+project metadata is rejected, and provenance is kept outside the historical
+`TruthCandidate`/worker request-hash shape. Archive/disable policy changes
+replay matching operation receipts safely and readable preflight rejections
+retain revision lineage. The NEW memory-ID collision is explicitly deferred
+to W-24A. W-21 remains closed at `02c05c0` with complete
 authority coverage, and W-20 remains closed at `db6ae44` with atomic,
 no-loss embedding cache publication. W-07B native runtime
 acceptance evidence is still active:
@@ -79,6 +85,14 @@ unchanged on stale lineage races. TSC-03 strict state decoding is deferred
 until its own bounded contract; `task_state_context.py` package inversion
 remains a separate IG-07 slice. W-07B's native
 trust/latency/dogfood acceptance gates remain open in parallel.
+
+W-24 direct memory-truth safety and provenance is also independently
+`SHIP`ped. Its implementation/test head is `4f1fd9e`, package report
+`80846d1`, and remediation review `9048ca5`. The package keeps the worker and
+canonical-store implementations unchanged while adding shared safety checks,
+registry authority, bounded provenance and policy-invalid replay protection.
+The deferred NEW memory-ID collision is tracked as W-24A; no retrieval, V2 or
+Phase 20 work was opened.
 
 W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
@@ -251,8 +265,13 @@ in-file, not a functional finding.
 
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
   Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
-latency matrix is complete at `ca15e31`, but it cannot substitute for native
+  latency matrix is complete at `ca15e31`, but it cannot substitute for native
   evidence; do not mark W-07B SHIP while any native gate is absent.
+- W-24 is closed. Before opening another implementation, the next P1 must be
+  selected from the read-only findings and given its own contract. Current
+  candidates are the native `Stop`/`SESSION_END` distinction, `doctor` health
+  truthfulness, HTTP project-scope authorization, and canonical `.claude`
+  reparse containment. These remain separate bounded packages.
 - IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
   highest blast-radius module in the whole inventory, 26/26 callers,
   deliberately excluded from every slice so far including 2E) — needs its
@@ -291,6 +310,16 @@ latency matrix is complete at `ca15e31`, but it cannot substitute for native
   branch and package. Update it with a few lines when the work session ends.
 
 ## Recent sessions
+
+**2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
+one independent contract `FIX-FIRST` cycle and one independent implementation
+`FIX-FIRST` remediation cycle. The final implementation/test head is
+`4f1fd9e`, full regression is 1404 passed with 4 skipped and 2 warnings, and
+the remediation review `9048ca5` is `SHIP`. The package keeps
+`TruthCandidate`/worker request-hash compatibility, gates content and
+lifecycle notes through shared capture safety, enforces registry-bound project
+scope, and leaves the NEW memory-ID collision as W-24A. Phase 20 remains
+FROZEN / LOCKED and V2 remains SHADOW.
 
 **2026-09-15 (continued)** — W-07B-R1 extended the synthetic runtime evidence
 harness at `ca15e31`. Disposable transcript roots and native-shaped fixtures
