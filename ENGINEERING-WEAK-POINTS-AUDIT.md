@@ -2,13 +2,33 @@
 
 **Audit date:** 2026-09-15
 **Program:** Engineering Weak-Point Improvement Goal  
-**Evidence revision:** `736c6c9` (W-22 exact implementation/review head)
+**Evidence revision:** `48d40f6` (current repository evidence head)
 **Phase 20:** FROZEN / LOCKED  
 **V2 runtime:** SHADOW
 
 This is the first evidence-backed audit pass. A passing regression suite is
 not treated as proof that product quality is high; the scores below reflect
 the behavior and operational evidence found in the current repository.
+
+## Current evidence update — 2026-09-16
+
+- **W-25 HTTP scope/authorization:** independently **SHIP**ped after the
+  graph-provenance remediation. The bounded after-score for scope/fail-closed
+  safety is **9.1/10**; the review found zero wrong-project graph leakage in
+  the tested default/global/project/all and chat paths. See
+  `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-PACKAGE-REPORT.md` and
+  `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-REMEDIATION-INDEPENDENT-REVIEW.md`.
+- **SRT-00 release truth:** exact-head Validation remains red while local
+  regression is green. The PRE-13 runtime failure has a confirmed local
+  reproduction: its selected 100 tests reach **65.57%** over the entire
+  `brain_eleven/runtime` package, below the workflow's 80% threshold. The 12
+  Validation unit assertion bodies remain unavailable from protected CI
+  artifacts, so their root cause is still unknown. No threshold or skip was
+  changed.
+- **TSC-03 strict nested task-state decoding:** a read-only probe confirmed
+  that `authority.serialization.task_state_from_dict()` accepts malformed
+  nested state values after validating only the outer envelope. This remains a
+  P2 follow-up pending its own bounded contract; no production code changed.
 
 ## Baseline verification
 

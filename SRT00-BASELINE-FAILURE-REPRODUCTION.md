@@ -114,6 +114,11 @@ must retain the failure until a separately bounded SRT contract defines a
 truthful coverage scope or adds meaningful coverage. No threshold was lowered
 and no test was skipped.
 
+For comparison, the same repository-wide non-integration/non-graduation test
+set used by Validation produced **1436 passed, 4 skipped** and **83%** total
+coverage over `brain_eleven/runtime`. The gap is therefore the selected-test
+denominator, not a missing package-wide test capability.
+
 ## Required next evidence
 
 1. Re-run the exact SHA on both runner images with a content-safe, retrievable
