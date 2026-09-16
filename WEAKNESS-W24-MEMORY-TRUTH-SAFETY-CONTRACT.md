@@ -6,8 +6,8 @@ check than the shared capture policy, accepts any non-empty project ID without
 checking `ProjectRegistry`, and writes fixed `source`/`is_approved` values
 instead of caller-derived provenance.
 **Priority:** P1 canonical-memory safety and scope authority
-**Audit baseline:** `09dbb76fca00004c4e7c2ef68690bf8a650fe71c`
-**Contract revision:** `66abdf6ba3d776b53602aace7fd21e2645d60ecc`
+**Audit baseline:** `fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd`
+**Contract revision:** `<revision commit SHA recorded after this review fix>`
 
 ## Boundary and evidence
 
@@ -28,7 +28,9 @@ gaps without moving canonical authority.
    additive fields proposed below also have a replay compatibility hazard:
    `scripts/memory_truth.py:322-324` hashes `asdict(candidate)`, while
    `:338-342` compares that hash byte-for-byte against an existing operation
-   receipt.
+   receipt.  `brain_eleven/runtime/worker.py:512-519` independently computes
+   the expected worker request hash from `asdict(TruthCandidate.from_mapping(values))`;
+   changing that dataclass/asdict shape would invalidate the worker verifier.
 4. `scripts/memory_truth.py:303-432` owns the dry-run/commit decision flow and
    delegates committed effects to `MemoryStore.transact()`.  The direct path
    has no registry lookup, so a project ID is treated as an authority merely
@@ -60,7 +62,7 @@ lines 143-168, reads an identity with `get()` at lines 218-233, and exposes
 fail-closed `unregistered`, `archived` and `disabled` proactive policy reasons
 at lines 235-252.  The direct truth path does not use these checks today.
 
-Read-only baseline probes at this revision showed:
+Read-only baseline probes at the audit baseline showed:
 
 | Input family | Direct truth result | Shared `capture_safety` result |
 |---|---|---|
@@ -87,10 +89,15 @@ effect is possible.  Keep the existing typed truth actions, lifecycle checks,
 deduplication, explicit target requirement, dry-run behavior, operation
 receipts and canonical transaction boundary.
 
-The implementation may add small private helpers or additive candidate fields
-inside `scripts/memory_truth.py`.  `brain_eleven/memory/truth.py` may change
-only if required to re-export the same identities.  No production file outside
-this direct truth surface is authorized by this contract.
+The implementation may add small private helpers and parse additive mapping
+metadata inside `scripts/memory_truth.py`.  `brain_eleven/memory/truth.py` may
+change only if required to re-export the same identities.  `TruthCandidate`'s
+public dataclass field list, field order and `dataclasses.asdict()` output are
+frozen at the pre-W-24 shape; `source` and `is_approved` must not become
+dataclass fields.  They may exist only in the input mapping and an internal
+normalized provenance sidecar carried alongside the unchanged candidate.  No
+production file outside this direct truth surface is authorized by this
+contract.
 
 ### Required target behavior
 
@@ -165,26 +172,31 @@ this direct truth surface is authorized by this contract.
    normalized value rather than contain a fixed source literal.  The persisted
    `is_approved` value is the normalized result of the commitment/approval
    check, rather than an unconditional literal.
-8. **Receipt/replay compatibility.** Adding `source` and `is_approved` to
-   `TruthCandidate` must not change the existing operation identity for a
-   legacy-shaped request.  Define `legacy_request_projection(candidate)` as
+8. **Receipt/replay compatibility.** Accepting `source` and `is_approved` in
+   an input mapping must not change the `TruthCandidate` public dataclass,
+   field order or `asdict()` result.  The parser may return the unchanged
+   candidate plus an internal normalized provenance sidecar; a legacy
+   `TruthCandidate` object passed directly to the engine follows the same
+   legacy path and hash.  Define `legacy_request_projection(candidate)` as
    the exact pre-W-24 ordered field allowlist from
    `candidate_id` through `note` (the fields currently present at
-   `scripts/memory_truth.py:78-94`), excluding `source` and `is_approved`, and
-   compute the existing `request_hash` as
-   `identity("request_", [legacy_request_projection(candidate)])`.  Keep this
-   projection for worker-shaped calls and existing receipts.  Add an optional
-   `provenance_hash` receipt field over the ordered normalized
-   `(source, is_approved)` pair for each candidate, so a changed provenance
-   envelope cannot replay merely because the legacy request hash is equal.  A
-   pre-W-24 receipt without `provenance_hash` may
-   replay only when the incoming mapping omits both additive fields; supplying
+   `scripts/memory_truth.py:78-94`), excluding all provenance metadata, and
+   compute the only `request_hash` as
+   `identity("request_", [legacy_request_projection(candidate)])`.  There is
+   no v2 request hash.  Keep this projection unchanged for worker-shaped calls,
+   existing receipts and the current worker verifier.  Add only an optional
+   `provenance_hash` field inside newly written operation receipts, over the
+   ordered normalized `(source, is_approved)` pair for each candidate, so a
+   changed provenance envelope cannot replay merely because the legacy request
+   hash is equal.  A pre-W-24 receipt without `provenance_hash` may replay only
+   when the incoming mapping omits both additive metadata fields; supplying
    either field against that receipt returns `INVALID_INPUT /
-   OPERATION_REPLAY_MISMATCH` and performs no write.  New receipts compare both
-   the legacy request hash and `provenance_hash`.  The existing worker effect
-   verifier must continue to observe the legacy request hash for its current
-   worker-shaped payload; no receipt replay may fail solely because the
-   additive fields were introduced.
+   OPERATION_REPLAY_MISMATCH` and performs no write.  New receipts compare the
+   historical request hash and `provenance_hash`.  The existing worker effect
+   verifier at `brain_eleven/runtime/worker.py:512-519` must continue to see
+   the historical request hash for its current worker-shaped payload; worker
+   source is unchanged and no receipt replay may fail solely because the
+   mapping metadata was introduced.
 
    The allowlist is explicit and ordered for review purposes:
    `candidate_id`, `content`, `memory_type`, `scope`, `project_id`, `project`,
@@ -192,8 +204,9 @@ this direct truth surface is authorized by this contract.
    `evidence_refs`, `occurred_at`, `operation`, `target_memory_id`,
    `successor_memory_id`, `resolved_by`, `note`.  The new provenance fields
    are never silently inserted into this legacy projection.  The normalized
-   source/approval pair is hashed separately in `provenance_hash` for every
-   newly written receipt.
+   source/approval pair is hashed separately in the receipt-only
+   `provenance_hash` for every newly written receipt.  It is never added to the
+   candidate dataclass, `asdict()` output or `request_hash`.
 9. **Existing truth semantics.** Exact scoped fingerprint deduplication,
    claim-key conflict, explicit confirmation, supersession and resolution
    continue to use the current `TruthAction`/`TruthStatus` values and target
@@ -213,6 +226,11 @@ this direct truth surface is authorized by this contract.
   registry mutation/locking behavior remain unchanged.  Truth only reads the
   registry identity/status/policy; it never writes state or registers a
   project.
+- `TruthCandidate` remains the exact public pre-W-24 dataclass.  Its fields,
+  order, constructor behavior for legacy arguments and `asdict()` keys/output
+  remain unchanged.  Mapping-level `source`/`is_approved` metadata is kept in
+  an engine-private sidecar and cannot leak into the historical request
+  projection.
 - A model proposal, uncertain/quoted/question content, or missing B1 approval
   cannot become canonical merely by setting `source` or `is_approved` on the
   worker path.  B1 remains the approval transition for worker-generated
@@ -230,11 +248,11 @@ this direct truth surface is authorized by this contract.
   all-eligible receipt rule.  The worker may continue its existing policy of
   routing a returned non-success outcome to B1 review; that worker-side review
   effect is outside this direct no-write assertion.
-- Exact operation replay remains idempotent: the same operation ID, legacy
-  request hash and (when present) provenance hash return the existing
-  content-free receipt/effect without a second memory.  A changed candidate or
-  provenance envelope under that operation ID remains a replay mismatch.  A
-  stale `expected_revision` remains `STALE_INPUT` with no write.
+- Exact operation replay remains idempotent: the same operation ID, historical
+  request hash and (when present) receipt-only provenance hash return the
+  existing content-free receipt/effect without a second memory.  A changed
+  candidate or provenance envelope under that operation ID remains a replay
+  mismatch.  A stale `expected_revision` remains `STALE_INPUT` with no write.
 - Rejected decisions and review decisions remain content-free.  Diagnostics
   may include IDs, status, reason, policy name, registry state and revisions,
   but never candidate text, secret values, raw transcript material or full
@@ -276,13 +294,16 @@ failure.
   old receipt without it is replayable only for a legacy-shaped request that
   omits `source` and `is_approved`.  No receipt migration write is performed
   during replay.
+- `TruthCandidate` is not schema-expanded for this package: mapping metadata
+  is parsed into a private sidecar, while a `TruthCandidate` object and its
+  `asdict()` serialization remain byte/hash compatible with pre-W-24 callers.
 - `brain_eleven.memory.truth` remains an adapter, not a second implementation;
   package/legacy/bare-loader object identity tests continue to pass
   (`tests/test_pre12_memory_state_caller_migration.py:250-265`).
-- The worker's queue, extraction, operation receipt, B1 approval and B2
-  grouping/order paths remain behaviorally unchanged.  Existing worker calls
-  that omit the additive provenance fields use the compatibility fallback
-  above.
+- The worker's `worker.py` source, queue, extraction, operation receipt, B1
+  approval and B2 grouping/order paths remain behaviorally unchanged.  Existing
+  worker calls that omit the mapping metadata use the compatibility fallback
+  above, and the current worker request-hash verifier remains green.
 - Explicit manual `brain_eleven.memory.capture.remember()` remains an explicit
   user capture path.  Its shared safety ordering and validator/store ownership
   (`brain_eleven/memory/capture.py:78-127`) are regression surfaces, not a new
@@ -340,8 +361,9 @@ uniqueness until that next package is independently reviewed and shipped.
 - The existing worker-shaped candidate and operation ID accept through the
   unchanged worker path; its stored source is the bounded worker/legacy
   compatibility value and approval remains true only after the existing
-  commitment gate.  A B1 review accept continues to be the only route for a
-  pending proposal.
+  commitment gate.  A pending worker proposal remains pending until the
+  existing B1 review action invokes worker apply; test that direct truth
+  processing does not implicitly convert that proposal into an approval.
 - Missing/invalid source, non-boolean approval, explicit approval false,
   non-`COMMITTED` commitment, contradictory project label and global/project
   identity cases are covered.  A contradictory project label is normalized to
@@ -366,6 +388,17 @@ uniqueness until that next package is independently reviewed and shipped.
   while the changed envelope mismatches through `provenance_hash` and cannot
   create a second effect.  The worker-shaped legacy payload must continue to
   satisfy the existing worker effect-verification hash.
+- Assert that `dataclasses.fields(TruthCandidate)` and the ordered keys from
+  `asdict(TruthCandidate.from_mapping(legacy_mapping))` are exactly the
+  historical field list; neither `source` nor `is_approved` may appear.  Pass
+  both a legacy `TruthCandidate` object and its mapping through the engine and
+  assert equal legacy request hashes and decisions.  A mapping carrying the
+  new metadata may produce a private sidecar and receipt `provenance_hash`,
+  but must leave the public object/asdict/hash shape unchanged.
+- Run the existing worker-shaped apply/verification control without editing
+  `brain_eleven/runtime/worker.py`: its receipt `request_hash` must equal the
+  expected hash recomputed at `worker.py:512-519`, and a replay must verify the
+  same canonical effect exactly once.
 - Package adapter identity, direct/CLI dry-run, lifecycle target checks,
   cross-project target rejection, exact-fingerprint deduplication and
   content-free results remain covered.
@@ -390,8 +423,10 @@ uniqueness until that next package is independently reviewed and shipped.
 1. **Boundary proof:** read-only source/AST review shows the direct truth path
    calls the single shared safety object, reads the existing registry authority,
    contains no copied secret policy, no direct file write and no second truth
-   or provenance authority.  The changed-file list is limited to this package's
-   truth surface and focused tests.
+   or provenance authority.  The public `TruthCandidate` dataclass and
+   `asdict()` shape are unchanged, `worker.py` is byte-unchanged, and the
+   changed-file list is limited to this package's truth surface and focused
+   tests.
 2. **Safety/scope proof:** all eight secret classes, lifecycle-note secret
    cases and all three negative registry states reject with zero canonical,
    registry, receipt, direct-truth review, state, graph or retrieval effects;
@@ -400,9 +435,10 @@ uniqueness until that next package is independently reviewed and shipped.
    expected provenance.
 3. **Compatibility proof:** focused truth, package identity, migration,
    capture-safety, manual capture, worker/B1 and B2 tests pass; existing
-   lifecycle, dedup, retrieval, pre-upgrade receipt replay and Phase 20
-   frozen/V2 shadow assertions remain unchanged.  The direct API/CLI privileged
-   assumption is reported as a boundary limitation, not a failed B1 proof.
+   lifecycle, dedup, retrieval, pre-upgrade receipt replay, dataclass/asdict
+   parity and worker request-hash verification, and Phase 20 frozen/V2 shadow
+   assertions remain unchanged.  The direct API/CLI privileged assumption is
+   reported as a boundary limitation, not a failed B1 proof.
 4. **Full verification:** at one exact revision, run `pytest tests -q`,
    critical flake8 (`E9,F63,F7,F82`), Python compile/import sanity and
    `git diff --check`.  Record pass/fail counts and any pre-existing failure
@@ -416,8 +452,10 @@ uniqueness until that next package is independently reviewed and shipped.
 
 - No change to `MemoryStore`, `StateStore`, `ProjectRegistry`, their schemas,
   locks, CAS, backups, atomic persistence or mutation APIs.
-- No worker, queue, evidence, extraction, model, B1 review, B2 ordering,
-  `StateBoundary`, manual capture, graph or retrieval implementation change.
+- No `brain_eleven/runtime/worker.py` change, queue, evidence, extraction,
+  model, B1 review, B2 ordering, `StateBoundary`, manual capture, graph or
+  retrieval implementation change.  In particular, no worker verifier
+  workaround may be used to hide a changed `TruthCandidate`/`asdict()` shape.
 - No second safety regex, secret-pattern tuning, source authentication system,
   transcript provenance redesign or project-root/ID migration.  Root/ID
   mismatch work remains W-13 scope.
@@ -425,8 +463,8 @@ uniqueness until that next package is independently reviewed and shipped.
   those calls remain a trusted privileged boundary by contract, while B1
   governs worker-generated proposals only when enabled.
 - No rewrite, repair or backfill of historical records with the old source or
-  approval values; no canonical schema migration is introduced for additive
-  provenance inputs.
+  approval values; no canonical schema migration is introduced for the
+  mapping-only provenance inputs or receipt-only `provenance_hash`.
 - No closure of the deferred `NEW` memory-ID collision finding; that belongs to
   owner `canonical-memory/truth maintainer` in
   `W-24A-MEMORY-ID-UNIQUENESS-CONTRACT`.
@@ -439,8 +477,8 @@ uniqueness until that next package is independently reviewed and shipped.
 
 ```text
 PACKAGE: W-24
-CONTRACT REVISION: 66abdf6ba3d776b53602aace7fd21e2645d60ecc
-AUDIT BASELINE: 09dbb76fca00004c4e7c2ef68690bf8a650fe71c
+CONTRACT REVISION: <exact revision commit SHA recorded in the header>
+AUDIT BASELINE: fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd
 IMPLEMENTATION REVISION: <exact SHA, only after authorization>
 OBJECTIVE: Apply shared capture safety, registered project authority and
            derived provenance to the direct MemoryTruthEngine commit path.
@@ -463,6 +501,8 @@ SCOPE METRICS: active/enabled acceptance; negative registry reason counts;
                registry-unavailable mappings; cross-project and global controls
 IDEMPOTENCE/CAS: legacy pre-upgrade replay, provenance mismatch, replay/effect
                  IDs, revision deltas, mismatch and stale counts
+PUBLIC SHAPE/PARITY: historical TruthCandidate fields/order/asdict and worker
+                     request-hash verifier remain unchanged
 DEFERRED P2: NEW caller-supplied memory-ID collision — owner canonical-memory/
              truth maintainer; next package W-24A-MEMORY-ID-UNIQUENESS-CONTRACT
 KNOWN LIMITATIONS: ...
