@@ -20,8 +20,10 @@ from brain_eleven.memory.truth import (
 )
 from brain_eleven.projects.registry import ProjectRegistry, registry_path
 from brain_eleven.runtime.migration import migrate
-from brain_eleven.runtime.storage import identity
-from brain_eleven.runtime.worker import _memory_candidate_values
+from brain_eleven.runtime.review import ReviewStore
+from brain_eleven.runtime.service import review_action
+from brain_eleven.runtime.storage import RuntimeConfig, identity, write_json
+from brain_eleven.runtime.worker import Worker, _memory_candidate_values, apply_candidate
 
 
 LEGACY_FIELDS = (
@@ -214,7 +216,230 @@ def test_project_registry_negative_states_fail_closed_without_memory_effect(tmp_
     assert result.status == TruthStatus.DEGRADED.value
     assert result.decisions[0].reason_code == reason
     assert MemoryStore(tmp_path).revision() == 0
+    assert result.source_memory_revision == 0
+    assert result.produced_memory_revision == 0
     assert not (tmp_path / ".claude" / "validated-memory.backup.json").exists()
+
+
+@pytest.mark.parametrize("state", ("archived", "disabled"))
+def test_matching_operation_replays_after_project_policy_changes(tmp_path, state):
+    project = _project(tmp_path)
+    migrate(tmp_path)
+    operation_id = identity("op_", "w24-policy-replay-" + state)
+    value = _candidate(project["project_id"], source="user", is_approved=True)
+    engine = MemoryTruthEngine(tmp_path)
+    first = engine.process([value], commit=True, commit_new=True, operation_id=operation_id)
+    assert first.status == TruthStatus.SUCCESS.value
+    before = MemoryStore(tmp_path).load()
+
+    if state == "archived":
+        ProjectRegistry(tmp_path).set_status(project["project_id"], "archived")
+    else:
+        ProjectRegistry(tmp_path).set_proactive_capture(project["project_id"], False)
+
+    replay = engine.process([value], commit=True, commit_new=True, operation_id=operation_id)
+    assert replay.status == TruthStatus.SUCCESS.value
+    assert [item.to_dict() for item in replay.decisions] == [item.to_dict() for item in first.decisions]
+    assert MemoryStore(tmp_path).load() == before
+
+    changed_content = engine.process(
+        [{**value, "content": "The queue uses a different source of truth."}],
+        commit=True,
+        commit_new=True,
+        operation_id=operation_id,
+    )
+    assert changed_content.status == TruthStatus.INVALID_INPUT.value
+    assert changed_content.error_code == "OPERATION_REPLAY_MISMATCH"
+    changed_provenance = engine.process(
+        [{**value, "source": "review"}],
+        commit=True,
+        commit_new=True,
+        operation_id=operation_id,
+    )
+    assert changed_provenance.status == TruthStatus.INVALID_INPUT.value
+    assert changed_provenance.error_code == "OPERATION_REPLAY_MISMATCH"
+    assert MemoryStore(tmp_path).load() == before
+
+
+def test_new_operation_still_obeys_archived_registry_policy(tmp_path):
+    project = _project(tmp_path)
+    migrate(tmp_path)
+    ProjectRegistry(tmp_path).set_status(project["project_id"], "archived")
+    result = MemoryTruthEngine(tmp_path).process(
+        [_candidate(project["project_id"])],
+        commit=True,
+        commit_new=True,
+        operation_id=identity("op_", "w24-policy-new"),
+    )
+    assert result.status == TruthStatus.DEGRADED.value
+    assert result.decisions[0].reason_code == "PROJECT_ARCHIVED"
+    assert result.source_memory_revision == 0
+    assert result.produced_memory_revision == 0
+    assert MemoryStore(tmp_path).revision() == 0
+
+
+def test_registry_read_oserror_is_bounded_without_memory_load(tmp_path, monkeypatch):
+    _project(tmp_path)
+    truth = importlib.import_module("scripts.memory_truth")
+
+    def fail_registry_read(self, _project_id):
+        raise OSError("simulated registry read failure")
+
+    def fail_memory_load(self):
+        raise AssertionError("memory must not be loaded for an unavailable registry")
+
+    monkeypatch.setattr(truth.ProjectRegistry, "get", fail_registry_read)
+    monkeypatch.setattr(truth.MemoryStore, "load", fail_memory_load)
+    result = MemoryTruthEngine(tmp_path).process(
+        [_candidate()],
+        commit=True,
+        commit_new=True,
+    )
+    assert result.status == TruthStatus.SCOPE_ERROR.value
+    assert result.error_code == "PROJECT_REGISTRY_UNAVAILABLE"
+    assert result.decisions[0].reason_code == "PROJECT_REGISTRY_UNAVAILABLE"
+
+
+def test_resolve_secret_note_rejects_before_lifecycle_effect(tmp_path):
+    project = _project(tmp_path)
+    target = _record(project_id=project["project_id"])
+    _write_record(tmp_path, target)
+    store = MemoryStore(tmp_path)
+    before_bytes = store.path.read_bytes()
+    revision = store.revision()
+    secret_note = "Authorization: Bearer " + "b" * 24
+    result = MemoryTruthEngine(tmp_path).process(
+        [_candidate(
+            project["project_id"],
+            operation="RESOLVE_EXISTING",
+            target_memory_id=target["memory_id"],
+            note=secret_note,
+        )],
+        commit=True,
+        commit_new=True,
+    )
+    assert result.status == TruthStatus.DEGRADED.value
+    assert result.decisions[0].reason_code == "SECRET_CONTENT"
+    assert store.path.read_bytes() == before_bytes
+    assert store.revision() == revision
+    assert not store.backup_path.exists()
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error"),
+    (
+        ("source", "", "INVALID_PROVENANCE"),
+        ("source", "model", "INVALID_PROVENANCE"),
+        ("is_approved", 1, "INVALID_APPROVAL"),
+    ),
+)
+def test_invalid_provenance_envelope_is_rejected_before_effect(tmp_path, field, value, error):
+    result = MemoryTruthEngine(tmp_path).process(
+        [{**_candidate(), field: value}],
+        commit=True,
+        commit_new=True,
+    )
+    assert result.status == TruthStatus.INVALID_INPUT.value
+    assert result.error_code == error
+    assert MemoryStore(tmp_path).revision() == 0
+
+
+@pytest.mark.parametrize("field", ("project_id", "project", "project_label"))
+def test_global_project_metadata_is_always_rejected(tmp_path, field):
+    value = {"candidate_id": "global-metadata", "content": "A safe global decision."}
+    value[field] = "foreign-project"
+    result = MemoryTruthEngine(tmp_path).process([value], commit=True, commit_new=True)
+    assert result.status == TruthStatus.DEGRADED.value
+    assert result.decisions[0].reason_code == "GLOBAL_PROJECT_METADATA"
+    assert result.source_memory_revision == 0
+    assert result.produced_memory_revision == 0
+    assert MemoryStore(tmp_path).revision() == 0
+
+
+def test_direct_committed_call_is_privileged_and_has_no_b1_proof(tmp_path):
+    project = _project(tmp_path)
+    migrate(tmp_path)
+    value = _candidate(project["project_id"], source="user", is_approved=True)
+    result = MemoryTruthEngine(tmp_path).process([value], commit=True, commit_new=True)
+    assert result.status == TruthStatus.SUCCESS.value
+    assert not (RuntimeConfig(tmp_path).root / "review").exists()
+    record = MemoryStore(tmp_path).load()["validated_memory"][0]
+    assert record["source"] == "user"
+    assert record["is_approved"] is True
+
+
+def test_review_accept_approved_worker_effect_matches_hash_and_replays(tmp_path):
+    project = _project(tmp_path)
+    migrate(tmp_path)
+    config = RuntimeConfig(tmp_path)
+    write_json(config.path, {
+        "schema_version": 1,
+        "mode": "CANARY",
+        "project_ids": [project["project_id"]],
+        "local_model": None,
+        "b1_human_approval": True,
+    })
+    candidate = _candidate(
+        project["project_id"],
+        candidate_id="worker-approved",
+        candidate_type="NEW_MEMORY",
+        commitment="COMMITTED",
+    )
+    reviews = ReviewStore(tmp_path)
+    review_id = reviews.add(
+        candidate,
+        "HUMAN_APPROVAL_REQUIRED",
+        {"client": "claude", "role": "user"},
+    )
+    assert review_id
+    operation_id = identity("op_", review_id)
+    expected_revision = MemoryStore(tmp_path).revision()
+    accepted = review_action(
+        tmp_path,
+        review_id,
+        "accept",
+        {"expected_revision": expected_revision},
+    )
+    assert accepted["status"] == "ACCEPTED"
+    effect = accepted["result"]
+    assert effect["status"] == TruthStatus.SUCCESS.value
+    record = MemoryStore(tmp_path).load()["validated_memory"][0]
+    assert record["source"] == "worker"
+    assert record["is_approved"] is True
+    receipt = MemoryStore(tmp_path).load()["operation_receipts"][operation_id]
+    values = _memory_candidate_values(candidate)
+    assert receipt["request_hash"] == identity(
+        "request_",
+        [legacy_request_projection(TruthCandidate.from_mapping(values))],
+    )
+    # ``review_action`` uses its durable review identity as the operation
+    # identity.  The regular worker operation identity is candidate/project
+    # based; verify that unchanged worker-shaped apply path independently
+    # satisfies the canonical verifier and replays without a second effect.
+    worker_operation_id = identity("op_", candidate["candidate_id"], project["project_id"])
+    verified_effect = apply_candidate(
+        tmp_path,
+        candidate,
+        op_id=worker_operation_id,
+        approved=True,
+    )
+    assert verified_effect["status"] == TruthStatus.SUCCESS.value
+    assert Worker(tmp_path)._verify_canonical_effect(
+        candidate,
+        verified_effect,
+        worker_operation_id,
+    )
+
+    before = MemoryStore(tmp_path).load()
+    replay = apply_candidate(
+        tmp_path,
+        candidate,
+        op_id=worker_operation_id,
+        approved=True,
+    )
+    assert replay["status"] == TruthStatus.SUCCESS.value
+    assert Worker(tmp_path)._verify_canonical_effect(candidate, replay, worker_operation_id)
+    assert MemoryStore(tmp_path).load() == before
 
 
 @pytest.mark.parametrize("registry_payload", (b"{broken", b'{"schema_version": 99}'))
