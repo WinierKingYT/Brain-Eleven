@@ -6,8 +6,8 @@ check than the shared capture policy, accepts any non-empty project ID without
 checking `ProjectRegistry`, and writes fixed `source`/`is_approved` values
 instead of caller-derived provenance.
 **Priority:** P1 canonical-memory safety and scope authority
-**Audit baseline:** `fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd`
-**Contract revision:** `c4b6277c073cfd0a396725434e53427b5af73e0d`
+**Audit baseline:** `0ad5fe5d118c03df1d8b0e0a258e2dadf13f5b8b`
+**Contract revision:** `<revision commit SHA recorded after this review fix>`
 
 ## Boundary and evidence
 
@@ -31,6 +31,17 @@ gaps without moving canonical authority.
    receipt.  `brain_eleven/runtime/worker.py:512-519` independently computes
    the expected worker request hash from `asdict(TruthCandidate.from_mapping(values))`;
    changing that dataclass/asdict shape would invalidate the worker verifier.
+   The worker boundary also has a separate approval distinction: its
+   `_memory_candidate_values(candidate, approved=False)` helper defaults an
+   omitted commitment to `UNCERTAIN` at `brain_eleven/runtime/worker.py:67-77`,
+   while `brain_eleven/runtime/service.py:46-63` sets `COMMITTED` and passes
+   `approved=True` only after a `ReviewStore` accept.  A generic
+   `MemoryTruthEngine.process()` call receives only the reduced candidate
+   mapping, so it cannot tell that a `COMMITTED` value came from that review
+   transition.  The current B1 fixture at
+   `tests/test_ig04_b1_human_approval.py:52-64` already has `COMMITTED` in its
+   pending-shaped candidate while `brain_eleven/runtime/worker.py:743-750`
+   routes it to review, which is the concrete ambiguity this contract records.
 4. `scripts/memory_truth.py:303-432` owns the dry-run/commit decision flow and
    delegates committed effects to `MemoryStore.transact()`.  The direct path
    has no registry lookup, so a project ID is treated as an authority merely
@@ -99,6 +110,21 @@ normalized provenance sidecar carried alongside the unchanged candidate.  No
 production file outside this direct truth surface is authorized by this
 contract.
 
+The B1 approval guarantee is deliberately narrower than the direct truth
+contract.  At the existing worker/review boundary, an unapproved worker-shaped
+input with no commitment is normalized by
+`_memory_candidate_values(candidate, approved=False)` to `commitment=UNCERTAIN`,
+and the truth decision is `REVIEW_REQUIRED / UNCOMMITTED_CANDIDATE`.  A
+`ReviewStore` accept is the only B1 approval transition in that worker boundary:
+the existing service calls `apply_candidate(..., approved=True)`, whose worker
+helper produces `commitment=COMMITTED` before the truth apply.  The
+`approved=True` call boundary is the B1 proof; it is not encoded in the public
+`TruthCandidate` or inferred from its fields.  Because the unchanged helper
+preserves a commitment that an input mapping already supplies when
+`approved=False`, a pending mapping that already says `COMMITTED` is an
+ambiguous shape; W-24 accepts that the generic engine cannot distinguish it
+from a direct privileged call and does not label either call B1-approved.
+
 ### Required target behavior
 
 1. **One safety policy and exact text inputs.** Before truth evaluation or any
@@ -157,12 +183,22 @@ contract.
    `--commit --commit-new` are trusted privileged write surfaces in this
    package.  Their caller is responsible for supplying structured,
    `COMMITTED` input and valid provenance; W-24 does not authenticate that
-   caller or add an approval token.  Therefore W-24 makes no claim that B1 is
-   the only approval route for direct API/CLI calls.  B1 remains the sole
-   approval transition for worker-generated proposals while B1 is enabled:
-   those proposals remain pending until the existing review action invokes the
-   worker apply path.  This distinction is testable and preserves the current
-   privileged direct surface.
+   caller or add an approval token.  A generic `process(COMMITTED)` mapping
+   contains no ReviewStore acceptance marker and cannot be classified as
+   B1-approved.  W-24 therefore makes no claim that B1 is the only approval
+   route for direct API/CLI calls, and direct success is reported as the
+   trusted privileged boundary it is.
+
+   Within the existing worker boundary when B1 is enabled, the worker routes a
+   pending candidate to `ReviewStore` before applying it.  The unapproved
+   worker-shaped control is the mapping with no commitment: existing
+   `_memory_candidate_values(candidate, approved=False)` yields `UNCERTAIN`,
+   which the truth engine returns as `REVIEW_REQUIRED /
+   UNCOMMITTED_CANDIDATE`.  Only the existing `ReviewStore` accept invokes
+   worker `apply_candidate(..., approved=True)`, yielding `COMMITTED` for the
+   canonical apply.  This scoped transition is the B1 guarantee; it does not
+   assert that an indistinguishable direct `COMMITTED` mapping carries B1
+   proof.
 7. **Compatibility provenance fallback.** Existing worker payloads currently
    omit both additive fields.  They remain valid: a call carrying the existing
    worker operation identity receives the bounded `worker` source label, and a
@@ -233,9 +269,11 @@ contract.
   projection.
 - A model proposal, uncertain/quoted/question content, or missing B1 approval
   cannot become canonical merely by setting `source` or `is_approved` on the
-  worker path.  B1 remains the approval transition for worker-generated
-  proposals while enabled; direct API/CLI writes are the separately documented
-  trusted privileged surface.  B2 remains deterministic grouping/order only.
+  worker path.  For the B1-enabled worker boundary, only the ReviewStore
+  accept-to-`approved=True` call is treated as B1 approval; the generic truth
+  engine cannot recover that proof from a `COMMITTED` mapping.  Direct API/CLI
+  writes are the separately documented trusted privileged surface.  B2 remains
+  deterministic grouping/order only.
   The worker still calls the same truth engine with the same operation IDs and
   validates the same canonical effect (`brain_eleven/runtime/worker.py:137-163`
   and `:733-790`).
@@ -303,7 +341,9 @@ failure.
 - The worker's `worker.py` source, queue, extraction, operation receipt, B1
   approval and B2 grouping/order paths remain behaviorally unchanged.  Existing
   worker calls that omit the mapping metadata use the compatibility fallback
-  above, and the current worker request-hash verifier remains green.
+  above, and the current worker request-hash verifier remains green.  The
+  contract records B1 proof at the unchanged `ReviewStore` accept call boundary
+  only; a direct `COMMITTED` mapping is not relabeled as B1-approved.
 - Explicit manual `brain_eleven.memory.capture.remember()` remains an explicit
   user capture path.  Its shared safety ordering and validator/store ownership
   (`brain_eleven/memory/capture.py:78-127`) are regression surfaces, not a new
@@ -361,9 +401,18 @@ uniqueness until that next package is independently reviewed and shipped.
 - The existing worker-shaped candidate and operation ID accept through the
   unchanged worker path; its stored source is the bounded worker/legacy
   compatibility value and approval remains true only after the existing
-  commitment gate.  A pending worker proposal remains pending until the
-  existing B1 review action invokes worker apply; test that direct truth
-  processing does not implicitly convert that proposal into an approval.
+  commitment gate.  Test the scoped B1 transition explicitly: an input with
+  no commitment passed to `_memory_candidate_values(candidate, approved=False)`
+  yields `UNCERTAIN` and a truth `REVIEW_REQUIRED /
+  UNCOMMITTED_CANDIDATE` decision; after `ReviewStore` accept, the unchanged
+  service calls worker `apply_candidate(..., approved=True)` and the same
+  effect applies with `COMMITTED`, exactly once.
+- Test the direct privileged distinction with the same field-shaped
+  `COMMITTED` mapping passed straight to `MemoryTruthEngine.process()`: it may
+  be accepted under the documented trusted boundary, but its result must carry
+  no B1-approved claim or inferred ReviewStore proof.  The test must document
+  that the generic engine cannot distinguish this mapping from a pending B1
+  record and must not assert B1 exclusivity for the direct call.
 - Missing/invalid source, non-boolean approval, explicit approval false,
   non-`COMMITTED` commitment, contradictory project label and global/project
   identity cases are covered.  A contradictory project label is normalized to
@@ -477,8 +526,8 @@ uniqueness until that next package is independently reviewed and shipped.
 
 ```text
 PACKAGE: W-24
-CONTRACT REVISION: c4b6277c073cfd0a396725434e53427b5af73e0d
-AUDIT BASELINE: fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd
+CONTRACT REVISION: <exact revision commit SHA recorded in the header>
+AUDIT BASELINE: 0ad5fe5d118c03df1d8b0e0a258e2dadf13f5b8b
 IMPLEMENTATION REVISION: <exact SHA, only after authorization>
 OBJECTIVE: Apply shared capture safety, registered project authority and
            derived provenance to the direct MemoryTruthEngine commit path.
@@ -503,6 +552,9 @@ IDEMPOTENCE/CAS: legacy pre-upgrade replay, provenance mismatch, replay/effect
                  IDs, revision deltas, mismatch and stale counts
 PUBLIC SHAPE/PARITY: historical TruthCandidate fields/order/asdict and worker
                      request-hash verifier remain unchanged
+B1 TRANSITION METRICS: unapproved UNCERTAIN review-required count, ReviewStore
+                       accept-to-approved COMMITTED count, direct privileged
+                       COMMITTED count with no B1 proof inference
 DEFERRED P2: NEW caller-supplied memory-ID collision — owner canonical-memory/
              truth maintainer; next package W-24A-MEMORY-ID-UNIQUENESS-CONTRACT
 KNOWN LIMITATIONS: ...
