@@ -27,6 +27,7 @@ file was changed.
 - `brain_eleven/runtime/storage.py`: one decorator line.
 - `tests/test_srt01_runtime_lock.py`: five focused behavior tests.
 - This package report.
+- `SRT00-BASELINE-FAILURE-REPRODUCTION.md`: coverage-gate boundary clarification.
 
 ## Tests and checks executed
 
@@ -114,7 +115,7 @@ coverage gate and one local cold-start failure, as required by the contract.
 
 If remote or focused regression evidence shows a changed timeout, error,
 resource-release, marker, path-safety, or Windows mutex contract, revert only
-the SRT-01 implementation and test commits (`335b6df` and `498e72b`) to restore
+the SRT-01 implementation and test commits (`335b6df`, `498e72b`, and `f0866b6`) to restore
 the pre-package code at `e6ecd14`. Do not alter workflows, thresholds, skips,
 markers, or unrelated fixes during rollback.
 
@@ -128,10 +129,10 @@ FILES CHANGED: one storage decorator, one focused test file, this report
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
 TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push runs 35131684181 and 35131684240; final conclusions pending
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push run 35131684181/35131684240 at pre-remediation report head; exact current-head result pending
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
-LOCK/RESOURCE EVIDENCE: normal reuse, exception cleanup, and distinct-target entry pass on POSIX smoke
+LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
 KNOWN LIMITATIONS: post-push remote verification pending; unrelated coverage, quality, Windows and cold-start failures remain
 OUT-OF-SCOPE FAILURES: STALE_INPUT, coverage threshold, W-03B, MemoryBackup, task-model, and other unrelated identities
 ROLLBACK: revert f0866b6, 498e72b, and 335b6df; preserve the evidence and original gates
