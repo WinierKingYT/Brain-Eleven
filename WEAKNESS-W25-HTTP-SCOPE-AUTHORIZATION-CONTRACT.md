@@ -70,6 +70,11 @@ The following references are from the exact audit baseline above.
   `:616-620` and currently has no scope or project parameter.
 * `GET /digest` (`:955-979`) passes both selectors to `MemorySummarizer` at
   `:969-975`.
+* `GET /anomalies` (`:981-993`) currently has no selector and calls
+  `AnomalyDetector.detect_all()` over the whole vault.  The detector emits
+  short content excerpts (`brain_eleven/support/anomaly.py:86-89,
+  :110-116, :130-133, :150-153, :190-193, :203-207`), so this is a
+  content-bearing scope route and must be brought under the same policy.
 * `GET /graph/entities` (`:1006-1024`), entity relationships (`:1026-1047`)
   and traversal (`:1049-1067`) pass the selectors to the canonical graph
   projection.  `all` is therefore a graph exposure as well as a memory
@@ -77,14 +82,26 @@ The following references are from the exact audit baseline above.
 * `POST /chat` (`:1086-1108`) passes the selectors to `ChatAgent` at
   `:1102-1108`.
 
-`/health`, `/docs`, `/redoc` and `/openapi.json` are public health/document
-surfaces.  `/status`, `/cache/stats`, `/anomalies`, `/graph/stats` and
-`/metrics` are operational or aggregate surfaces and must not gain a new
-content-bearing cross-project path.  Existing CRUD writes (`POST /memories`,
-`PUT /memories/{id}`, `DELETE /memories/{id}`) already use the validation and
-scope helpers at `:529-597` and `:671-708`; their canonical transaction and
-project checks remain intact while the same request authorization policy is
-applied where a request names a project.
+The complete current route policy must be recorded before implementation.  At
+minimum it is:
+
+| Method/path | Boundary class | W-25 requirement |
+|---|---|---|
+| `GET /health`, `/docs`, `/redoc`, `/openapi.json` | public liveness/docs | no memory content; remain public |
+| `GET /status`, `/metrics`, `/cache/stats` | aggregate/operational read | no new memory content; non-loopback key policy still applies |
+| `POST /search`, `POST /rank`, `GET /memories`, `GET /memories/{id}`, `GET /digest`, `GET /anomalies`, `GET /graph/entities`, graph relationships/traverse, `POST /chat` | content-bearing scoped read | one helper; `all` admin-only; project context validated |
+| `POST /memories`, `PUT /memories/{id}`, `DELETE /memories/{id}` | canonical mutation | preserve existing validation, scope, transaction/CAS and key policy; reject unauthorized project context before mutation |
+| `POST /embed` (`:452-488`) | query/content processing | no memory corpus disclosure; include in non-loopback/key matrix |
+| `POST /cache/clear` (`:942-949`), `POST /graph/rebuild` (`:1069-1084`) | derived-state mutation | admin/key or explicit local policy; no unauthenticated non-loopback access |
+
+`/anomalies` is intentionally included as a scoped route: the implementation
+may add `project_id`/`retrieval_scope` and pass a filtered list to
+`AnomalyDetector.detect_all(memories=...)`, or choose a content-free/redacted
+response, but it must not remain an unscoped whole-vault exception.  Existing
+CRUD writes (`POST /memories`, `PUT /memories/{id}`, `DELETE /memories/{id}`)
+already use the validation and scope helpers at `:529-597` and `:671-708`;
+their canonical transaction and project checks remain intact while the same
+request authorization policy is applied where a request names a project.
 
 ### Reproduced failure
 
@@ -139,11 +156,15 @@ boolean, query parameter, project label or `X-` header cannot grant `all`.
 ### 2. Loopback and non-loopback startup policy
 
 The existing local loopback default remains usable for ordinary scoped
-requests.  If `BRAIN_ELEVEN_HOST` is explicitly non-loopback, the application
-must fail closed for sensitive routes unless `BRAIN_ELEVEN_API_KEY` is set;
-the behavior must be deterministic and visible at startup or on the first
-protected request.  `/health` and documentation paths may remain reachable
-as public liveness surfaces.  Do not rely on a warning alone.
+requests.  The accepted loopback host values are exactly `127.0.0.1`, `::1`
+and `localhost` (case-insensitive); `0.0.0.0`, `::`, an empty value with an
+explicit non-loopback deployment, and every other value are treated as
+non-loopback.  If `BRAIN_ELEVEN_HOST` is explicitly non-loopback, the
+application must fail closed for sensitive routes unless
+`BRAIN_ELEVEN_API_KEY` is set; the behavior must be deterministic and visible
+at startup or on the first protected request.  `/health` and documentation
+paths may remain reachable as public liveness surfaces.  Do not rely on a
+warning alone.
 
 This is a boundary check, not a redesign of deployment or Docker networking.
 The package must document how tests select loopback/no-key versus authenticated
@@ -179,14 +200,19 @@ HTTP boundary only.
 
 ### 5. Privacy and bounded errors
 
-Authorization failures use stable machine-readable codes such as
-`HTTP_SCOPE_REQUIRED`, `HTTP_SCOPE_FORBIDDEN`, `HTTP_PROJECT_UNKNOWN` and
-`HTTP_ADMIN_KEY_REQUIRED` (the final names must be fixed in the implementation
-and tests).  Bodies and logs must not echo raw query text, memory content,
-API keys, vault paths, project labels from an untrusted request or exception
-tracebacks.  A 404 for a foreign direct ID must not disclose whether another
-project owns that ID.  Content-free telemetry may record route, scope class,
-status code and a bounded reason.
+Authorization failures and the new W-25 boundary telemetry use stable
+machine-readable codes such as `HTTP_SCOPE_REQUIRED`, `HTTP_SCOPE_FORBIDDEN`,
+`HTTP_PROJECT_UNKNOWN` and `HTTP_ADMIN_KEY_REQUIRED` (the final names must be
+fixed in the implementation and tests).  The no-echo rule applies to those
+denial responses, their logs, and any new scope/auth telemetry: they must not
+echo raw query text, memory content, API keys, vault paths, project labels from
+an untrusted request or exception tracebacks.  Existing successful response
+contracts (for example `/search`'s query echo and `/status`'s configured vault
+path at `:339-345`) and unrelated legacy catch-all error text are pre-existing
+out of scope for W-25; do not silently broaden this package into a general API
+privacy rewrite.  A 404 for a foreign direct ID must not disclose whether
+another project owns that ID.  Content-free telemetry may record route, scope
+class, status code and a bounded reason.
 
 ### 6. No new broad capability
 
@@ -230,9 +256,11 @@ report; comments, documentation and static inventory mentions do not count.
 
 Add focused tests with two registered projects and at least one global record:
 
-* `/search`, `/rank`, `/memories` list, `/digest`, graph entity/relationship/
-  traverse and `/chat` reject unauthenticated `all` without returning either
-  project's content;
+* `/search`, `/rank`, `/memories` list, `/digest`, `/anomalies`, graph
+  entity/relationship/traverse and `/chat` reject unauthenticated `all`
+  (or reject an omitted/unknown project context) without returning either
+  project's content; anomaly responses are either filtered to the authorized
+  project or explicitly content-free/redacted;
 * project-A context returns global plus project-A records and never project-B;
   missing/unknown/archived/disabled project context fails closed;
 * direct GET of a project-B ID from project-A or without context is content-
@@ -240,6 +268,9 @@ Add focused tests with two registered projects and at least one global record:
   explicit and tested;
 * a configured API key permits the documented admin `all` route and still
   rejects missing/wrong keys; a non-loopback/no-key configuration fails closed;
+* `/embed`, `/cache/clear` and `/graph/rebuild` follow the complete route
+  matrix: no unauthenticated non-loopback access, and denied operations leave
+  canonical revision, backup files, graph projection and cache bytes unchanged;
 * existing CRUD create/update/delete, expected-revision conflict and graph
   rebuild tests remain green; no canonical revision changes on denied reads;
 * malformed scope/project inputs produce bounded errors with no content/path/
