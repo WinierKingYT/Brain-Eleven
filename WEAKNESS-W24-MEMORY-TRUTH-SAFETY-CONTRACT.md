@@ -7,7 +7,7 @@ checking `ProjectRegistry`, and writes fixed `source`/`is_approved` values
 instead of caller-derived provenance.
 **Priority:** P1 canonical-memory safety and scope authority
 **Audit baseline:** `fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd`
-**Contract revision:** `<revision commit SHA recorded after this review fix>`
+**Contract revision:** `c4b6277c073cfd0a396725434e53427b5af73e0d`
 
 ## Boundary and evidence
 
@@ -477,7 +477,7 @@ uniqueness until that next package is independently reviewed and shipped.
 
 ```text
 PACKAGE: W-24
-CONTRACT REVISION: <exact revision commit SHA recorded in the header>
+CONTRACT REVISION: c4b6277c073cfd0a396725434e53427b5af73e0d
 AUDIT BASELINE: fb81e6e4d102dbca55ed16d120ebdf40f32ca9dd
 IMPLEMENTATION REVISION: <exact SHA, only after authorization>
 OBJECTIVE: Apply shared capture safety, registered project authority and
