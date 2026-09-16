@@ -80,9 +80,16 @@ protocol failure:
 
 The local WSL smoke and the focused tests show that the approved decorator
 restores the public context-manager boundary and the existing cleanup and
-per-target behavior. Exact post-push GitHub Actions evidence at the
-implementation SHA is still pending; this report makes no whole-workflow
-green claim.
+per-target behavior. Exact-head GitHub Actions evidence is now available. The
+Validation run `35133592063` (head `e117893`) still fails only on the reported
+W-03B Ubuntu fixture identities and the two Windows identities
+`test_direct_adapter_and_package_cli_have_the_same_contract` and
+`test_disaster_drill_rebuilds_context_without_cross_project_leakage`; no
+POSIX-lock `TypeError` appears in its failure annotations. PRE-13 run
+`35133591987` (head `e117893`) still fails its runtime and quality jobs, but
+the runtime annotations contain no POSIX-lock `TypeError`; the quality job
+retains the historical holdout failure. These runs are evidence for this
+exact revision and do not constitute a whole-workflow green claim.
 
 ## Scope confirmation
 
@@ -104,8 +111,9 @@ These findings remain separate and are not repaired or waived by SRT-01:
 - Windows direct `scripts/task_model.py` adapter subprocess exit status 1.
 - Any remaining W-15, W-19B, W-07B, cold-start, installer, or service behavior
   failures after lock acquisition is repaired.
-- No authenticated post-push remote run had completed when this report was
-  written.
+- Protected JUnit artifacts/logs prevent further remote traceback inspection
+  without authenticated access; the public annotations expose the failure
+  identities above.
 
 ## Regression and rollback
 
@@ -129,18 +137,19 @@ FILES CHANGED: one storage decorator, one focused test file, this report, and th
 ROOT CAUSE ADDRESSED: missing @contextmanager on _runtime_posix_lock
 TESTS ADDED: five behavioral tests for reuse, exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target concurrency
 TESTS EXECUTED: 9 focused pytest tests; Ubuntu WSL POSIX smoke; critical flake8; compileall; diff check; unchanged PRE-13 command
-REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; post-push run 35131684181/35131684240 at the pre-review-remediation report head; exact current-head result pending
+REMOTE JOB IDS: baseline 104896530998, 104898515102, 104896531347, 104898515132; exact-head Validation run 35133592063 (jobs 104920302310, 104920302391); exact-head PRE-13 run 35133591987 (jobs 104920301628, 104920301847, 104920302056); public annotations show no POSIX-lock TypeError and retain the out-of-scope failures listed above
 QUALITY METRICS BEFORE: Ubuntu PRE-13 57 lock failures / 41.71% coverage; Validation Ubuntu 120 lock failures
 QUALITY METRICS AFTER: local focused 9/9; local POSIX smoke PASS; local PRE-13 99 passed, 1 unrelated failure / 65.58% coverage
 LOCK/RESOURCE EVIDENCE: normal reuse, body-exception cleanup, timeout cleanup, post-acquisition validation cleanup, and distinct-target entry are covered; POSIX smoke confirms the first, second, and fifth behaviors, while the 9-test host suite covers all five
-KNOWN LIMITATIONS: post-push remote verification pending; unrelated coverage, quality, Windows and cold-start failures remain
+KNOWN LIMITATIONS: exact-head remote workflows remain red for unrelated coverage, quality, Windows and cold-start/runtime identities; protected JUnit logs are unavailable anonymously
 OUT-OF-SCOPE FAILURES: STALE_INPUT, coverage threshold, W-03B, MemoryBackup, task-model, and other unrelated identities
 ROLLBACK: revert f0866b6, 498e72b, and 335b6df; preserve the evidence and original gates
-INDEPENDENT REVIEW: contract SHIP; implementation review pending
+INDEPENDENT REVIEW: contract SHIP; implementation review pending final exact-head assessment
 SCORE BEFORE: not assigned
 SCORE AFTER: not assigned pending independent review
 VERDICT: REVIEW PENDING
 ```
 
 **Implementation status: complete for the approved bounded diff; independent
-review and exact post-push CI evidence remain pending.**
+review remains pending. Exact-head remote evidence is recorded above, with
+out-of-scope failures retained rather than hidden.**
