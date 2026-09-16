@@ -9,6 +9,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from brain_eleven.projects.registry import ProjectRegistry
+
 
 SCRIPTS = Path(__file__).parents[1] / "scripts"
 
@@ -174,6 +176,9 @@ def test_project_scope_is_required_and_exact_but_global_ignores_request(api):
             _memory("project", scope="project", project_id="opaque-a"),
         ],
     )
+    registry = ProjectRegistry(vault)
+    registry.register(vault / "opaque-a", project_id="opaque-a", proactive_capture=True)
+    registry.register(vault / "opaque-b", project_id="opaque-b", proactive_capture=True)
     # Keep the running graph independent of this direct fixture rewrite.
     module._rebuild_graph()
 
@@ -199,6 +204,9 @@ def test_project_scope_is_required_and_exact_but_global_ignores_request(api):
 def test_delete_project_scope_requires_exact_id(api):
     _module, client, vault = api
     _write(vault, [_memory("project", scope="project", project_id="opaque-a")])
+    registry = ProjectRegistry(vault)
+    registry.register(vault / "opaque-a", project_id="opaque-a", proactive_capture=True)
+    registry.register(vault / "opaque-b", project_id="opaque-b", proactive_capture=True)
     required = client.delete("/memories/project")
     mismatch = client.delete("/memories/project", params={"project_id": "opaque-b"})
     accepted = client.delete("/memories/project", params={"project_id": "opaque-a"})

@@ -10,13 +10,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, Dict, Literal
+import hmac
 import json
 import hashlib
 import os
+import re
 import sys
 import importlib.util
+import uuid
 from pathlib import Path
 import logging
 
@@ -81,7 +85,11 @@ try:
         infer_memory_scope,
         scoped_fingerprint,
     )
-    from brain_eleven.projects.registry import registry_path as project_registry_path
+    from brain_eleven.projects.registry import (
+        ProjectRegistry,
+        ProjectRegistryError,
+        registry_path as project_registry_path,
+    )
     from brain_eleven.memory import MemoryStore, MemoryStoreConflict, no_change
     from capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:
@@ -103,8 +111,14 @@ class MemoryCreate(BaseModel):
     scope: Optional[Literal["global", "project"]] = None
     project: str = Field(default="", description="Optional originating project identifier")
     project_label: str = Field(default="", description="Human-readable project label")
-    project_id: str = Field(default="", description="Opaque project namespace identifier")
-    project_root: Optional[str] = Field(default=None, description="Project root used only to derive project_id")
+    project_id: str = Field(
+        default="", max_length=256, description="Opaque project namespace identifier"
+    )
+    project_root: Optional[str] = Field(
+        default=None,
+        max_length=4096,
+        description="Project root used only to derive project_id",
+    )
     timestamp: Optional[str] = None
 
 class MemoryUpdate(BaseModel):
@@ -123,13 +137,13 @@ class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=4096, description="Search query")
     top_k: int = Field(default=5, ge=1, le=100)
     hybrid: bool = Field(default=True, description="Use hybrid search")
-    project_id: Optional[str] = None
+    project_id: Optional[str] = Field(default=None, max_length=256)
     retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 class RankRequest(BaseModel):
     query: str
     candidates: List[Dict]
-    project_id: Optional[str] = None
+    project_id: Optional[str] = Field(default=None, max_length=256)
     retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 class HealthResponse(BaseModel):
@@ -297,19 +311,186 @@ async def bounded_request_validation_error(request: Request, exc: RequestValidat
         content={"detail": {"code": "INVALID_REQUEST"}},
     )
 
-# API key gate. BRAIN_ELEVEN_API_KEY unset means auth is OFF - fine for
-# local-only use bound to 127.0.0.1, but this endpoint set has no other
-# access control (memory CRUD, cache clear, graph rebuild, chat), so
-# anything reachable beyond localhost MUST set this. Logged loudly at
-# startup rather than failing silently either way.
-API_KEY = os.environ.get("BRAIN_ELEVEN_API_KEY")
+# HTTP boundary policy. The API key is an internal/admin bearer credential;
+# it is intentionally kept out of request contexts, records, and diagnostics.
+API_KEY = os.environ.get("BRAIN_ELEVEN_API_KEY") or None
 _PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
+_HTTP_SCOPED_READ_PATHS = frozenset(
+    {
+        ("POST", "/search"),
+        ("POST", "/rank"),
+        ("GET", "/memories"),
+        ("GET", "/digest"),
+        ("GET", "/anomalies"),
+        ("GET", "/graph/entities"),
+        ("POST", "/chat"),
+    }
+)
+_CONFIGURED_HOST = (
+    os.environ["BRAIN_ELEVEN_HOST"]
+    if "BRAIN_ELEVEN_HOST" in os.environ
+    else "127.0.0.1"
+)
+_IS_LOOPBACK_HOST = str(_CONFIGURED_HOST).lower() in _LOOPBACK_HOSTS
+_HTTP_PROJECT_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}\Z")
+
+
+@dataclass(frozen=True)
+class _HttpScopeContext:
+    """Normalized scope facts produced by the single HTTP read boundary."""
+
+    project_id: Optional[str]
+    retrieval_scope: str
+    admin: bool = False
+
+
+def _http_policy_error(code: str, status_code: int = 403) -> HTTPException:
+    """Return a stable, content-free HTTP policy error."""
+    return HTTPException(status_code=status_code, detail={"code": code})
+
+
+def _http_policy_response(code: str, status_code: int) -> JSONResponse:
+    """Return the middleware form of a stable, content-free policy error."""
+    return JSONResponse(status_code=status_code, content={"detail": {"code": code}})
+
+
+def _http_project_id(project_id: Optional[str]) -> Optional[str]:
+    """Normalize an opaque project ID without accepting path/query fragments."""
+    if project_id is None:
+        return None
+    if not isinstance(project_id, str):
+        raise _http_policy_error("HTTP_PROJECT_INVALID", 422)
+    normalized = project_id.strip()
+    if not normalized or not _HTTP_PROJECT_ID_PATTERN.fullmatch(normalized):
+        raise _http_policy_error("HTTP_PROJECT_INVALID", 422)
+    return normalized
+
+
+def _validate_http_project(project_id: str) -> None:
+    """Validate a project context through the existing read-only registry."""
+    try:
+        record = ProjectRegistry(vault_path).get(project_id)
+    except (ProjectRegistryError, OSError, TypeError, ValueError, UnicodeError):
+        # Registry corruption and unavailable identity are deliberately
+        # indistinguishable from an unknown project at this boundary.
+        raise _http_policy_error("HTTP_PROJECT_UNKNOWN", 404) from None
+
+    if not record or record.get("project_id") != project_id:
+        raise _http_policy_error("HTTP_PROJECT_UNKNOWN", 404)
+    if record.get("status") != "active" or record.get("proactive_capture") is not True:
+        raise _http_policy_error("HTTP_PROJECT_UNAVAILABLE", 403)
+
+
+def _http_create_project_id(memory: MemoryCreate) -> Optional[str]:
+    """Resolve a create request's project claim through registry read access."""
+    if memory.project_id:
+        return memory.project_id
+    if memory.scope == "project" and memory.project_root:
+        try:
+            record = ProjectRegistry(vault_path).resolve(memory.project_root)
+        except (ProjectRegistryError, OSError, TypeError, ValueError, UnicodeError):
+            raise _http_policy_error("HTTP_PROJECT_UNKNOWN", 404) from None
+        if not record or not record.get("project_id"):
+            raise _http_policy_error("HTTP_PROJECT_UNKNOWN", 404)
+        return record["project_id"]
+    return memory.project or None
+
+
+def _authorize_http_scope(
+    request: Request,
+    project_id: Optional[str],
+    retrieval_scope: str,
+) -> _HttpScopeContext:
+    """Authorize and normalize every HTTP scope-bearing request.
+
+    Project IDs are checked against the canonical registry before any memory,
+    graph, digest, anomaly, or chat data is loaded. The `all` scope is granted
+    only from the middleware's validated API-key marker.
+    """
+    if retrieval_scope not in {"default", "global", "project", "all"}:
+        raise _http_policy_error("HTTP_SCOPE_INVALID", 422)
+
+    normalized_project_id = _http_project_id(project_id)
+    admin = bool(getattr(request.state, "http_admin_authorized", False))
+
+    if retrieval_scope == "all":
+        if not admin:
+            raise _http_policy_error("HTTP_ADMIN_KEY_REQUIRED", 403)
+    elif retrieval_scope == "project" and not normalized_project_id:
+        raise _http_policy_error("HTTP_SCOPE_REQUIRED", 403)
+
+    if normalized_project_id:
+        _validate_http_project(normalized_project_id)
+
+    return _HttpScopeContext(
+        project_id=normalized_project_id,
+        retrieval_scope=retrieval_scope,
+        admin=admin and retrieval_scope == "all",
+    )
+
+
+def _load_http_memories(context: _HttpScopeContext) -> tuple[List[Dict], Dict]:
+    """Load only the corpus allowed by a previously authorized context."""
+    validated_file = vault_path / ".claude/validated-memory.json"
+    if not validated_file.exists():
+        return [], {}
+
+    with open(validated_file, encoding="utf-8") as handle:
+        data = json.load(handle)
+    records = data.get("validated_memory", [])
+    if not isinstance(records, list):
+        raise ValueError("validated_memory must be a list")
+    return (
+        filter_memories(
+            records,
+            project_id=context.project_id,
+            retrieval_scope=context.retrieval_scope,
+        ),
+        data,
+    )
+
+
+def _http_admin_key_is_valid(request: Request) -> bool:
+    """Validate the configured bearer credential without exposing it."""
+    supplied = request.headers.get("X-API-Key")
+    return bool(API_KEY and supplied and hmac.compare_digest(supplied, API_KEY))
+
+
+def _is_http_scoped_read(request: Request) -> bool:
+    """Identify read routes whose ordinary loopback scope stays usable."""
+    method_path = (request.method.upper(), request.url.path)
+    if method_path in _HTTP_SCOPED_READ_PATHS:
+        return True
+    if request.method.upper() != "GET":
+        return False
+    path = request.url.path
+    return (
+        path.startswith("/memories/")
+        or path.startswith("/graph/entities/")
+        or path.startswith("/graph/traverse/")
+    )
+
 
 @app.middleware("http")
 async def require_api_key(request: Request, call_next):
-    if API_KEY and request.url.path not in _PUBLIC_PATHS:
-        if request.headers.get("X-API-Key") != API_KEY:
-            return JSONResponse(status_code=401, content={"detail": "Missing or invalid X-API-Key header"})
+    """Protect sensitive routes when configured or bound beyond loopback."""
+    if request.url.path in _PUBLIC_PATHS:
+        return await call_next(request)
+
+    request.state.http_admin_authorized = False
+    supplied_admin_key = _http_admin_key_is_valid(request)
+    if API_KEY:
+        if not supplied_admin_key and (
+            not _IS_LOOPBACK_HOST or not _is_http_scoped_read(request)
+        ):
+            return _http_policy_response("HTTP_ADMIN_KEY_REQUIRED", 401)
+        request.state.http_admin_authorized = supplied_admin_key
+    elif not _IS_LOOPBACK_HOST:
+        # A non-loopback deployment without a configured key has no trusted
+        # boundary. Fail closed on the first protected request.
+        return _http_policy_response("HTTP_ADMIN_KEY_REQUIRED", 403)
+
     return await call_next(request)
 
 # ============================================================================
@@ -352,27 +533,22 @@ async def status():
 # ============================================================================
 
 @app.post("/search")
-async def search(request: SearchRequest):
+async def search(request: SearchRequest, http_request: Request):
     """
     Hybrid search: combines lexical + semantic search
 
     Returns ranked results with combined scores
     """
+    scope_context = _authorize_http_scope(
+        http_request, request.project_id, request.retrieval_scope
+    )
     try:
         logger.info(f"Search query: {request.query}")
 
         # Load memories
-        validated_file = vault_path / ".claude/validated-memory.json"
-        if not validated_file.exists():
+        memories, data = _load_http_memories(scope_context)
+        if not data:
             raise HTTPException(status_code=404, detail="No memories found")
-
-        with open(validated_file) as f:
-            data = json.load(f)
-            memories = filter_memories(
-                data.get("validated_memory", []),
-                project_id=request.project_id,
-                retrieval_scope=request.retrieval_scope,
-            )
 
         if not memories:
             return {"results": [], "query": request.query, "count": 0}
@@ -387,8 +563,8 @@ async def search(request: SearchRequest):
         def compute_results():
             return hybrid_engine.search(
                 request.query, memories, top_k=request.top_k,
-                project_id=request.project_id,
-                retrieval_scope=request.retrieval_scope,
+                project_id=scope_context.project_id,
+                retrieval_scope=scope_context.retrieval_scope,
             )
 
         results = cache.get_or_compute(cache_key, compute_results) if cache else compute_results()
@@ -410,31 +586,33 @@ async def search(request: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/rank")
-async def rank_results(request: RankRequest):
+async def rank_results(request: RankRequest, http_request: Request):
     """
     Deterministic weighted ranking: applies 5-feature weighting to candidates
 
     Features: search_relevance, memory_quality, recency, novelty, match_type
     """
+    scope_context = _authorize_http_scope(
+        http_request, request.project_id, request.retrieval_scope
+    )
     try:
         # Load memories for context
-        validated_file = vault_path / ".claude/validated-memory.json"
-        with open(validated_file) as f:
-            data = json.load(f)
-            memories = filter_memories(
-                data.get("validated_memory", []),
-                project_id=request.project_id,
-                retrieval_scope=request.retrieval_scope,
-            )
+        memories, _data = _load_http_memories(scope_context)
 
         # Apply the same visibility policy to the candidate set itself. The
         # context corpus alone is not enough: otherwise a caller could send a
         # foreign project's candidate directly to /rank and bypass retrieval.
         candidates = filter_memories(
             request.candidates,
-            project_id=request.project_id,
-            retrieval_scope=request.retrieval_scope,
+            project_id=scope_context.project_id,
+            retrieval_scope=scope_context.retrieval_scope,
         )
+        allowed_ids = {memory.get("memory_id") for memory in memories}
+        candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.get("memory_id") in allowed_ids
+        ]
         ranked = ranker.rank(request.query, candidates, memories)
 
         return {
@@ -445,6 +623,8 @@ async def rank_results(request: RankRequest):
         }
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Ranking error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -493,24 +673,18 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
 
 @app.get("/memories")
 async def list_memories(
+    http_request: Request,
     skip: int = 0,
     limit: int = 100,
     project_id: Optional[str] = None,
     retrieval_scope: Literal["default", "global", "project", "all"] = "default",
 ):
     """List all memories"""
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     try:
-        validated_file = vault_path / ".claude/validated-memory.json"
-        if not validated_file.exists():
+        memories, _data = _load_http_memories(scope_context)
+        if not _data:
             return {"memories": [], "total": 0}
-
-        with open(validated_file) as f:
-            data = json.load(f)
-            memories = filter_memories(
-                data.get("validated_memory", []),
-                project_id=project_id,
-                retrieval_scope=retrieval_scope,
-            )
 
         # Pagination
         total = len(memories)
@@ -522,12 +696,14 @@ async def list_memories(
             "skip": skip,
             "limit": limit
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"List memories error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/memories")
-async def create_memory(memory: MemoryCreate):
+async def create_memory(memory: MemoryCreate, http_request: Request):
     """
     Create a new memory through the real validation pipeline (fingerprint
     dedup, conflict detection, quality scoring) - NOT a raw append.
@@ -544,6 +720,11 @@ async def create_memory(memory: MemoryCreate):
     conflict-detection, and quality-scoring logic the batch compiler uses,
     just scoped to one item instead of a compiled batch.
     """
+    project_claim = _http_create_project_id(memory)
+    if memory.scope == "project" or project_claim:
+        _authorize_http_scope(http_request, project_claim, "project")
+    else:
+        _authorize_http_scope(http_request, None, "default")
     try:
         safety = evaluate_capture(memory.content)
         if not safety.accepted:
@@ -606,16 +787,18 @@ async def create_memory(memory: MemoryCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/memories/{memory_id}")
-async def get_memory(memory_id: str):
+async def get_memory(
+    memory_id: str,
+    http_request: Request,
+    project_id: Optional[str] = Query(default=None, max_length=256),
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """Get specific memory"""
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     try:
-        validated_file = vault_path / ".claude/validated-memory.json"
-        if not validated_file.exists():
+        memories, _data = _load_http_memories(scope_context)
+        if not _data:
             raise HTTPException(status_code=404, detail="Memory not found")
-
-        with open(validated_file) as f:
-            data = json.load(f)
-            memories = data.get("validated_memory", [])
 
         memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
         if not memory:
@@ -802,8 +985,10 @@ def _projection_degraded(memory_id: str) -> JSONResponse:
 
 
 @app.put("/memories/{memory_id}")
-async def update_memory(memory_id: str, update: MemoryUpdate):
+async def update_memory(memory_id: str, update: MemoryUpdate, http_request: Request):
     """Update content or apply one typed, fail-closed lifecycle transition."""
+    normalized_project_id = _http_project_id(update.project_id)
+    _authorize_http_scope(http_request, None, "default")
     try:
         if update.content is not None:
             safety = evaluate_capture(update.content)
@@ -820,7 +1005,10 @@ async def update_memory(memory_id: str, update: MemoryUpdate):
             if not memory:
                 raise HTTPException(status_code=404, detail={"code": "MEMORY_NOT_FOUND"})
 
-            _validate_api_project_scope(memory, update.project_id)
+            memory_scope = infer_memory_scope(memory)[0]
+            if memory_scope == "project" and normalized_project_id:
+                _authorize_http_scope(http_request, normalized_project_id, "project")
+            _validate_api_project_scope(memory, normalized_project_id)
             changed = _apply_api_lifecycle_transition(memory, update, memories)
             return (memory, True) if changed else no_change((memory, False))
 
@@ -864,11 +1052,14 @@ async def update_memory(memory_id: str, update: MemoryUpdate):
 
 @app.delete("/memories/{memory_id}")
 async def delete_memory(
+    http_request: Request,
     memory_id: str,
     expected_revision: Optional[int] = Query(default=None, ge=0),
     project_id: Optional[str] = Query(default=None, max_length=256),
 ):
     """Delete memory (soft delete - mark as deleted)"""
+    normalized_project_id = _http_project_id(project_id)
+    _authorize_http_scope(http_request, None, "default")
     try:
         store = MemoryStore(vault_path)
 
@@ -877,7 +1068,10 @@ async def delete_memory(
             memory = next((m for m in memories if m.get("memory_id") == memory_id), None)
             if not memory:
                 raise HTTPException(status_code=404, detail={"code": "MEMORY_NOT_FOUND"})
-            _validate_api_project_scope(memory, project_id)
+            memory_scope = infer_memory_scope(memory)[0]
+            if memory_scope == "project" and normalized_project_id:
+                _authorize_http_scope(http_request, normalized_project_id, "project")
+            _validate_api_project_scope(memory, normalized_project_id)
             status = _api_memory_status(memory)
             if status == "deleted":
                 return no_change((memory, False))
@@ -954,6 +1148,7 @@ async def cache_clear():
 
 @app.get("/digest")
 async def get_digest(
+    http_request: Request,
     days: Optional[int] = None,
     top_n: int = 5,
     project_id: Optional[str] = None,
@@ -965,29 +1160,40 @@ async def get_digest(
     Embedding/LLM-free (token-overlap dedup + quality/confidence ranking),
     so this works the same whether OPENAI_API_KEY is set or not.
     """
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     try:
         summarizer = MemorySummarizer(str(vault_path))
         digest = summarizer.generate_digest(
             days=days,
             top_n_per_type=top_n,
-            project_id=project_id,
-            retrieval_scope=retrieval_scope,
+            project_id=scope_context.project_id,
+            retrieval_scope=scope_context.retrieval_scope,
         )
         return digest
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Digest error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/anomalies")
-async def get_anomalies():
+async def get_anomalies(
+    http_request: Request,
+    project_id: Optional[str] = Query(default=None, max_length=256),
+    retrieval_scope: Literal["default", "global", "project", "all"] = "default",
+):
     """
     Scan the memory store for structural anomalies: duplicates, stale
     open loops, broken supersession links, scoring inconsistencies, etc.
     """
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     try:
         detector = AnomalyDetector(str(vault_path))
-        report = detector.detect_all()
+        memories, _data = _load_http_memories(scope_context)
+        report = detector.detect_all(memories=memories)
         return report
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Anomaly detection error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1005,12 +1211,14 @@ async def graph_stats():
 
 @app.get("/graph/entities")
 async def graph_entities(
+    http_request: Request,
     type: Optional[str] = None,
     name_contains: Optional[str] = None,
     project_id: Optional[str] = None,
     retrieval_scope: Literal["default", "global", "project", "all"] = "default",
 ):
     """List entities, optionally filtered by type and/or name substring."""
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
@@ -1018,52 +1226,60 @@ async def graph_entities(
         "entities": current_graph.find_entities(
             entity_type=type,
             name_contains=name_contains,
-            project_id=project_id,
-            retrieval_scope=retrieval_scope,
+            project_id=scope_context.project_id,
+            retrieval_scope=scope_context.retrieval_scope,
         )
     }
 
 @app.get("/graph/entities/{entity_id}/relationships")
 async def graph_entity_relationships(
+    http_request: Request,
     entity_id: str,
     direction: str = "both",
     project_id: Optional[str] = None,
     retrieval_scope: Literal["default", "global", "project", "all"] = "default",
 ):
     """Relationships for one entity. direction: out | in | both."""
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
-    if not current_graph.is_entity_visible(entity_id, project_id, retrieval_scope):
+    if not current_graph.is_entity_visible(
+        entity_id, scope_context.project_id, scope_context.retrieval_scope
+    ):
         raise HTTPException(status_code=404, detail="Entity not found")
     return {
         "entity_id": entity_id,
         "relationships": current_graph.get_relationships(
             entity_id,
             direction=direction,
-            project_id=project_id,
-            retrieval_scope=retrieval_scope,
+            project_id=scope_context.project_id,
+            retrieval_scope=scope_context.retrieval_scope,
         ),
     }
 
 @app.get("/graph/traverse/{entity_id}")
 async def graph_traverse(
+    http_request: Request,
     entity_id: str,
     depth: int = 2,
     project_id: Optional[str] = None,
     retrieval_scope: Literal["default", "global", "project", "all"] = "default",
 ):
     """Subgraph reachable from an entity within `depth` hops (either direction)."""
+    scope_context = _authorize_http_scope(http_request, project_id, retrieval_scope)
     if graph is None:
         raise HTTPException(status_code=503, detail="Graph not initialized")
     current_graph = _ensure_graph_current()
-    if not current_graph.is_entity_visible(entity_id, project_id, retrieval_scope):
+    if not current_graph.is_entity_visible(
+        entity_id, scope_context.project_id, scope_context.retrieval_scope
+    ):
         raise HTTPException(status_code=404, detail="Entity not found")
     return current_graph.traverse(
         entity_id,
         max_depth=depth,
-        project_id=project_id,
-        retrieval_scope=retrieval_scope,
+        project_id=scope_context.project_id,
+        retrieval_scope=scope_context.retrieval_scope,
     )
 
 @app.post("/graph/rebuild")
@@ -1086,26 +1302,44 @@ async def graph_rebuild():
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User message")
     conversation_id: Optional[str] = None
-    project_id: Optional[str] = None
+    project_id: Optional[str] = Field(default=None, max_length=256)
     retrieval_scope: Literal["default", "global", "project", "all"] = "default"
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(http_request: Request, request: ChatRequest):
     """
     Rule-based chat over the memory system (see chat_interface.py) -
     answers are grounded in real search/digest/anomaly/graph results, not
     LLM-generated free text, since no LLM is configured.
     """
+    scope_context = _authorize_http_scope(
+        http_request, request.project_id, request.retrieval_scope
+    )
     if not chat_agent:
         raise HTTPException(status_code=503, detail="Chat agent not initialized")
     try:
+        # ChatAgent's legacy anomaly handler has no context argument and would
+        # otherwise inspect the entire vault. Keep the existing chat envelope
+        # while returning a content-free answer for scoped HTTP requests.
+        if (
+            not scope_context.admin
+            and chat_agent.intent_classifier.classify(request.message).name == "ANOMALY"
+        ):
+            return {
+                "response": "Anomaly details are unavailable for this request scope.",
+                "conversation_id": request.conversation_id or str(uuid.uuid4()),
+                "intent": "ANOMALY",
+                "follow_ups": [],
+            }
         _ensure_graph_current()
         return chat_agent.chat(
             request.message,
             conversation_id=request.conversation_id,
-            project_id=request.project_id,
-            retrieval_scope=request.retrieval_scope,
+            project_id=scope_context.project_id,
+            retrieval_scope=scope_context.retrieval_scope,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1153,17 +1387,15 @@ if __name__ == "__main__":
 
     if not API_KEY:
         logger.warning(
-            "⚠️  BRAIN_ELEVEN_API_KEY is not set - every endpoint except "
-            "/health is unauthenticated. Fine for 127.0.0.1-only local use; "
-            "set it before binding to anything else reachable off this machine."
+            "⚠️  BRAIN_ELEVEN_API_KEY is not set - ordinary loopback reads "
+            "remain available, while protected routes fail closed when the "
+            "server is bound to a non-loopback host."
         )
 
-    # Default to loopback-only: memory CRUD, cache clear, and graph rebuild
-    # have no access control beyond the API key gate above, so binding
-    # 0.0.0.0 without also setting BRAIN_ELEVEN_API_KEY exposes all of it
-    # to the network. Override via BRAIN_ELEVEN_HOST - docker-compose.yml
-    # sets it to 0.0.0.0 explicitly, since container network isolation is
-    # the real boundary there, not the bind address.
+    # Default to loopback-only. The HTTP middleware applies the same explicit
+    # host decision to every protected route, including the Docker
+    # configuration's 0.0.0.0 bind, before any route handler can read or
+    # mutate state.
     #
     # Pass the app object directly (not "module:app" string) since this
     # file's hyphenated name (search-api.py) isn't a valid import target.

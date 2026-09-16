@@ -15,7 +15,9 @@ SCRIPTS = ROOT / "scripts"
 
 
 def _registry(vault: Path, root: Path, project_id: str) -> None:
-    ProjectRegistry(vault).register(root, project_id=project_id)
+    ProjectRegistry(vault).register(
+        root, project_id=project_id, proactive_capture=True
+    )
 
 
 def test_mismatched_root_and_project_id_fails_closed_without_registry_write(tmp_path):

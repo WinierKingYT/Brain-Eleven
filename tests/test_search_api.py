@@ -29,6 +29,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from brain_eleven.projects.registry import ProjectRegistry
+
 SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 pytestmark = pytest.mark.integration
 
@@ -138,6 +140,13 @@ class TestSearchRankEmbed:
     def test_search_and_rank_enforce_project_scope(self, client, vault):
         validated_file = vault / ".claude" / "validated-memory.json"
         original = validated_file.read_text(encoding="utf-8")
+        registry = ProjectRegistry(vault)
+        registry.register(
+            vault / "project-a", project_id="project-a", proactive_capture=True
+        )
+        registry.register(
+            vault / "project-b", project_id="project-b", proactive_capture=True
+        )
         try:
             write_memories(vault, [
                 make_memory(
@@ -280,10 +289,16 @@ class TestMemoryCRUD:
         assert response.status_code == 200
         assert len(response.json()["memories"]) == 1
 
-    def test_create_memory_goes_through_real_validation(self, client):
+    def test_create_memory_goes_through_real_validation(self, client, vault):
+        ProjectRegistry(vault).register(
+            vault / "brain-eleven-tests",
+            project_id="brain-eleven-tests",
+            proactive_capture=True,
+        )
         response = client.post("/memories", json={
             "type": "decision", "content": "Adopt PostgreSQL for the test suite", "confidence": 0.75,
-            "project": "brain-eleven-tests",
+            "scope": "project", "project": "brain-eleven-tests",
+            "project_id": "brain-eleven-tests",
         })
 
         assert response.status_code == 200
