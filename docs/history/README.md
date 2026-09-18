@@ -8,6 +8,12 @@ contract, `DOCUMENTATION-AUTHORITY.md` and `RUNTIME-DATAFLOW.md`.
 Cross-references inside these files may still point at the pre-archive layout
 (bare `FILENAME.md` at the repo root). They are not maintained.
 
+On 2026-09-18, five root-level snapshots were moved here with `git mv` to
+reduce active-root noise while preserving history: two superseded W-24 contract
+re-reviews, two superseded W-25 contract re-reviews, and the completed vault
+hygiene report. Their final/current successors remain at the repository root
+where the authority registry or package status points to them.
+
 ## Contents
 
 | Group | Files |
@@ -18,4 +24,5 @@ Cross-references inside these files may still point at the pre-archive layout
 | PRE-program records | `PRE13-TECHNICAL-CLOSURE`, `PRE20-12-REPOSITORY-CONSOLIDATION`, `PRE-PHASE20-CORE-INTELLIGENCE-HARDENING-CONTRACT` |
 | Context Engine Foundation V1 | `CONTEXT-ENGINE-FOUNDATION-V1`, `CONTEXT-ENGINE-FOUNDATION-V1-INDEPENDENT-REVIEW` |
 | Historical operational guides | `TESTING`, `TESTING-FRAMEWORK`, `DEPLOYMENT-STACK`, `INTEGRATION-CHECKLIST`, `ORCHESTRATION-STATUS`, `PARALLEL-ORCHESTRATION` |
+| Superseded review snapshots and vault audit | `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-02`, `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-03`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW-02`, `VAULT-HYGIENE-REPORT` |
 | Misc | `hamle6_notes_content.txt` |
