@@ -11,11 +11,14 @@ were left untouched.
 
 ## Archived root snapshots
 
-Five files were moved with `git mv`; their content and Git history are intact:
+The first cleanup pass moved five files with `git mv`; a same-day follow-up
+moved the completed IG-07 Slice 2E E1 baseline contract. All content and Git
+history remain intact:
 
 - two superseded W-24 contract re-reviews (`...-02`, `...-03`);
 - two superseded W-25 contract re-reviews (the initial review and `...-02`);
 - the completed 2026-09-10 vault hygiene report.
+- the completed IG-07 Slice 2E E1 baseline contract (follow-up move).
 
 No active contract, package report, final independent review, status document,
 runtime map, or authority registry entry was deleted. The moved snapshots had

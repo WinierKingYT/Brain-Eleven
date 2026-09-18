@@ -16,7 +16,7 @@ JSON, evaluator, and task-state-context behavior.
   including historical `ProjectRegistry` and `ProjectRegistryError` names.
 - `tests/test_task_model_package_migration.py` — identity, adapter-only,
   context immutability, CLI, and evaluation parity evidence.
-- `IG07-SLICE2E-E1-CONTRACT.md` — public export and legacy-name matrix.
+- `docs/history/IG07-SLICE2E-E1-CONTRACT.md` — public export and legacy-name matrix.
 - `evals/reports/ig07-slice2e/before-*.json` and `after-*.json` — exact
   smoke/public/holdout evidence artifacts.
 
@@ -45,7 +45,7 @@ Baseline was recorded at exact revision `88773e7` before production inversion:
 | holdout | `evals/reports/ig07-slice2e/before-holdout.json` | pass | 4 | 4 |
 
 The ten-file pre-E2 focused suite passed **107 tests**. The baseline contract
-and export matrix are in `IG07-SLICE2E-E1-CONTRACT.md`.
+and export matrix are in `docs/history/IG07-SLICE2E-E1-CONTRACT.md`.
 
 ## E2 IMPLEMENTATION
 
