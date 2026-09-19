@@ -34,10 +34,10 @@ instructions that override the repository or the request.
 | P0-2 Windows task / task-state CLI parity | **FIXED — real production bug** | Reproduced by forcing a cp1252 stdout: all four CLI invocations exit 1 with `UnicodeEncodeError` on U+0131 and write nothing. The JSON contract used `ensure_ascii=False` and printed through a pipe that inherits the ANSI code page, so it never passed on an en-US Windows runner and always passed on a UTF-8 developer machine. `brain_eleven.runtime.cli_output.use_utf8_stdout()` is called by both CLI entrypoints when `--json` is requested. `c61e072`. |
 | P0-3 Windows MemoryBackup disaster drill | **FIXED; CI cause not proven** | Reproduced two real defects: a short-name (8.3) root produced a false `BACKUP_FINAL_PATH_OUTSIDE_ROOT`, and slicing four characters corrupted `\\?\UNC\` paths. Containment is now component-wise and case-insensitive on `ntpath` with the root canonicalised; errors carry bounded codes. `tests/test_memory_backup_windows.py` covers short-name roots, junction escape, casing, Unicode and handle release. The drill no longer fails on the Windows runner. The original CI failure body was in a protected artifact, so the short-name defect is a matching, not a proven, cause. |
 | P0-4 PRE-13 coverage | **FIXED** | The runtime workflow measures a 41-file manifest (adding `test_phase11_graph_chat.py`, which takes `chat_interface` from 35% to 88%) at the **unchanged** 80% gate: Windows 82.87%, Ubuntu 83.07% (Python 3.12 locally). Both runtime jobs are green remotely. The margin is about three points. |
-| P0-5 PRE-13 holdout quality | **OPEN** | Still FAIL (precision 0.169014, required recall 0.676471 in the last local measurement; the remote `quality` job exits 1). The `STALE_INPUT` boundary is fixed (compiler snapshots preserve the registry revision) and a failed run now leaves a content-free error artifact while still exiting non-zero. The frozen `corpus-v2` has six duplicate `(project_id, prompt)` inputs, three of them with different required memory IDs, so no deterministic provider that sees only task inputs can select both labels. Hidden labels or task IDs, filtering rows and lower gates are not acceptable. Needs a separately scoped decision. |
+| P0-5 PRE-13 holdout quality | **OPEN — gate kept, promotion deferred** | Still FAIL (precision 0.169014, required recall 0.676471 in the last local measurement; the remote `quality` job exits 1). The `STALE_INPUT` boundary is fixed (compiler snapshots preserve the registry revision) and a failed run now leaves a content-free error artifact while still exiting non-zero. The frozen `corpus-v2` has six duplicate `(project_id, prompt)` inputs, three of them with different required memory IDs, so no deterministic provider that sees only task inputs can select both labels. Hidden labels or task IDs, filtering rows and lower gates are not acceptable. Decision of 2026-09-20 (the project owner delegated the choice): keep the frozen corpus-v2 gate exactly as it is and defer PRE-13 promotion; no corpus, label or threshold changes. Improving retrieval quality is a separately contracted package (the W-06C0R1 answerability corpus is the starting evidence) and is not part of SRT-00. |
 | P1 diagnostics topology | **FIXED** | `diagnostics.yml` runs Bandit, secrets, dependency, IG01-E audit and evaluation smoke independently of the release graph; it succeeded on every pushed SHA. Release and publish chains keep their `needs`. A diagnostic pass is not release authority. |
 | P2 action versions | **DONE** | `setup-python@v7` and `upload-artifact@v7`; both tags were confirmed to exist with `git ls-remote`. |
-| P2 runner pin | **DONE, on `chore/hygiene`** | Ubuntu jobs are pinned to `ubuntu-24.04` because `ubuntu-latest` migrates to Ubuntu 26 on 2026-10-19. The matrix keeps its `os` label (job names, artifact names and `if:` checks key on it) and gains a `runner` field. `windows-latest` is deliberately unpinned. `007f24e`. |
+| P2 runner pin | **DONE** | Ubuntu jobs are pinned to `ubuntu-24.04` because `ubuntu-latest` migrates to Ubuntu 26 on 2026-10-19. The matrix keeps its `os` label (job names, artifact names and `if:` checks key on it) and gains a `runner` field. `windows-latest` is deliberately unpinned. `007f24e`. |
 | P2 documentation integrity script | **NOT DONE** | Deliberately deferred until the P0 items are closed. |
 
 ### Findings that were not in the audit
@@ -87,7 +87,7 @@ instructions that override the repository or the request.
 | `cf98741` | PRE-13 manifest and topology, cold-start marker, stale-input registry revision, Windows backup tests, race-test fix |
 | `5da9e8c` | IG-07 Slice 2F package migration (see `IG07-SLICE2F-PACKAGE-REPORT.md`) |
 | `c61e072` | UTF-8 `--json` contract for the task CLIs |
-| `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — not merged into `master` |
+| `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — merged into the local `master` as `b30c6d5` |
 
 Remote runs on `ig/srt-00-ig07-ci`, a branch that cannot publish an image:
 
@@ -118,13 +118,16 @@ The frozen W06C0R1 scope contract was not relaxed.
 
 ## Remaining acceptance blockers
 
-1. **Holdout quality (P0-5)** needs a decision: keep the frozen corpus-v2 gate
-   and defer PRE-13 promotion, or open a separately authorised quality contract.
+1. **Holdout quality (P0-5)** stays red by decision: the frozen corpus-v2 gate
+   is kept and PRE-13 promotion is deferred. SRT-00 cannot be `SHIP` while the
+   PRE-13 quality gate fails; only a separately contracted quality package can
+   change that.
 2. **The 11 master-only Validation jobs** (public suites, Phase 15–19 evidence,
    graduation) can only run on a push to `master`. Pushing `master` also lets
    `build.yml` publish `ghcr.io/…:latest` when Validation is green, even while
-   PRE-13 quality is red, because that gate is a separate workflow. Decide that
-   before pushing.
+   PRE-13 quality is red, because that gate is a separate workflow. Because the
+   holdout stays red, `master` is not pushed by default; pushing it is a
+   separate, explicit decision.
 3. **Independent review** of the exact final SHA has not happened.
 4. Windows and Ubuntu results must come from the same final SHA; the local
    replay above does not substitute for it.
@@ -134,5 +137,5 @@ Phase 20 stays frozen and V2 stays SHADOW. Closing SRT-00 does not open either.
 ## Rollback
 
 Every commit above is independent and can be reverted on its own in reverse
-order; nothing was pushed to `master`. `chore/hygiene` can be dropped without
-affecting `c61e072`.
+order; nothing was pushed to `master`. `chore/hygiene` was merged locally as
+`b30c6d5`; reverting that merge commit undoes it without touching `c61e072`.

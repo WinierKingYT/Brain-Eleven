@@ -18,9 +18,14 @@ Windows backup reader mishandled short-name and UNC roots; PRE-13 measured too
 little of the runtime. `SRT00-PLAN.md` records each finding, the corrections to
 the earlier claims and the evidence. Nothing is pushed to `master`.
 `chore/hygiene` (hook line endings, `ubuntu-24.04` pin, no `PYTHONPATH`) is
-waiting to be merged; its remote run at `a4a3411` is green apart from the
-holdout. The frozen W06C0R1 scope contract only fails while the
-tree has uncommitted changes; it was not relaxed.
+merged into the local `master` as `b30c6d5`; its remote run at `a4a3411` was
+green apart from the holdout. The frozen W06C0R1 scope contract only fails while
+the tree has uncommitted changes; it was not relaxed.
+
+Holdout decision (2026-09-20, delegated by Ahmet): the frozen corpus-v2 gate
+stays exactly as it is and PRE-13 promotion is deferred. No corpus, label or
+threshold change is acceptable; improving retrieval quality needs its own
+contract.
 
 Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed engineering weak-point package:
@@ -299,12 +304,13 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## What's next
 
-- Decide PRE-13 holdout quality: keep the frozen corpus-v2 gate and defer
-  promotion, or open a separately authorised quality contract. Then decide
-  whether to push `master`: it runs the 11 master-only Validation jobs but also
-  lets `build.yml` publish `ghcr.io/…:latest` while PRE-13 quality is red.
-  Merge `chore/hygiene` (its remote run is green). Independent review of the
-  final SHA is still required.
+- Keep `master` unpushed until it is a deliberate choice: a push runs the 11
+  master-only Validation jobs but also lets `build.yml` publish
+  `ghcr.io/…:latest` while PRE-13 quality is red. Independent review of the
+  final SHA is still required before SRT-00 can be called SHIP.
+- Retrieval quality is the only thing that can turn PRE-13 quality green. It
+  needs its own bounded contract; the W-06C0R1 answerability corpus is the
+  starting evidence. It is not started.
 - Find out why the IG01-E audit reports `baseline_boundary` FAIL at every commit
   back to `5dc0121`; it reports rather than gates, so nothing fails today.
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
