@@ -1,1 +1,7 @@
 *.sh text eol=lf
+
+# Extensionless hook scripts are run by bash, so they must stay LF on every
+# checkout; core.autocrlf=true would otherwise turn them into CRLF and break
+# them ("$'\r': command not found").
+templates/claude/hooks/* text eol=lf
+templates/claude/legacy/* text eol=lf

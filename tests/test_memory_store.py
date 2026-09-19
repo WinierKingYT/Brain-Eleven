@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 
-from memory_store import (  # noqa: E402
+from scripts.memory_store import (  # noqa: E402
     CANONICAL_SCHEMA_VERSION,
     MemoryStore,
     MemoryStoreConflict,
@@ -130,7 +130,7 @@ def test_corrupt_store_is_not_treated_as_empty(vault):
     path = vault / ".claude" / "validated-memory.json"
     path.write_text("{not-json", encoding="utf-8")
 
-    from memory_store import MemoryStoreCorrupt
+    from scripts.memory_store import MemoryStoreCorrupt
 
     with pytest.raises(MemoryStoreCorrupt):
         MemoryStore(vault).load()

@@ -50,6 +50,7 @@ for _module_name in (
     "extraction",
     "graduation_evidence",
     "knowledge_graph",
+    "logging_config",
     "memory_backup",
     "memory_provenance",
     "memory_scope",

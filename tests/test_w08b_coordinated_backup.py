@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-import memory_backup as backup
-from memory_backup import (
+import scripts.memory_backup as backup
+from scripts.memory_backup import (
     CANONICAL_ARCHIVE_PATH,
     MemoryBackupConsistencyError,
     MemoryBackupError,
@@ -95,8 +95,7 @@ def _manifest(archive: Path) -> dict:
 
 def _create_backup_process(vault: str, archive: str, results, ready=None) -> None:
     """Run one creator in a separate process for real sidecar-lock evidence."""
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-    from memory_backup import MemoryBackupError, create_backup
+    from scripts.memory_backup import MemoryBackupError, create_backup
 
     if ready is not None:
         # Spawn plus import is the slow, machine-dependent part; only what
