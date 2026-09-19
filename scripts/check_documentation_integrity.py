@@ -23,7 +23,8 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import subprocess
+import shutil
+import subprocess  # nosec B404 - fixed no-shell Git metadata command only.
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -104,11 +105,12 @@ def _mask_code(lines: Sequence[str], *, inline: bool) -> list[str]:
 
 
 def _tracked_markdown(root: Path) -> Optional[list[Path]]:
-    if not (root / ".git").exists():
+    git = shutil.which("git")
+    if git is None or not (root / ".git").exists():
         return None
     try:
-        result = subprocess.run(
-            ["git", "-c", "core.quotepath=off", "ls-files", "-z", "--", "*.md"],
+        result = subprocess.run(  # nosec B603 - fixed no-shell Git invocation.
+            [git, "-c", "core.quotepath=off", "ls-files", "-z", "--", "*.md"],
             cwd=root,
             capture_output=True,
             check=True,
