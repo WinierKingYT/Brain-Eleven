@@ -5,8 +5,11 @@ current behavior, CI, deployment, runtime wiring or release state from anything
 here. For current state read the root `PROJECT-STATUS.md`, the active IG package
 contract, `DOCUMENTATION-AUTHORITY.md` and `RUNTIME-DATAFLOW.md`.
 
-Cross-references inside these files may still point at the pre-archive layout
-(bare `FILENAME.md` at the repo root). They are not maintained.
+Archived content and verdicts are never rewritten. When a file moves here, every
+reference to it from an active document is updated in the same change. A path
+written inside an archived file may still point at the pre-archive layout (bare
+`FILENAME.md` at the repo root); it is kept as provenance and must not be
+followed as a link to current content.
 
 On 2026-09-18, six root-level snapshots were moved here with `git mv` to
 reduce active-root noise while preserving history: two superseded W-24 contract
@@ -17,6 +20,11 @@ registry or package status points to them.
 
 ## Contents
 
+A second bounded pass on 2026-09-18 moved 30 unregistered, unreferenced W-01–W-18
+and TSC-03 contract/review records into `weakness/`. They remain available for
+provenance; current authority-registered contracts, package reports and final
+reviews stay at the root.
+
 | Group | Files |
 |---|---|
 | Phase plans / summaries / roadmaps | `PHASE5-SUMMARY`, `PHASE6-PLAN`, `PHASE6-SUMMARY`, `PHASE7-PLAN`, `PHASE7-STATUS`, `PHASE10-DEEP-DIVE`, `PHASE11-KICKSTART`, `PHASE11-PLANNING`, `PHASE13-PLAN`, `PHASES-8-9-10-ROADMAP` |
@@ -26,4 +34,5 @@ registry or package status points to them.
 | Context Engine Foundation V1 | `CONTEXT-ENGINE-FOUNDATION-V1`, `CONTEXT-ENGINE-FOUNDATION-V1-INDEPENDENT-REVIEW` |
 | Historical operational guides | `TESTING`, `TESTING-FRAMEWORK`, `DEPLOYMENT-STACK`, `INTEGRATION-CHECKLIST`, `ORCHESTRATION-STATUS`, `PARALLEL-ORCHESTRATION` |
 | Superseded review snapshots, baseline contract and vault audit | `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-02`, `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-03`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW-02`, `IG07-SLICE2E-E1-CONTRACT`, `VAULT-HYGIENE-REPORT` |
+| Historical weakness contracts/reviews | `weakness/` — 30 W-01–W-18 and TSC-03 records moved after authority and reference checks |
 | Misc | `hamle6_notes_content.txt` |
