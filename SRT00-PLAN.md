@@ -67,9 +67,17 @@ instructions that override the repository or the request.
 - **Hook line endings.** Extensionless hook scripts became CRLF under
   `core.autocrlf=true` and broke under bash. `.gitattributes` now pins them to
   LF; a fresh checkout went from 145/37/18 CRLF to zero (`4211851`).
-- **IG01-E audit.** `baseline_boundary` reports FAIL at every commit back to
-  `5dc0121` and the run still exits 0 because the audit reports rather than
-  gates. It predates this work and is not investigated here.
+- **IG01-E audit `baseline_boundary` FAIL — explained, not a defect.** The
+  diagnostics step runs `python -m evals.ig01e.audit` without the IG01-D pair
+  artifact, and the audit deliberately fails that check without it
+  (`evals/ig01e/audit.py`: a local audit "can never emit SHIP without the exact
+  CI-produced pair artifact"). It therefore reads `FIX-FIRST` at every commit
+  back to `5dc0121` while exiting 0. The real `ig01e-audit` job downloads the
+  artifact and exits non-zero unless the verdict is `SHIP`. Generating the
+  pair with `python -m evals.ig01d.baseline` and running the real command on a
+  clean checkout of `ba0d7ab` gave `SHIP` with all nine checks passing. Making
+  the diagnostics step pair-backed would stop its report from reading
+  `FIX-FIRST`; that change is not made.
 - **Human-readable output** of the two CLIs still uses the platform encoding;
   only the `--json` contract was changed.
 

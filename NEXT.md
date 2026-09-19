@@ -311,8 +311,12 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 - Retrieval quality is the only thing that can turn PRE-13 quality green. It
   needs its own bounded contract; the W-06C0R1 answerability corpus is the
   starting evidence. It is not started.
-- Find out why the IG01-E audit reports `baseline_boundary` FAIL at every commit
-  back to `5dc0121`; it reports rather than gates, so nothing fails today.
+- The IG01-E `baseline_boundary` FAIL in the diagnostics report is by design,
+  not a defect: that step runs the audit without the IG01-D pair artifact,
+  which the audit requires for a `SHIP` verdict. The real `ig01e-audit` job
+  supplies it and gates on `SHIP`; the same commands on a clean checkout of
+  `ba0d7ab` gave `SHIP` with all nine checks passing. Making the diagnostics
+  step pair-backed would stop its report from reading `FIX-FIRST`; not done.
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
   Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
   latency matrix is complete at `ca15e31`, but it cannot substitute for native
