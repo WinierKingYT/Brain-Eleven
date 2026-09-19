@@ -11,6 +11,7 @@ from authority.adapters import AuthorityEvidenceAdapter
 
 from brain_eleven.memory.scope import infer_memory_scope  # noqa: E402
 from brain_eleven.memory import MemoryStore, MemoryStoreError  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
 from brain_eleven.state.resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,
@@ -77,7 +78,9 @@ class CompilerEvidenceAdapter:
         self.state = StateResolver(self.vault_path)
 
     @staticmethod
-    def _expected_revisions(resolution_result: Any) -> tuple[int, Mapping[str, Any]]:
+    def _expected_revisions(
+        resolution_result: Any,
+    ) -> tuple[int, Mapping[str, Any], Optional[int], bool]:
         revisions = resolution_result.input_revisions
         if not isinstance(revisions, Mapping):
             raise CompilerEvidenceError("Resolution input revisions are invalid")
@@ -87,7 +90,14 @@ class CompilerEvidenceAdapter:
             raise CompilerEvidenceError("Resolution memory revision is invalid")
         if not isinstance(states, Mapping):
             raise CompilerEvidenceError("Resolution state revisions are invalid")
-        return memory, states
+        registry_revision = revisions.get("registry")
+        if registry_revision is not None and (
+            isinstance(registry_revision, bool)
+            or not isinstance(registry_revision, int)
+            or registry_revision < 0
+        ):
+            raise CompilerEvidenceError("Resolution registry revision is invalid")
+        return memory, states, registry_revision, "registry" in revisions
 
     @staticmethod
     def _load_state_item(state: CurrentProjectState, reference: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -120,7 +130,13 @@ class CompilerEvidenceAdapter:
             raise CompilerScopeError("Task project identity is invalid")
         if task_state.state.project_id != task_project:
             raise CompilerScopeError("Task and StateSnapshot project mismatch")
-        memory_revision, expected_states = self._expected_revisions(resolution_result)
+        memory_revision, expected_states, registry_revision, has_registry_revision = (
+            self._expected_revisions(resolution_result)
+        )
+        if has_registry_revision and task_project is not None:
+            lineage = getattr(task_state, "lineage", None)
+            if getattr(lineage, "registry_revision", None) != registry_revision:
+                raise CompilerStaleInput("TaskStateContext registry revision differs from ResolutionResult")
         try:
             memory_document = self.memory.load()
         except MemoryStoreError as exc:
@@ -172,8 +188,14 @@ class CompilerEvidenceAdapter:
                 items.append(RehydratedCandidate(candidate, record, _state_text(record, kind), project_id, kind))
                 continue
             raise CompilerEvidenceError(f"Unsupported resolved source: {candidate.source_type}")
+        revisions: dict[str, Any] = {
+            "memory": memory_revision,
+            "state": dict(expected_states),
+        }
+        if has_registry_revision:
+            revisions["registry"] = registry_revision
         return CompilerSnapshot(
-            revisions={"memory": memory_revision, "state": dict(expected_states)},
+            revisions=revisions,
             candidates=tuple(sorted(items, key=lambda item: item.resolution.candidate_id)),
         )
 
@@ -185,6 +207,14 @@ class CompilerEvidenceAdapter:
                 state = self.state.resolve(project_id)
                 if state.status != details.get("status") or state.state_revision != details.get("revision"):
                     return False
-        except (MemoryStoreError, OSError):
+            if "registry" in snapshot.revisions:
+                expected_registry_revision = snapshot.revisions["registry"]
+                if expected_registry_revision is not None:
+                    current_registry = ProjectRegistry(self.vault_path).load()
+                    if not isinstance(current_registry, Mapping):
+                        return False
+                    if current_registry.get("revision") != expected_registry_revision:
+                        return False
+        except (MemoryStoreError, ProjectRegistryError, OSError, TypeError, ValueError):
             return False
         return True

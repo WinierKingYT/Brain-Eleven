@@ -35,6 +35,17 @@ def request_service(vault, route, payload=None, timeout=.35):
         conn.close()
 
 
+def _process_alive(pid):
+    """Return whether a launch marker still belongs to a live process."""
+    if isinstance(pid, bool) or not isinstance(pid, int) or pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except (OSError, ProcessLookupError, ValueError):
+        return False
+    return True
+
+
 def ensure_service(vault, *, wait=False, wait_timeout=8):
     deadline = time.monotonic() + wait_timeout
     cfg = RuntimeConfig(vault)
@@ -49,15 +60,17 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
     with file_lock(cfg.root / 'launch', timeout=.15):
         prior = read_json(cfg.root / 'launch.json', {})
         # Bounded throttle plus the server lock prevent concurrent hook starts.
-        if time.time() - prior.get('started', 0) > 10:
+        launch_recent = time.time() - prior.get('started', 0) <= 10
+        launch_pid = prior.get('pid')
+        if not launch_recent or not _process_alive(launch_pid):
             options = {'stdin': subprocess.DEVNULL, 'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL, 'cwd': str(ROOT)}
             if os.name == 'nt':
                 # CREATE_NO_WINDOW is ignored when combined with DETACHED_PROCESS.
                 options['creationflags'] = subprocess.CREATE_NO_WINDOW
             else:
                 options['start_new_session'] = True
-            subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
-            write_json(cfg.root / 'launch.json', {'started': time.time()})
+            process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
+            write_json(cfg.root / 'launch.json', {'started': time.time(), 'pid': process.pid})
     if wait:
         while time.monotonic() < deadline:
             try:

@@ -2,20 +2,24 @@
 import asyncio
 from contextlib import asynccontextmanager
 import hmac
+import os
 from pathlib import Path
 import secrets
 import time
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from brain_eleven.memory import MemoryStore
-from brain_eleven.state import StateStore
 from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
-from .review import ReviewStore
-from .worker import Worker, apply_candidate
-from .context import compile_context
+
+
+def apply_candidate(*args, **kwargs):
+    """Keep the review seam patchable without importing the worker on startup."""
+    from .worker import apply_candidate as implementation
+    return implementation(*args, **kwargs)
 
 
 def review_action(vault, review_id, action, payload):
+    from .review import ReviewStore
+
     cfg = RuntimeConfig(vault)
     if action == 'accept' and cfg.load()['mode'] not in {'CANARY', 'ACTIVE'}:
         raise ValueError('Enable canary before accepting canonical changes')
@@ -84,6 +88,8 @@ def create_app(vault, *, token=None, background=True):
     cfg = RuntimeConfig(vault)
     token = token or secrets.token_urlsafe(32)
     async def worker_loop():
+        from .worker import Worker
+
         while True:
             delay = 2
             try:
@@ -185,8 +191,11 @@ def create_app(vault, *, token=None, background=True):
 
     @app.get('/api/review/candidates')
     def candidates():
-        from context_compiler_v2.safety import contains_secret
+        from brain_eleven.memory import MemoryStore
+        from brain_eleven.state import StateStore
         from scripts.capture_safety import evaluate_capture
+        from .review import ReviewStore
+        from context_compiler_v2.safety import contains_secret
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
         state = StateStore(vault)
@@ -215,6 +224,8 @@ def create_app(vault, *, token=None, background=True):
 
     @app.post('/api/context')
     async def context(request: Request):
+        from .context import compile_context
+
         payload = await body(request)
         required = {'project_root', 'request', 'client', 'session', 'turn'}
         if set(payload) not in (required, required | {'event'}) or not all(isinstance(x, str) for x in payload.values()):
@@ -254,3 +265,6 @@ def serve(vault):
         finally:
             sock.close()
             (cfg.root / 'service.json').unlink(missing_ok=True)
+            launch = read_json(cfg.root / 'launch.json', {})
+            if isinstance(launch, dict) and launch.get('pid') == os.getpid():
+                (cfg.root / 'launch.json').unlink(missing_ok=True)

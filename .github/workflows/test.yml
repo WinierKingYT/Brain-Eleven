@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -49,7 +49,7 @@ jobs:
           --junitxml=unit-test-results-${{ matrix.os }}.xml
       - name: Upload unit-test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results-${{ matrix.os }}
           path: unit-test-results-${{ matrix.os }}.xml
@@ -63,6 +63,7 @@ jobs:
   integration:
     name: Integration tests
     needs: unit
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     services:
       redis:
@@ -85,7 +86,7 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -99,10 +100,11 @@ jobs:
   context-privacy:
     name: Context-engine privacy audit
     needs: unit
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -117,7 +119,7 @@ jobs:
           --junitxml=context-privacy-junit.xml
       - name: Upload privacy audit evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: context-engine-privacy-audit
           path: context-privacy-junit.xml
@@ -126,10 +128,11 @@ jobs:
   evaluation-smoke:
     name: Evaluation smoke suite
     needs: unit
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -143,7 +146,7 @@ jobs:
           --report evaluation-smoke-report.json
       - name: Upload evaluation smoke report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation-smoke-report
           path: evaluation-smoke-report.json
@@ -157,7 +160,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -175,7 +178,7 @@ jobs:
           --junitxml=ig01d-baseline-tests.xml
       - name: Upload IG01-D evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ig01d-baseline-evidence
           path: |
@@ -190,7 +193,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -204,7 +207,7 @@ jobs:
           --report evaluation-public-report.json
       - name: Upload public evaluation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: evaluation-public-report
           path: evaluation-public-report.json
@@ -216,7 +219,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -230,7 +233,7 @@ jobs:
           --report task-state-smoke-report.json
       - name: Upload task/state smoke report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: task-state-smoke-report
           path: task-state-smoke-report.json
@@ -243,7 +246,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -275,7 +278,7 @@ jobs:
           --output .phase-evidence/phase15-evaluation.json
       - name: Upload Phase 15 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase15-evaluation-evidence
           path: .phase-evidence/phase15-evaluation.json
@@ -288,7 +291,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -302,7 +305,7 @@ jobs:
           --report task-state-public-report.json
       - name: Upload task/state public report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: task-state-public-report
           path: task-state-public-report.json
@@ -314,7 +317,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -336,7 +339,7 @@ jobs:
           --output router-shadow-smoke-report.json
       - name: Upload router smoke reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase17-router-smoke-reports
           path: |
@@ -352,7 +355,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -370,7 +373,7 @@ jobs:
           --output router-shadow-public-report.json
       - name: Upload router public reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase17-router-public-reports
           path: |
@@ -384,7 +387,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -406,7 +409,7 @@ jobs:
           --output authority-shadow-smoke-report.json
       - name: Upload authority smoke reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase18-authority-smoke-reports
           path: |
@@ -422,7 +425,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -444,7 +447,7 @@ jobs:
           --output authority-shadow-public-report.json
       - name: Upload authority public reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase18-authority-public-reports
           path: |
@@ -459,7 +462,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -481,7 +484,7 @@ jobs:
           --output compiler-v2-shadow-smoke-report.json
       - name: Upload compiler V2 smoke reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase19-compiler-v2-smoke-reports
           path: |
@@ -497,7 +500,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -515,7 +518,7 @@ jobs:
           --output compiler-v2-shadow-public-report.json
       - name: Upload compiler V2 public reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase19-compiler-v2-public-reports
           path: |
@@ -530,7 +533,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -555,7 +558,7 @@ jobs:
           --output .phase-evidence/phase16-task-state.json
       - name: Upload Phase 16 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase16-task-state-evidence
           path: .phase-evidence/phase16-task-state.json
@@ -568,7 +571,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -608,7 +611,7 @@ jobs:
           --output .phase-evidence/phase17-task-aware-router.json
       - name: Upload Phase 17 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase17-task-aware-router-evidence
           path: .phase-evidence/phase17-task-aware-router.json
@@ -621,7 +624,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -656,7 +659,7 @@ jobs:
           --output .phase-evidence/phase18-authority-conflict.json
       - name: Upload Phase 18 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase18-authority-conflict-evidence
           path: .phase-evidence/phase18-authority-conflict.json
@@ -669,7 +672,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -709,7 +712,7 @@ jobs:
           --output .phase-evidence/phase19-context-compiler-v2.json
       - name: Upload Phase 19 evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase19-context-compiler-v2-evidence
           path: .phase-evidence/phase19-context-compiler-v2.json
@@ -722,7 +725,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -771,7 +774,7 @@ jobs:
           --output .phase-evidence/context-engine-foundation-v1.json
       - name: Upload foundation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: context-engine-foundation-v1-evidence
           path: |
@@ -782,12 +785,13 @@ jobs:
   quality:
     name: Coverage gate
     needs: integration
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -809,7 +813,7 @@ jobs:
           fail_ci_if_error: false
       - name: Archive coverage reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: |
@@ -821,10 +825,11 @@ jobs:
   bandit:
     name: Bandit security scan
     needs: quality
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install Bandit
@@ -845,7 +850,7 @@ jobs:
         run: bandit -r scripts context_router authority context_compiler_v2 retrieval_decision_v2 context_density_v2 -f json -o bandit-report.json
       - name: Upload Bandit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bandit-report
           path: bandit-report.json
@@ -853,10 +858,11 @@ jobs:
   secrets:
     name: Secret detection
     needs: quality
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install detect-secrets
@@ -869,10 +875,11 @@ jobs:
   dependency-audit:
     name: Dependency security check
     needs: quality
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install pip-audit
@@ -884,7 +891,7 @@ jobs:
           --report dependency-audit-report.json
       - name: Upload dependency audit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependency-audit-report
           path: dependency-audit-report.json
@@ -892,6 +899,7 @@ jobs:
   docker-security:
     name: Docker image security scan
     needs: quality
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -921,7 +929,7 @@ jobs:
         run: python scripts/report_trivy_findings.py --report trivy-results.json
       - name: Upload Trivy diagnostic report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-os-report
           path: trivy-results.json
@@ -954,7 +962,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install evidence parser
@@ -972,7 +980,7 @@ jobs:
           --security-status PASS
           --output .phase-evidence/phase14-graduation.json
       - name: Upload graduation evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: phase14-graduation-evidence
           path: .phase-evidence/phase14-graduation.json
@@ -984,7 +992,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -1002,7 +1010,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -1021,7 +1029,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: 'pip'
@@ -1040,7 +1048,7 @@ jobs:
           python -c "import json, pathlib, sys; report=json.loads(pathlib.Path('ig01e-audit.json').read_text(encoding='utf-8')); verdict=report.get('verdict'); print(f'IG01-E verdict: {verdict}'); sys.exit(0 if verdict == 'SHIP' else 1)"
           python -m pytest tests/test_ig01e_audit.py -q
       - name: Upload content-free IG01-E audit evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ig01e-audit-${{ github.sha }}
           path: ig01e-audit.json

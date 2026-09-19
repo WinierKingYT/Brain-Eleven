@@ -93,11 +93,15 @@ def _manifest(archive: Path) -> dict:
         return json.loads(handle.read("manifest.json"))
 
 
-def _create_backup_process(vault: str, archive: str, results) -> None:
+def _create_backup_process(vault: str, archive: str, results, ready=None) -> None:
     """Run one creator in a separate process for real sidecar-lock evidence."""
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
     from memory_backup import MemoryBackupError, create_backup
 
+    if ready is not None:
+        # Spawn plus import is the slow, machine-dependent part; only what
+        # follows this signal (reading sources, reaching the lock) is timed.
+        ready.put("ready")
     try:
         create_backup(vault, archive)
     except MemoryBackupError as exc:
@@ -426,15 +430,20 @@ def test_two_concurrent_creators_have_one_success_and_no_clobber(tmp_path):
     output = tmp_path / "concurrent.zip"
     context = multiprocessing.get_context("spawn")
     results = context.Queue()
+    ready = context.Queue()
 
     # Hold the destination sidecar while both workers finish their reads.  The
     # workers then contend on the same real publication lock, proving that the
-    # exists check and replace are one no-clobber critical section.
+    # exists check and replace are one no-clobber critical section.  The lock
+    # is only released once both processes have imported the module, so a slow
+    # spawn cannot let one creator finish before the other reaches the check.
     with backup.file_lock(output, timeout=backup.ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS):
-        first = context.Process(target=_create_backup_process, args=(str(vault), str(output), results))
-        second = context.Process(target=_create_backup_process, args=(str(vault), str(output), results))
+        first = context.Process(target=_create_backup_process, args=(str(vault), str(output), results, ready))
+        second = context.Process(target=_create_backup_process, args=(str(vault), str(output), results, ready))
         first.start()
         second.start()
+        assert ready.get(timeout=60) == "ready"
+        assert ready.get(timeout=60) == "ready"
         time.sleep(0.5)
     first.join(15)
     second.join(15)

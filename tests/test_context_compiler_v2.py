@@ -10,7 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 from authority import AuthorityOptions, AuthorityResolver  # noqa: E402
+from brain_eleven.runtime.context import compile_task  # noqa: E402
 from context_compiler_v2 import BudgetContract, CompilationOptions, CompilationRequest, ContextCompilerV2  # noqa: E402
+from context_compiler_v2.adapters import CompilerEvidenceAdapter  # noqa: E402
 from context_router import ContextRouter, RoutingOptions  # noqa: E402
 from project_registry import ProjectRegistry  # noqa: E402
 from state_store import StateService  # noqa: E402
@@ -180,6 +182,29 @@ def test_stale_authority_snapshot_is_never_compiled(tmp_path):
     result = ContextCompilerV2(tmp_path).compile(_request(context, resolution))
 
     assert result.status == "STALE_INPUT"
+
+
+def test_runtime_compatibility_compile_preserves_registry_revision(tmp_path):
+    context, _state, _project = _configured(tmp_path)
+    resolution = _resolved(tmp_path, context)
+    adapter = CompilerEvidenceAdapter(tmp_path)
+    snapshot = adapter.snapshot(context, resolution)
+
+    assert snapshot.revisions["registry"] == context.lineage.registry_revision
+    assert adapter.inputs_current(snapshot)
+
+    result = compile_task(
+        tmp_path,
+        context,
+        routing=RoutingOptions(),
+        budget=1024,
+    )
+
+    assert result["status"] in {"SUCCESS", "DEGRADED", "EMPTY"}
+    assert result["input_revisions"]["registry"] == context.lineage.registry_revision
+
+    ProjectRegistry(tmp_path).register(tmp_path / "project-c", project_id="project-c")
+    assert not adapter.inputs_current(snapshot)
 
 
 def test_compiler_off_never_reads_or_injects_context(tmp_path):

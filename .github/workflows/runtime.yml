@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -27,12 +27,31 @@ jobs:
       - name: Exercise native adapters, receipts, recovery, review and service
         run: >-
           python -m pytest tests/test_pre13_runtime.py tests/test_ig00_bootstrap.py
-          tests/test_ig02_capture_closure.py -q
+          tests/test_ig02_capture_closure.py tests/test_runtime_chat_interface.py
+          tests/test_srt01_runtime_lock.py
+          tests/test_runtime_maintenance.py tests/test_memory_backup.py
+          tests/test_w03b_transcript_ownership.py tests/test_w08a_project_registry.py
+          tests/test_w08b_coordinated_backup.py tests/test_w08c_state_reference_guard.py
+          tests/test_w08d_search_api_lifecycle.py tests/test_w15_runtime_config_race.py
+          tests/test_w17_runtime_path_containment.py
+          tests/test_capture_event.py tests/test_capture_provenance.py tests/test_capture_queue.py
+          tests/test_capture_safety.py
+          tests/test_memory_capture_package.py tests/test_task_model.py
+          tests/test_task_model_package_migration.py tests/test_w06b_task_aware.py
+          tests/test_w07b_maintenance_delivery.py tests/test_w07b_process_recovery.py
+          tests/test_w10_v2_delivery_gate.py tests/test_w21_authority_coverage.py
+          tests/test_ig04_b1_human_approval.py tests/test_ig04_b1_p2_coverage.py
+          tests/test_ig04_b2_review_order.py tests/test_w02_terminal_state.py
+          tests/test_w05_prompt_event.py tests/test_task_state_context.py
+          tests/test_w07b_r1_evidence.py tests/test_w19b_native_health.py
+          tests/test_w24_memory_truth_safety.py tests/test_post_session_maintenance.py
+          tests/test_graduation_evidence.py tests/test_w19a_stale_reminder.py
+          tests/test_phase11_graph_chat.py -q
           --junitxml=pre13-runtime.xml --cov=brain_eleven/runtime
           --cov-fail-under=80 --cov-report=xml:pre13-coverage.xml
       - name: Reject significant runtime security findings
         run: python -m bandit -r brain_eleven/runtime -q -ll
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pre13-runtime-${{ matrix.os }}
@@ -43,15 +62,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
       - run: python -m pip install -r requirements.txt
       - name: Measure actual chain against frozen independent holdout labels
         run: python -m evals.runtime_eval --suite holdout --report pre13-holdout.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pre13-independent-quality
           path: pre13-holdout.json
+          if-no-files-found: error

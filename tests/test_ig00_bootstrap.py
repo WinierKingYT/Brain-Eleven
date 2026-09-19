@@ -82,6 +82,34 @@ def test_startup_unavailable_warns_and_continues(runtime, monkeypatch):
     assert 'systemMessage' in launcher.hook(vault, 'codex', 'SessionStart', {'cwd': str(vault), 'session_id': 's'})
 
 
+def test_recent_dead_launch_marker_does_not_block_service_restart(runtime, monkeypatch):
+    import time
+    from brain_eleven.runtime import launcher
+
+    vault, _ = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    write_json(RuntimeConfig(vault).root / 'launch.json', {'started': time.time(), 'pid': 424242})
+    monkeypatch.setattr(launcher, '_process_alive', lambda pid: False)
+    calls = {'count': 0}
+
+    def request(*args, **kwargs):
+        calls['count'] += 1
+        if calls['count'] == 1:
+            raise OSError('not ready')
+        return {'status': 'ok'}
+
+    monkeypatch.setattr(launcher, 'request_service', request)
+
+    class Process:
+        pid = 424243
+
+    started = []
+    monkeypatch.setattr(launcher.subprocess, 'Popen', lambda *args, **kwargs: started.append(args) or Process())
+    assert launcher.ensure_service(vault, wait=True, wait_timeout=.2)
+    assert len(started) == 1
+    assert read_json(RuntimeConfig(vault).root / 'launch.json')['pid'] == 424243
+
+
 def test_cold_native_session_start_delivers_v1_within_hook_budget(runtime):
     import os
     import subprocess
