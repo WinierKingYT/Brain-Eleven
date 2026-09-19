@@ -20,8 +20,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        # `os` is a stable label: job names, artifact names and the `if:` checks
+        # key on it. `runner` is the pinned image (ubuntu-latest moves to Ubuntu 26
+        # on 2026-10-19); bump it deliberately after the suite passes on the new image.
+        include:
+          - os: ubuntu-latest
+            runner: ubuntu-24.04
+          - os: windows-latest
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -67,7 +74,7 @@ jobs:
     name: Integration tests
     needs: unit
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       redis:
         image: redis:7-alpine
@@ -104,7 +111,7 @@ jobs:
     name: Context-engine privacy audit
     needs: unit
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -132,7 +139,7 @@ jobs:
     name: Evaluation smoke suite
     needs: unit
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -158,7 +165,7 @@ jobs:
   ig01d-baseline:
     name: IG01-D paired V1/V2 baseline measurement
     needs: evaluation-smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -193,7 +200,7 @@ jobs:
     name: Evaluation public suite
     needs: evaluation-smoke
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -219,7 +226,7 @@ jobs:
   task-state-smoke:
     name: Phase 16 task/state smoke suite
     needs: evaluation-smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -246,7 +253,7 @@ jobs:
     name: Phase 15 evaluation evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, evaluation-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -291,7 +298,7 @@ jobs:
     name: Phase 16 task/state public suite
     needs: [evaluation-public, task-state-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -317,7 +324,7 @@ jobs:
   router-smoke:
     name: Phase 17 router shadow smoke suite
     needs: [evaluation-smoke, task-state-smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -355,7 +362,7 @@ jobs:
     name: Phase 17 router public suite
     needs: [evaluation-public, router-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -387,7 +394,7 @@ jobs:
   authority-smoke:
     name: Phase 18 authority shadow smoke suite
     needs: [router-smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -425,7 +432,7 @@ jobs:
     name: Phase 18 authority public suite
     needs: [router-public, authority-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -462,7 +469,7 @@ jobs:
   compiler-v2-smoke:
     name: Phase 19 compiler V2 shadow smoke suite
     needs: [authority-smoke]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -500,7 +507,7 @@ jobs:
     name: Phase 19 compiler V2 public suite
     needs: [authority-public, compiler-v2-smoke]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -533,7 +540,7 @@ jobs:
     name: Phase 16 task/state evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, task-state-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -571,7 +578,7 @@ jobs:
     name: Phase 17 router evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, router-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -624,7 +631,7 @@ jobs:
     name: Phase 18 authority evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, authority-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -672,7 +679,7 @@ jobs:
     name: Phase 19 compiler V2 evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, compiler-v2-public]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -725,7 +732,7 @@ jobs:
     name: Context Engine Foundation V1 graduation
     needs: [phase15-evidence, phase16-evidence, phase17-evidence, phase18-evidence, phase19-evidence]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -789,7 +796,7 @@ jobs:
     name: Coverage gate
     needs: integration
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -829,7 +836,7 @@ jobs:
     name: Bandit security scan
     needs: quality
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -862,7 +869,7 @@ jobs:
     name: Secret detection
     needs: quality
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -879,7 +886,7 @@ jobs:
     name: Dependency security check
     needs: quality
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -903,7 +910,7 @@ jobs:
     name: Docker image security scan
     needs: quality
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       security-events: write
@@ -962,7 +969,7 @@ jobs:
   graduation-evidence:
     name: Phase 14 graduation evidence
     needs: [bandit, secrets, dependency-audit, docker-security]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -990,7 +997,7 @@ jobs:
 
   ig01b-corpus:
     name: IG01-B corpus integrity
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -1008,7 +1015,7 @@ jobs:
 
   ig01c-evaluator:
     name: IG01-C evaluator and anti-gaming gates
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
@@ -1027,7 +1034,7 @@ jobs:
   ig01e-audit:
     name: IG01-E independent evaluation audit
     needs: [ig01b-corpus, ig01c-evaluator, ig01d-baseline]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:

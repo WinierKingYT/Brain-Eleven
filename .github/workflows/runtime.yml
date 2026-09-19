@@ -18,8 +18,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        # `os` is a stable label: job names, artifact names and the `if:` checks
+        # key on it. `runner` is the pinned image (ubuntu-latest moves to Ubuntu 26
+        # on 2026-10-19); bump it deliberately after the suite passes on the new image.
+        include:
+          - os: ubuntu-latest
+            runner: ubuntu-24.04
+          - os: windows-latest
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -62,7 +69,7 @@ jobs:
             pre13-runtime.xml
             pre13-coverage.xml
   quality:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7

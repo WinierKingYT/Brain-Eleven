@@ -15,7 +15,7 @@ env:
 jobs:
   bandit:
     name: Bandit diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -38,7 +38,7 @@ jobs:
 
   secrets:
     name: Secret diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -53,7 +53,7 @@ jobs:
 
   dependency-audit:
     name: Dependency diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -76,7 +76,7 @@ jobs:
 
   documentation-integrity:
     name: Documentation integrity diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
@@ -102,7 +102,7 @@ jobs:
 
   evaluation-smoke:
     name: Evaluation smoke diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v7
