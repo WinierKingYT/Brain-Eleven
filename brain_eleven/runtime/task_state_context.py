@@ -13,6 +13,7 @@ from brain_eleven.projects.identity import (
     ProjectLineageError,
     registry_snapshot_for_root,
 )
+from brain_eleven.runtime.cli_output import use_utf8_stdout
 from brain_eleven.runtime.task import (
     TaskAnalyzer,
     TaskEnvelope,
@@ -190,6 +191,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--request", required=True, help="Raw user request")
     parser.add_argument("--json", action="store_true", help="Emit the machine contract")
     arguments = parser.parse_args(argv)
+    if arguments.json:
+        use_utf8_stdout()
     try:
         context = TaskStateComposer(arguments.vault, arguments.project_root).compose(arguments.request)
     except (TaskValidationError, TaskProjectResolutionError, TaskStateLineageError) as exc:

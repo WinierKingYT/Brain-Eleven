@@ -11,6 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateService
 
@@ -122,6 +124,7 @@ def _run_cli(module: str, vault: Path, project_root: Path, *, cwd: Path) -> subp
         env=environment,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=False,
     )
 
@@ -251,6 +254,40 @@ def test_direct_adapter_and_package_cli_have_identical_json_contract(tmp_path) -
     assert _strip_generated_fields(json.loads(adapter.stdout)) == _strip_generated_fields(
         json.loads(package.stdout)
     )
+
+
+@pytest.mark.parametrize(
+    "entrypoint",
+    [[str(ADAPTER_PATH)], ["-m", "brain_eleven.runtime.task_state_context"]],
+    ids=["adapter", "package"],
+)
+def test_json_cli_is_utf8_when_stdout_uses_a_legacy_windows_code_page(tmp_path, entrypoint) -> None:
+    """An en-US Windows pipe defaults to cp1252, which cannot encode U+0131 by itself."""
+    request = "Phase 17 task state planını doğrula."
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    environment["PYTHONIOENCODING"] = "cp1252"
+    result = subprocess.run(
+        [
+            sys.executable,
+            *entrypoint,
+            "--vault",
+            str(tmp_path / "vault"),
+            "--project-root",
+            str(tmp_path / "unknown-project"),
+            "--request",
+            request,
+            "--json",
+        ],
+        cwd=ROOT,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    stderr_tail = result.stderr.decode("utf-8", errors="replace").strip().splitlines()[-1:]
+    assert result.returncode == 0, f"return_code={result.returncode}; stderr_tail={stderr_tail}"
+    payload = json.loads(result.stdout.decode("utf-8", errors="strict"))
+    assert request in json.dumps(payload, ensure_ascii=False)
 
 
 def test_direct_adapter_and_package_cli_have_identical_human_contract(tmp_path) -> None:

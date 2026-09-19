@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+from brain_eleven.runtime.cli_output import use_utf8_stdout
 
 
 TASK_SCHEMA_VERSION = 1
@@ -652,6 +653,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     analyze.add_argument("--request", required=True, help="Raw user request to preserve in the envelope")
     analyze.add_argument("--json", action="store_true", help="Emit the machine contract")
     arguments = parser.parse_args(argv)
+    if arguments.json:
+        use_utf8_stdout()
     try:
         envelope = TaskAnalyzer(arguments.vault, arguments.project_root).analyze(arguments.request)
     except (TaskValidationError, TaskProjectResolutionError) as exc:

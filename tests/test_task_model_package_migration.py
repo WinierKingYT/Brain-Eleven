@@ -6,9 +6,12 @@ import ast
 import hashlib
 import importlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 from evals.task_state_eval import run_task_state_evaluation
 
@@ -163,3 +166,55 @@ def test_direct_adapter_and_package_cli_have_the_same_contract(tmp_path):
         payload.pop("task_id", None)
         payload.pop("created_at", None)
     assert adapter_payload == package_payload
+
+
+def test_use_utf8_stdout_reconfigures_strictly_and_tolerates_plain_streams(monkeypatch):
+    from brain_eleven.runtime import cli_output
+
+    calls = []
+
+    class ReconfigurableStream:
+        def reconfigure(self, **options):
+            calls.append(options)
+
+    monkeypatch.setattr(cli_output.sys, "stdout", ReconfigurableStream())
+    cli_output.use_utf8_stdout()
+    assert calls == [{"encoding": "utf-8", "errors": "strict"}]
+
+    monkeypatch.setattr(cli_output.sys, "stdout", object())
+    cli_output.use_utf8_stdout()  # a stream without reconfigure() is left untouched
+
+
+@pytest.mark.parametrize(
+    "entrypoint",
+    [[str(ROOT / "scripts" / "task_model.py")], ["-m", "brain_eleven.runtime.task"]],
+    ids=["adapter", "package"],
+)
+def test_json_cli_is_utf8_when_stdout_uses_a_legacy_windows_code_page(tmp_path, entrypoint):
+    """An en-US Windows pipe defaults to cp1252, which cannot encode U+0131 by itself."""
+    request = "Phase 17 planını hazırla."
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    environment["PYTHONIOENCODING"] = "cp1252"
+    result = subprocess.run(
+        [
+            sys.executable,
+            *entrypoint,
+            "analyze",
+            "--vault",
+            str(tmp_path / "vault"),
+            "--project-root",
+            str(tmp_path / "unknown"),
+            "--request",
+            request,
+            "--json",
+        ],
+        cwd=ROOT,
+        env=environment,
+        check=False,
+        capture_output=True,
+    )
+    stderr_tail = result.stderr.decode("utf-8", errors="replace").strip().splitlines()[-1:]
+    assert result.returncode == 0, f"return_code={result.returncode}; stderr_tail={stderr_tail}"
+    payload = json.loads(result.stdout.decode("utf-8", errors="strict"))
+    assert request in json.dumps(payload, ensure_ascii=False)
