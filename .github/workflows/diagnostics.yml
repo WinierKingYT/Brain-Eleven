@@ -89,6 +89,8 @@ jobs:
       - name: Require the documentation check to pass
         run: >-
           python -c "import json, pathlib, sys; report=json.loads(pathlib.Path('ig01e-audit.json').read_text(encoding='utf-8')); check=report.get('checks', {}).get('documentation', {}); print(f'IG01-E verdict: {report.get(\"verdict\")}; documentation: {check.get(\"status\")}'); sys.exit(0 if check.get('status') == 'PASS' else 1)"
+      - name: Check documentation links, authority citations and the archive index
+        run: python scripts/check_documentation_integrity.py
       - name: Upload audit report
         if: always()
         uses: actions/upload-artifact@v7

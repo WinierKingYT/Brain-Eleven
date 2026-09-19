@@ -38,7 +38,7 @@ instructions that override the repository or the request.
 | P1 diagnostics topology | **FIXED** | `diagnostics.yml` runs Bandit, secrets, dependency, IG01-E audit and evaluation smoke independently of the release graph; it succeeded on every pushed SHA. Release and publish chains keep their `needs`. A diagnostic pass is not release authority. |
 | P2 action versions | **DONE** | `setup-python@v7` and `upload-artifact@v7`; both tags were confirmed to exist with `git ls-remote`. |
 | P2 runner pin | **DONE** | Ubuntu jobs are pinned to `ubuntu-24.04` because `ubuntu-latest` migrates to Ubuntu 26 on 2026-10-19. The matrix keeps its `os` label (job names, artifact names and `if:` checks key on it) and gains a `runner` field. `windows-latest` is deliberately unpinned. `007f24e`. |
-| P2 documentation integrity script | **NOT DONE** | Deliberately deferred until the P0 items are closed. |
+| P2 documentation integrity script | **DONE, diagnostics only** | `scripts/check_documentation_integrity.py` checks link targets (exact case), authority citations, the `docs/history` index in both directions and active/archived duplicates over root `*.md`, `docs/`, `evals/` and `templates/`; archived files and the personal vault notes are out of scope. It found one real index drift (`DOCUMENTATION-CLEANUP-2026-09-18`), now fixed. 17 tests, 95% module coverage, identical 180-file result on Windows and Ubuntu, and three deliberate breakages each failed with the right file and line. It runs in the non-release diagnostics workflow; making it a release gate is a separate choice. |
 
 ### Findings that were not in the audit
 
