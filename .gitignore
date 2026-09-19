@@ -87,3 +87,7 @@ pytest-results-local.xml
 
 # Claude Code agent-isolation worktrees; never source-controlled.
 .claude/worktrees/
+
+# Local generated documentation and graph exports; never source-controlled.
+.ig02-smoke/
+graphify-out/
