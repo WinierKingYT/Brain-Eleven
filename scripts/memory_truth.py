@@ -250,7 +250,8 @@ def _capture_rejection_reason(content: str) -> Optional[str]:
     if result.accepted:
         return None
     return {
-        "potential_secret": "SECRET_CONTENT",
+        # This is a bounded policy reason code, not a credential.
+        "potential_secret": "SECRET_CONTENT",  # nosec B105
         "payload_too_large": "CAPTURE_TOO_LARGE",
         "too_many_lines": "CAPTURE_TOO_MANY_LINES",
         "transcript_like": "CAPTURE_TRANSCRIPT_LIKE",

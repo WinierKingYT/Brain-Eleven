@@ -98,13 +98,39 @@ def run(suite='public', budget=2048, noise_count=24):
             'status':'PASS' if all(gates.values()) else 'FAIL', 'cases':rows}
 
 
+def _failure_report(suite, *, budget=2048, noise_count=24):
+    """Return content-free evidence when a provider aborts before a case row."""
+    return {
+        'schema_version': 1,
+        'evidence_type': 'SYNTHETIC_LABELED',
+        'measurement': 'unavailable',
+        'suite': suite,
+        'implementation_fingerprint': implementation_fingerprint(),
+        'budget': budget,
+        'v1_budget_protocol': 'legacy_order_whole_records_conservative_ceiling',
+        'noise_count': noise_count,
+        'case_count': 0,
+        'runtime': None,
+        'v1': None,
+        'gates': {},
+        'context_p95_ms': None,
+        'status': 'ERROR',
+        'error_code': 'RUNTIME_EVALUATION_FAILED',
+    }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--suite', choices=['smoke','public','holdout','all'], default='public')
     parser.add_argument('--report', required=True, type=Path)
     parser.add_argument('--noise-count', type=int, default=24)
     args = parser.parse_args(argv)
-    result = run(args.suite, noise_count=args.noise_count)
+    try:
+        result = run(args.suite, noise_count=args.noise_count)
+    except Exception:
+        # Keep the quality artifact available without serializing task text,
+        # provider exceptions, paths, or labels into CI evidence.
+        result = _failure_report(args.suite, noise_count=args.noise_count)
     write_json(args.report, result)
     print(json.dumps({key:value for key,value in result.items() if key != 'cases'}, indent=2))
     return 0 if result['status'] == 'PASS' else 1

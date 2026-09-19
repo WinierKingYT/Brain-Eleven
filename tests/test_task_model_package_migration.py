@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib
 import json
 import subprocess
@@ -117,23 +118,51 @@ def test_direct_adapter_and_package_cli_have_the_same_contract(tmp_path):
         request,
         "--json",
     ]
-    adapter = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "task_model.py"), *common],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    package = subprocess.run(
-        [sys.executable, "-m", "brain_eleven.runtime.task", *common],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    def run_cli(label, command):
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            check=False,
+            capture_output=True,
+            text=False,
+        )
+        stderr_sha256 = hashlib.sha256(result.stderr).hexdigest()
+        try:
+            stdout = result.stdout.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise AssertionError(
+                f"{label}: return_code={result.returncode}; "
+                f"stdout_bytes={len(result.stdout)}; "
+                f"stderr_bytes={len(result.stderr)}; "
+                f"stderr_sha256={stderr_sha256}; "
+                f"stdout_decode_error={type(exc).__name__}"
+            ) from exc
+        if result.returncode != 0:
+            raise AssertionError(
+                f"{label}: return_code={result.returncode}; "
+                f"stdout_bytes={len(result.stdout)}; "
+                f"stderr_bytes={len(result.stderr)}; "
+                f"stderr_sha256={stderr_sha256}"
+            )
+        try:
+            return json.loads(stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(
+                f"{label}: return_code={result.returncode}; "
+                f"stdout_bytes={len(result.stdout)}; "
+                f"stderr_bytes={len(result.stderr)}; "
+                f"stderr_sha256={stderr_sha256}; "
+                f"json_parse_error={type(exc).__name__}"
+            ) from exc
 
-    adapter_payload = json.loads(adapter.stdout)
-    package_payload = json.loads(package.stdout)
+    adapter_payload = run_cli(
+        "adapter",
+        [sys.executable, str(ROOT / "scripts" / "task_model.py"), *common],
+    )
+    package_payload = run_cli(
+        "package",
+        [sys.executable, "-m", "brain_eleven.runtime.task", *common],
+    )
     for payload in (adapter_payload, package_payload):
         payload.pop("task_id", None)
         payload.pop("created_at", None)

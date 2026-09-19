@@ -1,0 +1,119 @@
+name: Validation diagnostics (non-release)
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: scripts
+
+# These jobs are intentionally independent of the release validation graph.
+# A diagnostic PASS is evidence for investigation, not release authority.
+jobs:
+  bandit:
+    name: Bandit diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install scanner
+        run: python -m pip install --upgrade pip 'bandit[toml]'
+      - name: Run Bandit
+        run: >-
+          bandit -r scripts context_router authority context_compiler_v2
+          retrieval_decision_v2 context_density_v2 -f json -o bandit-report.json
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-bandit
+          path: bandit-report.json
+          if-no-files-found: warn
+
+  secrets:
+    name: Secret diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install scanner
+        run: python -m pip install --upgrade pip detect-secrets
+      - name: Verify reviewed baseline exists
+        run: test -f .secrets.baseline
+      - name: Scan against reviewed baseline
+        run: detect-secrets scan --baseline .secrets.baseline
+
+  dependency-audit:
+    name: Dependency diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install scanner
+        run: python -m pip install --upgrade pip pip-audit
+      - name: Audit pinned dependencies
+        run: >-
+          python scripts/dependency_audit.py
+          --requirements requirements.txt
+          --report dependency-audit-report.json
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-dependency-audit
+          path: dependency-audit-report.json
+          if-no-files-found: warn
+
+  documentation-integrity:
+    name: Documentation integrity diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install project dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run content-free documentation and contract audit
+        run: python -m evals.ig01e.audit --report ig01e-audit.json
+      # The independent diagnostic workflow does not have the exact IG01-D
+      # pair artifact. Full IG01-E SHIP remains owned by Validation.
+      - name: Require the documentation check to pass
+        run: >-
+          python -c "import json, pathlib, sys; report=json.loads(pathlib.Path('ig01e-audit.json').read_text(encoding='utf-8')); check=report.get('checks', {}).get('documentation', {}); print(f'IG01-E verdict: {report.get(\"verdict\")}; documentation: {check.get(\"status\")}'); sys.exit(0 if check.get('status') == 'PASS' else 1)"
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: diagnostics-documentation-integrity
+          path: ig01e-audit.json
+          if-no-files-found: warn
+
+  evaluation-smoke:
+    name: Evaluation smoke diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install project dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run baseline smoke evaluation
+        run: >-
+          python -m evals.run
+          --provider baseline
+          --suite smoke
+          --corpus-root evals/corpus-v2

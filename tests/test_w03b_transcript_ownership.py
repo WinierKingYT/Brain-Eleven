@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 
 import pytest
 
@@ -43,20 +44,30 @@ def _claude_transcript(tmp_path, raw_session, content="We decided to use SQLite.
     directory = tmp_path / _slug(tmp_path / "vault")
     directory.mkdir(exist_ok=True)
     path = directory / (raw_session + ".jsonl")
-    path.write_text(json.dumps({
-        "type": "user",
-        "sessionId": session_id,
-        "message": {"role": "user", "content": content},
-    }) + "\n", encoding="utf-8")
+    payload = (
+        json.dumps({
+            "type": "user",
+            "sessionId": session_id,
+            "message": {"role": "user", "content": content},
+        }, ensure_ascii=False, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
+    path.write_bytes(payload)
     return path
 
 
 def _codex_transcript(tmp_path, raw_session, project_root, content="We decided to use SQLite."):
     path = tmp_path / (raw_session + ".jsonl")
-    path.write_text("\n".join([
-        json.dumps({"type": "session_meta", "payload": {"session_id": raw_session, "cwd": str(project_root)}}),
-        json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user", "content": content}}),
-    ]) + "\n", encoding="utf-8")
+    payload = b"\n".join([
+        json.dumps({
+            "type": "session_meta",
+            "payload": {"session_id": raw_session, "cwd": str(project_root)},
+        }, ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
+        json.dumps({
+            "type": "response_item",
+            "payload": {"type": "message", "role": "user", "content": content},
+        }, ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
+    ]) + b"\n"
+    path.write_bytes(payload)
     return path
 
 
@@ -116,12 +127,54 @@ def test_same_size_replacement_after_ownership_validation_is_detected(runtime, t
     path = _claude_transcript(tmp_path, "stable-session", "A message with stable size.")
     session = "claude:" + hashlib.sha256(b"stable-session").hexdigest()
     binding = verify_transcript_ownership(vault, path, "claude", session, project_id, vault)
-    replacement = json.dumps({
-        "type": "user", "sessionId": "stable-session",
-        "message": {"role": "user", "content": "A message with changed size."},
-    }) + "\n"
-    assert len(replacement.encode()) == path.stat().st_size
-    path.write_text(replacement, encoding="utf-8")
+    replacement_bytes = (
+        json.dumps({
+            "type": "user", "sessionId": "stable-session",
+            "message": {"role": "user", "content": "A message with edited size."},
+        }, ensure_ascii=False, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
+    assert len(replacement_bytes) == path.stat().st_size
+    path.write_bytes(replacement_bytes)
+    with pytest.raises(ValueError, match="TRANSCRIPT_CHANGED"):
+        read_increment(vault, path, "claude", session, project_id, "2026-09-13T00:00:00Z", binding=binding)
+
+
+def _claude_line(session_id, content):
+    return (
+        json.dumps({
+            "type": "user", "sessionId": session_id,
+            "message": {"role": "user", "content": content},
+        }, ensure_ascii=False, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
+
+
+def test_same_size_replacement_with_a_new_inode_is_detected(runtime, tmp_path):
+    vault, project_id = runtime
+    path = _claude_transcript(tmp_path, "inode-session", "A message with stable size.")
+    session = "claude:" + hashlib.sha256(b"inode-session").hexdigest()
+    binding = verify_transcript_ownership(vault, path, "claude", session, project_id, vault)
+    replacement_bytes = _claude_line("inode-session", "A message with edited size.")
+    assert len(replacement_bytes) == path.stat().st_size
+    sibling = path.with_name("inode-session.replacement")
+    sibling.write_bytes(replacement_bytes)
+    original_identity = (path.stat().st_dev, path.stat().st_ino)
+    os.replace(sibling, path)
+    assert (path.stat().st_dev, path.stat().st_ino) != original_identity
+    with pytest.raises(ValueError, match="TRANSCRIPT_CHANGED"):
+        read_increment(vault, path, "claude", session, project_id, "2026-09-13T00:00:00Z", binding=binding)
+
+
+def test_multibyte_replacement_with_identical_byte_length_is_detected(runtime, tmp_path):
+    vault, project_id = runtime
+    original_content = "A message with stable size."
+    path = _claude_transcript(tmp_path, "multibyte-session", original_content)
+    session = "claude:" + hashlib.sha256(b"multibyte-session").hexdigest()
+    binding = verify_transcript_ownership(vault, path, "claude", session, project_id, vault)
+    # Two ASCII bytes are swapped for one two-byte UTF-8 character.
+    replacement_bytes = _claude_line("multibyte-session", original_content[:-2] + "é")
+    assert len(replacement_bytes) == path.stat().st_size
+    assert replacement_bytes != path.read_bytes()
+    path.write_bytes(replacement_bytes)
     with pytest.raises(ValueError, match="TRANSCRIPT_CHANGED"):
         read_increment(vault, path, "claude", session, project_id, "2026-09-13T00:00:00Z", binding=binding)
 
@@ -137,15 +190,17 @@ def test_worker_preserves_changed_code_and_writes_no_effect(runtime, tmp_path, m
     import brain_eleven.runtime.worker as worker_module
 
     original_verify = worker_module.verify_transcript_ownership
-    replacement = json.dumps({
-        "type": "user", "sessionId": "worker-stable",
-        "message": {"role": "user", "content": "A message with changed size."},
-    }) + "\n"
-    assert len(replacement.encode()) == path.stat().st_size
+    replacement_bytes = (
+        json.dumps({
+            "type": "user", "sessionId": "worker-stable",
+            "message": {"role": "user", "content": "A message with edited size."},
+        }, ensure_ascii=False, separators=(",", ":")) + "\n"
+    ).encode("utf-8")
+    assert len(replacement_bytes) == path.stat().st_size
 
     def replace_after_verify(*args, **kwargs):
         binding = original_verify(*args, **kwargs)
-        path.write_text(replacement, encoding="utf-8")
+        path.write_bytes(replacement_bytes)
         return binding
 
     monkeypatch.setattr(worker_module, "verify_transcript_ownership", replace_after_verify)

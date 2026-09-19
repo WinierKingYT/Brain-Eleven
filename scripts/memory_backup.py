@@ -11,6 +11,7 @@ import ctypes
 import hashlib
 import importlib.util
 import json
+import ntpath
 import os
 import shutil
 import sys
@@ -66,6 +67,8 @@ ARCHIVE_PUBLICATION_LOCK_TIMEOUT_SECONDS = 5.0
 _WINDOWS_FILE_ATTRIBUTE_REPARSE_POINT = 0x400
 _WINDOWS_FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000
 _WINDOWS_FILE_FLAG_BACKUP_SEMANTICS = 0x02000000
+_WINDOWS_EXTENDED_PREFIX = "\\\\?\\"
+_WINDOWS_EXTENDED_UNC_PREFIX = "\\\\?\\UNC\\"
 
 RESTORE_PATHS = {
     CANONICAL_ARCHIVE_PATH: Path(".claude") / "validated-memory.json",
@@ -77,6 +80,10 @@ RESTORE_PATHS = {
 
 class MemoryBackupError(RuntimeError):
     """Raised when a backup cannot be trusted, created, or safely restored."""
+
+    def __init__(self, message: str, *, code: str = "MEMORY_BACKUP_ERROR"):
+        self.code = code
+        super().__init__(message)
 
 
 class MemoryBackupConsistencyError(MemoryBackupError):
@@ -111,7 +118,10 @@ def _is_reparse_or_symlink(path: Path) -> bool:
     try:
         stat_result = path.lstat()
     except OSError as exc:
-        raise MemoryBackupError("Cannot inspect backup source path") from exc
+        raise MemoryBackupError(
+            "Cannot inspect backup source path",
+            code="BACKUP_SOURCE_INSPECT_FAILED",
+        ) from exc
     if path.is_symlink():
         return True
     attributes = getattr(stat_result, "st_file_attributes", 0)
@@ -139,15 +149,35 @@ def _assert_source_root(vault: Path) -> Path:
     return claude
 
 
+def _windows_normalise_final_path(path: str) -> str:
+    """Drop the Win32 extended-length prefix without corrupting UNC paths."""
+    if path.upper().startswith(_WINDOWS_EXTENDED_UNC_PREFIX):
+        return "\\\\" + path[len(_WINDOWS_EXTENDED_UNC_PREFIX):]
+    if path.startswith(_WINDOWS_EXTENDED_PREFIX):
+        return path[len(_WINDOWS_EXTENDED_PREFIX):]
+    return path
+
+
+def _windows_path_within(root: str, candidate: str) -> bool:
+    """Return whether candidate is root or below it, by whole path component."""
+    try:
+        normalised_root = ntpath.normcase(ntpath.normpath(root))
+        normalised_candidate = ntpath.normcase(ntpath.normpath(candidate))
+        return ntpath.commonpath((normalised_root, normalised_candidate)) == normalised_root
+    except ValueError:
+        # Different drives, or a drive-letter path compared with a UNC path.
+        return False
+
+
 def _read_windows_no_follow(path: Path, containment_root: Path) -> bytes:
     """Read a regular file through a reparse-point-aware Windows handle."""
     import msvcrt
 
-    try:
-        if os.path.commonpath((os.path.abspath(str(containment_root)), os.path.abspath(str(path)))) != os.path.abspath(str(containment_root)):
-            raise MemoryBackupError("Backup source escapes the selected .claude directory")
-    except ValueError as exc:
-        raise MemoryBackupError("Backup source escapes the selected .claude directory") from exc
+    if not _windows_path_within(os.path.abspath(str(containment_root)), os.path.abspath(str(path))):
+        raise MemoryBackupError(
+            "Backup source escapes the selected .claude directory",
+            code="BACKUP_SOURCE_OUTSIDE_ROOT",
+        )
 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     create_file = kernel32.CreateFileW
@@ -172,7 +202,10 @@ def _read_windows_no_follow(path: Path, containment_root: Path) -> bytes:
         None,
     )
     if handle in (None, invalid):
-        raise OSError(ctypes.get_last_error(), "Cannot open backup source")
+        raise MemoryBackupError(
+            "Cannot open backup source",
+            code="BACKUP_SOURCE_OPEN_FAILED",
+        ) from OSError(ctypes.get_last_error(), "Cannot open backup source")
     raw_handle = handle
     descriptor = None
     try:
@@ -187,27 +220,38 @@ def _read_windows_no_follow(path: Path, containment_root: Path) -> bytes:
             chunks.append(chunk)
         after = os.fstat(descriptor)
         if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
-            raise MemoryBackupError("Backup source identity changed while reading")
+            raise MemoryBackupError(
+                "Backup source identity changed while reading",
+                code="BACKUP_SOURCE_IDENTITY_CHANGED",
+            )
         get_final_path = kernel32.GetFinalPathNameByHandleW
         get_final_path.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32]
         get_final_path.restype = ctypes.c_uint32
         final_buffer = ctypes.create_unicode_buffer(32768)
         final_length = get_final_path(raw_handle, final_buffer, len(final_buffer), 0)
         if not final_length or final_length >= len(final_buffer):
-            raise MemoryBackupError("Cannot verify backup source containment")
-        final_path = final_buffer.value
-        if final_path.startswith("\\\\?\\"):
-            final_path = final_path[4:]
-        try:
-            if os.path.commonpath((os.path.abspath(str(containment_root)), os.path.abspath(final_path))) != os.path.abspath(str(containment_root)):
-                raise MemoryBackupError("Backup source escapes the selected .claude directory")
-        except ValueError as exc:
-            raise MemoryBackupError("Backup source escapes the selected .claude directory") from exc
+            raise MemoryBackupError(
+                "Cannot verify backup source containment",
+                code="BACKUP_FINAL_PATH_UNAVAILABLE",
+            )
+        final_path = _windows_normalise_final_path(final_buffer.value)
+        # The handle reports the fully resolved (long-name) path, so the root
+        # must be resolved the same way: an 8.3 short-name root such as
+        # C:\Users\RUNNER~1\... would otherwise look like an escape.
+        canonical_root = _windows_normalise_final_path(os.path.realpath(str(containment_root)))
+        if not _windows_path_within(canonical_root, final_path):
+            raise MemoryBackupError(
+                "Backup source escapes the selected .claude directory",
+                code="BACKUP_FINAL_PATH_OUTSIDE_ROOT",
+            )
         # FILE_FLAG_OPEN_REPARSE_POINT prevents following the final reparse
         # point.  The lstat check below remains a defence against a path swap
         # between the pre-open check and handle creation.
         if _is_reparse_or_symlink(path):
-            raise MemoryBackupError("Backup source must not be a symbolic link or reparse point")
+            raise MemoryBackupError(
+                "Backup source must not be a symbolic link or reparse point",
+                code="BACKUP_SOURCE_REPARSE_POINT",
+            )
         return b"".join(chunks)
     finally:
         if descriptor is not None:
@@ -221,7 +265,10 @@ def _read_source_file(path: Path, containment_root: Path) -> bytes:
     if not _lexists(path):
         raise FileNotFoundError(path)
     if _is_reparse_or_symlink(path):
-        raise MemoryBackupError("Backup source must not be a symbolic link or reparse point")
+        raise MemoryBackupError(
+            "Backup source must not be a symbolic link or reparse point",
+            code="BACKUP_SOURCE_REPARSE_POINT",
+        )
     if not path.is_file():
         raise MemoryBackupError("Backup source must be a regular file")
     before_path = path.lstat()
@@ -230,7 +277,10 @@ def _read_source_file(path: Path, containment_root: Path) -> bytes:
     else:
         flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
         if not getattr(os, "O_NOFOLLOW", 0):
-            raise MemoryBackupError("Backup source no-follow support is unavailable")
+            raise MemoryBackupError(
+                "Backup source no-follow support is unavailable",
+                code="BACKUP_NO_FOLLOW_UNAVAILABLE",
+            )
         descriptor = None
         try:
             descriptor = os.open(str(path), flags)
@@ -243,12 +293,18 @@ def _read_source_file(path: Path, containment_root: Path) -> bytes:
                 chunks.append(chunk)
             after = os.fstat(descriptor)
             if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
-                raise MemoryBackupError("Backup source identity changed while reading")
+                raise MemoryBackupError(
+                    "Backup source identity changed while reading",
+                    code="BACKUP_SOURCE_IDENTITY_CHANGED",
+                )
             payload = b"".join(chunks)
         except FileNotFoundError:
             raise
         except OSError as exc:
-            raise MemoryBackupError("Cannot read backup source") from exc
+            raise MemoryBackupError(
+                "Cannot read backup source",
+                code="BACKUP_SOURCE_READ_FAILED",
+            ) from exc
         finally:
             if descriptor is not None:
                 os.close(descriptor)
@@ -961,7 +1017,10 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         else:
             result = run_disaster_drill(args.vault, args.output, args.project_id)
     except (MemoryBackupError, MemoryStoreCorrupt, ProjectRegistryError, OSError) as exc:
-        print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=False))
+        payload = {"status": "failed", "error": str(exc)}
+        if isinstance(exc, MemoryBackupError):
+            payload["code"] = exc.code
+        print(json.dumps(payload, ensure_ascii=False))
         return 2
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
