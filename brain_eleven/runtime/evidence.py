@@ -4,9 +4,18 @@ import hashlib
 import os
 from pathlib import Path
 from dataclasses import replace
-from scripts.evidence import EvidenceBatch, EvidenceMessage, EvidenceTime, EvidenceStore, _record, _safe_source_path
+from brain_eleven._legacy import load_legacy_module
 from .storage import identity
 from .ownership import TranscriptBinding
+
+
+_legacy_evidence = load_legacy_module("evidence", "evidence.py")
+EvidenceBatch = _legacy_evidence.EvidenceBatch
+EvidenceMessage = _legacy_evidence.EvidenceMessage
+EvidenceTime = _legacy_evidence.EvidenceTime
+EvidenceStore = _legacy_evidence.EvidenceStore
+_record = _legacy_evidence._record
+_safe_source_path = _legacy_evidence._safe_source_path
 
 
 def read_increment(vault, path, client, session, project, captured_at, cursor=None, *, binding: TranscriptBinding | None = None):

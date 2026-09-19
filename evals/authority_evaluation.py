@@ -19,7 +19,7 @@ from .authority.schema import AuthorityExpectation
 ROOT = Path(__file__).resolve().parents[1]
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.state import StateService  # noqa: E402
-from scripts.task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 
 NOW = "2026-09-03T12:00:00Z"

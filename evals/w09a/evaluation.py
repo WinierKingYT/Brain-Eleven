@@ -34,7 +34,7 @@ SOURCE_GLOBS = (
     "evals/baseline.py", "evals/compiler_v2_provider.py", "evals/fixture_generator.py",
     "evals/metrics.py", "evals/reporting.py", "evals/run.py", "evals/schema.py",
     "evals/fixtures/phase15-contract.json", "scripts/context-compiler.py",
-    "scripts/task_state_context.py", "brain_eleven/memory/**/*.py", "brain_eleven/state/**/*.py",
+    "brain_eleven/runtime/task_state_context.py", "brain_eleven/memory/**/*.py", "brain_eleven/state/**/*.py",
     "brain_eleven/runtime/context.py", "brain_eleven/runtime/storage.py",
     "brain_eleven/runtime/task_aware.py",
     "brain_eleven/projects/**/*.py", "authority/**/*.py", "context_router/**/*.py",

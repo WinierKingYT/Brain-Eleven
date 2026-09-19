@@ -34,9 +34,10 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
-# Setup path for imports
+# Direct execution needs the repository package root.  The scripts directory
+# is used below as a filesystem location for hyphenated compatibility modules;
+# it is no longer injected as a second import root.
 SCRIPTS_DIR = Path(__file__).parent
-sys.path.insert(0, str(SCRIPTS_DIR))
 REPO_ROOT = SCRIPTS_DIR.resolve().parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -80,7 +81,7 @@ try:
     from brain_eleven.support import CacheManager, AnomalyDetector, MemorySummarizer
     from brain_eleven.graph import KnowledgeGraph
     from brain_eleven.extraction import EntityExtractor
-    from chat_interface import ChatAgent
+    from brain_eleven.runtime.chat_interface import ChatAgent
     from brain_eleven.memory import (
         filter_memories,
         infer_memory_scope,
@@ -92,7 +93,7 @@ try:
         registry_path as project_registry_path,
     )
     from brain_eleven.memory import MemoryStore, MemoryStoreConflict, no_change
-    from capture_safety import CaptureSafetyError, evaluate_capture
+    from brain_eleven.runtime.capture_safety import CaptureSafetyError, evaluate_capture
 except ImportError as e:
     print(f"Warning: Could not import components: {e}")
 

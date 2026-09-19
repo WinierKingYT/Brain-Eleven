@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Iterable, Mapping, Optional
 
 from brain_eleven.graph import KnowledgeGraph  # noqa: E402
@@ -79,6 +80,18 @@ class MemoryAdapter:
         terms = tuple(term.casefold() for term in query.terms)
         if query.strategy == "DIRECT_ID":
             return (memory_id.casefold() in terms, 1.0, "direct_id")
+        if query.strategy == "EXACT_ENTITY":
+            # Stable project identities commonly use ``snake_case`` or
+            # hyphens while human-authored memory text uses spaces.  Match
+            # the identity as a phrase after normalizing only those
+            # separators; keep direct memory-ID lookup byte-exact above.
+            normalized_haystack = re.sub(r"[_-]+", " ", haystack)
+            normalized_terms = tuple(re.sub(r"[_-]+", " ", term).strip() for term in terms)
+            matched = tuple(term for term in normalized_terms if term and term in normalized_haystack)
+            if not matched:
+                return (False, 0.0, "")
+            ratio = len(matched) / len(normalized_terms)
+            return (True, min(0.99, 0.82 + ratio * 0.18), "entity_match")
         if query.strategy == "RECENT_CONTINUITY":
             if memory.get("type") not in {"open_loop", "decision"}:
                 return (False, 0.0, "")

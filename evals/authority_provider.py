@@ -14,7 +14,7 @@ from .schema import GoldenTask
 
 ROOT = Path(__file__).resolve().parents[1]
 from brain_eleven.memory import MemoryStore  # noqa: E402
-from scripts.task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 
 AUTHORITY_PROVIDER_ID = "metadata_authority_v1"

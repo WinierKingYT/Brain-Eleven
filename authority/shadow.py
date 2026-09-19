@@ -12,7 +12,7 @@ from .models import AuthorityOptions, ResolutionResult
 from .resolver import AuthorityResolver
 
 
-from scripts.task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 
 class AuthorityShadowRunner:

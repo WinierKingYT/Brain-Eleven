@@ -175,7 +175,6 @@ STATE_RESOLUTION_CALLERS = (
     "evals/task_state_eval.py",
     "scripts/context-compiler.py",
     "scripts/state.py",
-    "scripts/task_state_context.py",
 )
 
 

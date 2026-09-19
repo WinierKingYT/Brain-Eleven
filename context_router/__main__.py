@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from scripts.task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 from .models import RoutingOptions
 from .router import ContextRouter

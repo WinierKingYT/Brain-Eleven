@@ -193,7 +193,7 @@ def create_app(vault, *, token=None, background=True):
     def candidates():
         from brain_eleven.memory import MemoryStore
         from brain_eleven.state import StateStore
-        from scripts.capture_safety import evaluate_capture
+        from .capture_safety import evaluate_capture
         from .review import ReviewStore
         from context_compiler_v2.safety import contains_secret
         items = ReviewStore(vault).list()

@@ -21,7 +21,7 @@ class CompilerShadowRunner:
         self.project_root = Path(project_root)
 
     def run(self, request_text: str, budget: BudgetContract, routing: RoutingOptions | None = None) -> tuple[Any, Any, ContextBundle]:
-        from scripts.task_state_context import TaskStateComposer
+        from brain_eleven.runtime.task_state_context import TaskStateComposer
 
         routing = routing or RoutingOptions()
         task_state = TaskStateComposer(self.vault_path, self.project_root).compose(request_text)

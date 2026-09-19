@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 import math
 import re
 from context_compiler_v2.safety import contains_secret
+from .capture_safety import evaluate_capture
 from .storage import read_json, write_json, identity, now, RuntimeConfig, runtime_file_lock as file_lock
 
 _REVIEW_CANDIDATE_TYPE_ORDER = {
@@ -140,7 +141,6 @@ class ReviewStore:
         return None
 
     def add(self, candidate, reason, source):
-        from scripts.capture_safety import evaluate_capture
         text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
         content = candidate.get(text_key, '')
         if not isinstance(content, str) or not evaluate_capture(content).accepted or contains_secret(content) or len(content) > 8000:

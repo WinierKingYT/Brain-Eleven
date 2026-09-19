@@ -12,6 +12,7 @@ from typing import Any
 from context_compiler_v2.safety import contains_secret
 from context_compiler_v2.tokenizer import ConservativeTokenEstimator
 from brain_eleven.memory.scope import infer_memory_scope
+from .capture_safety import evaluate_capture
 
 INTENTS = frozenset({"IMPLEMENT", "MIGRATE", "TEST", "DEBUG", "REVIEW", "PLAN", "DESIGN", "RESEARCH", "GENERAL"})
 STATUSES = frozenset({"READY", "NO_NEED", "AMBIGUOUS", "UNAVAILABLE", "INVALID"})
@@ -75,7 +76,6 @@ def select(compiler: Any, task: Any, *, budget: int = 1024, human_approval: bool
     if result.status != "READY":
         return {"status": result.status, "task_need": result.to_dict(), "selected": [], "context": "", "provider": "V1"}
     try:
-        from scripts.capture_safety import evaluate_capture
         safe = lambda text: not contains_secret(text) and evaluate_capture(text).accepted
         records = [x for x in compiler._rank_memories(limit=MAX_ITEMS * 8)
                    if _scope_is_eligible(x, result.project_id) and safe(x.get("content", ""))

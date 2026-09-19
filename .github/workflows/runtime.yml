@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONPATH: scripts
+
 jobs:
   runtime:
     strategy:
@@ -33,9 +36,9 @@ jobs:
           tests/test_w03b_transcript_ownership.py tests/test_w08a_project_registry.py
           tests/test_w08b_coordinated_backup.py tests/test_w08c_state_reference_guard.py
           tests/test_w08d_search_api_lifecycle.py tests/test_w15_runtime_config_race.py
-          tests/test_w17_runtime_path_containment.py
+          tests/test_w17_runtime_path_containment.py tests/test_canonical_runtime_boundaries.py
           tests/test_capture_event.py tests/test_capture_provenance.py tests/test_capture_queue.py
-          tests/test_capture_safety.py
+          tests/test_capture_safety.py tests/test_copied_hook_runtime.py
           tests/test_memory_capture_package.py tests/test_task_model.py
           tests/test_task_model_package_migration.py tests/test_w06b_task_aware.py
           tests/test_w07b_maintenance_delivery.py tests/test_w07b_process_recovery.py

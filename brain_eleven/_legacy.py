@@ -27,10 +27,20 @@ def load_legacy_module(module_name: str, filename: str) -> ModuleType:
     if not script_path.is_file():
         raise ImportError(f"legacy implementation not found: {filename}")
 
-    existing = sys.modules.get(module_name)
+    # Package callers historically loaded the implementation as ``memory_truth``
+    # while direct package imports use ``scripts.memory_truth``. Resolve both
+    # names before loading so class identity does not depend on import order.
+    normalized_stem = Path(filename).stem.replace("-", "_")
+    package_name = f"scripts.{normalized_stem}" if module_name == normalized_stem else None
+    existing = sys.modules.get(module_name) or (
+        sys.modules.get(package_name) if package_name else None
+    )
     if existing is not None:
         existing_path = getattr(existing, "__file__", None)
         if existing_path and Path(existing_path).resolve() == script_path:
+            sys.modules[module_name] = existing
+            if package_name:
+                sys.modules[package_name] = existing
             return existing
 
     spec = importlib.util.spec_from_file_location(module_name, script_path)
@@ -44,4 +54,6 @@ def load_legacy_module(module_name: str, filename: str) -> ModuleType:
     except Exception:
         sys.modules.pop(module_name, None)
         raise
+    if package_name:
+        sys.modules[package_name] = module
     return module

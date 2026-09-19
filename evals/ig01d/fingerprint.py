@@ -18,7 +18,7 @@ _CODE_PATHS = (
     "evals/schema.py",
     "evals/fixtures/phase15-contract.json",
     "scripts/context-compiler.py",
-    "scripts/task_state_context.py",
+    "brain_eleven/runtime/task_state_context.py",
     "scripts/memory_scope.py",
     "scripts/memory_store.py",
     "scripts/project_registry.py",

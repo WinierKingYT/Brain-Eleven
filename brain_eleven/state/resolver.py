@@ -7,16 +7,19 @@ one resolver implementation while preserving fail-closed state semantics.
 
 from __future__ import annotations
 
-from scripts.state_resolver import (
-    PROJECT_ARCHIVED,
-    PROJECT_UNKNOWN,
-    STATE_AVAILABLE,
-    STATE_CORRUPT,
-    STATE_NOT_FOUND,
-    STATE_UNAVAILABLE,
-    CurrentProjectState,
-    StateResolver,
-)
+from brain_eleven._legacy import load_legacy_module
+
+
+_legacy = load_legacy_module("state_resolver", "state_resolver.py")
+
+PROJECT_ARCHIVED = _legacy.PROJECT_ARCHIVED
+PROJECT_UNKNOWN = _legacy.PROJECT_UNKNOWN
+STATE_AVAILABLE = _legacy.STATE_AVAILABLE
+STATE_CORRUPT = _legacy.STATE_CORRUPT
+STATE_NOT_FOUND = _legacy.STATE_NOT_FOUND
+STATE_UNAVAILABLE = _legacy.STATE_UNAVAILABLE
+CurrentProjectState = _legacy.CurrentProjectState
+StateResolver = _legacy.StateResolver
 
 __all__ = [
     "PROJECT_ARCHIVED",

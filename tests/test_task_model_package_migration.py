@@ -90,13 +90,9 @@ def test_canonical_task_module_uses_package_registry_surface():
     assert "from scripts.task_model import" not in source
 
 
-def test_task_state_context_has_no_worktree_diff():
-    result = subprocess.run(
-        ["git", "diff", "--quiet", "--", "scripts/task_state_context.py"],
-        cwd=ROOT,
-        check=False,
-    )
-    assert result.returncode == 0
+def test_task_state_context_migration_is_guarded_by_its_own_slice2f_gate():
+    source = (ROOT / "scripts" / "task_state_context.py").read_text(encoding="utf-8")
+    assert "brain_eleven.runtime.task_state_context" in source
 
 
 def test_public_and_holdout_evaluations_match_immutable_baselines():

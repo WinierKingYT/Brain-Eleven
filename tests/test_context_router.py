@@ -315,6 +315,16 @@ def test_recent_continuity_is_age_aware_and_ignores_stale_records():
     assert old_match[0] is False
 
 
+def test_exact_entity_matches_stable_identity_when_memory_uses_spaces():
+    query = RetrievalQuery("entity", "test", "EXACT_ENTITY", terms=("minecraft_mcp",))
+    memory = {"memory_id": "mem-world", "content": "Minecraft MCP snapshots a world."}
+
+    matched = MemoryAdapter._matches(memory, query)
+
+    assert matched[0] is True
+    assert matched[2] == "entity_match"
+
+
 def test_state_query_keeps_mandatory_records_with_lower_relevance_when_unmatched():
     query = RetrievalQuery("state", "test", "CONCEPT", terms=("sqlite",))
 

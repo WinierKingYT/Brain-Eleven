@@ -13,9 +13,13 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
-# Import our modules
 import sys
-sys.path.insert(0, str(Path(__file__).parent))
+
+# Direct execution loads embedding-generator.py by file path, while that
+# module imports the packaged runtime storage surface.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import importlib.util
 spec = importlib.util.spec_from_file_location(

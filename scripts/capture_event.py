@@ -27,7 +27,23 @@ except ModuleNotFoundError as exc:
     # contract while preferring the canonical package in the repository.
     if exc.name != "brain_eleven":
         raise
-    from project_registry import ProjectRegistry, ProjectRegistryError
+    try:
+        from project_registry import ProjectRegistry, ProjectRegistryError
+    except (ImportError, ModuleNotFoundError):
+        # A copied hook may not have the repository package or an explicit
+        # BRAIN_ELEVEN_ROOT.  Keep the CLI content-safe and fail closed rather
+        # than surfacing an import traceback or treating the project as new.
+        class _ProjectRegistryUnavailableError(RuntimeError):
+            pass
+
+        class _UnavailableProjectRegistry:
+            def __init__(self, *args, **kwargs):
+                raise _ProjectRegistryUnavailableError(
+                    "project registry package is unavailable"
+                )
+
+        ProjectRegistry = _UnavailableProjectRegistry
+        ProjectRegistryError = _ProjectRegistryUnavailableError
 
 
 CAPTURE_EVENT_SCHEMA_VERSION = 1

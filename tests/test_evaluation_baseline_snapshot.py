@@ -53,6 +53,8 @@ def test_source_fingerprint_is_independent_of_checkout_line_endings(tmp_path):
     (tmp_path / "evals" / "fixtures" / "fixture.json").write_bytes(b"{}\r\n")
     (tmp_path / "evals" / "schemas").mkdir()
     (tmp_path / "evals" / "schemas" / "schema.json").write_bytes(b"{}\r\n")
+    (tmp_path / "brain_eleven" / "runtime").mkdir(parents=True)
+    (tmp_path / "brain_eleven" / "runtime" / "task_state_context.py").write_bytes(b"value = 0\r\n")
     (tmp_path / "scripts").mkdir()
     for name in ("context-compiler.py", "memory_scope.py", "memory_store.py", "project_registry.py"):
         (tmp_path / "scripts" / name).write_bytes(b"value = 1\r\n")

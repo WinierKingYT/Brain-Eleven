@@ -38,7 +38,7 @@ from brain_eleven.memory import (
     scoped_fingerprint,
 )
 from brain_eleven.memory import MemoryStore, no_change
-from capture_safety import evaluate_capture, require_safe_capture
+from brain_eleven.runtime.capture_safety import evaluate_capture, require_safe_capture
 
 try:
     from ulid import ULID

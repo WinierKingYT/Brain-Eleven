@@ -107,7 +107,7 @@ def task_state_from_dict(document: Mapping[str, Any]):
     """Decode task/state input, then rely on canonical reads for truth."""
     from brain_eleven.state.resolver import CurrentProjectState
     from scripts.task_model import TaskEnvelope
-    from scripts.task_state_context import (
+    from brain_eleven.runtime.task_state_context import (
         TASK_STATE_CONTEXT_SCHEMA_VERSION,
         TaskStateContext,
         TaskStateLineage,

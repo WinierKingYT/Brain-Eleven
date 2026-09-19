@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.state.resolver import STATE_NOT_FOUND, StateResolver  # noqa: E402
 from brain_eleven.state import StateService  # noqa: E402
-from scripts.task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 
 _SOURCE = {"type": "system", "reference": "phase19_benchmark"}

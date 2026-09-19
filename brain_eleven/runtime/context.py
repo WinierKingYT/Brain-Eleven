@@ -4,7 +4,8 @@ import re
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, write_json
 from brain_eleven.runtime.worker import allowed
-from scripts.task_state_context import TaskStateComposer
+from .capture_safety import evaluate_capture
+from .task_state_context import TaskStateComposer
 from context_router import ContextRouter, RoutingOptions
 from authority import AuthorityResolver, AuthorityOptions
 from retrieval_decision_v2 import RetrievalDecisionEngine, DecisionOptions, NeedPlan
@@ -58,8 +59,6 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     scoped primitives, so this adapter deliberately supplies empty related
     and unscoped note inputs to ``_generate_context_block``.
     """
-    from scripts.capture_safety import evaluate_capture
-
     compiler = _legacy_context_compiler()(str(vault), project_id=project_id)
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
@@ -122,7 +121,6 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
     from brain_eleven._legacy import load_legacy_module
-    from scripts.capture_safety import evaluate_capture
     compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     runtime = RuntimeConfig(vault)
     project = allowed(vault, project_root)
@@ -259,7 +257,6 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
 def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     """Native UserPromptSubmit W-06B path; SessionStart never calls this."""
     from brain_eleven._legacy import load_legacy_module
-    from scripts.capture_safety import evaluate_capture
     compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
     if not project_id:
