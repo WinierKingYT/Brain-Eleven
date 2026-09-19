@@ -48,9 +48,15 @@ instructions that override the repository or the request.
   (`cf98741`).
 - **Cold start.** A recent launch marker belonging to a dead process suppressed
   a service restart. The marker now records a pid and the service lazy-imports
-  its heavy graph (`cf98741`). The related test asserts a hard 3 s budget with a
-  real subprocess and failed once right after a checkout wrote new files; it is
-  timing-sensitive.
+  its heavy graph (`cf98741`). The related test
+  (`test_cold_native_session_start_delivers_v1_within_hook_budget`) asserts a
+  hard 3 s budget on a real subprocess. It is timing-sensitive: on a busy local
+  Windows machine it failed twice inside a larger run (once right after a
+  checkout, once while heavy file and process activity ran alongside), while it
+  passed 8/8 alone on an idle machine and in every remote run. One idle run took
+  2 s longer than the others and still passed, so the margin is real but
+  shrinks under contention. It protects a real hook-window requirement and was
+  not loosened.
 - **`PYTHONPATH=scripts` hid real gaps.** Without it six tests failed on
   Windows: five multiprocessing tests whose spawned children could not import
   bare script names, and one identity test whose `logging_config` alias was
