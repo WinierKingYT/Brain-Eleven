@@ -102,6 +102,7 @@ instructions that override the repository or the request.
 | `5da9e8c` | IG-07 Slice 2F package migration (see `IG07-SLICE2F-PACKAGE-REPORT.md`) |
 | `c61e072` | UTF-8 `--json` contract for the task CLIs |
 | `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — merged into the local `master` as `b30c6d5` |
+| `43a204b` `c9ac7d4` `fd9bbc0` `dc2fae5` | Documentation integrity checker, its tests, the diagnostics step and the Bandit-convention fix — fast-forwarded into the local `master` |
 
 Remote runs on `ig/srt-00-ig07-ci`, a branch that cannot publish an image:
 
@@ -110,6 +111,16 @@ Remote runs on `ig/srt-00-ig07-ci`, a branch that cannot publish an image:
 | `5da9e8c` | failure — two Windows CLI parity tests (P0-2) | green / green | FAIL | success |
 | `c61e072` | **success** — 19 jobs green, 11 skipped by design | green / green | FAIL (holdout) | success |
 | `a4a3411` | **success** — 19 jobs green, 11 skipped by design | green / green | FAIL (holdout) | success |
+| `dc2fae5` | **success** — 19 jobs green, 11 skipped by design; includes the Bandit hard gate and both Unit jobs | green / green | FAIL (holdout) | success |
+
+`dc2fae5` is the local `master` tip at the time of writing, so the whole
+current code state has run on GitHub. Its first push (`fd9bbc0`) failed the
+Bandit gate because the new checker did not follow the repository's `nosec`
+convention; that was caught on this branch before it reached `master`. Run
+links for `dc2fae5`: Validation
+[`35473233931`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233931),
+PRE-13 [`35473233917`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233917),
+diagnostics [`35473233904`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233904).
 
 `a4a3411` is the tip of `chore/hygiene`; its run also shows that the
 `ubuntu-24.04` pin and the removal of `PYTHONPATH` work on GitHub. Run links:
