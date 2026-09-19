@@ -35,4 +35,5 @@ reviews stay at the root.
 | Historical operational guides | `TESTING`, `TESTING-FRAMEWORK`, `DEPLOYMENT-STACK`, `INTEGRATION-CHECKLIST`, `ORCHESTRATION-STATUS`, `PARALLEL-ORCHESTRATION` |
 | Superseded review snapshots, baseline contract and vault audit | `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-02`, `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-03`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW-02`, `IG07-SLICE2E-E1-CONTRACT`, `VAULT-HYGIENE-REPORT` |
 | Historical weakness contracts/reviews | `weakness/` — 30 W-01–W-18 and TSC-03 records moved after authority and reference checks |
+| Documentation cleanup records | `DOCUMENTATION-CLEANUP-2026-09-18` |
 | Misc | `hamle6_notes_content.txt` |
