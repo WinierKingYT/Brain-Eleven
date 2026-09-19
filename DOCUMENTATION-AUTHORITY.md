@@ -1,6 +1,6 @@
 # Documentation authority
 
-Authority: **CURRENT**. Updated: 2026-09-15. This registry classifies documentation;
+Authority: **CURRENT**. Updated: 2026-09-20. This registry classifies documentation;
 it does not make personal notes canonical MemoryStore or StateStore records.
 
 ## Reading and precedence
@@ -26,6 +26,8 @@ authorize opening Phase 20 or promoting V2.
 | `PROJECT-STATUS.md` | CURRENT top-level IG status; explicitly historical sections remain HISTORICAL. |
 | `NEXT.md` | CURRENT plain-language status/next-steps summary for humans; not evidence and not a substitute for `PROJECT-STATUS.md`'s revision-bound claims. |
 | `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
+| `ARCHITECTURE.md`, `CONTRIBUTING.md` | CURRENT project orientation and contribution guidance; neither is release or package authority. |
+| `ENGINEERING-WEAK-POINTS-AUDIT.md` | CURRENT evidence-backed weakness baseline; cited revisions and package contracts remain the authority for implementation decisions. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `INTELLIGENCE-GRADUATION.md`, `IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
 | `IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
@@ -58,6 +60,8 @@ authorize opening Phase 20 or promoting V2.
 | `IG02-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for IG-02; acceptance status, exact implementation SHA, CI, native smoke and independent review are recorded here. It does not authorize IG-04, V2 promotion or Phase 20 until `SHIP`. |
 | `CODEX-RESULTS-R0.md` | GENERATED EVIDENCE / real semantic + embedding provider socket probe at `88821a8`; adds provider adapters behind explicit switches with no canonical-store import and a green regression. Evaluation-only; it does not open IG-04, wire production retrieval or promote V2. |
 | `CODEX-RESULTS-D0.md` | GENERATED EVIDENCE / IG-04-adjacent retrieval-ceiling probe (package D0) at `5deebe8`; measures scope, corpus balance and a retrieval-tuned-model spike ahead of a RETHINK branch decision. Evaluation-only, bound to `evals/ig01d/d0-probe-real.json`; it does not open IG-04 by itself or authorize production tuning. |
+| `CODEX-RESULTS.md`, `W-06B-PACKAGE-REPORT.md` | HISTORICAL / GENERATED EVIDENCE from the earlier engineering-goal task stream; retain for provenance, but do not infer current quality or authorization from them. |
+| `WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md` | HISTORICAL compatibility-scope input retained at the root because the frozen W-06C0R1 evaluator allowlist addresses this exact path; it does not authorize new implementation. |
 | `IG07-INVENTORY.md` | GENERATED EVIDENCE / read-only audit of the `scripts/` ↔ `brain_eleven/` implementation-authority split at `cb02554`; independently spot-checked (LOC and module counts confirmed, one caller-count undercount found for `cache_manager.py`, not risk-changing). Its first-slice proposal is approved; it does not itself authorize touching `MemoryStore`/`StateStore`/`ProjectRegistry` or any capture/retrieval path. |
 | `IG07-SLICE1-REPORT.md` | REVIEW / GENERATED EVIDENCE for the four-module slice 1 migration (`logging_config`, `cache_manager`, `summarizer`, `anomaly_detector`) at implementation revision `44c9d80`; independently accepted. |
 | `IG07-SLICE1-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-07 slice 1; bound to reviewed HEAD `639e130a5127553480026f74c121e000983b7941`. Verdict `SHIP`. Does not authorize the next slice, which needs its own bounded plan. |
@@ -80,6 +84,13 @@ authorize opening Phase 20 or promoting V2.
 | `IG07-SLICE2E-PLAN.md` | GENERATED EVIDENCE / read-only migration plan for `scripts/task_model.py` at reviewed revision `971726b`; independently spot-checked (roughly 20 distinct line-number/structural citations verified exact or within an expected off-by-one for a preceding `@dataclass` decorator line, across `task_model.py`, `task_state_context.py`'s import fallback, `authority/serialization.py`'s `task_state_from_dict`, and `evals/task_state_eval.py`'s suite structure). Correctly resolves the `task_state_context.py` dependency question via a zero-behavioral-impact adapter inversion under five explicit halt conditions, and protects HOLDOUT immutability with concrete before/after eval-report comparison commands. No C0 business decision needed — approved for E1 (contract/baseline) then E2 (canonical inversion) implementation. A later commit (`0a8f26a`) regenerated this file's prose from the pre-inversion baseline and left a stale "PLAN ONLY/REVIEW PENDING" header/footer after implementation was already complete; corrected in-file — see `IG07-SLICE2E-INDEPENDENT-REVIEW.md` for the actual closure status. |
 | `IG07-SLICE2E-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for Slice 2E (`task_model.py` → `brain_eleven/runtime/task.py`) at implementation revision `c0fe23f`; independently accepted. |
 | `IG07-SLICE2E-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact closing IG-07 Slice 2E in full; bound to reviewed HEAD `0a8f26a`. Verdict `SHIP` — byte-identical canonical source at the inversion cut, adapter-only AST, empty `task_state_context.py` diff across the whole E1+E2 range, and exact before/after evaluator JSON equality on smoke/public/holdout were each independently re-verified against the repository, not accepted on the package report's word. IG-07's remaining scope is `task_state_context.py` (Slice 2F), requiring a new bounded plan. |
+| `IG07-SLICE2F-PLAN.md` | GENERATED EVIDENCE / bounded Slice 2F migration plan; the file records the plan as closed, while implementation and regression status are governed by the paired package report. |
+| `IG07-SLICE2F-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for Slice 2F, committed with the migration as `5da9e8c`; it is not an independent `SHIP` authorization. |
+| `SRT00-PLAN.md` | CURRENT bounded stabilization record derived from the 2026-09-17 and 2026-09-18 findings reports; it records outcomes, corrections and remaining blockers. It is not acceptance evidence, SRT-00 remains `NOT SHIP`, and it does not authorize promotion. |
+| `SRT00-BASELINE-FAILURE-REPRODUCTION.md` | GENERATED EVIDENCE / exact-head SRT-00 baseline; `FIX-FIRST / NOT ACCEPTED`, and it does not authorize architecture or runtime changes. |
+| `SRT01-LINUX-RUNTIME-LOCK-CONTRACT.md` | CURRENT **CONTRACT** for the bounded SRT-01 POSIX runtime-lock repair; it does not reopen SRT-00 or authorize unrelated changes. |
+| `SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for the bounded SRT-01 implementation; its `SHIP` verdict is limited to SRT-01. |
+| `SRT01-LINUX-RUNTIME-LOCK-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for SRT-01 only; it does not close SRT-00 or change the Phase 20/V2 gates. |
 | `WEAKNESS-W19A-STALE-REMINDER-CONTRACT.md`, `WEAKNESS-W19A-STALE-REMINDER-PACKAGE-REPORT.md` | CONTRACT plus REVIEW/evidence for the bounded stale-reminder authority fix; exact implementation head `352f51b`, independent verdict `SHIP`. |
 | `WEAKNESS-W19B-NATIVE-HEALTH-CONTRACT.md`, `WEAKNESS-W19B-NATIVE-HEALTH-PACKAGE-REPORT.md` | CONTRACT plus REVIEW/evidence for bounded native hook health diagnostics; exact implementation head `5555318`, independent verdict `SHIP`. Native trust/latency/dogfood remain W-07B gates. |
 | `WEAKNESS-W07B-R1-EVIDENCE-HARNESS-CONTRACT.md` | CONTRACT / bounded evidence-harness repair; permits only synthetic benchmark, focused tests and evidence documentation, with native trust and Phase 20 gates unchanged. |
@@ -114,6 +125,7 @@ authorize opening Phase 20 or promoting V2.
 | `docs/history/PHASE16-TASK-STATE-CONTRACT.md`, `docs/history/PHASE17-TASK-AWARE-CONTEXT-ROUTER-CONTRACT.md`, `docs/history/PHASE18-AUTHORITY-CONFLICT-CONTRACT.md`, `docs/history/PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md` | CONTRACT for their bounded Foundation components; runtime connection/status statements are historical checkpoint facts. |
 | `docs/history/TESTING.md`, `docs/history/TESTING-FRAMEWORK.md`, `docs/history/DEPLOYMENT-STACK.md`, `docs/history/INTEGRATION-CHECKLIST.md` | HISTORICAL operational guidance until independently reconciled; do not infer current CI/deployment from them. |
 | `docs/history/ORCHESTRATION-STATUS.md`, `docs/history/PARALLEL-ORCHESTRATION.md` | HISTORICAL prior engineering coordination; current IG sequencing supersedes. |
+| `docs/history/weakness/**` | HISTORICAL weakness-contract/review records moved out of the root after reference and authority checks; retain for provenance only. |
 | `templates/claude/commands/remember.md` | CURRENT command template, subject to current CLI behavior. |
 | `templates/claude/legacy/remember-v1.md` | HISTORICAL compatibility artifact. |
 | `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |

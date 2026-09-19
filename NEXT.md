@@ -6,6 +6,22 @@ the end of a work session; keep entries to a few lines.
 
 ## Where we are
 
+**2026-09-20** — SRT-00 is fixed on every gate that could be reproduced, but it
+is still **NOT SHIP**. A remote run of the same SHA (`c61e072`, on the
+non-publishing branch `ig/srt-00-ig07-ci`) is green for Ubuntu and Windows unit,
+integration, privacy, coverage, security and PRE-13 runtime; the 11 master-only
+Validation jobs are skipped by design; PRE-13 quality (the frozen holdout,
+precision 0.169 / required recall 0.676) is still an honest FAIL. Root causes:
+the W-03B fixtures were one byte off on Linux; the task CLIs' `--json` output
+could not be encoded under a cp1252 Windows pipe (a real bug, now UTF-8); the
+Windows backup reader mishandled short-name and UNC roots; PRE-13 measured too
+little of the runtime. `SRT00-PLAN.md` records each finding, the corrections to
+the earlier claims and the evidence. Nothing is pushed to `master`.
+`chore/hygiene` (hook line endings, `ubuntu-24.04` pin, no `PYTHONPATH`) is
+waiting to be merged; its remote run at `a4a3411` is green apart from the
+holdout. The frozen W06C0R1 scope contract only fails while the
+tree has uncommitted changes; it was not relaxed.
+
 Active program: **Intelligence Graduation (IG)**, replacing the old
 "Phase 20" plan (frozen). Last closed engineering weak-point package:
 **SRT-01 Linux runtime lock protocol repair** — independent review `SHIP` at
@@ -25,11 +41,10 @@ environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 Canonical branch: **master**. The exact baseline snapshot check passes.
 SRT-01 closed the Linux POSIX lock protocol defect; exact implementation-head
 evidence and terminal report-only checks are recorded in
-`SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md`. SRT-00 remains active because
-remote Validation #800 (`35135589646`) and PRE-13 #654 (`35135589665`) are
-red for W-03B, task-model/MemoryBackup, runtime, quality and coverage
-identities unrelated to SRT-01. V2 remains SHADOW and Phase 20 remains
-FROZEN / LOCKED.
+`SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md`. SRT-00 remains active: its unit,
+runtime and coverage identities are green on the remote run above, but PRE-13
+quality is still red and no independent review has happened. V2 remains SHADOW
+and Phase 20 remains FROZEN / LOCKED.
 
 **Pilot status: blocked by design, not by accident.** Ahmet's real install
 (`C:\Users\faruk\Documents\Brain-Eleven`) has `b1_human_approval=true`
@@ -270,12 +285,28 @@ baseline for an unrelated reason and left a stale "PLAN ONLY/REVIEW
 PENDING" header despite implementation already being complete — corrected
 in-file, not a functional finding.
 
+**IG-07 Slice 2F is complete for its bounded six-gate scope.** The 26/26
+caller inventory, task/state/lineage contract, AST/identity/fixture/CLI and
+fail-closed tests, package inversion, thin legacy adapter, canonical coverage
+and source-fingerprint paths, and full regression evidence are recorded in
+`IG07-SLICE2F-PLAN.md` and `IG07-SLICE2F-PACKAGE-REPORT.md`. The focused suite
+passed at 143 tests; the established full baseline passed at 1359 tests with
+4 skips and 82 deselections. No task/state schema, routing, persistence or
+evaluation label behavior changed. A separately commissioned independent
+review is not part of this bounded execution. The work is committed as
+`5da9e8c`, on top of the SRT-00 commit `cf98741`; the PRE-13 manifest with it
+measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
+
 ## What's next
 
-- Finish SRT-00 exact-head CI failure reproduction: obtain content-safe
-  remote failure evidence and identify the runner/environment cause before
-  changing any test or workflow behavior. The latest exact-head local suite
-  remains green while Validation and PRE-13 remote runs are red.
+- Decide PRE-13 holdout quality: keep the frozen corpus-v2 gate and defer
+  promotion, or open a separately authorised quality contract. Then decide
+  whether to push `master`: it runs the 11 master-only Validation jobs but also
+  lets `build.yml` publish `ghcr.io/…:latest` while PRE-13 quality is red.
+  Merge `chore/hygiene` (its remote run is green). Independent review of the
+  final SHA is still required.
+- Find out why the IG01-E audit reports `baseline_boundary` FAIL at every commit
+  back to `5dc0121`; it reports rather than gates, so nothing fails today.
 - Finish W-07B's bounded acceptance evidence: authenticated isolated native
   Claude/Codex smoke and privacy-safe multi-session dogfood. The synthetic
   latency matrix is complete at `ca15e31`, but it cannot substitute for native
@@ -285,10 +316,9 @@ in-file, not a functional finding.
   next P1 must be selected from the read-only findings and given its own
   contract. Current candidates are native `Stop`/`SESSION_END` distinction,
   `doctor` health truthfulness, and canonical `.claude` reparse containment.
-- IG-07's remaining scope is `task_state_context.py` (Slice 2F — the
-  highest blast-radius module in the whole inventory, 26/26 callers,
-  deliberately excluded from every slice so far including 2E) — needs its
-  own new bounded plan before implementation, same discipline as 2E.
+- IG-07 Slice 2F's bounded implementation and regression gates are complete;
+  the remaining non-retrieval high-risk cluster below is the next architecture
+  consolidation scope and needs its own contract before implementation.
 - After 2F, the non-retrieval high-risk cluster (`memory_store.py`,
   `state_store.py`, `project_registry.py`, `memory_scope.py`,
   `memory_store_lock.py`, `memory_backup.py`, `memory-validator.py`, the
