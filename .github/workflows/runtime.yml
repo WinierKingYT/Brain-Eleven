@@ -10,9 +10,6 @@ on:
 permissions:
   contents: read
 
-env:
-  PYTHONPATH: scripts
-
 jobs:
   runtime:
     strategy:

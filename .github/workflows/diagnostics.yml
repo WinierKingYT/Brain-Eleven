@@ -7,9 +7,6 @@ on:
 permissions:
   contents: read
 
-env:
-  PYTHONPATH: scripts
-
 # These jobs are intentionally independent of the release validation graph.
 # A diagnostic PASS is evidence for investigation, not release authority.
 jobs:
