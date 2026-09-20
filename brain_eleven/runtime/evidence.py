@@ -1,7 +1,13 @@
-"""Bounded native transcript adapters. Unknown message shapes fail visibly."""
+"""Bounded native transcript adapters.
+
+A recognised conversation record with an unknown role or content shape fails
+visibly. A Claude record of an unrecognised *type* is skipped and counted, never
+read as evidence.
+"""
 import json
 import hashlib
 import os
+import re
 from pathlib import Path
 from dataclasses import replace
 from brain_eleven._legacy import load_legacy_module
@@ -18,7 +24,27 @@ _record = _legacy_evidence._record
 _safe_source_path = _legacy_evidence._safe_source_path
 
 
-def read_increment(vault, path, client, session, project, captured_at, cursor=None, *, binding: TranscriptBinding | None = None):
+# Claude transcripts hold conversation records plus metadata records that never
+# carry evidence. Newer clients keep adding metadata types, and rejecting a
+# whole session for one of them dead-lettered every real session, so only the
+# conversation types produce evidence and any other type is skipped and counted.
+_CLAUDE_CONVERSATION_TYPES = frozenset({'user', 'assistant'})
+_CLAUDE_METADATA_TYPES = frozenset({'system', 'progress', 'summary', 'file-history-snapshot', 'queue-operation',
+                                    'last-prompt', 'custom-title', 'agent-name', 'agent-color'})
+MAX_IGNORED_TYPE_NAMES = 32
+_TYPE_NAME = re.compile(r'[A-Za-z0-9_-]{1,40}')
+
+
+def _count_ignored_type(counts, kind):
+    """Count one unrecognised record type by a bounded, content-free name."""
+    name = kind if isinstance(kind, str) and _TYPE_NAME.fullmatch(kind) else 'OTHER'
+    if name != 'OTHER' and name not in counts and sum(1 for key in counts if key != 'OTHER') >= MAX_IGNORED_TYPE_NAMES:
+        name = 'OTHER'
+    counts[name] = counts.get(name, 0) + 1
+
+
+def read_increment(vault, path, client, session, project, captured_at, cursor=None, *,
+                   binding: TranscriptBinding | None = None, stats: dict | None = None):
     path = _safe_source_path(path)
     before = path.stat()
     if before.st_size > 128 * 1024 * 1024:
@@ -78,28 +104,37 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
         raise ValueError('TRANSCRIPT_LINE_TOO_LARGE')
     messages = []
     position = offset
+    records_seen = conversation_records = 0
+    ignored_types = {}
     for line in complete.splitlines(keepends=True):
         start = position
         position += len(line)
         if not line.strip():
             continue
         doc = json.loads(line.decode('utf-8'))
+        records_seen += 1
         role = content = None
         if client == 'codex':
             if doc.get('type') == 'response_item':
                 payload = doc.get('payload', {})
                 if payload.get('type') == 'message':
+                    conversation_records += 1
                     role, content = payload.get('role'), payload.get('content')
                 elif payload.get('type') not in {'function_call', 'function_call_output', 'reasoning', 'custom_tool_call', 'custom_tool_call_output', 'web_search_call', 'local_shell_call'}:
                     raise ValueError('UNSUPPORTED_CODEX_ITEM')
             elif doc.get('type') not in {'session_meta', 'event_msg', 'turn_context', 'compacted'}:
                 raise ValueError('UNSUPPORTED_CODEX_TRANSCRIPT')
         elif client == 'claude':
-            if doc.get('type') in {'user', 'assistant'}:
+            kind = doc.get('type') if isinstance(doc.get('type'), str) else None
+            if kind in _CLAUDE_CONVERSATION_TYPES:
+                conversation_records += 1
                 message = doc.get('message', {})
-                role, content = message.get('role', doc['type']), message.get('content')
-            elif doc.get('type') not in {'system', 'progress', 'summary', 'file-history-snapshot', 'queue-operation', 'last-prompt', 'custom-title', 'agent-name', 'agent-color'}:
-                raise ValueError('UNSUPPORTED_CLAUDE_TRANSCRIPT')
+                role, content = message.get('role', kind), message.get('content')
+            elif kind not in _CLAUDE_METADATA_TYPES:
+                # An unrecognised type never becomes evidence, even when it
+                # carries a message-shaped field; it is only counted by name.
+                _count_ignored_type(ignored_types, doc.get('type'))
+                continue
         else:
             raise ValueError('UNSUPPORTED_CLIENT')
         if role is None:
@@ -129,5 +164,8 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
         if len(messages) > 10000:
             raise ValueError('TRANSCRIPT_TOO_MANY_MESSAGES')
     digest.update(complete)
+    if stats is not None:
+        stats.update(records_seen=records_seen, conversation_records=conversation_records,
+                     ignored_record_types=dict(ignored_types))
     return EvidenceBatch(tuple(x.record for x in messages), tuple(messages)), {'offset': offset + end, 'prefix_hash': digest.hexdigest(),
              'has_more': len(raw) == 2 * 1024 * 1024 and end > 0}

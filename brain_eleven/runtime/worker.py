@@ -1,7 +1,7 @@
 """One durable event consumer shared by both native clients."""
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 import hashlib
 from pathlib import Path
 import re
@@ -713,15 +713,28 @@ class Worker:
         stored_cursor = read_json(checkpoint) if cursor_override is None else cursor_override
         if stored_cursor is not None:
             stored_cursor = _validate_cursor(stored_cursor)
+        read_stats = {}
         try:
             batch, cursor = read_increment(self.vault, transcript_path, client, session,
                                            project['project_id'], event['event_at'], stored_cursor,
-                                           binding=binding)
+                                           binding=binding, stats=read_stats)
         except FileNotFoundError as exc:
             raise WorkerProcessingError('TRANSCRIPT_NOT_FOUND') from exc
         except OSError as exc:
             raise WorkerProcessingError('EVIDENCE_IO_FAILED') from exc
         cursor = _validate_cursor(cursor)
+        if read_stats:
+            # Content-free drift signal: how many records were conversation and
+            # which unrecognised record types (by bounded name) were skipped in
+            # this increment. It is advisory, so a reader that reports nothing or
+            # a failed write must never fail or replay the capture itself.
+            with suppress(OSError):
+                write_json(self.config.root / 'last-transcript-stats.json', {
+                    'at': now(),
+                    'records_seen': int(read_stats.get('records_seen', 0)),
+                    'conversation_records': int(read_stats.get('conversation_records', 0)),
+                    'ignored_record_types': dict(read_stats.get('ignored_record_types', {})),
+                })
         EvidenceStore(self.vault).persist(batch.records)
         outcomes = []
         effect_ids = []

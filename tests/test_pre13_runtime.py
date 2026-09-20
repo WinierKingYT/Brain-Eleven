@@ -581,17 +581,143 @@ def test_live_gate_computation_uses_observed_ids_and_human_labels(runtime):
 @pytest.mark.parametrize('client,document,error', [
     ('codex', {'type':'unknown'}, 'UNSUPPORTED_CODEX_TRANSCRIPT'),
     ('codex', {'type':'response_item','payload':{'type':'unknown'}}, 'UNSUPPORTED_CODEX_ITEM'),
-    ('claude', {'type':'unknown'}, 'UNSUPPORTED_CLAUDE_TRANSCRIPT'),
     ('claude', {'type':'user','message':{'role':'unknown','content':'abc'}}, 'UNSUPPORTED_MESSAGE_ROLE'),
     ('claude', {'type':'user','message':{'role':'user','content':42}}, 'UNSUPPORTED_MESSAGE_CONTENT'),
 ])
 def test_unknown_native_shapes_fail_visibly(runtime, tmp_path, client, document, error):
+    # A Claude record of an unrecognised *type* is no longer here: newer clients
+    # add metadata record types, and rejecting the whole session for one of them
+    # dead-lettered every real session. See the tolerance tests below. A
+    # recognised conversation record with a malformed role or content still fails.
     from brain_eleven.runtime.evidence import read_increment
     vault, project = runtime
     path = tmp_path / 'unknown.jsonl'
     path.write_text(json.dumps(document)+'\n', encoding='utf-8')
     with pytest.raises(ValueError, match=error):
         read_increment(vault, path, client, 's', project, '2026-09-06T00:00:00Z')
+
+
+# Record types found in real Claude Code sessions that the reader used to reject.
+REAL_METADATA_TYPES = ('attachment', 'bridge-session', 'atis-latch', 'mode', 'file-history-delta',
+                       'frame-link', 'permission-mode', 'artifact-comment-monitor', 'artifact-autoreact-ledger')
+
+
+def _real_shaped_documents():
+    """Synthetic records shaped like a modern Claude session: metadata types first, as in real ones."""
+    documents = [{'type': kind, 'note': 'metadata'} for kind in REAL_METADATA_TYPES]
+    documents += [
+        {'type': 'system', 'note': 'recognised metadata'},
+        {'type': 'user', 'message': {'role': 'user', 'content': [{'type': 'text', 'text': 'We decided to use SQLite for persistent storage.'}]}},
+        {'type': 'attachment', 'attachment': {'text': 'ATTACHMENT-TEXT-MUST-NOT-BECOME-EVIDENCE'}},
+        {'type': 'assistant', 'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': 'Noted.'}]}},
+        {'type': 'user', 'message': {'role': 'user', 'content': [{'type': 'tool_result', 'content': 'TOOL-OUTPUT-MUST-NOT-COUNT'}]}},
+    ]
+    return documents
+
+
+def test_unknown_claude_record_types_are_skipped_and_the_conversation_is_still_read(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    documents = _real_shaped_documents()
+    path = _native_path(tmp_path, vault, 'claude', 's', documents)
+    stats = {}
+    batch, cursor = read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    assert [message.record.role for message in batch.messages] == ['user', 'assistant']
+    text = ' '.join(message.content for message in batch.messages)
+    assert 'ATTACHMENT-TEXT' not in text and 'TOOL-OUTPUT' not in text
+    assert cursor['offset'] == path.stat().st_size and not cursor['has_more']
+    assert stats['records_seen'] == len(documents)
+    assert stats['conversation_records'] == 3
+    # Only unrecognised types are reported; the recognised 'system' record is not.
+    assert stats['ignored_record_types'] == {**{kind: 1 for kind in REAL_METADATA_TYPES}, 'attachment': 2}
+
+
+def test_an_unknown_record_that_carries_a_message_is_never_evidence(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [
+        {'type': 'future-type', 'message': {'role': 'user', 'content': 'FUTURE-TEXT-MUST-NOT-BE-CAPTURED'}}])
+    stats = {}
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    assert not batch.messages and not batch.records
+    assert stats['ignored_record_types'] == {'future-type': 1}
+    assert 'FUTURE-TEXT' not in json.dumps(stats)
+
+
+def test_ignored_type_names_are_bounded_and_content_free(runtime, tmp_path):
+    import re
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    hostile = ['x' * 200, 'has space and TEXT', {'nested': 'object'}, None, 7, 'ok-name']
+    documents = [{'type': kind} for kind in hostile] + [{'type': f'new-type-{number}'} for number in range(60)]
+    path = _native_path(tmp_path, vault, 'claude', 's', documents)
+    stats = {}
+    read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    names = stats['ignored_record_types']
+    assert len(names) <= 33
+    assert all(re.fullmatch(r'[A-Za-z0-9_-]{1,40}', name) for name in names)
+    assert sum(names.values()) == len(documents)
+    assert 'OTHER' in names and 'ok-name' in names
+    encoded = json.dumps(stats)
+    assert 'has space' not in encoded and 'x' * 41 not in encoded and 'nested' not in encoded
+
+
+def test_a_transcript_of_only_unknown_records_reads_no_messages_and_still_advances(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [{'type': 'mode'}, {'type': 'attachment'}])
+    stats = {}
+    batch, cursor = read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    assert not batch.messages
+    assert cursor['offset'] == path.stat().st_size
+    assert stats['conversation_records'] == 0
+    assert stats['ignored_record_types'] == {'mode': 1, 'attachment': 1}
+
+
+def test_a_corrupt_line_is_still_rejected(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = tmp_path / 'corrupt.jsonl'
+    path.write_text('{"type": "mode"}\n{not json}\n', encoding='utf-8')
+    with pytest.raises(ValueError):
+        read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z')
+
+
+def test_a_failing_transcript_stats_write_never_fails_the_capture(runtime, tmp_path, monkeypatch):
+    # The stats file is an advisory drift signal: losing it must not dead-letter a session.
+    import brain_eleven.runtime.worker as worker_module
+    from brain_eleven.runtime.review import ReviewStore
+    vault, project = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    real_write = worker_module.write_json
+
+    def failing_stats_write(path, value, *args, **kwargs):
+        if getattr(path, 'name', '') == 'last-transcript-stats.json':
+            raise OSError('simulated disk failure')
+        return real_write(path, value, *args, **kwargs)
+
+    monkeypatch.setattr(worker_module, 'write_json', failing_stats_write)
+    path = _native_path(tmp_path, vault, 'claude', 'stats-io', [
+        {'type': 'user', 'sessionId': 'stats-io', 'message': {'role': 'user', 'content': candidate(project)['content']}}])
+    enqueue(vault, 'claude', {'cwd': str(vault), 'session_id': 'stats-io', 'transcript_path': str(path)})
+    assert Worker(vault).once()['status'] == 'PROCESSED'
+    assert ReviewStore(vault).list()[0]['status'] == 'PENDING'
+
+
+def test_worker_captures_a_session_containing_modern_metadata_records(runtime, tmp_path):
+    from brain_eleven.runtime.review import ReviewStore
+    vault, project = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    documents = [{'type': kind} for kind in REAL_METADATA_TYPES] + [
+        {'type': 'user', 'sessionId': 'modern', 'message': {'role': 'user', 'content': candidate(project)['content']}}]
+    path = _native_path(tmp_path, vault, 'claude', 'modern', documents)
+    enqueue(vault, 'claude', {'cwd': str(vault), 'session_id': 'modern', 'transcript_path': str(path)})
+    assert Worker(vault).once()['status'] == 'PROCESSED'
+    assert ReviewStore(vault).list()[0]['status'] == 'PENDING'
+    stats = json.loads((RuntimeConfig(vault).root / 'last-transcript-stats.json').read_text(encoding='utf-8'))
+    assert set(stats) == {'at', 'records_seen', 'conversation_records', 'ignored_record_types'}
+    assert stats['conversation_records'] == 1 and stats['ignored_record_types']['attachment'] == 1
+    assert candidate(project)['content'] not in json.dumps(stats)
 
 
 def test_transcript_larger_than_one_chunk_is_consumed_incrementally(runtime, tmp_path):
