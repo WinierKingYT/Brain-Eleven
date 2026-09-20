@@ -3,7 +3,8 @@
 Status: **NOT SHIP.** On a remote run of the same SHA the Ubuntu and Windows
 unit, integration, coverage and PRE-13 runtime gates are green, but the PRE-13
 holdout quality gate is still an honest **FAIL**, the master-only Validation
-jobs have not run on GitHub, and no independent review has happened.
+jobs ran green on GitHub only on a throwaway branch (not on `master`), and no
+independent review has happened.
 
 Record date: 2026-09-20. This replaces the 2026-09-18 version of this file; the
 claims of that version that turned out to be wrong are corrected in
@@ -104,7 +105,8 @@ instructions that override the repository or the request.
 | `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — merged into the local `master` as `b30c6d5` |
 | `43a204b` `c9ac7d4` `fd9bbc0` `dc2fae5` | Documentation integrity checker, its tests, the diagnostics step and the Bandit-convention fix — fast-forwarded into the local `master` |
 
-Remote runs on `ig/srt-00-ig07-ci`, a branch that cannot publish an image:
+Remote runs on `ig/…` branches (`ig/srt-00-ig07-ci`, and
+`ig/master-only-preview` for `d7852e8`), which cannot publish an image:
 
 | SHA | Validation | PRE-13 runtime (Ubuntu / Windows) | PRE-13 quality | Diagnostics |
 |---|---|---|---|---|
@@ -112,6 +114,7 @@ Remote runs on `ig/srt-00-ig07-ci`, a branch that cannot publish an image:
 | `c61e072` | **success** — 19 jobs green, 11 skipped by design | green / green | FAIL (holdout) | success |
 | `a4a3411` | **success** — 19 jobs green, 11 skipped by design | green / green | FAIL (holdout) | success |
 | `dc2fae5` | **success** — 19 jobs green, 11 skipped by design; includes the Bandit hard gate and both Unit jobs | green / green | FAIL (holdout) | success |
+| `d7852e8` | **success** — 30 of 30 jobs green, **0 skipped**; the 11 master-only jobs ran (their branch condition was relaxed, see below) | green / green | FAIL (holdout) | success |
 
 `dc2fae5` is the local `master` tip at the time of writing, so the whole
 current code state has run on GitHub. Its first push (`fd9bbc0`) failed the
@@ -121,6 +124,18 @@ links for `dc2fae5`: Validation
 [`35473233931`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233931),
 PRE-13 [`35473233917`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233917),
 diagnostics [`35473233904`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35473233904).
+
+`d7852e8` is a throwaway commit on `ig/master-only-preview`, made on top of the
+`master` tip `5da23b4` and never to be merged. It changes only the 11 job
+conditions that read `github.ref == 'refs/heads/master'` to
+`startsWith(github.ref, 'refs/heads/ig/')`, so the public suites, the Phase
+15–19 evidence jobs and the foundation graduation job ran on GitHub without
+pushing `master`. All 11 succeeded and no job was skipped. `build.yml` is
+untouched and published nothing: it produced no run for that branch. This is
+evidence for identical code, not a `master` run. Run links: Validation
+[`35495699060`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35495699060),
+PRE-13 [`35495699068`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35495699068),
+diagnostics [`35495699042`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35495699042).
 
 `a4a3411` is the tip of `chore/hygiene`; its run also shows that the
 `ubuntu-24.04` pin and the removal of `PYTHONPATH` work on GitHub. Run links:
@@ -135,7 +150,8 @@ real clone with history. Full unit run 1410 passed, 8 skipped, coverage gate and
 context-engine coverage contract passed. A replay of the 11 master-only jobs'
 commands passed: 25/25 evaluation, shadow and benchmark commands, the Phase
 15–19 evidence generators (`status: PASS` in each output), the graduation tests
-(3 passed) and the foundation evidence. On Windows the full unit run passes
+(3 passed) and the foundation evidence; the GitHub run of `d7852e8` then
+confirmed those jobs. On Windows the full unit run passes
 apart from five `test_w06c0r1_contract.py` tests that only fail while there are
 uncommitted changes; the whole file passes (23/23) on a committed tree.
 
@@ -148,11 +164,13 @@ The frozen W06C0R1 scope contract was not relaxed.
    PRE-13 quality gate fails; only a separately contracted quality package can
    change that.
 2. **The 11 master-only Validation jobs** (public suites, Phase 15–19 evidence,
-   graduation) can only run on a push to `master`. Pushing `master` also lets
-   `build.yml` publish `ghcr.io/…:latest` when Validation is green, even while
-   PRE-13 quality is red, because that gate is a separate workflow. Because the
-   holdout stays red, `master` is not pushed by default; pushing it is a
-   separate, explicit decision.
+   graduation) are verified on GitHub, but not on `master`: they only run on a
+   push to `master`, so the throwaway `d7852e8` relaxed exactly those
+   conditions and Validation finished 30 of 30 green with nothing skipped.
+   Pushing `master` would still add the image publication
+   (`ghcr.io/…:latest`) while PRE-13 quality is red, because that gate is a
+   separate workflow. Because the holdout stays red, `master` is not pushed by
+   default; pushing it is a separate, explicit decision.
 3. **Independent review** of the exact final SHA has not happened.
 4. Windows and Ubuntu results must come from the same final SHA; the local
    replay above does not substitute for it.
