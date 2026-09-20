@@ -36,8 +36,8 @@ _TYPE_NAME = re.compile(r'[A-Za-z0-9_-]{1,40}')
 
 
 def _count_ignored_type(counts, kind):
-    """Count one unrecognised record type by a bounded, content-free name."""
-    name = kind if isinstance(kind, str) and _TYPE_NAME.fullmatch(kind) else 'OTHER'
+    """Count one unrecognised string record type by a bounded ASCII-identifier name."""
+    name = kind if _TYPE_NAME.fullmatch(kind) else 'OTHER'
     if name != 'OTHER' and name not in counts and sum(1 for key in counts if key != 'OTHER') >= MAX_IGNORED_TYPE_NAMES:
         name = 'OTHER'
     counts[name] = counts.get(name, 0) + 1
@@ -125,7 +125,11 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
             elif doc.get('type') not in {'session_meta', 'event_msg', 'turn_context', 'compacted'}:
                 raise ValueError('UNSUPPORTED_CODEX_TRANSCRIPT')
         elif client == 'claude':
-            kind = doc.get('type') if isinstance(doc.get('type'), str) else None
+            kind = doc.get('type')
+            if not isinstance(kind, str):
+                # Only a *string* type this reader does not know is tolerated as
+                # newer metadata; a record with no usable type is malformed.
+                raise ValueError('UNSUPPORTED_CLAUDE_TRANSCRIPT')
             if kind in _CLAUDE_CONVERSATION_TYPES:
                 conversation_records += 1
                 message = doc.get('message', {})
@@ -133,7 +137,7 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
             elif kind not in _CLAUDE_METADATA_TYPES:
                 # An unrecognised type never becomes evidence, even when it
                 # carries a message-shaped field; it is only counted by name.
-                _count_ignored_type(ignored_types, doc.get('type'))
+                _count_ignored_type(ignored_types, kind)
                 continue
         else:
             raise ValueError('UNSUPPORTED_CLIENT')

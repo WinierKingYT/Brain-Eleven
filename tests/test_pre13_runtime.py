@@ -644,11 +644,11 @@ def test_an_unknown_record_that_carries_a_message_is_never_evidence(runtime, tmp
     assert 'FUTURE-TEXT' not in json.dumps(stats)
 
 
-def test_ignored_type_names_are_bounded_and_content_free(runtime, tmp_path):
+def test_ignored_type_names_are_bounded_ascii_identifiers(runtime, tmp_path):
     import re
     from brain_eleven.runtime.evidence import read_increment
     vault, project = runtime
-    hostile = ['x' * 200, 'has space and TEXT', {'nested': 'object'}, None, 7, 'ok-name']
+    hostile = ['x' * 200, 'has space and TEXT', 'ｕser', 'user\n', '', 'ok-name']
     documents = [{'type': kind} for kind in hostile] + [{'type': f'new-type-{number}'} for number in range(60)]
     path = _native_path(tmp_path, vault, 'claude', 's', documents)
     stats = {}
@@ -659,7 +659,89 @@ def test_ignored_type_names_are_bounded_and_content_free(runtime, tmp_path):
     assert sum(names.values()) == len(documents)
     assert 'OTHER' in names and 'ok-name' in names
     encoded = json.dumps(stats)
-    assert 'has space' not in encoded and 'x' * 41 not in encoded and 'nested' not in encoded
+    assert 'has space' not in encoded and 'x' * 41 not in encoded
+
+
+@pytest.mark.parametrize('document', [{}, {'foo': 1}, {'type': None}, {'type': 7}, {'type': ['user']},
+                                      {'role': 'user', 'content': 'a record with no type at all'}])
+def test_a_claude_record_without_a_string_type_is_still_rejected(runtime, tmp_path, document):
+    # Only a *string* type that is not recognised is tolerated. A record with no
+    # type, or a non-string one, is malformed rather than newer metadata.
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [document])
+    with pytest.raises(ValueError, match='UNSUPPORTED_CLAUDE_TRANSCRIPT'):
+        read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z')
+
+
+def test_case_variants_and_the_literal_other_are_unrecognised_not_conversation(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [
+        {'type': 'User', 'message': {'role': 'user', 'content': 'CASE-VARIANT-TEXT-MUST-NOT-BE-CAPTURED'}},
+        {'type': 'OTHER'}])
+    stats = {}
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    assert not batch.messages
+    assert stats['ignored_record_types'] == {'User': 1, 'OTHER': 1}
+
+
+def test_skipped_records_do_not_disturb_the_cursor_across_chunks(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    padding = 'x' * 3000
+    lines = []
+    for number in range(400):
+        lines.append(json.dumps({'type': 'attachment', 'attachment': {'data': padding}}))
+        lines.append(json.dumps({'type': 'mode', 'data': padding}))
+        lines.append(json.dumps({'type': 'user', 'sessionId': 's', 'message': {'role': 'user', 'content': f'We decided item {number}.'}}))
+    path = tmp_path / 'chunked.jsonl'
+    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    assert path.stat().st_size > 2 * 1024 * 1024  # forces more than one increment
+    cursor, increments, ids, contents, seen = None, 0, [], [], 0
+    while True:
+        stats = {}
+        batch, cursor = read_increment(vault, path, 'claude', 's', project, '2026-09-06T00:00:00Z', cursor, stats=stats)
+        increments += 1
+        ids += [message.record.evidence_id for message in batch.messages]
+        contents += [message.content for message in batch.messages]
+        seen += stats['records_seen']
+        if not cursor['has_more']:
+            break
+    assert increments > 1
+    assert len(contents) == 400 and contents[0] == 'We decided item 0.' and contents[-1] == 'We decided item 399.'
+    assert len(set(ids)) == 400
+    assert seen == 1200 and cursor['offset'] == path.stat().st_size
+
+
+def test_codex_records_report_conversation_counts_too(runtime, tmp_path):
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'codex', 's', [
+        {'type': 'session_meta', 'payload': {}},
+        {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': 'We decided to use SQLite.'}}])
+    stats = {}
+    batch, _ = read_increment(vault, path, 'codex', 's', project, '2026-09-06T00:00:00Z', stats=stats)
+    assert len(batch.messages) == 1
+    assert (stats['records_seen'], stats['conversation_records'], stats['ignored_record_types']) == (2, 1, {})
+
+
+def test_doctor_reports_the_transcript_drift_signal_without_changing_readiness(runtime, tmp_path):
+    from brain_eleven.runtime.install import doctor
+    vault, _ = runtime
+    cfg = RuntimeConfig(vault)
+    home = tmp_path / 'home'
+    baseline = doctor(vault, home=home)
+    assert baseline['last_transcript'] == {}
+    write_json(cfg.root / 'last-transcript-stats.json', {'at': '2026-09-20T00:00:00Z', 'records_seen': 5,
+                                                         'conversation_records': 0, 'ignored_record_types': {'mode': 5}})
+    checks = doctor(vault, home=home)
+    assert checks['last_transcript'] == {'at': '2026-09-20T00:00:00Z', 'records_seen': 5, 'conversation_records': 0,
+                                         'ignored_record_types': {'mode': 5}, 'no_conversation_records': True}
+    assert checks['status'] == baseline['status']
+    for invalid in (['not', 'a', 'dict'], {'records_seen': 'five', 'conversation_records': 0}):
+        write_json(cfg.root / 'last-transcript-stats.json', invalid)
+        assert doctor(vault, home=home)['last_transcript'] == {}
 
 
 def test_a_transcript_of_only_unknown_records_reads_no_messages_and_still_advances(runtime, tmp_path):
@@ -702,6 +784,26 @@ def test_a_failing_transcript_stats_write_never_fails_the_capture(runtime, tmp_p
     enqueue(vault, 'claude', {'cwd': str(vault), 'session_id': 'stats-io', 'transcript_path': str(path)})
     assert Worker(vault).once()['status'] == 'PROCESSED'
     assert ReviewStore(vault).list()[0]['status'] == 'PENDING'
+
+
+def test_a_path_safety_violation_on_the_stats_write_is_not_swallowed(runtime, tmp_path, monkeypatch):
+    # Only plain I/O failures are advisory; a path-safety violation is a boundary error.
+    import brain_eleven.runtime.worker as worker_module
+    from brain_eleven.runtime.path_safety import RuntimePathError
+    vault, project = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    real_write = worker_module.write_json
+
+    def unsafe_stats_write(path, value, *args, **kwargs):
+        if getattr(path, 'name', '') == 'last-transcript-stats.json':
+            raise RuntimePathError('simulated unsafe path')
+        return real_write(path, value, *args, **kwargs)
+
+    monkeypatch.setattr(worker_module, 'write_json', unsafe_stats_write)
+    path = _native_path(tmp_path, vault, 'claude', 'stats-unsafe', [
+        {'type': 'user', 'sessionId': 'stats-unsafe', 'message': {'role': 'user', 'content': candidate(project)['content']}}])
+    enqueue(vault, 'claude', {'cwd': str(vault), 'session_id': 'stats-unsafe', 'transcript_path': str(path)})
+    assert Worker(vault).once()['status'] != 'PROCESSED'
 
 
 def test_worker_captures_a_session_containing_modern_metadata_records(runtime, tmp_path):

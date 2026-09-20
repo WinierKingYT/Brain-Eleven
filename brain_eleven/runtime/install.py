@@ -208,6 +208,27 @@ def _session_start_health(vault):
     return message, state == 'failed'
 
 
+def _last_transcript_signal(cfg):
+    """Advisory transcript-drift signal from the last capture; {} when absent or malformed.
+
+    It never affects readiness: a transcript that carries no conversation records
+    is worth seeing (the client format may have drifted) but is not a failure.
+    """
+    try:
+        stats = read_json(cfg.root / 'last-transcript-stats.json', {})
+    except (OSError, ValueError, TypeError):
+        return {}
+    if not isinstance(stats, dict):
+        return {}
+    seen, conversation, ignored = stats.get('records_seen'), stats.get('conversation_records'), stats.get('ignored_record_types')
+    if not all(isinstance(value, int) and not isinstance(value, bool) for value in (seen, conversation)):
+        return {}
+    if not isinstance(ignored, dict) or not isinstance(stats.get('at'), str):
+        return {}
+    return {'at': stats['at'], 'records_seen': seen, 'conversation_records': conversation,
+            'ignored_record_types': ignored, 'no_conversation_records': seen > 0 and conversation == 0}
+
+
 def doctor(vault, *, home=None):
     cfg = RuntimeConfig(vault)
     checks = {'python': {'version': sys.version.split()[0], 'executable': sys.executable}}
@@ -232,6 +253,7 @@ def doctor(vault, *, home=None):
         last_hook = {}
     checks['last_hook'] = last_hook if isinstance(last_hook, dict) else {}
     checks['last_session_start'], session_failed = _session_start_health(vault)
+    checks['last_transcript'] = _last_transcript_signal(cfg)
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (
         all(checks['dependencies'].values())
