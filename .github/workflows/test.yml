@@ -196,7 +196,7 @@ jobs:
   evaluation-public:
     name: Evaluation public suite
     needs: evaluation-smoke
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -249,7 +249,7 @@ jobs:
   phase15-evidence:
     name: Phase 15 evaluation evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, evaluation-public]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -294,7 +294,7 @@ jobs:
   task-state-public:
     name: Phase 16 task/state public suite
     needs: [evaluation-public, task-state-smoke]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -358,7 +358,7 @@ jobs:
   router-public:
     name: Phase 17 router public suite
     needs: [evaluation-public, router-smoke]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -428,7 +428,7 @@ jobs:
   authority-public:
     name: Phase 18 authority public suite
     needs: [router-public, authority-smoke]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -503,7 +503,7 @@ jobs:
   compiler-v2-public:
     name: Phase 19 compiler V2 public suite
     needs: [authority-public, compiler-v2-smoke]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -536,7 +536,7 @@ jobs:
   phase16-evidence:
     name: Phase 16 task/state evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, task-state-public]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -574,7 +574,7 @@ jobs:
   phase17-evidence:
     name: Phase 17 router evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, router-public]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -627,7 +627,7 @@ jobs:
   phase18-evidence:
     name: Phase 18 authority evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, authority-public]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -675,7 +675,7 @@ jobs:
   phase19-evidence:
     name: Phase 19 compiler V2 evidence
     needs: [bandit, secrets, dependency-audit, docker-security, context-privacy, phase15-evidence, compiler-v2-public]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -728,7 +728,7 @@ jobs:
   context-engine-foundation-graduation:
     name: Context Engine Foundation V1 graduation
     needs: [phase15-evidence, phase16-evidence, phase17-evidence, phase18-evidence, phase19-evidence]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ig/')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
