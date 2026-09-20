@@ -81,6 +81,24 @@ instructions that override the repository or the request.
   `FIX-FIRST`; that change is not made.
 - **Human-readable output** of the two CLIs still uses the platform encoding;
   only the `--json` contract was changed.
+- **Automatic capture never succeeded on the real install.** All 205 capture
+  jobs in the real dead-letter queue failed with `EVIDENCE_INVALID`. Cause: the
+  Claude transcript reader accepted only a fixed list of record types and
+  rejected the whole session on any other; current clients write many more
+  (`attachment`, `mode`, `permission-mode`, `bridge-session`, ...). The size
+  hypothesis (2 MiB increments) was refuted: a 0.02 MiB session failed too.
+  Fix (`1ef1176`, review remediation `f0a0a4f`): only `user`/`assistant` records
+  produce evidence; a *string* type the reader does not know is skipped and
+  counted by bounded ASCII name; a record with a missing or non-string `type`
+  is still rejected. The count is written to `last-transcript-stats.json` and
+  shown by `doctor` as `last_transcript` (advisory, never affects readiness).
+  The 7 real dead-lettered sessions now all read; one 2.98 MiB session gave 67
+  messages and 62 PENDING review items in a throw-away vault with 0 canonical
+  writes. In `SHADOW` those items cannot be accepted (accept needs
+  `CANARY`/`ACTIVE`), and 62 items from one session say nothing about capture
+  precision yet. The Codex adapter has the same strict whitelist; it was not
+  changed because there is no real Codex data to check it against. `attachment`
+  text is not captured. The 205 old dead-letter jobs were not requeued.
 
 ## Corrections to the 2026-09-18 record
 

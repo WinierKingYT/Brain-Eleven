@@ -24,6 +24,14 @@ merged into the local `master` as `b30c6d5`; its remote run at `a4a3411` was
 green apart from the holdout. The frozen W06C0R1 scope contract only fails while
 the tree has uncommitted changes; it was not relaxed.
 
+Capture fix (2026-09-20, approved by Ahmet): automatic capture had never
+succeeded on the real install (205/205 jobs dead-lettered on unknown transcript
+record types). The reader now skips unknown string types and counts them;
+merged into the local `master` as a fast-forward to `f0a0a4f`, not pushed. New
+sessions will now fill the review queue; in `SHADOW` those items cannot be
+accepted. Still open and Ahmet's call: the pilot gate and whether to requeue
+the 205 old jobs. Details in `SRT00-PLAN.md`.
+
 Holdout decision (2026-09-20, delegated by Ahmet): the frozen corpus-v2 gate
 stays exactly as it is and PRE-13 promotion is deferred. No corpus, label or
 threshold change is acceptable; improving retrieval quality needs its own
