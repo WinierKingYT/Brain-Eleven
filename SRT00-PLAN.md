@@ -138,6 +138,8 @@ Remote runs on `ig/…` branches (`ig/srt-00-ig07-ci`, and
 | `d7852e8` | **success** — 30 of 30 jobs green, **0 skipped**; the 11 master-only jobs ran (their branch condition was relaxed, see below) | green / green | FAIL (holdout) | success |
 | `7e384a1` | **success** (#819) — 19 jobs green, 11 skipped by design; both Unit jobs green; **0 annotations** (the Node 20 and CodeQL v3 warnings are gone) | green / green | FAIL (holdout) | success |
 | `03920bb` | **success** (#820) — 30 of 30 jobs green, **0 skipped**, **0 annotations**; `f3dfa6f` plus the `ig/**` relaxation, merged onto the earlier throwaway so the push was a fast-forward | green / green | FAIL (holdout) | success |
+| `6103a3d` | **success** (#822) — 19 jobs green, 11 skipped by design, **0 annotations**; includes the opt-in router scope sweep (off by default) and the `retrieval_decision_v2` fix | not read | FAIL (holdout) | not read |
+| `00fddcf` | **success** (#823) — 30 of 30 jobs green, **0 skipped**, **0 annotations**; `6103a3d` plus the `ig/**` relaxation; the three Phase 17 router jobs (shadow smoke, public suite, evidence) ran against the new router code | not read | FAIL (holdout) | not read |
 
 `dc2fae5` is the local `master` tip at the time of writing, so the whole
 current code state has run on GitHub. Its first push (`fd9bbc0`) failed the
