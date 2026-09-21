@@ -331,6 +331,15 @@ class RetrievalDecisionEngine:
             authorities = _authority_candidates(resolution_result)
 
         ranked: list[_Ranked] = []
+        # A need matched only by a broad content-type category (any "state"
+        # or "constraint"-shaped candidate) is not evidence that a specific
+        # candidate is on-topic; exempting the whole category from the
+        # relevance filter is what let unrelated noise flood the selection.
+        # A precise per-record match (an exact tracked blocker/constraint id)
+        # is trusted without a lexical check. A broad match that fails
+        # relevance is parked here so a critical need never goes completely
+        # uncovered, without re-admitting every same-category candidate.
+        relevance_omitted: dict[str, list[_Ranked]] = {}
         for candidate in eligible:
             candidate_id = str(_get(candidate, "candidate_id", ""))
             authority = authorities.get(candidate_id)
@@ -346,12 +355,18 @@ class RetrievalDecisionEngine:
             retrieval_score = float(_get(candidate, "retrieval_score", 0.0) or 0.0)
             retrieval_score = max(0.0, min(1.0, retrieval_score))
             need_bonus = 0.35 if needs else 0.0
-            critical_bonus = 0.15 if any(need.priority == "critical" and need.need_id in needs for need in plan.needs) else 0.0
+            matched_critical = tuple(need for need in plan.needs if need.priority == "critical" and need.need_id in needs)
+            critical_bonus = 0.15 if matched_critical else 0.0
+            precise_critical = any(need.kind == "record" for need in matched_critical)
             score = round(min(1.0, retrieval_score * 0.5 + need_bonus + critical_bonus), 6)
             if candidate_texts is not None and has_query:
                 lexical = text_scores.get(candidate_id, 0)
-                if not critical_bonus and (lexical == 0 or lexical < best_text * .35):
+                if not precise_critical and (lexical == 0 or lexical < best_text * .35):
                     omitted[candidate_id] = 'INSUFFICIENT_TASK_RELEVANCE'
+                    if matched_critical:
+                        item = _Ranked(candidate, needs, score, retrieval_score, _candidate_channels(candidate), ())
+                        for need in matched_critical:
+                            relevance_omitted.setdefault(need.need_id, []).append(item)
                     continue
                 score = round(min(1.0, lexical * .85 + retrieval_score * .1 + critical_bonus), 6)
             reasons = ("AUTHORITY_UNRESOLVED",) if authority_status in {"UNRESOLVED", "CONTESTED"} else ()
@@ -362,7 +377,8 @@ class RetrievalDecisionEngine:
         selected: list[SelectedCandidate] = []
         groups: set[str] = set()
         covered_critical: set[str] = set()
-        for item in ranked:
+
+        def _try_select(item: _Ranked) -> bool:
             candidate = item.candidate
             candidate_id = str(_get(candidate, "candidate_id"))
             authority = authorities.get(candidate_id)
@@ -371,10 +387,10 @@ class RetrievalDecisionEngine:
             group = str(fingerprint or candidate_id)
             if group in groups and not (critical.intersection(item.needs) - covered_critical):
                 omitted[candidate_id] = "REDUNDANT_CLAIM"
-                continue
+                return False
             if len(selected) >= options.max_selected:
                 omitted[candidate_id] = "DECISION_BUDGET"
-                continue
+                return False
             groups.add(group)
             covered_critical.update(critical.intersection(item.needs))
             selected.append(
@@ -392,6 +408,26 @@ class RetrievalDecisionEngine:
                     reason_codes=item.reasons,
                 )
             )
+            return True
+
+        for item in ranked:
+            _try_select(item)
+
+        # Guarantee coverage, never a category: a critical need still with no
+        # coverage gets exactly one best-effort candidate back, not every
+        # same-category candidate that lost the relevance filter.
+        for need_id in sorted(critical - covered_critical):
+            pool = relevance_omitted.get(need_id, [])
+            if not pool:
+                continue
+            pool.sort(key=lambda item: (-item.score, -item.retrieval_score, _get(item.candidate, "candidate_id")))
+            best = pool[0]
+            best_id = str(_get(best.candidate, "candidate_id"))
+            if omitted.get(best_id) == 'INSUFFICIENT_TASK_RELEVANCE':
+                del omitted[best_id]
+            backfilled = _Ranked(best.candidate, best.needs, best.score, best.retrieval_score, best.channels, best.reasons + ("CRITICAL_BACKFILL",))
+            if not _try_select(backfilled):
+                omitted[best_id] = 'INSUFFICIENT_TASK_RELEVANCE'
 
         degraded = []
         if str(_get(router_result, "status", "")) == "DEGRADED":
