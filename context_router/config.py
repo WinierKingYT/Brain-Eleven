@@ -56,6 +56,9 @@ class RouterConfig:
     max_graph_hops: int = 2
     strict_min_memory_candidates: int = 3
     cache_enabled: bool = True
+    # Adds a scope-complete candidate tier after the lexical passes. Off by
+    # default: candidate sets, plan fingerprints and cache keys are unchanged.
+    scope_sweep: bool = False
 
     def __post_init__(self) -> None:
         if self.version != ROUTER_CONFIG_VERSION:
@@ -85,6 +88,8 @@ class RouterConfig:
                 raise RouterConfigError(f"{name} must be a non-negative integer")
         if not isinstance(self.cache_enabled, bool):
             raise RouterConfigError("cache_enabled must be boolean")
+        if not isinstance(self.scope_sweep, bool):
+            raise RouterConfigError("scope_sweep must be boolean")
         object.__setattr__(self, "profiles", profiles)
 
     @classmethod
@@ -135,6 +140,7 @@ class RouterConfig:
             "max_graph_hops",
             "strict_min_memory_candidates",
             "cache_enabled",
+            "scope_sweep",
         }
         if set(routing) - allowed_routing:
             raise RouterConfigError("Unknown routing configuration field")
@@ -147,4 +153,5 @@ class RouterConfig:
             max_graph_hops=routing.get("max_graph_hops", 2),
             strict_min_memory_candidates=routing.get("strict_min_memory_candidates", 3),
             cache_enabled=routing.get("cache_enabled", True),
+            scope_sweep=routing.get("scope_sweep", False),
         )

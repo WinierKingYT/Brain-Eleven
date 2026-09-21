@@ -439,3 +439,113 @@ def test_cli_json_and_shadow_report_remain_content_free(tmp_path, capsys):
     assert "mem_a_sqlite" in rendered
     assert "SQLite Markdown write ordering is atomic" not in rendered
     assert "SQLite Markdown write ordering is atomic" not in persisted
+
+
+# --- scope sweep: a scope-complete candidate tier (off by default) -----------------
+
+def _sweep_context(tmp_path, request="Implement SQLite Markdown persistence ordering."):
+    context = _configured_context(tmp_path, request)
+    _write_memory(
+        tmp_path,
+        [
+            _memory("mem_a_sqlite", "project-a", "SQLite Markdown write ordering is atomic."),
+            _memory("mem_a_unrelated", "project-a", "Weekly office kitchen rota."),
+            _memory("mem_a_observation", "project-a", "Coffee machine descaling note.", memory_type="observation"),
+            _memory("mem_a_old_unrelated", "project-a", "Retired parking rule.", status="superseded"),
+            _memory("mem_b_unrelated", "project-b", "Other project badge renewal."),
+            _memory("mem_global_unrelated", None, "Global holiday calendar."),
+        ],
+    )
+    return context
+
+
+def _enable_sweep(tmp_path, **extra):
+    routing = {"scope_sweep": True}
+    document = {"schema_version": 1, "routing": routing}
+    document.update(extra)
+    (tmp_path / ".claude" / "context-router.json").write_text(json.dumps(document), encoding="utf-8")
+
+
+def _ids(result):
+    return {candidate.candidate_id for candidate in result.candidates}
+
+
+def test_scope_sweep_is_off_by_default(tmp_path):
+    context = _sweep_context(tmp_path)
+
+    result = ContextRouter(tmp_path).route(context)
+
+    assert "mem_a_unrelated" not in _ids(result)
+    assert all(query.strategy != "SCOPE_SWEEP" for query in result.plan.queries)
+    assert {query.pass_name for query in result.plan.queries} <= {"strict", "fallback"}
+
+
+def test_scope_sweep_adds_in_scope_memory_without_lexical_overlap(tmp_path):
+    context = _sweep_context(tmp_path)
+    _enable_sweep(tmp_path)
+
+    result = ContextRouter(tmp_path).route(context)
+
+    by_id = {candidate.candidate_id: candidate for candidate in result.candidates}
+    assert {"mem_a_unrelated", "mem_global_unrelated"} <= set(by_id)
+    assert "scope_sweep" in by_id["mem_a_unrelated"].match_signals
+    # A lexical match always outranks a sweep-only candidate.
+    assert by_id["mem_a_sqlite"].retrieval_score > by_id["mem_a_unrelated"].retrieval_score
+    assert [c.candidate_id for c in result.candidates][0] == "mem_a_sqlite"
+
+
+def test_scope_sweep_keeps_project_isolation_lifecycle_and_profile_types(tmp_path):
+    context = _sweep_context(tmp_path)
+    _enable_sweep(tmp_path)
+
+    result = ContextRouter(tmp_path).route(context)
+
+    assert "mem_a_unrelated" in _ids(result)              # the sweep is really running
+    assert "mem_b_unrelated" not in _ids(result)         # another project stays out
+    assert "mem_a_old_unrelated" not in _ids(result)      # superseded stays out
+    assert "mem_a_observation" not in _ids(result)        # implementation profile has no observations
+    no_global = ContextRouter(tmp_path).route(context, RoutingOptions(include_global=False))
+    assert "mem_global_unrelated" not in _ids(no_global)  # trusted caller can still drop global
+
+
+def test_scope_sweep_respects_the_memory_candidate_budget(tmp_path):
+    context = _sweep_context(tmp_path)
+    _enable_sweep(tmp_path, profiles={"implementation": {"memory_candidate_budget": 2}})
+
+    result = ContextRouter(tmp_path).route(context)
+
+    memory_ids = [c.candidate_id for c in result.candidates if c.source_type == "memory"]
+    assert len(memory_ids) == 2
+    assert "mem_a_sqlite" in memory_ids                    # lexical evidence survives the cut
+
+
+def test_scope_sweep_setting_must_be_boolean(tmp_path):
+    context = _sweep_context(tmp_path)
+    (tmp_path / ".claude" / "context-router.json").write_text(
+        json.dumps({"schema_version": 1, "routing": {"scope_sweep": "yes"}}), encoding="utf-8"
+    )
+
+    result = ContextRouter(tmp_path).route(context)
+
+    assert result.status == "FAILED"
+    assert result.candidates == ()
+    assert "scope_sweep" in result.error                   # rejected for its type, not as an unknown field
+
+
+def test_scope_sweep_is_part_of_the_plan_and_cache_identity(tmp_path):
+    context = _sweep_context(tmp_path)
+    router = ContextRouter(tmp_path)
+    first = router.route(context)                          # writes a cache entry with the flag off
+    _enable_sweep(tmp_path)
+
+    second = ContextRouter(tmp_path).route(context)
+
+    assert first.plan.fingerprint != second.plan.fingerprint
+    assert "mem_a_unrelated" not in _ids(first)
+    assert "mem_a_unrelated" in _ids(second)               # the old cache entry is not reused
+
+
+def test_retrieval_query_accepts_only_known_passes():
+    assert RetrievalQuery("q01", "memory", "SCOPE_SWEEP", (), (), "sweep").pass_name == "sweep"
+    with pytest.raises(Exception):
+        RetrievalQuery("q01", "memory", "SCOPE_SWEEP", (), (), "everything")

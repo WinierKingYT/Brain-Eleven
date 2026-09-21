@@ -114,8 +114,8 @@ class RetrievalQuery:
         _string(self.query_id, "query_id")
         _string(self.source, "query.source")
         _string(self.strategy, "query.strategy")
-        if self.pass_name not in {"strict", "fallback"}:
-            raise RouterContractError("query.pass_name must be strict or fallback")
+        if self.pass_name not in {"strict", "fallback", "sweep"}:
+            raise RouterContractError("query.pass_name must be strict, fallback or sweep")
         object.__setattr__(self, "terms", _unique_strings(self.terms, "query.terms"))
         object.__setattr__(self, "memory_types", _unique_strings(self.memory_types, "query.memory_types"))
 
