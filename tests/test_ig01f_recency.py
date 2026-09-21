@@ -1,0 +1,134 @@
+"""Frozen IG01-F provider, projection, safety, and HOLDOUT gates."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from evals.ig01f.corpus import (
+    DEFAULT_OUTPUT,
+    SOURCE_ROOT,
+    CorpusProjectionError,
+    build_projection,
+    check_projection,
+)
+from evals.ig01f.provider import RecencyContinuityProvider
+
+
+PINNED_HOLDOUT_SHA256 = "8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1"
+
+
+def _rows(name: str = "dev.jsonl"):
+    return [json.loads(line) for line in (DEFAULT_OUTPUT / name).read_text(encoding="utf-8").splitlines()]
+
+
+def _vault(tmp_path: Path, row: dict) -> Path:
+    root = tmp_path / "vault"
+    target = root / ".claude" / "validated-memory.json"
+    target.parent.mkdir(parents=True)
+    target.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "revision": 0,
+                "updated_at": "2025-01-01T00:00:00Z",
+                "validated_at": "2025-01-01T00:00:00Z",
+                "summary": {"source": "ig01f_test"},
+                "validated_memory": row["memories"],
+                "rejected_memory": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return root
+
+
+def _task(row: dict, text: str | None = None):
+    return SimpleNamespace(task_id=row["case_id"], project_id=row["project_id"], prompt=text or row["task_text"])
+
+
+def test_projection_is_byte_deterministic_and_committed():
+    first = build_projection()
+    second = build_projection()
+    assert first == second
+    check_projection()
+
+
+def test_projection_refuses_holdout_before_path_access(monkeypatch):
+    opened = []
+    original = Path.read_text
+
+    def watched(path, *args, **kwargs):
+        opened.append(str(path))
+        assert "holdout" not in str(path).casefold()
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", watched)
+    build_projection()
+    assert opened
+    with pytest.raises(CorpusProjectionError, match="HOLDOUT"):
+        from evals.ig01f.corpus import _safe_source_path
+
+        _safe_source_path(SOURCE_ROOT, "holdout")
+
+
+def test_holdout_manifest_pin_is_unchanged_without_opening_holdout():
+    manifest = json.loads((SOURCE_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["holdout_sha256"] == PINNED_HOLDOUT_SHA256
+    assert manifest["file_sha256"]["holdout"] == PINNED_HOLDOUT_SHA256
+
+
+def test_query_blind_deterministic_and_read_only(tmp_path):
+    row = _rows()[0]
+    vault = _vault(tmp_path, row)
+    provider = RecencyContinuityProvider()
+    before = (vault / ".claude" / "validated-memory.json").read_bytes()
+    first = provider.select(_task(row, "first unrelated task"), vault)
+    second = provider.select(_task(row, "different task text"), vault)
+    after = (vault / ".claude" / "validated-memory.json").read_bytes()
+    assert [item.id for item in first.selected_items] == [item.id for item in second.selected_items]
+    assert first.as_dict() == second.as_dict()
+    assert before == after
+
+
+def test_scope_and_lifecycle_leakage_are_zero(tmp_path):
+    for category in ("wrong_project_candidate", "superseded_memory", "resolved_blocker"):
+        row = next(item for item in _rows() if item["category"] == category)
+        vault = _vault(tmp_path / category, row)
+        selected = RecencyContinuityProvider().select(_task(row), vault)
+        assert set(item.id for item in selected.selected_items).issubset(set(row["candidate_ids"]))
+        for item in selected.selected_items:
+            assert item.project_id in {None, row["project_id"]}
+            assert item.status == "active"
+
+
+def test_budget_is_enforced_on_exact_rendered_selection(tmp_path):
+    row = _rows()[0]
+    for index, memory in enumerate(row["memories"]):
+        memory["content"] = f"record-{index}-" + ("x" * 500)
+    vault = _vault(tmp_path, row)
+    provider = RecencyContinuityProvider(max_context_tokens=64, minimum_headroom_tokens=8, hard_byte_limit=256)
+    result = provider.select(_task(row), vault)
+    assert result.selected_items == ()
+
+
+def test_projection_contains_all_public_phenomena_and_languages():
+    rows = _rows() + _rows("validation.jsonl")
+    source_manifest = json.loads((SOURCE_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    assert {row["category"] for row in rows} == set(source_manifest["phenomena"])
+    assert {row["language"] for row in rows} == set(source_manifest["languages"])
+    assert len(rows) == 114
+
+
+def test_projection_has_no_label_bearing_candidate_ids_or_content():
+    for row in _rows() + _rows("validation.jsonl") + _rows("abstention.jsonl"):
+        for memory in row["memories"]:
+            payload = json.dumps(memory, sort_keys=True).casefold()
+            assert "-answer" not in payload
+            assert "-distractor" not in payload
+            assert memory["memory_id"] in row["candidate_ids"]
+            assert memory["memory_id"].startswith("mem-ig01f-")
+            assert len(memory["memory_id"]) == len("mem-ig01f-") + 20
