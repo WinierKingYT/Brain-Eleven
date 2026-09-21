@@ -29,6 +29,9 @@ from brain_eleven.state.resolver import (  # noqa: E402
 from .models import RetrievalQuery, RouteScope
 from .policy import lifecycle_allowed
 
+# Below every lexical base score (>= 0.40) and the RECENT_CONTINUITY floor (0.20).
+SCOPE_SWEEP_SCORE = 0.10
+
 
 @dataclass(frozen=True)
 class RawCandidate:
@@ -109,6 +112,11 @@ class MemoryAdapter:
                 return (False, 0.0, "")
             recency = max(0.20, 1.0 - (age_days / 30.0) * 0.60)
             return (True, round(recency, 4), "continuity_recency")
+        if query.strategy == "SCOPE_SWEEP":
+            # Scope, lifecycle and profile types were already enforced by
+            # retrieve(); this only says "in scope, no lexical evidence". The
+            # score sits below every lexical base so it never outranks a match.
+            return (True, SCOPE_SWEEP_SCORE, "scope_sweep")
         if not terms:
             return (False, 0.0, "")
         matched = tuple(term for term in terms if term in haystack)

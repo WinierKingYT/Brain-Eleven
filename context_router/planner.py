@@ -29,6 +29,7 @@ _ALIASES = {
 }
 STRICT_TIER = "strict"
 FALLBACK_TIER = "fallback"
+SWEEP_TIER = "sweep"
 
 
 def _unique(values: Iterable[str]) -> tuple[str, ...]:
@@ -60,6 +61,7 @@ def _fingerprint(
     scope: RouteScope,
     history_mode: str,
     config_version: int,
+    scope_sweep: bool = False,
 ) -> str:
     """Fingerprint all task inputs that can affect planning or cache output."""
     document = {
@@ -74,6 +76,10 @@ def _fingerprint(
         "history_mode": history_mode,
         "config_version": config_version,
     }
+    if scope_sweep:
+        # Only when enabled, so fingerprints (and cache keys) of the default
+        # configuration are byte-for-byte what they were before the tier existed.
+        document["scope_sweep"] = True
     raw = json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -122,7 +128,10 @@ def build_plan(task, scope: RouteScope, history_mode: str, config: RouterConfig)
     if profile_config.allow_graph and (getattr(task, "entities", ()) or concepts or domains):
         add("graph", "RELATION_EXPANSION", _unique((*getattr(task, "entities", ()), *concepts, *domains)), FALLBACK_TIER)
 
-    fingerprint = _fingerprint(task, profile, scope, history_mode, config.version)
+    if config.scope_sweep:
+        add("memory", "SCOPE_SWEEP", (), SWEEP_TIER)
+
+    fingerprint = _fingerprint(task, profile, scope, history_mode, config.version, config.scope_sweep)
     route_id = "route_" + fingerprint[:20]
     return RetrievalPlan(
         route_id=route_id,

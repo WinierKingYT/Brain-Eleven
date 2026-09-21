@@ -13,7 +13,7 @@ from .adapters import GraphAdapter, MemoryAdapter, RawCandidate, StateAdapter, i
 from .cache import RouterCache
 from .config import RouterConfig, RouterConfigError
 from .models import Candidate, RetrievalPlan, RetrievalQuery, RouteScope, RouterResult, RoutingOptions
-from .planner import FALLBACK_TIER, STRICT_TIER, build_plan
+from .planner import FALLBACK_TIER, STRICT_TIER, SWEEP_TIER, build_plan
 from .policy import ScopePolicyError, lifecycle_allowed, resolve_history_mode, resolve_profile, resolve_scope
 
 
@@ -373,6 +373,21 @@ class ContextRouter:
                 raw_candidates.extend(graph_candidates)
                 if graph_reason:
                     degraded.append(graph_reason)
+
+        # Scope-complete tier: runs regardless of how many lexical matches the
+        # passes above found, so a required record with no lexical overlap is
+        # still a candidate. Global memory follows the same trusted scope flag.
+        for query in (query for query in plan.queries if query.source == "memory" and query.pass_name == SWEEP_TIER):
+            raw_candidates.extend(
+                self.memory.retrieve(
+                    snapshot,
+                    memory_revision,
+                    query,
+                    scope,
+                    history_mode,
+                    include_global=scope.include_global,
+                )
+            )
 
         candidates = self._normalize(raw_candidates, plan.candidate_budget)
         if not self._inputs_current(states, memory_revision):

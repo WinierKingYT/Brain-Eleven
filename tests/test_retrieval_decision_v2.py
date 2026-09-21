@@ -172,6 +172,56 @@ def test_history_state_matching_and_unresolved_authority_are_safe():
     assert by_id["mem-resolved"].reason_codes == ("AUTHORITY_UNRESOLVED",)
 
 
+def test_broad_critical_category_no_longer_blanket_includes_off_topic_noise():
+    """A 'state'/'constraint' content-type match is a category, not a topic.
+
+    Blanket-exempting every candidate of that category from the lexical
+    relevance filter is what let unrelated noise flood the selection (the
+    holdout regression this reproduces). A single guaranteed slot preserves
+    recall for the need; it must not become blanket inclusion.
+    """
+    on_topic = _candidate("mem-on-topic", content_type="decision")
+    noise_1 = _candidate("mem-noise-1", content_type="blocker", source_type="state")
+    noise_2 = _candidate("mem-noise-2", content_type="blocker", source_type="state")
+    noise_3 = _candidate("mem-noise-3", content_type="risk", source_type="state")
+    task, router, authority = _inputs(
+        [on_topic, noise_1, noise_2, noise_3],
+        authority=[_authority(on_topic), _authority(noise_1), _authority(noise_2), _authority(noise_3)],
+    )
+    task.task.raw_request = "holdout gate quality decision"
+    task.state = SimpleNamespace(active_blockers=({"id": "blocker-9"},))
+    texts = {
+        "mem-on-topic": "Holdout gate stays red by decision until quality improves",
+        "mem-noise-1": "Printer driver installation fails on windows update",
+        "mem-noise-2": "Coffee machine descaling schedule for the office kitchen",
+        "mem-noise-3": "Parking garage badge access renewal deadline next month",
+    }
+
+    result = RetrievalDecisionEngine().select(task, router, authority, candidate_texts=texts)
+
+    selected_ids = {item.candidate_id for item in result.selected}
+    assert "mem-on-topic" in selected_ids
+    # Exactly one off-topic "state"-category candidate survives: a backfill
+    # for the otherwise-uncovered critical need, never all three.
+    assert len(selected_ids & {"mem-noise-1", "mem-noise-2", "mem-noise-3"}) == 1
+
+
+def test_precise_record_critical_match_still_bypasses_relevance_filter():
+    """A specifically tracked record (exact id match) is trusted without a
+    lexical check — only the broad content-type category lost its bypass."""
+    tracked = _candidate("mem-tracked-blocker", content_type="blocker", source_type="state")
+    tracked.canonical_ref = {"authority": "state", "memory_id": "mem-tracked-blocker", "item_id": "blocker-9"}
+    task, router, authority = _inputs([tracked], authority=[_authority(tracked)])
+    task.task.raw_request = "something entirely unrelated to this record"
+    task.state = SimpleNamespace(active_blockers=({"id": "blocker-9"},))
+    texts = {"mem-tracked-blocker": "Completely different wording with zero shared terms whatsoever"}
+
+    result = RetrievalDecisionEngine().select(task, router, authority, candidate_texts=texts)
+
+    assert [item.candidate_id for item in result.selected] == ["mem-tracked-blocker"]
+    assert "mem-tracked-blocker" not in result.omitted
+
+
 def test_duplicate_candidates_scope_mismatch_and_stale_source_are_omitted():
     first = _candidate("mem-1")
     duplicate = _candidate("mem-1", score=1.0)

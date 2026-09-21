@@ -375,6 +375,20 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## Recent sessions
 
+**2026-09-21** — Work order changed (see `CLAUDE.md`): SRT-00 → IG-05
+reachability check → IG-05 → IG-06 → IG-07. SRT-00: the red `origin/master`
+(`5dc0121`, four unit tests failing on every run since 2026-09-18) is explained
+by an unpushed branch, not by flakiness; the fixes are on
+`ig/real-transcript-compat` and in the local `master`. The Node 20 and CodeQL
+v3 warnings were removed and verified on all 30 jobs (`03920bb`, 0
+annotations). `master` is still not pushed: that push publishes the `latest`
+image and needs its own approval. Two measurements changed the plan: the
+embedding signal (e5-base) does not pick the required memory among real
+candidates any better than term overlap, and the precision ceiling of a
+prompt-only selector on corpus-v2 is 0.211, so the 0.70 gate and the 0.60 IG-05
+target look unreachable there. See `docs/CANARY-GATE-FEASIBILITY-PROPOSAL.md`.
+D0-RECHECK had already been run on 2026-09-12.
+
 **2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
 one independent contract `FIX-FIRST` cycle and one independent implementation
 `FIX-FIRST` remediation cycle. The final implementation/test head is
