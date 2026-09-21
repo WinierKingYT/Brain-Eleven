@@ -21,6 +21,8 @@ def main(argv=None):
     rollout.add_argument('mode', choices=['OFF', 'SHADOW', 'CANARY', 'ACTIVE'])
     approval = sub.add_parser('approval')
     approval.add_argument('state', choices=['OFF', 'ON'])
+    shadow_accept = sub.add_parser('shadow-accept')
+    shadow_accept.add_argument('state', choices=['OFF', 'ON'])
     migration = sub.add_parser('migration')
     migration.add_argument('action', choices=['upgrade', 'rollback'])
     graduation = sub.add_parser('graduation')
@@ -46,6 +48,9 @@ def main(argv=None):
         elif args.command == 'approval':
             from .runtime.storage import RuntimeConfig
             result = RuntimeConfig(args.vault).set_human_approval(args.state == 'ON')
+        elif args.command == 'shadow-accept':
+            from .runtime.storage import RuntimeConfig
+            result = RuntimeConfig(args.vault).set_shadow_accept(args.state == 'ON')
         elif args.command == 'migration':
             from .runtime.migration import migrate, rollback
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)

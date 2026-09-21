@@ -389,6 +389,22 @@ prompt-only selector on corpus-v2 is 0.211, so the 0.70 gate and the 0.60 IG-05
 target look unreachable there. See `docs/CANARY-GATE-FEASIBILITY-PROPOSAL.md`.
 D0-RECHECK had already been run on 2026-09-12.
 
+IG-05 reachability check (`docs/IG05-REACHABILITY-CHECK.md`, public suite only): on
+`phase15-corpus-v2` the floors (macro precision ≥ 0.60 and mandatory recall ≥ 0.80)
+are not jointly reachable; even a label-leaking upper bound gives 0.565 / 0.812,
+because the required memory cycles with a "scenario N" counter that no content
+explains. The one lever it found was built as an opt-in, default-off router tier
+(`routing.scope_sweep`): required memories among candidates 97/130 → 129/130,
+end-to-end V2 recall 0.714 → 0.760 (V1 0.747), precision 0.189 → 0.159 (V1 0.180).
+It is the recall/precision trade, so it stays off. The D1 call that opens IG-05 is
+still not recorded. Validation on both CI branches was green with 0 annotations
+(#822, #823).
+
+Decisions recorded the same day (`INTELLIGENCE-GRADUATION.md`, "Owner decisions"): IG-05 closed as
+unreachable on this corpus, V2 stays SHADOW, IG-06/IG-07 not opened, Phase 20 locked, scope sweep
+off, and human-approved accept in SHADOW added behind the default-off `shadow_accept` flag
+(`python -m brain_eleven shadow-accept ON`); it awaits independent review and is not enabled.
+
 **2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
 one independent contract `FIX-FIRST` cycle and one independent implementation
 `FIX-FIRST` remediation cycle. The final implementation/test head is

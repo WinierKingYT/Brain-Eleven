@@ -194,6 +194,19 @@ Bulgular:
    kararıdır. Ayrıca kapı, teslim edilmeyen V2 hattını ölçüyor ("Native delivery
    never calls this function") ve `review_action` accept iznini ona bağlıyor.
 
+## Şimdi hatırlama testini gerçekten çalıştırmak (2026-09-21 kararı)
+
+Kilit kaldırıldı ama **açılmadı**: `shadow_accept` varsayılan kapalı, bayrağı sen açarsın.
+
+1. `python -m brain_eleven shadow-accept ON` — SHADOW'da insan onaylı kabulü açar.
+2. `python -m brain_eleven review` — inceleme sayfasını açar. 248 bekleyen kayıt var; hepsini
+   onaylamana gerek yok, önemli birkaç kararı (holdout kararı, push kararı, Phase 20 durumu,
+   transcript düzeltmesi) seçip "Kabul et"le yeterli. Sırları ve gürültüyü kabul etme.
+3. Yeni bir oturumda yukarıdaki 5 soruyu yeniden sor, tabloyu doldur.
+
+Beklenti: onayladığın kayıtlar SessionStart bağlamına V1 yolundan girer (testle doğrulandı).
+Bayrağı geri almak için `shadow-accept OFF`; onaylanmış kayıtlar canonical'da kalır.
+
 ## Günlük (iki hafta)
 
 Her gün bir satır: "Bugün hatırladı mı? Evet/hayır, neyi."

@@ -105,6 +105,27 @@ overstates the case. Two cheap, infrastructure-free recheck experiments are
 proposed in that document; their results are the next real input to whether
 D1 should be revisited.
 
+### Owner decisions, 2026-09-21
+
+Recorded at the owner's explicit instruction after the IG-05 reachability check
+(`docs/IG05-REACHABILITY-CHECK.md`). They change no floor and tune nothing.
+
+- **IG-05 is closed as unreachable on `phase15-corpus-v2`.** The immutable floors
+  (context precision ≥ 0.60 and mandatory recall ≥ 0.80) are not jointly reachable on it:
+  even a label-leaking upper bound gives 0.565 / 0.812. This is consistent with D1 (IG-05
+  through IG-09 stay closed); it is not a pass. A real-data measurement or a corpus whose
+  prompts determine its labels would be a separate, explicit decision.
+- **V2 stays SHADOW and is not promoted.** IG-06 and IG-07 are not opened (both depend on
+  IG-05). Phase 20 stays FROZEN / LOCKED. The outcome recorded is "today's system is
+  sufficient; V2 was not promoted". Simplifying or retiring V2 remains a later, explicit call.
+- **Router scope sweep stays off.** `routing.scope_sweep` exists and is tested but is off by
+  default: enabled, V2 recall rises above V1 (0.760 vs 0.747) and precision falls below it
+  (0.159 vs 0.180).
+- **Human-approved accept in SHADOW** (`shadow_accept`, off by default) is adopted so that
+  reviewed candidates can reach canonical memory without weakening the quality gate, which
+  still governs CANARY and any V2 promotion. It needs an independent review before it counts
+  as shipped; enabling it and accepting candidates is the owner's action.
+
 ## Evaluation contract to establish in IG-01
 
 Retrieval covers exact/related relevance, recent distractors, old critical

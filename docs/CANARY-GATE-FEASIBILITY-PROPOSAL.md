@@ -1,8 +1,8 @@
 # CANARY gate feasibility — proposal for independent review
 
-**Status: PROPOSAL.** Not a decision, not a contract, not completion evidence.
-It changes no threshold, corpus, code path or authority, and it does not reopen
-Phase 20 or promote V2. Classification in `DOCUMENTATION-AUTHORITY.md` is left to
+**Status: PROPOSAL (sections 1–4), with the owner's decision recorded in section 5.** It is
+not a contract and not completion evidence. The proposal itself changes no threshold, corpus,
+code path or authority, and it does not reopen Phase 20 or promote V2. Classification in `DOCUMENTATION-AUTHORITY.md` is left to
 the owner; until then it defaults to HISTORICAL by path rule 7.
 
 **Özet (TR).** Canonical hafızaya yeni kayıt kabulü (`review accept`), CANARY moduna
@@ -101,7 +101,18 @@ the frozen corpus, or the gate's role for normal-turn delivery.
 
 No threshold lowered, no case skipped, no corpus or holdout label touched, no mode
 changed (the repeated `set_mode('CANARY')` attempts were refused by the gate itself and
-left `SHADOW` in place), no push. An unrelated, tested fix to
-`retrieval_decision_v2/engine.py` (a broad "critical" category no longer bypasses the
-relevance filter) exists in the working tree; it did not move the gate numbers and is
-not part of this proposal.
+left `SHADOW` in place). An unrelated, tested fix to `retrieval_decision_v2/engine.py`
+(a broad "critical" category no longer bypasses the relevance filter) was committed
+separately; it did not move the gate numbers and is not part of this proposal.
+
+## 5. Decision (owner, 2026-09-21)
+
+The owner chose **option B**, as an explicit flag rather than a change of mode semantics.
+`shadow_accept` (off by default; `python -m brain_eleven shadow-accept ON|OFF`) lets a person
+accept a reviewed candidate while the runtime stays in SHADOW. What did **not** change: the
+quality gate still governs CANARY and any V2 promotion, no threshold or corpus was touched,
+the automatic worker path never uses the flag, and it never applies while the runtime is OFF.
+The SHADOW refusal of accept, which had no test, now has one in each direction
+(`tests/test_shadow_accept.py`). The flag has not been enabled by the assistant and the change
+still needs an independent review before it counts as shipped. Option D (a holdout ceiling
+audit by someone with holdout access) remains open and unaffected.
