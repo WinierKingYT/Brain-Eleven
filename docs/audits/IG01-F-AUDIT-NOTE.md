@@ -181,3 +181,10 @@ uses the Phase-15 retrieval corpus for direct V1/V2 comparability or introduces
 a reviewed `ig-eval-v2` retrieval/vault projection capable of the requested 17
 phenomenon and three-language breakdown. Existing IG01-D evidence must remain
 immutable either way.
+
+## Owner resolution
+
+After this audit commit, the owner authorized preparing the missing corpus.
+`docs/contracts/IG01-F-PREREGISTRATION.md` records the new derived public-only
+projection and common-budget decision. This does not alter the historical Phase
+0 finding or preserved IG01-D evidence.
