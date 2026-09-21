@@ -131,6 +131,7 @@ authorize opening Phase 20 or promoting V2.
 | `evals/fixtures/README.md`, `evals/private_eval/README.md`, `evals/reports/README.md` | CURRENT dataset/tool instructions within their named versions; metrics do not imply IG acceptance. |
 | `evals/intelligence_taxonomy.py` | CURRENT **IG-00 shared evaluation vocabulary** retained for IG-01; category/metric names only, with no evaluator, ranking or tuning implementation. |
 | `evals/ig01e/**` | CURRENT **IG01-E read-only audit implementation**; it verifies the evaluation foundation and emits content-free evidence only. |
+| `docs/audits/IG01-F-AUDIT-NOTE.md` | CURRENT **IG01-F Phase 0 audit**; records the exact-head prerequisites, verified provider/corpus/budget boundaries, and the mandatory STOP pending an owner-defined equal-budget and corpus-projection contract. It authorizes no implementation or measurement. |
 
 ## Default path rules (first match)
 
