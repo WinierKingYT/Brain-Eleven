@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import copy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -16,6 +17,7 @@ from evals.ig01f.corpus import (
     check_projection,
 )
 from evals.ig01f.provider import RecencyContinuityProvider
+from evals.ig01f.measure import MeasurementError, _load, validate_evidence
 
 
 PINNED_HOLDOUT_SHA256 = "8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1"
@@ -132,3 +134,38 @@ def test_projection_has_no_label_bearing_candidate_ids_or_content():
             assert memory["memory_id"] in row["candidate_ids"]
             assert memory["memory_id"].startswith("mem-ig01f-")
             assert len(memory["memory_id"]) == len("mem-ig01f-") + 20
+
+
+def _evidence_envelope():
+    summary = {"leakage": {name: 0 for name in (
+        "forbidden_leakage", "wrong_project_leakage", "superseded_leakage", "resolved_leakage"
+    )}}
+    provider = {"aggregate": summary, "by_phenomenon": {}, "by_language": {}, "case_results": []}
+    return {
+        "schema_version": 1,
+        "report_type": "ig01f-naive-baseline-evidence",
+        "source": {"git_sha": "a" * 40, "source_fingerprint": "sha256:" + "b" * 64,
+                   "corpus_version": "ig01f-recency-v1", "splits": ["dev", "validation"],
+                   "holdout_included": False},
+        "budget": {},
+        "providers": {name: copy.deepcopy(provider) for name in ("v1", "v2", "recency")},
+        "paired": {"recency_vs_v1": {}, "recency_vs_v2": {}},
+        "abstention": {},
+    }
+
+
+def test_measurement_contract_rejects_holdout_and_tampered_leakage():
+    with pytest.raises(MeasurementError, match="HOLDOUT"):
+        _load("holdout")
+    evidence = _evidence_envelope()
+    assert validate_evidence(evidence) == evidence
+    evidence["providers"]["recency"]["aggregate"]["leakage"]["forbidden_leakage"] = 1
+    with pytest.raises(MeasurementError, match="leakage"):
+        validate_evidence(evidence)
+
+
+def test_measurement_contract_is_closed():
+    evidence = _evidence_envelope()
+    evidence["unexpected"] = True
+    with pytest.raises(MeasurementError, match="envelope"):
+        validate_evidence(evidence)

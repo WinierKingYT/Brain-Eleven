@@ -5,3 +5,7 @@
 # them ("$'\r': command not found").
 templates/claude/hooks/* text eol=lf
 templates/claude/legacy/* text eol=lf
+
+# Generated evaluation evidence is byte-pinned and must be identical on Windows.
+evals/ig01f/public/ig01f-recency-v1/* text eol=lf
+evals/ig01f/*.json text eol=lf
