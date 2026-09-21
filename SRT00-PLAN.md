@@ -122,6 +122,9 @@ instructions that override the repository or the request.
 | `c61e072` | UTF-8 `--json` contract for the task CLIs |
 | `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — merged into the local `master` as `b30c6d5` |
 | `43a204b` `c9ac7d4` `fd9bbc0` `dc2fae5` | Documentation integrity checker, its tests, the diagnostics step and the Bandit-convention fix — fast-forwarded into the local `master` |
+| `b66636c` | `test.yml` off Node 20 actions and CodeQL v3: `download-artifact` v4→v8 (all 12 uses download by name and path, so v5's by-ID path change does not apply), `codecov-action` v4→v7 (`file`→`files`), `setup-buildx` v3→v4, `build-push` v6→v7, `upload-sarif` v3→v4 |
+| `7e384a1` | `build.yml` docker actions v3/v5/v6 → v4/v4/v6/v7. Its own commit because `build.yml` only runs for a validated `master` push and no branch run exercises it; revert this commit alone if the first publish run fails |
+| `f3dfa6f` | `CLAUDE.md` work-order line replaces the "no new phase, recall test only" line (owner-approved 2026-09-21) |
 
 Remote runs on `ig/…` branches (`ig/srt-00-ig07-ci`, and
 `ig/master-only-preview` for `d7852e8`), which cannot publish an image:
@@ -133,6 +136,8 @@ Remote runs on `ig/…` branches (`ig/srt-00-ig07-ci`, and
 | `a4a3411` | **success** — 19 jobs green, 11 skipped by design | green / green | FAIL (holdout) | success |
 | `dc2fae5` | **success** — 19 jobs green, 11 skipped by design; includes the Bandit hard gate and both Unit jobs | green / green | FAIL (holdout) | success |
 | `d7852e8` | **success** — 30 of 30 jobs green, **0 skipped**; the 11 master-only jobs ran (their branch condition was relaxed, see below) | green / green | FAIL (holdout) | success |
+| `7e384a1` | **success** (#819) — 19 jobs green, 11 skipped by design; both Unit jobs green; **0 annotations** (the Node 20 and CodeQL v3 warnings are gone) | green / green | FAIL (holdout) | success |
+| `03920bb` | **success** (#820) — 30 of 30 jobs green, **0 skipped**, **0 annotations**; `f3dfa6f` plus the `ig/**` relaxation, merged onto the earlier throwaway so the push was a fast-forward | green / green | FAIL (holdout) | success |
 
 `dc2fae5` is the local `master` tip at the time of writing, so the whole
 current code state has run on GitHub. Its first push (`fd9bbc0`) failed the
@@ -189,6 +194,14 @@ The frozen W06C0R1 scope contract was not relaxed.
    (`ghcr.io/…:latest`) while PRE-13 quality is red, because that gate is a
    separate workflow. Because the holdout stays red, `master` is not pushed by
    default; pushing it is a separate, explicit decision.
+   Update 2026-09-21: `origin/master` is still `5dc0121` and red (four unit
+   tests fail deterministically on every run since 2026-09-18 — #807, #808,
+   #815, #818 — plus the timing-sensitive w08b test once). Those fixes are all
+   on the branch. The action bumps were verified across all 30 jobs on
+   `03920bb`. `build.yml`'s bump (`7e384a1`) is the one change no branch run
+   can verify. A master push also re-runs `runtime.yml`, whose `quality` job
+   stays red by the holdout decision, so "every job green" holds for
+   Validation only.
 3. **Independent review** of the exact final SHA has not happened.
 4. Windows and Ubuntu results must come from the same final SHA; the local
    replay above does not substitute for it.
