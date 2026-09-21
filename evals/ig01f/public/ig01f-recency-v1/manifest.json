@@ -1,0 +1,21 @@
+{
+  "corpus_version": "ig01f-recency-v1",
+  "counts": {
+    "abstention": 6,
+    "dev": 76,
+    "validation": 38
+  },
+  "files": {
+    "abstention.jsonl": "sha256:07c410c4913b14ff897e3df4f82088150fff0354ee8cb54e2b75485e12c9a870",
+    "dev.jsonl": "sha256:8a5370c56fe10bcf74d35e91ffc1993308b11689fb37004225253b50db919d91",
+    "validation.jsonl": "sha256:69be6d7e02775f929ce2b98aaa97f9b716bd3ff0ef95297286679d99abd6c002"
+  },
+  "holdout_included": false,
+  "schema_version": 1,
+  "source_corpus_version": "ig-eval-v2",
+  "source_splits": [
+    "dev",
+    "validation",
+    "abstention"
+  ]
+}
