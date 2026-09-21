@@ -16,6 +16,14 @@ repair — **SHIP** after fresh independent review recorded in
 `SRT01-LINUX-RUNTIME-LOCK-INDEPENDENT-REVIEW.md`; the POSIX context-manager
 defect is closed without changing workflow gates. W-25 HTTP project-scope/
 authorization remains the preceding application closure (`fe1318b`).
+
+**IG-05: CLOSED as unreachable on `phase15-corpus-v2` (owner decision 2026-09-21).** The
+immutable floors are not jointly reachable there (`docs/IG05-REACHABILITY-CHECK.md`); nothing
+was tuned and no floor changed. V2 stays SHADOW and is not promoted, IG-06 and IG-07 are not
+opened, Phase 20 stays FROZEN / LOCKED. `routing.scope_sweep` stays off. `shadow_accept`
+(human-approved accept in SHADOW, off by default) awaits independent review; see
+`INTELLIGENCE-GRADUATION.md`, "Owner decisions, 2026-09-21".
+
 **CLOSED STABILIZATION PACKAGE:** SRT-00 (2026-09-21, master `f5b8c1b`). The
 four deterministic unit failures on `5dc0121` and the timing-sensitive w08b test
 are fixed at their root cause, the Node 20 and CodeQL v3 workflow warnings are

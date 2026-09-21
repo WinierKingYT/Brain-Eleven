@@ -400,6 +400,11 @@ It is the recall/precision trade, so it stays off. The D1 call that opens IG-05 
 still not recorded. Validation on both CI branches was green with 0 annotations
 (#822, #823).
 
+Decisions recorded the same day (`INTELLIGENCE-GRADUATION.md`, "Owner decisions"): IG-05 closed as
+unreachable on this corpus, V2 stays SHADOW, IG-06/IG-07 not opened, Phase 20 locked, scope sweep
+off, and human-approved accept in SHADOW added behind the default-off `shadow_accept` flag
+(`python -m brain_eleven shadow-accept ON`); it awaits independent review and is not enabled.
+
 **2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
 one independent contract `FIX-FIRST` cycle and one independent implementation
 `FIX-FIRST` remediation cycle. The final implementation/test head is

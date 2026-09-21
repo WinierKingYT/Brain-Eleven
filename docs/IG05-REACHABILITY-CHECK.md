@@ -3,7 +3,7 @@
 **Status: GENERATED EVIDENCE / FINDINGS (2026-09-21).** Sections 1–5 are read-only analysis:
 they change no floor, target, corpus or threshold, and they do not open or close IG-05.
 Section 6 records the one code change the owner approved from that analysis (an opt-in,
-default-off router tier). The program floors are immutable (`IG01-A-EVALUATION-CONTRACT.md`,
+default-off router tier); section 7 records the owner's decisions of 2026-09-21. The program floors are immutable (`IG01-A-EVALUATION-CONTRACT.md`,
 "Verdict rule"); any change to them is a human checkpoint, not something this document
 decides. Until classified in `DOCUMENTATION-AUTHORITY.md` it defaults to HISTORICAL by path rule 7.
 
@@ -170,3 +170,15 @@ frontier says it must. This is the recall/precision trade, not evidence of bette
   W-06C0R1 tests, which pass on a clean tree) and the timing-sensitive cold-start test failing.
 - Measured on the public suite only. The holdout and Phase 17 router evidence were not used to
   tune anything.
+
+## 7. Decisions taken (owner, 2026-09-21)
+
+- **IG-05 is closed as unreachable on this corpus** (section 4, option 4 in spirit): V2
+  stays SHADOW and is not promoted, IG-06 and IG-07 are not opened, Phase 20 stays LOCKED.
+  No floor changed and nothing was tuned. Recorded in `INTELLIGENCE-GRADUATION.md` and
+  `PROJECT-STATUS.md`.
+- **Scope sweep stays off** (section 6).
+- **Human-approved accept in SHADOW** was adopted behind a default-off flag; see
+  `docs/CANARY-GATE-FEASIBILITY-PROPOSAL.md`, section 5.
+- Still open, and not decided here: real-data measurement (`evals/ig01e_real`), a corpus
+  version whose prompts determine its labels, and a holdout ceiling audit.
