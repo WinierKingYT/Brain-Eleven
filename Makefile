@@ -44,13 +44,13 @@ health:
 	@docker-compose exec postgres psql -U brain -c "SELECT 1" > /dev/null && echo "✅ PostgreSQL healthy" || echo "❌ PostgreSQL unhealthy"
 
 backup:
-	@bash backup.sh
+	@bash scripts/ops/backup.sh
 
 rollback:
-	@bash rollback.sh
+	@bash scripts/ops/rollback.sh
 
 deploy:
-	@bash deploy.sh
+	@bash scripts/ops/deploy.sh
 
 clean:
 	docker-compose down -v
