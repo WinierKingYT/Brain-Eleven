@@ -17,7 +17,7 @@ from .capture_queue import CaptureQueue
 from .capture_safety import evaluate_capture
 from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
 from .state_boundary import StateBoundary
-from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
+from .storage import RuntimeConfig, canonical_accept_allowed, read_json, write_json, identity, now, runtime_file_lock as file_lock
 from .evidence import EvidenceStore, EvidenceBatch, read_increment
 from .ownership import TranscriptOwnershipError, verify_transcript_ownership
 from .path_safety import RuntimePathError
@@ -138,7 +138,7 @@ def enqueue(vault, client, payload):
 def apply_candidate(vault, candidate, *, op_id, approved=False, target_id=None, expected_revision=None):
     """Apply one effect. Receipt and effect share the store transaction."""
     from context_compiler_v2.safety import contains_secret
-    if RuntimeConfig(vault).load()['mode'] not in {'CANARY', 'ACTIVE'}:
+    if not canonical_accept_allowed(RuntimeConfig(vault).load(), approved=approved):
         return {'status': 'SCOPE_ERROR'}
     content = candidate.get('text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content', '')
     if not evaluate_capture(content).accepted or contains_secret(content):

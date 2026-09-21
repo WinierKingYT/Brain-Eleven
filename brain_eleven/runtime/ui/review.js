@@ -19,7 +19,8 @@ async function refresh() {
     el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=pending.length;
     el('queue').textContent=status.queue.queued;el('context').textContent=status.context?(names[status.context.status] || status.context.status):'Henüz yok';
     el('details').textContent=JSON.stringify(status,null,2);el('candidates').replaceChildren();
-    if(status.mode==='SHADOW') el('candidates').append(node('p','Gözlem modu açık. Öneriler burada birikir; ortak hafızaya yazma sınırlı kullanım açıldıktan sonra başlar.','empty'));
+    const canAccept=['CANARY','ACTIVE'].includes(status.mode) || (status.mode==='SHADOW' && status.shadow_accept===true);
+    if(status.mode==='SHADOW') el('candidates').append(node('p',status.shadow_accept===true?'Gözlem modu açık. Öneriler burada birikir; sen onayladığında ortak hafızaya yazılır.':'Gözlem modu açık. Öneriler burada birikir; ortak hafızaya yazma sınırlı kullanım açıldıktan sonra başlar.','empty'));
     if(!pending.length) el('candidates').append(node('p','Henüz inceleme bekleyen öneri yok. Yeni öneriler burada görünecek.','empty'));
     for(const item of pending) {
       const card=node('article',null,'candidate');
@@ -33,7 +34,7 @@ async function refresh() {
       for(const t of item.targets || []) {const option=node('option',t.text);option.value=t.id;target.append(option);}
       if(item.targets?.length)card.append(target);
       const actions=node('div',null,'actions');const reject=node('button','Reddet','secondary');const accept=node('button','Kabul et');
-      accept.disabled=!['CANARY','ACTIVE'].includes(status.mode);
+      accept.disabled=!canAccept;
       async function submit(action) {
         accept.disabled=reject.disabled=true;
         try {const result=await api('/api/review/candidates/'+item.id+'/'+action,{content:input.value,expected_revision:item.expected_revision,target_id:target.value || null});

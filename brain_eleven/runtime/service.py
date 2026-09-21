@@ -8,7 +8,7 @@ import secrets
 import time
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
+from .storage import RuntimeConfig, canonical_accept_allowed, read_json, write_json, identity, now, runtime_file_lock as file_lock
 
 
 def apply_candidate(*args, **kwargs):
@@ -21,8 +21,8 @@ def review_action(vault, review_id, action, payload):
     from .review import ReviewStore
 
     cfg = RuntimeConfig(vault)
-    if action == 'accept' and cfg.load()['mode'] not in {'CANARY', 'ACTIVE'}:
-        raise ValueError('Enable canary before accepting canonical changes')
+    if action == 'accept' and not canonical_accept_allowed(cfg.load(), approved=True):
+        raise ValueError('Enable canary, or shadow accept, before accepting canonical changes')
     store = ReviewStore(vault)
     store.expire()
     path = store.path(review_id)
@@ -79,7 +79,8 @@ def review_action(vault, review_id, action, payload):
 def runtime_status(vault):
     cfg = RuntimeConfig(vault)
     capture = Path(vault) / '.brain-eleven' / 'capture'
-    return {'mode': cfg.load()['mode'], 'queue': {name: len(list((capture / name).glob('*.json'))) for name in ('queued', 'processing', 'completed', 'dead-letter')},
+    config = cfg.load()
+    return {'mode': config['mode'], 'shadow_accept': config['shadow_accept'], 'queue': {name: len(list((capture / name).glob('*.json'))) for name in ('queued', 'processing', 'completed', 'dead-letter')},
             'worker': read_json(cfg.root / 'last-worker.json'), 'context': read_json(cfg.root / 'last-context.json'),
             'model': read_json(cfg.root / 'model-status.json'), 'graduation': read_json(cfg.root / 'graduation.json', {'status': 'PENDING_REAL_USE'})}
 

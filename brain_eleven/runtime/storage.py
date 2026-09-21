@@ -222,12 +222,15 @@ class RuntimeConfig:
         if os.path.lexists(self.path):
             guard_runtime_path(self.root, self.path, create=False)
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
-                                      'b1_human_approval': False})
+                                      'b1_human_approval': False, 'shadow_accept': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
         # pre-B1 behavior until an operator explicitly enables it.
         value.setdefault('b1_human_approval', False)
+        # Additive and off by default: only a person may accept a reviewed
+        # candidate while the runtime stays in SHADOW, and only when enabled.
+        value.setdefault('shadow_accept', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -236,6 +239,8 @@ class RuntimeConfig:
         value['retrieval_mode_telemetry'] = None if valid_retrieval else 'RETRIEVAL_MODE_INVALID'
         if not isinstance(value['b1_human_approval'], bool):
             raise ValueError('Invalid B1 human approval configuration')
+        if not isinstance(value['shadow_accept'], bool):
+            raise ValueError('Invalid shadow accept configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -283,6 +288,18 @@ class RuntimeConfig:
 
         return self._commit(snapshot, mutate)
 
+    def set_shadow_accept(self, enabled):
+        """Allow human-approved accept while the runtime stays in SHADOW (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Shadow accept flag must be boolean')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['shadow_accept'] = enabled
+
+        return self._commit(snapshot, mutate)
+
     def _commit(self, expected_fingerprint, mutate):
         """Apply one config mutation only if its validated snapshot is current."""
         with file_lock(self.path):
@@ -301,3 +318,16 @@ class RuntimeConfig:
             mutate(current)
             write_json(self.path, current)
             return current
+
+
+def canonical_accept_allowed(config, *, approved):
+    """Whether one effect may reach canonical memory under this validated config.
+
+    CANARY and ACTIVE always allow it. SHADOW allows it only for an effect a person
+    approved and only when ``shadow_accept`` is on; the automatic worker path never
+    passes ``approved``. OFF never allows it.
+    """
+    mode = config['mode']
+    if mode in {'CANARY', 'ACTIVE'}:
+        return True
+    return bool(approved) and mode == 'SHADOW' and config['shadow_accept'] is True
