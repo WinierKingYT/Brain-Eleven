@@ -6,23 +6,11 @@ the end of a work session; keep entries to a few lines.
 
 ## Where we are
 
-**2026-09-20** — SRT-00 is fixed on every gate that could be reproduced, but it
-is still **NOT SHIP**. A remote run of the same SHA (`c61e072`, on the
-non-publishing branch `ig/srt-00-ig07-ci`) is green for Ubuntu and Windows unit,
-integration, privacy, coverage, security and PRE-13 runtime; the 11 master-only
-Validation jobs are skipped there by design, but ran green (30 of 30 jobs, none
-skipped) on a throwaway branch whose conditions were relaxed, without pushing
-`master`; PRE-13 quality (the frozen holdout,
-precision 0.169 / required recall 0.676) is still an honest FAIL. Root causes:
-the W-03B fixtures were one byte off on Linux; the task CLIs' `--json` output
-could not be encoded under a cp1252 Windows pipe (a real bug, now UTF-8); the
-Windows backup reader mishandled short-name and UNC roots; PRE-13 measured too
-little of the runtime. `SRT00-PLAN.md` records each finding, the corrections to
-the earlier claims and the evidence. Nothing is pushed to `master`.
-`chore/hygiene` (hook line endings, `ubuntu-24.04` pin, no `PYTHONPATH`) is
-merged into the local `master` as `b30c6d5`; its remote run at `a4a3411` was
-green apart from the holdout. The frozen W06C0R1 scope contract only fails while
-the tree has uncommitted changes; it was not relaxed.
+**2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is
+green on Ubuntu and Windows and Build & Push #820 published. It remains a
+stabilization closure rather than an independent `SHIP`; the frozen PRE-13
+holdout quality gate is still an honest FAIL. `SRT00-PLAN.md` retains the
+detailed evidence and corrections.
 
 Capture fix (2026-09-20, approved by Ahmet): automatic capture had never
 succeeded on the real install (205/205 jobs dead-lettered on unknown transcript
@@ -42,11 +30,11 @@ Active program: **Intelligence Graduation (IG)**, replacing the old
 **SRT-01 Linux runtime lock protocol repair** — independent review `SHIP` at
 review head `775d0d2`; implementation `335b6df`, focused tests `f0866b6`.
 B1 and B2 are both closed; the earlier IG-04 B2 review queue package remains
-closed as well. SRT-00 is the active stabilization package.
+closed as well. No later document should describe SRT-00 as active.
 `INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
 the Branch B track, not the original reference/correction scope (deferred,
 not deleted). The earlier D0/R0 feasibility probes remain evaluation-only
-evidence; see `CODEX-RESULTS-D0.md` / `CODEX-RESULTS-R0.md`.
+evidence; see `docs/history/evidence/CODEX-RESULTS-D0.md` / `docs/history/evidence/CODEX-RESULTS-R0.md`.
 
 **Ownership as of 2026-09-10:** Ahmet delegated project management — status,
 documentation, quality bar and direction — to Claude. Codex executes from
@@ -56,10 +44,9 @@ environment, so Ahmet relays. See `CONTRIBUTING.md`'s Roles section.
 Canonical branch: **master**. The exact baseline snapshot check passes.
 SRT-01 closed the Linux POSIX lock protocol defect; exact implementation-head
 evidence and terminal report-only checks are recorded in
-`SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md`. SRT-00 remains active: its unit,
-runtime and coverage identities are green on the remote run above, but PRE-13
-quality is still red and no independent review has happened. V2 remains SHADOW
-and Phase 20 remains FROZEN / LOCKED.
+`docs/history/reports/SRT01-LINUX-RUNTIME-LOCK-PACKAGE-REPORT.md`. SRT-00 is
+closed with green CI but without an independent `SHIP`; PRE-13 quality remains
+red. V2 remains SHADOW and Phase 20 remains FROZEN / LOCKED.
 
 **Pilot status: blocked by design, not by accident.** Ahmet's real install
 (`C:\Users\faruk\Documents\Brain-Eleven`) has `b1_human_approval=true`
@@ -113,7 +100,7 @@ P0/P1/P2 defect; W-07B stays `FIX-FIRST / NOT ACCEPTED`.
 
 The bounded remediation **TSC-01 timezone-bound state resolution** is now
 independently `SHIP`ped at exact tip `6225d4f` (implementation `9bb24d8`;
-review `SHIP` in `WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`). Explicit
+review `SHIP` in `docs/history/reviews/WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md`). Explicit
 offset validation and bounded `STATE_CORRUPT` mapping are in place without
 changing native context translation, project identity lineage or serialized
 decoder behavior. **TSC-02 project identity and registry lineage** is now
@@ -147,7 +134,7 @@ catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
 risk). Slice 1's four bridge-only, non-authority modules (`logging_config`,
 `cache_manager`, `summarizer`, `anomaly_detector`) are all migrated into
 `brain_eleven/support/*` with real implementation authority, independently
-reviewed and accepted (`IG07-SLICE1-INDEPENDENT-REVIEW.md`, verdict `SHIP`).
+reviewed and accepted (`docs/history/reviews/IG07-SLICE1-INDEPENDENT-REVIEW.md`, verdict `SHIP`).
 One P2 finding open (unnecessary `sys.modules` dependency lookup in
 `anomaly.py` — not blocking). `MemoryStore`/`StateStore`/`ProjectRegistry`
 and capture/retrieval paths remain untouched and out of scope.
@@ -159,7 +146,7 @@ several got reclassified to HIGH (`entity_extractor`, `knowledge_graph`,
 `task_model`). Sub-slice 2A (`memory_provenance.py` → `chat_interface.py` →
 `post_session_maintenance.py`) is fully migrated into `brain_eleven/memory/`
 and `brain_eleven/runtime/`, independently reviewed and accepted
-(`IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`, 2026-09-11). Full
+(`docs/history/reviews/IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`, 2026-09-11). Full
 suite reproduces at 895 passed; `session_pipeline.py` and the hook budget
 are unchanged. No new P0/P1/P2 findings; Slice 1's two open P2s (the
 `anomaly.py` `sys.modules` lookup and a hook-timing stabilization pass)
@@ -189,8 +176,8 @@ loader. Both moves independently verified byte-for-byte against the
 pre-migration scripts — only docstrings, one import each, and additive CLI
 wrapping differ, no logic changed. Full suite reproduces at 913 passed;
 `brain_eleven/graph/*` and all canonical authority paths confirmed untouched
-by diff at each step. Independent reviews: `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`
-and `IG07-SLICE2B-INDEPENDENT-REVIEW.md`, both `SHIP`. This closes all of
+by diff at each step. Independent reviews: `docs/history/reviews/IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`
+and `docs/history/reviews/IG07-SLICE2B-INDEPENDENT-REVIEW.md`, both `SHIP`. This closes all of
 Slice 2 (2A + 2B) from `IG07-SLICE2-PLAN.md`.
 
 **Two-track workflow started (2026-09-11).** Codex continues on relayed
@@ -236,7 +223,7 @@ behavior change: equal-timestamp tie-break is now `(timestamp, memory_id)`
 instead of list order. Full suite reproduces at 920 passed.
 `migrate-legacy-memory.py`, `migrate-memory-scope.py`, `MemoryStore`, and
 `MemoryLifecycleManager` confirmed untouched. Independent review:
-`IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+`docs/history/reviews/IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
 **IG-07 Slice 2C is fully closed (C1 + C3).** `brain_eleven/memory/migrations.py`
 is now canonical for scope migration (`migrate_scope`/`rollback_scope`);
@@ -248,7 +235,7 @@ concurrent write mid-call, and `MemoryStoreConflict` correctly fires with no
 data loss. A second rollback of the same backup is a guarded
 `already_rolled_back` no-op. Full suite reproduces at 927 passed.
 `migrate-legacy-memory.py` (C2) remains archived per the C0 decision,
-untouched. Independent review: `IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`,
+untouched. Independent review: `docs/history/reviews/IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`,
 verdict `SHIP`. One non-blocking finding: the combined report's original
 commit-chain citations didn't exist in git history (pre-push local rewrite),
 corrected in-file.
@@ -280,7 +267,7 @@ Safety-before-registry ordering and concurrent-replay idempotence were
 proven under genuine conditions (a registry double that raises if
 constructed too early; a real `ThreadPoolExecutor` race), independently
 re-run, not just asserted. Full suite reproduces at 936 passed. Independent
-review: `IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+review: `docs/history/reviews/IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
 **IG-07 Slice 2E is fully closed.** `IG07-SLICE2E-PLAN.md` covered
 `task_model.py` → `brain_eleven/runtime/task.py`; plan independently
@@ -293,7 +280,7 @@ canonical source at the moment of the cut (27428 bytes both sides), adapter
 is a genuine thin loader with zero duplicate implementation, `task_state_context.py`
 diff empty across the whole range, exact before/after evaluator JSON
 equality on smoke/public/holdout, full suite reproduces at 943 passed,
-focused suite at 114 passed. Independent review: `IG07-SLICE2E-INDEPENDENT-REVIEW.md`,
+focused suite at 114 passed. Independent review: `docs/history/reviews/IG07-SLICE2E-INDEPENDENT-REVIEW.md`,
 verdict `SHIP`. One documentation-hygiene note: a later commit
 (`0a8f26a`) regenerated `IG07-SLICE2E-PLAN.md` from the pre-inversion
 baseline for an unrelated reason and left a stale "PLAN ONLY/REVIEW
@@ -304,7 +291,7 @@ in-file, not a functional finding.
 caller inventory, task/state/lineage contract, AST/identity/fixture/CLI and
 fail-closed tests, package inversion, thin legacy adapter, canonical coverage
 and source-fingerprint paths, and full regression evidence are recorded in
-`IG07-SLICE2F-PLAN.md` and `IG07-SLICE2F-PACKAGE-REPORT.md`. The focused suite
+`IG07-SLICE2F-PLAN.md` and `docs/history/reports/IG07-SLICE2F-PACKAGE-REPORT.md`. The focused suite
 passed at 143 tests; the established full baseline passed at 1359 tests with
 4 skips and 82 deselections. No task/state schema, routing, persistence or
 evaluation label behavior changed. A separately commissioned independent
@@ -458,7 +445,7 @@ Codex implemented all three Slice 2A modules (`memory_provenance.py`,
 `brain_eleven/memory/` and `brain_eleven/runtime/`; each independently
 reviewed, full suite re-run at 895 passed, CI's exact lint command clean,
 adapter-only/identity/parity checks re-verified rather than trusted from the
-report. Closed with `IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
+report. Closed with `docs/history/reviews/IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 No new P0/P1/P2 findings. Same day: Codex produced `IG07-SLICE2B-PLAN.md`
 (a bridge-direction inversion for `entity_extractor.py`/`knowledge_graph.py`,
 not a simple move); independently spot-checked every cited line reference

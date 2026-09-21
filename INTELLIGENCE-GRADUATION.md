@@ -65,7 +65,7 @@ bounded corrective work and a fresh review.
 
 ## IG-04 pivot: Branch B (2026-09-10)
 
-`CODEX-RESULTS-D0.md` measured the embedding-similarity retrieval approach
+`docs/history/evidence/CODEX-RESULTS-D0.md` measured the embedding-similarity retrieval approach
 this program originally planned to build IG-04 through IG-09 on top of, and
 found it does not graduate (empirical ceiling below 0.45). Its D1 decision:
 **Branch B** — automatic capture stays, but retrieval eligibility is gated on
@@ -79,8 +79,8 @@ Branch B is delivered as lettered sub-packages under IG-04:
 
 | Sub-package | Scope | Status |
 |---|---|---|
-| **B1 — Human-approved retrieval boundary** | A captured candidate cannot affect retrieval until an explicit accept action. See `IG04-B1-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `IG04-B1-INDEPENDENT-REVIEW.md`. |
-| **B2 — Review queue usability** | Makes B1's review queue actually usable day to day: dedup near-duplicate pending candidates, order the queue so the most decision-worthy items surface first. See `IG04-B2-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `IG04-B2-INDEPENDENT-REVIEW.md`. |
+| **B1 — Human-approved retrieval boundary** | A captured candidate cannot affect retrieval until an explicit accept action. See `IG04-B1-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `docs/history/reviews/IG04-B1-INDEPENDENT-REVIEW.md`. |
+| **B2 — Review queue usability** | Makes B1's review queue actually usable day to day: dedup near-duplicate pending candidates, order the queue so the most decision-worthy items surface first. See `IG04-B2-CONTRACT.md`. | CLOSED / SHIPPED — independent review `SHIP`, see `docs/history/reviews/IG04-B2-INDEPENDENT-REVIEW.md`. |
 
 IG-05 through IG-09 remain closed until Branch B's daily-use quality is
 established (per D1) — not merely until B1 or B2 ship. That determination is

@@ -118,7 +118,7 @@ instructions that override the repository or the request.
 |---|---|
 | `33a06b2` | W-03B byte fixtures, bounded backup error codes and containment, content-free eval failure artifact, diagnostics workflow |
 | `cf98741` | PRE-13 manifest and topology, cold-start marker, stale-input registry revision, Windows backup tests, race-test fix |
-| `5da9e8c` | IG-07 Slice 2F package migration (see `IG07-SLICE2F-PACKAGE-REPORT.md`) |
+| `5da9e8c` | IG-07 Slice 2F package migration (see `docs/history/reports/IG07-SLICE2F-PACKAGE-REPORT.md`) |
 | `c61e072` | UTF-8 `--json` contract for the task CLIs |
 | `4211851` `007f24e` `ac04f53` `a4a3411` | `chore/hygiene`: hook LF, runner pin, spawn-safe tests, no `PYTHONPATH` — merged into the local `master` as `b30c6d5` |
 | `43a204b` `c9ac7d4` `fd9bbc0` `dc2fae5` | Documentation integrity checker, its tests, the diagnostics step and the Bandit-convention fix — fast-forwarded into the local `master` |

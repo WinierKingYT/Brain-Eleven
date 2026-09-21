@@ -42,7 +42,7 @@ Concretely:
    session/branch that did the work is not independent.** Real independent
    review means a separate pass — re-run the claimed checks yourself, don't
    just read the report and trust the numbers. (This project has caught real
-   discrepancies this way — see `IG-00-INDEPENDENT-REVIEW.md`.)
+   discrepancies this way — see `docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md`.)
 4. **Delete a branch once it's merged.** A merged, undeleted branch is how
    this project ended up with six stale branches pointing at superseded
    history.

@@ -86,7 +86,7 @@ retrieval, predecessor corpus, or Phase 20 file changed.
 
 **INDEPENDENT REVIEW: SHIP.** P1-A final seal-binding review and P1-B
 immutable-pin final review are recorded in
-`WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`; final review
+`docs/history/reviews/WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`; final review
 commit `32d158f`.
 
 ## Score

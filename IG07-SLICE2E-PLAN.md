@@ -1,8 +1,8 @@
 # IG-07 Slice 2E — `task_model.py` Migration Plan
 
 **Durum:** CLOSED / SHIPPED — implementation tamamlandı ve bağımsız
-incelemeden `SHIP` aldı, bkz. `IG07-SLICE2E-PACKAGE-REPORT.md` ve
-`IG07-SLICE2E-INDEPENDENT-REVIEW.md` (2026-09-12). Aşağıdaki plan metni,
+incelemeden `SHIP` aldı, bkz. `docs/history/reports/IG07-SLICE2E-PACKAGE-REPORT.md` ve
+`docs/history/reviews/IG07-SLICE2E-INDEPENDENT-REVIEW.md` (2026-09-12). Aşağıdaki plan metni,
 bu doküman `09935e0` baseline'ından yeniden üretildiği için tarihsel bir
 kayıt olarak korunuyor; "PLAN ONLY/REVIEW PENDING" ifadesi §0'da açıklanan
 nedenle artık güncel değildir.
@@ -354,5 +354,5 @@ genişletilmeyecek ve ayrı `RETHINK/defer` bulgusu yazılacaktır:
 Bu planın incelemesi tamamlanmadan hiçbir production `.py` dosyası değişmez.
 
 **Plan status: CLOSED — implementation (E1+E2) tamamlandı, bağımsız inceleme
-`SHIP` verdiği verdi. Bkz. `IG07-SLICE2E-PACKAGE-REPORT.md`,
-`IG07-SLICE2E-INDEPENDENT-REVIEW.md`.**
+`SHIP` verdiği verdi. Bkz. `docs/history/reports/IG07-SLICE2E-PACKAGE-REPORT.md`,
+`docs/history/reviews/IG07-SLICE2E-INDEPENDENT-REVIEW.md`.**

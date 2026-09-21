@@ -6,7 +6,7 @@ evidence. Updated: 2026-09-08.
 Implementation/evidence review HEAD:
 `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`.
 
-Independent review: [IG-00-INDEPENDENT-REVIEW.md](IG-00-INDEPENDENT-REVIEW.md).
+Independent review: [docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md](docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md).
 Verdict: **SHIP**. P0: **0**. P1: **0**.
 
 ## Bounded contract
@@ -99,7 +99,7 @@ required recall 0.2941, zero leakage).
 The preferred master-targeted draft PR could not be created because the GitHub
 connector returned HTTP 403 (`Resource not accessible by integration`); exact
 push-triggered CI remains revision-bound. Independent acceptance is recorded in
-`IG-00-INDEPENDENT-REVIEW.md`.
+`docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md`.
 
 ## Review and next-package boundary
 

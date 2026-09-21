@@ -55,7 +55,7 @@ The canonical support implementations contain **993 physical lines / 808 nonblan
 ## Review and verdict
 
 **Independent review:** **SHIP**, recorded 2026-09-11. See
-`IG07-SLICE1-INDEPENDENT-REVIEW.md` — all four modules independently
+`docs/history/reviews/IG07-SLICE1-INDEPENDENT-REVIEW.md` — all four modules independently
 re-verified (tests re-run, diffs read, LOC spot-checked), one P2 finding
 (unnecessary `sys.modules` dependency lookup in `anomaly.py`, not blocking),
 the reported intermittent failure reproduced-clean 3/3 in isolation.

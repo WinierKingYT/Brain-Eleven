@@ -75,7 +75,7 @@ independent review/acceptance gate remains open by design.
 ## Review and verdict
 
 **Independent review:** **SHIP**, recorded 2026-09-11. See
-`IG07-SLICE2A-INDEPENDENT-REVIEW.md` — all three modules independently
+`docs/history/reviews/IG07-SLICE2A-INDEPENDENT-REVIEW.md` — all three modules independently
 re-verified (tests re-run, diffs read, identity re-checked), full suite
 reproduced at 895 passed with no open findings.
 **Self-review:** Not accepted as graduation evidence (unchanged principle).

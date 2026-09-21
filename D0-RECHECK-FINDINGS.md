@@ -49,7 +49,7 @@ freezing the thresholds.
 Measured MPNet precision: 0.205. Against the true ceiling of 0.425, that's
 **~48% of the achievable score captured**, not "0.205 out of a 0.60
 possible." Consistent with this: mandatory recall was already 0.70–0.81
-across variants (`CODEX-RESULTS-D0.md`'s own table) — the required item is
+across variants (`docs/history/evidence/CODEX-RESULTS-D0.md`'s own table) — the required item is
 usually *found* somewhere in the top 5; the low precision number is
 substantially a mechanical consequence of 3-4 forced-noise slots per case
 (nothing else was allowed to fill them), not the model failing to find the

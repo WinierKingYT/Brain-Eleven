@@ -36,5 +36,5 @@ PRE-13 runtime workflow's
 Ubuntu/Windows jobs passed, while its historical holdout quality job remains a
 visible failure. This record is the implementation review only and is not the
 independent acceptance decision. Independent acceptance is recorded separately
-in [IG-00-INDEPENDENT-REVIEW.md](IG-00-INDEPENDENT-REVIEW.md), which returned
+in [docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md](docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md), which returned
 SHIP for the reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`.

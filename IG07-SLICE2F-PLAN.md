@@ -1,7 +1,7 @@
 # IG-07 Slice 2F — `task_state_context.py` Migration Plan
 
 **Durum:** CLOSED / SHIPPED — bounded plan, implementation and regression
-evidence are recorded in `IG07-SLICE2F-PACKAGE-REPORT.md` (2026-09-17).
+evidence are recorded in `docs/history/reports/IG07-SLICE2F-PACKAGE-REPORT.md` (2026-09-17).
 **Kapsam:** yalnız `scripts/task_state_context.py` implementation inversion and
 its direct callers; task model, state resolver, registry, router, authority,
 retrieval and persistence semantics are frozen.

@@ -16,8 +16,8 @@ the behavior and operational evidence found in the current repository.
   graph-provenance remediation. The bounded after-score for scope/fail-closed
   safety is **9.1/10**; the review found zero wrong-project graph leakage in
   the tested default/global/project/all and chat paths. See
-  `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-PACKAGE-REPORT.md` and
-  `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-REMEDIATION-INDEPENDENT-REVIEW.md`.
+  `docs/history/reports/WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-PACKAGE-REPORT.md` and
+  `docs/history/reviews/WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-REMEDIATION-INDEPENDENT-REVIEW.md`.
 - **SRT-00 release truth:** exact-head Validation remains red while local
   regression is green. The PRE-13 runtime failure has a confirmed local
   reproduction: its selected 100 tests reach **65.57%** over the entire
@@ -134,7 +134,7 @@ the trusted client/project transcript root or current session. This needs a
 separate capture-safety contract.
 
 **W-03A status:** Path confinement is independently shipped at `bae7c15` (code
-`a6f7fd1`, report `WEAKNESS-W03A-PACKAGE-REPORT.md`). Enqueue and worker read
+`a6f7fd1`, report `docs/history/reports/WEAKNESS-W03A-PACKAGE-REPORT.md`). Enqueue and worker read
 boundaries now enforce configured/native client roots, traversal and symlink
 containment. Project-slug ownership, Codex project association, session
 ownership and stable replacement identity remain explicit follow-up work.
@@ -160,7 +160,7 @@ retry/dead-letter handling begins.
 
 **Status:** Closed as the bounded W-04 package and independently reviewed
 `SHIP` at `6a786b6` (implementation `64e2591`, report
-`WEAKNESS-W04-PACKAGE-REPORT.md`). A trusted but temporarily absent locator is
+`docs/history/reports/WEAKNESS-W04-PACKAGE-REPORT.md`). A trusted but temporarily absent locator is
 now durable and retryable; a missing locator is still explicitly degraded and
 never guessed.
 
@@ -171,7 +171,7 @@ routes every no-evidence result through retry/dead-letter. The event contract
 must be made explicit and tested.
 
 **Status:** Closed and independently reviewed `SHIP` at `ac29c51`
-(implementation `1f98a7d`, report `WEAKNESS-W05-PACKAGE-REPORT.md`). Validated
+(implementation `1f98a7d`, report `docs/history/reports/WEAKNESS-W05-PACKAGE-REPORT.md`). Validated
 prompt events now complete once with a zero-effect receipt; SessionEnd evidence
 behavior remains unchanged.
 
@@ -184,14 +184,14 @@ and retrieval-quality gates; no ranking tuning starts from this audit alone.
 
 **W-06A status:** The bounded SessionStart bootstrap slice is independently
 shipped at `cc1c0b5` (implementation/tests `8270fef`, report
-`WEAKNESS-W06A-PACKAGE-REPORT.md`). It uses resolved project-state lexical
+`docs/history/reports/WEAKNESS-W06A-PACKAGE-REPORT.md`). It uses resolved project-state lexical
 relevance, fixed normalized weights and deterministic identity/content
 tie-breaking. The broader task-aware retrieval work in
 `memory-retriever.py`/`hybrid-search.py` remains deferred behind evaluation
 gates.
 
 **W-06B status:** The first task-aware V1 design reached independent
-`RETHINK` at exact review head `a26912c` (`WEAKNESS-W06B-INDEPENDENT-REVIEW.md`).
+`RETHINK` at exact review head `a26912c` (`docs/history/reviews/WEAKNESS-W06B-INDEPENDENT-REVIEW.md`).
 Runtime safety, malformed-gate handling, fallback, deterministic ordering and
 public safety counters are covered, but W-06B precision is about `0.18` on
 both DEV and TEST against the frozen `>=0.60` contract floor; TEST precision
@@ -229,7 +229,7 @@ reliability is fixed.
 
 **W-07A status:** Native SessionStart structured continuity is independently
 shipped at `ad8c544` (implementation `a83f93d`, baseline evidence refresh
-`2fff176`, review `WEAKNESS-W07A-INDEPENDENT-REVIEW.md`). The V1 read path now
+`2fff176`, review `docs/history/reviews/WEAKNESS-W07A-INDEPENDENT-REVIEW.md`). The V1 read path now
 renders bounded, deterministic, project-scoped work items, requirements,
 blockers, constraints and risks. Automatic markdown reminder writing remains
 open and is not implied by this package.
@@ -255,31 +255,31 @@ These are separate authority packages and are intentionally not mixed with W-01.
 
 **W-08A status:** Independently reviewed `SHIP` at `05fd7f6` (implementation
 `7fc2860`, tests `a2b065d` plus integrity evidence `05fd7f6`, review
-`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`). ProjectRegistry revision/CAS,
+`docs/history/reviews/WEAKNESS-W08A-INDEPENDENT-REVIEW.md`). ProjectRegistry revision/CAS,
 durable atomic writes, backup envelope, stale-safe monotonic rollback and
 complete identity/status/opt-in rollback integrity are covered. W-08B
 coordinated backup and W-08C state-reference TOCTOU are independently shipped;
 W-08D typed API lifecycle contract is independently `SHIP` at exact revision
-`f4d83b1` in `WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is
+`f4d83b1` in `docs/history/reviews/WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is
 independently `SHIP` at exact head `a9c64cf` in
-`WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
+`docs/history/reviews/WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 **W-08B contract status:** Independently reviewed `SHIP` at `17954cc` in
-`WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
+`docs/history/reviews/WEAKNESS-W08B-CONTRACT-INDEPENDENT-REVIEW.md`. The amended contract freezes
 the three-attempt/five-second retry and error boundary, destination
 no-clobber publication with durability evidence, read-time no-follow
 symlink/reparse containment and project-identifier privacy assertions. The
 **W-08B implementation status:** Independently reviewed `SHIP` at exact head
-`90336ee` in `WEAKNESS-W08B-INDEPENDENT-REVIEW.md` after the bounded privacy
+`90336ee` in `docs/history/reviews/WEAKNESS-W08B-INDEPENDENT-REVIEW.md` after the bounded privacy
 correction `e4df824`. The focused suite (35), full suite (1018) and critical
 static gates pass; malformed registry validation now emits content-free
 errors. W-08C implementation is independently shipped at exact review
- revision `ecee32b` in `WEAKNESS-W08C-INDEPENDENT-REVIEW.md`. W-08D typed API
+ revision `ecee32b` in `docs/history/reviews/WEAKNESS-W08C-INDEPENDENT-REVIEW.md`. W-08D typed API
  lifecycle is independently shipped; its focused, combined, full-suite and
- privacy/CAS evidence is recorded in `WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
+ privacy/CAS evidence is recorded in `docs/history/reviews/WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 **W-08C contract status:** Independently reviewed `SHIP` at `7f175b3` in
-`WEAKNESS-W08C-CONTRACT-INDEPENDENT-REVIEW.md`. The contract freezes the
+`docs/history/reviews/WEAKNESS-W08C-CONTRACT-INDEPENDENT-REVIEW.md`. The contract freezes the
 memory-lock-then-state-lock linearization guard, lifecycle/status policy,
  scope isolation, stale-CAS/replay/audit behavior, privacy boundary and
 holdout-preserving evidence requirements. The contract was accepted
@@ -288,8 +288,8 @@ holdout-preserving evidence requirements. The contract was accepted
 `ecee32b`; the bounded memory-lock/state-lock guard, lifecycle policy, CLI
 mapping, privacy evidence, and frozen evaluation boundary all passed review.
 W-08D typed API lifecycle contract is independently `SHIP` at `f4d83b1` in
-`WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is independently
-`SHIP` at `a9c64cf` in `WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
+`docs/history/reviews/WEAKNESS-W08D-CONTRACT-INDEPENDENT-REVIEW.md`; implementation is independently
+`SHIP` at `a9c64cf` in `docs/history/reviews/WEAKNESS-W08D-INDEPENDENT-REVIEW.md`.
 
 **W-09 audit finding:** Evaluation Evidence Integrity & Gate Semantics is a
 bounded P1 weakness. `evals/ig01c/engine.validate_report()` accepts some
@@ -301,7 +301,7 @@ precision `0.1472`; V1 holdout `0.1733`, V2 holdout `0.1026`). No retrieval or
 corpus tuning is authorized by this finding.
 
 **W-09 status:** Independently reviewed `SHIP` at exact head `c90a9ca` in
-`WEAKNESS-W09-INDEPENDENT-REVIEW.md` (final review commit `3dce089`). The
+`docs/history/reviews/WEAKNESS-W09-INDEPENDENT-REVIEW.md` (final review commit `3dce089`). The
 bounded implementation now distinguishes unsupported safety from pass,
 separates quality/evidence/measurement/promotion, reconciles IG01-C/IG01-D
 source and public split identity, fails closed on pair-gate tampering, bounds
@@ -317,7 +317,7 @@ executable, latency and dogfood evidence are closed. Automatic
 markdown writes remain deferred.
 
 **W-09A status:** Independently reviewed `SHIP` at exact review head
-`31a436c` in `WEAKNESS-W09A-INDEPENDENT-REVIEW.md` (review commit
+`31a436c` in `docs/history/reviews/WEAKNESS-W09A-INDEPENDENT-REVIEW.md` (review commit
 `c6dc3bb`). The evaluation-only boundary now runs V1 and V2 on identical
 `evals/corpus-v2` DEV+TEST inputs, fingerprints source/corpus/candidate
 snapshots, enforces K/label/safety gates, and keeps HOLDOUT separate. Public
@@ -350,7 +350,7 @@ invalidate future evaluation. The bounded selector fix uses canonical
 `infer_memory_scope()` and preserves foreign-project exclusion. Status:
 **CLOSED / SHIP** at exact implementation revision `2efb943`; focused
 isolation and full-regression evidence are recorded in
-[`WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md`](WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md).
+[`docs/history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md).
 
 ### W-12 — Derived router/compiler cache read-modify-write is unsynchronized (P2)
 
@@ -364,14 +364,14 @@ The bounded fix applies the existing sidecar lock to complete read-modify-write
 and access refresh paths, uses atomic fsync/replace, and fails open on cache
 lock/write errors. Status: **CLOSED / SHIP** at exact implementation revision
 `4cde804`; focused, process-stress, and full-regression evidence is recorded in
-[`WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
+[`docs/history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
 `authority/cache.py` had the same pre-existing race. The bounded W-12A fix now
 guards its full store and validated-hit refresh operations with the existing
 sidecar lock and atomic writer. Status: **CLOSED / SHIP** at exact
 implementation revision `d33b38d`; process-stress, raw-reader, failure-path
 and full-regression evidence is recorded in
-[`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md) and the independent review in
-[`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`](WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md).
+[`docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md) and the independent review in
+[`docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`](docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md).
 
 ### W-13 — Supplied project root and project ID can disagree (P1)
 
@@ -385,7 +385,7 @@ head is `366835b`. The shared resolver requires an exact registry match for
 root+ID pairs, rejects unregistered explicit IDs without creating a registry
 entry, and preserves root-only auto-registration/relocation. Focused
 scope/capture/API coverage, full regression, and independent review are
-recorded in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`.
+recorded in `docs/history/reports/WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md`.
 
 ### W-14 — Archived project can race a state mutation (P1)
 
@@ -396,7 +396,7 @@ successful requirement write after archive. Status: **CLOSED / SHIP** at exact
 head `aef19b8`; the shared registry sidecar lock now spans the active check and
 state transaction. Archive-first/mutation-first race evidence, timeout
 mapping, full regression, and independent review are recorded in
-`WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md`.
+`docs/history/reports/WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md`.
 
 ### W-15 — Runtime rollout/config updates can lose concurrent operator changes (P1)
 
@@ -408,8 +408,8 @@ a later operator `OFF`. Status: **CLOSED / SHIP** at exact package head
 sidecar lock and rejects a changed snapshot with `RuntimeConfigConflict`.
 The installer’s project-ID/mode update uses the same current-config lock
 boundary. Full regression, race evidence and independent review are recorded
-in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
-`WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
+in `docs/history/reports/WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
+`docs/history/reviews/WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
 
 ### W-16 — Public `MemoryStore.append()` accepts malformed canonical records (P2)
 
@@ -420,9 +420,9 @@ caller was found. Status: **CLOSED / SHIP** at exact review head `3406d7b`;
 `_validate_record()` now rejects malformed required fields, explicit null
 lifecycle/scope fields, invalid supplied types and inconsistent scope metadata
 before the existing lock/revision/atomic transaction. Evidence is recorded in
-[`WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md`](WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md)
+[`docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md)
 and the independent review in
-[`WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md).
+[`docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md).
 
 ### W-17 — Runtime config writes follow symlinked/reparse runtime paths (P2)
 
@@ -434,9 +434,9 @@ revision `6017255c3405dfdbc8d9d154498c7a5edd5f7649`; runtime-owned writes and
 locks now use component-level no-follow/reparse checks, identity revalidation,
 descriptor-relative POSIX target locks and Windows target-scoped mutexes.
 Evidence is recorded in
-`WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-PACKAGE-REPORT.md` and the
+`docs/history/reports/WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-PACKAGE-REPORT.md` and the
 independent review in
-`WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-INDEPENDENT-REVIEW.md`.
+`docs/history/reviews/WEAKNESS-W17-RUNTIME-CONFIG-PATH-CONTAINMENT-INDEPENDENT-REVIEW.md`.
 
 ### W-18 — MemoryStore replacement does not fsync the parent directory (P2)
 
@@ -447,8 +447,8 @@ ProjectRegistry and coordinated backup paths after power loss. Status:
 hosts now fsync the parent directory after replacement, while Windows keeps the
 explicit file-fsync-only behavior. Fault visibility, cleanup, ordering, full
 regression and independent review are recorded in
-`WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and
-`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
+`docs/history/reports/WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and
+`docs/history/reviews/WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`.
 
 ### W-19A — Newer maintenance reports could fall back to stale reminders (P2)
 
@@ -464,7 +464,7 @@ report before interpreting its surface flag.
 focused suite has 22 passing tests and the full suite has 1298 passed, 4
 skipped and 2 dependency warnings. No canonical store, retrieval, V2 or
 Phase 20 behavior changed. Evidence is recorded in
-`WEAKNESS-W19A-STALE-REMINDER-PACKAGE-REPORT.md` and the contract review is
+`docs/history/reports/WEAKNESS-W19A-STALE-REMINDER-PACKAGE-REPORT.md` and the contract review is
 recorded in `WEAKNESS-W19A-STALE-REMINDER-CONTRACT.md`.
 
 ### W-19B — Native hook health can report false green (P1 candidate)
@@ -482,7 +482,7 @@ launcher/install/session-start evidence has 67 passing tests and the full suite
 has 1304 passed, 4 skipped and 2 dependency warnings. Native client trust,
 latency and dogfood remain W-07B gates; SessionStart context telemetry remains
 separate. Evidence is recorded in
-`WEAKNESS-W19B-NATIVE-HEALTH-PACKAGE-REPORT.md`.
+`docs/history/reports/WEAKNESS-W19B-NATIVE-HEALTH-PACKAGE-REPORT.md`.
 
 ### W-20 — Legacy embedding cache is non-atomic and stale in long-lived readers (P2)
 
@@ -500,7 +500,7 @@ incompatible same-ID provenance without replacing the prior snapshot, persists
 clear operations, suppresses stale-writer resurrection and exposes an explicit
 semantic-search refresh boundary. Process-crash, process-concurrency,
 deterministic tie-break, canonical-revision and ranking-parity evidence is in
-`WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md`; the focused suite has 40
+`docs/history/reports/WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md`; the focused suite has 40
 passing tests and the full suite has 1318 passed, 4 skipped and 2 dependency
 warnings. Provider selection, retrieval tuning, V2 promotion and Phase 20 are
 unchanged.
@@ -528,7 +528,7 @@ skipped and 2 dependency warnings. V2 remains SHADOW; no promotion or Phase
 ## Current package selection
 
 **W-08 contract status:** `SHIP` at `90ac899`, reviewed in
-`WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
+`docs/history/reviews/WEAKNESS-W08-CONTRACT-INDEPENDENT-REVIEW.md`. W-08A is independently
 `SHIP` at `05fd7f6`; W-08C's bounded contract is independently `SHIP` at
 `7f175b3`.
 **Current package:** W-07B native runtime acceptance remains `FIX-FIRST / NOT
@@ -567,61 +567,61 @@ W-12A AuthorityCache concurrency is independently `SHIP`ped at exact
 implementation revision `d33b38d`, with final evidence documentation at
 `587c72f`.
 **Closed packages:** W-01 context related-note boundary — `SHIP`, report in
-`WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
-`SHIP`, report in `WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
-confinement — `SHIP`, report in `WEAKNESS-W03A-PACKAGE-REPORT.md`; W-04 late
-transcript durability — `SHIP`, report in `WEAKNESS-W04-PACKAGE-REPORT.md`; W-05
+`docs/history/reports/WEAKNESS-W01-PACKAGE-REPORT.md`; W-02 capture queue transition crash safety —
+`SHIP`, report in `docs/history/reports/WEAKNESS-W02-PACKAGE-REPORT.md`; W-03A transcript path
+confinement — `SHIP`, report in `docs/history/reports/WEAKNESS-W03A-PACKAGE-REPORT.md`; W-04 late
+transcript durability — `SHIP`, report in `docs/history/reports/WEAKNESS-W04-PACKAGE-REPORT.md`; W-05
 prompt event terminal semantics — `SHIP`, report in
-`WEAKNESS-W05-PACKAGE-REPORT.md`; W-06A V1 bootstrap ranking — `SHIP`, report
-in `WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
-`WEAKNESS-W06A-INDEPENDENT-REVIEW.md`; W-07A native continuity read — `SHIP`,
-report in `WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W07A-INDEPENDENT-REVIEW.md`; W-08A ProjectRegistry durability/CAS —
-`SHIP`, report in `WEAKNESS-W08A-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
-`SHIP`, report in `WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
+`docs/history/reports/WEAKNESS-W05-PACKAGE-REPORT.md`; W-06A V1 bootstrap ranking — `SHIP`, report
+in `docs/history/reports/WEAKNESS-W06A-PACKAGE-REPORT.md` and independent review
+`docs/history/reviews/WEAKNESS-W06A-INDEPENDENT-REVIEW.md`; W-07A native continuity read — `SHIP`,
+report in `docs/history/reports/WEAKNESS-W07A-PACKAGE-REPORT.md` and independent review in
+`docs/history/reviews/WEAKNESS-W07A-INDEPENDENT-REVIEW.md`; W-08A ProjectRegistry durability/CAS —
+`SHIP`, report in `docs/history/reports/WEAKNESS-W08A-PACKAGE-REPORT.md` and independent review in
+`docs/history/reviews/WEAKNESS-W08A-INDEPENDENT-REVIEW.md`; W-08B coordinated backup snapshot —
+`SHIP`, report in `docs/history/reports/WEAKNESS-W08B-PACKAGE-REPORT.md` and independent review in
+`docs/history/reviews/WEAKNESS-W08B-INDEPENDENT-REVIEW.md`.
 W-20 legacy embedding-cache durability — `SHIP` at exact review head
-`db6ae44`, report in `WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md` and
+`db6ae44`, report in `docs/history/reports/WEAKNESS-W20-EMBEDDING-CACHE-PACKAGE-REPORT.md` and
 independent implementation review recorded there.
 W-21 V2 authority coverage — `SHIP` at exact review head `02c05c0`, report in
-`WEAKNESS-W21-V2-AUTHORITY-COVERAGE-PACKAGE-REPORT.md` and independent review
+`docs/history/reports/WEAKNESS-W21-V2-AUTHORITY-COVERAGE-PACKAGE-REPORT.md` and independent review
 recorded there.
 W-22 optional-omission enforcement — `SHIP` at exact review head `736c6c9`,
-report in `WEAKNESS-W22-OPTIONAL-OMISSION-PACKAGE-REPORT.md` and independent
+report in `docs/history/reports/WEAKNESS-W22-OPTIONAL-OMISSION-PACKAGE-REPORT.md` and independent
 review recorded there.
 W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
 head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
-review `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
+review `docs/history/reviews/WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
 W-03B transcript ownership/provenance — `SHIP` at exact review head `f1d8896`,
-report in `WEAKNESS-W03B-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W03B-TRANSCRIPT-OWNERSHIP-INDEPENDENT-REVIEW.md`.
+report in `docs/history/reports/WEAKNESS-W03B-PACKAGE-REPORT.md` and independent review in
+`docs/history/reviews/WEAKNESS-W03B-TRANSCRIPT-OWNERSHIP-INDEPENDENT-REVIEW.md`.
 W-02 completed-folder terminal-state closure — `SHIP` at exact review head
-`ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
-independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
+`ed54bfa`, report in `docs/history/reports/WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
+independent review in `docs/history/reviews/WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 W-02 completed-folder terminal-state closure — `SHIP` at exact review head
-`ed54bfa`, report in `WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
-independent review in `WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
+`ed54bfa`, report in `docs/history/reports/WEAKNESS-W02-TERMINAL-STATE-PACKAGE-REPORT.md` and
+independent review in `docs/history/reviews/WEAKNESS-W02-TERMINAL-STATE-INDEPENDENT-REVIEW.md`.
 W-13 project-root/project-ID consistency — `SHIP` at exact code revision
-`cc344e3`, report in `WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md` and
+`cc344e3`, report in `docs/history/reports/WEAKNESS-W13-PROJECT-ROOT-ID-PACKAGE-REPORT.md` and
 independent implementation review recorded at test/documentation head
 `366835b`.
 W-14 archived-state mutation race — `SHIP` at exact implementation revision
-`aef19b8`, report in `WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md` and
+`aef19b8`, report in `docs/history/reports/WEAKNESS-W14-ARCHIVED-STATE-RACE-PACKAGE-REPORT.md` and
 independent review recorded at evidence head `439a62c`.
 W-15 runtime-config lost-update protection — `SHIP` at exact package head
-`7fd9d5a`, report in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
-independent review in `WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
+`7fd9d5a`, report in `docs/history/reports/WEAKNESS-W15-RUNTIME-CONFIG-CAS-PACKAGE-REPORT.md` and
+independent review in `docs/history/reviews/WEAKNESS-W15-RUNTIME-CONFIG-CAS-INDEPENDENT-REVIEW.md`.
 W-16 malformed canonical append validation — `SHIP` at exact review head
-`3406d7b`, report in `WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md` and
-independent review in `WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`;
+`3406d7b`, report in `docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md` and
+independent review in `docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`;
 W-18 MemoryStore parent-directory durability — `SHIP`, report in
-`WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and independent review in
-`WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`; W-12A AuthorityCache
+`docs/history/reports/WEAKNESS-W18-MEMORY-PARENT-FSYNC-PACKAGE-REPORT.md` and independent review in
+`docs/history/reviews/WEAKNESS-W18-MEMORY-PARENT-FSYNC-INDEPENDENT-REVIEW.md`; W-12A AuthorityCache
 concurrency — `SHIP`, report in
-`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md` and independent
+`docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md` and independent
 review in
-`WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
+`docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`.
 **Required outcome:** W-09 and W-09A are complete as measurement-boundary
 corrections. W-06B's lexical design is rejected by independent evidence; its
 successor must improve retrieval against the frozen W-09A evidence without
@@ -656,7 +656,7 @@ retrieval, V2, and Phase 20 were unchanged. Independent implementation review
 at exact head `942aee8` returned `SHIP`; no P0/P1/P2 findings remain.
 
 **W-06C0R1 independent review:** `SHIP` at `942aee8`, recorded in
-`WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`. The R4 immutable anchor
+`docs/history/reviews/WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`. The R4 immutable anchor
 rejects post-anchor evaluator/pin renewal and keeps the historical allowlist
 unchanged.
 
@@ -707,8 +707,8 @@ focused state/context suite is **47 passed** and the full regression is
 `git diff --check` pass. Naive timestamps are rejected before canonical write,
 valid explicit offsets preserve their stored form, and malformed reads return
 bounded `STATE_CORRUPT` without path/content leakage or side effects. See
-`WEAKNESS-TSC-01-TIMEZONE-PACKAGE-REPORT.md` and the independent review
-`WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md` (`SHIP`, review commit
+`docs/history/reports/WEAKNESS-TSC-01-TIMEZONE-PACKAGE-REPORT.md` and the independent review
+`docs/history/reviews/WEAKNESS-TSC-01-TIMEZONE-INDEPENDENT-REVIEW.md` (`SHIP`, review commit
 `1cb524c`). TSC-03 strict decoding, native `compile_context` translation and
 `task_state_context.py` inversion remain open follow-up findings; TSC-02
 identity/lineage is independently closed at reviewed code head `709a9c2`

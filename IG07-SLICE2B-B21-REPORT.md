@@ -87,7 +87,7 @@ open and is required before this step can be accepted.
 
 ## INDEPENDENT REVIEW
 
-**SHIP**, recorded 2026-09-11. See `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md` —
+**SHIP**, recorded 2026-09-11. See `docs/history/reviews/IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md` —
 the implementation move was verified byte-for-byte against the pre-migration
 script (only docstring, one import, and CLI-wrapping differ), full suite and
 all focused tests reproduced exactly, entity extraction and canonical

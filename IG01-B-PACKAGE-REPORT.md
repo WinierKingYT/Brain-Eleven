@@ -26,7 +26,7 @@ promote V2, or change Phase 20.
 - `tests/test_ig01b_corpus.py`
 - `.github/workflows/test.yml`
 - `README.md`, `PROJECT-STATUS.md`, `DOCUMENTATION-AUTHORITY.md`,
-  `IG01-B-INDEPENDENT-REVIEW.md`
+  `docs/history/reviews/IG01-B-INDEPENDENT-REVIEW.md`
 
 ## Root causes addressed
 
@@ -122,7 +122,7 @@ later evaluator/intelligence concern.
 
 ## Independent review
 
-Independent read-only review: [IG01-B independent review](IG01-B-INDEPENDENT-REVIEW.md)
+Independent read-only review: [IG01-B independent review](docs/history/reviews/IG01-B-INDEPENDENT-REVIEW.md)
 checked exact head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`, corpus/schema,
 evidence-derived annotator B, holdout pin/tag, privacy boundaries, prior-art,
 CI and package scope. Verdict: **SHIP**. The synthetic double-label agreement

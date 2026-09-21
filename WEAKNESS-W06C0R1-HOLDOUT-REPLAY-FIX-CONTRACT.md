@@ -31,10 +31,10 @@ Allowed files:
 - `evals/w06c0r1/evidence/test.json`
 - `evals/w06c0r1/evidence/holdout.json`
 - `evals/corpus-v4/holdout/seal.json`
-- `WEAKNESS-W06C0R1-CONTRACT-INDEPENDENT-REVIEW.md`
+- `docs/history/reviews/WEAKNESS-W06C0R1-CONTRACT-INDEPENDENT-REVIEW.md`
 - `WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md`
 - `WEAKNESS-W06C0-SCOPE-COMPAT-CONTRACT.md`
-- `WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`
+- `docs/history/reviews/WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`
 - `WEAKNESS-W06C0R1-PACKAGE-REPORT.md`
 
 The evaluator must define one canonical final evidence path under the existing

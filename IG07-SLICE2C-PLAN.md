@@ -72,7 +72,7 @@ Caller sayımı yalnız gerçek import/dynamic load/function call'ları kapsar. 
 
 Bu script dosyaya doğrudan yazmaz. `scripts/memory-lifecycle.py` içindeki `save` yaklaşık 175–184. satırlarda `self.store.replace(data, expected_revision=self.store_revision)` çağırır. Dolayısıyla lock, CAS ve atomic backup canonical `MemoryStore` üzerinden gelir; ancak dedupe'nin kendi planlama snapshot'ı ile save anı arasındaki stale-window ve eşit timestamp tie-break davranışı ayrıca contract edilmelidir.
 
-**Kullanım sorusu:** production ve behavioral test caller'ı sıfırdır. `tests/test_pre12_memory_state_caller_migration.py:115-117` yalnız static `LIFECYCLE_CALLERS` envanteridir; `.coveragerc` one-off cleanup olarak exclude eder; `CODEX-RESULTS.md` operasyonel CLI olarak listeler. Bu veriler “ölü kod” ihtimalini güçlü biçimde gösterir fakat tek başına silme yetkisi vermez. Uygulama öncesi Ahmet'in C0 kararı gerekir: korunup package'a taşınacak mı, tarihsel/operasyonel adapter olarak mı tutulacak, yoksa ayrı bir retirement/deletion planına mı ayrılacak? Bu plan karar vermemekte, kararı görünür bir gate olarak bırakmaktadır.
+**Kullanım sorusu:** production ve behavioral test caller'ı sıfırdır. `tests/test_pre12_memory_state_caller_migration.py:115-117` yalnız static `LIFECYCLE_CALLERS` envanteridir; `.coveragerc` one-off cleanup olarak exclude eder; `docs/history/evidence/CODEX-RESULTS.md` operasyonel CLI olarak listeler. Bu veriler “ölü kod” ihtimalini güçlü biçimde gösterir fakat tek başına silme yetkisi vermez. Uygulama öncesi Ahmet'in C0 kararı gerekir: korunup package'a taşınacak mı, tarihsel/operasyonel adapter olarak mı tutulacak, yoksa ayrı bir retirement/deletion planına mı ayrılacak? Bu plan karar vermemekte, kararı görünür bir gate olarak bırakmaktadır.
 
 ### 2.2 `migrate-legacy-memory.py`
 
@@ -88,7 +88,7 @@ Bu script dosyaya doğrudan yazmaz. `scripts/memory-lifecycle.py` içindeki `sav
 
 Bu araç da doğrudan dosyaya yazmaz; lock ve atomic write `MemoryStore.transact` içindedir. Ancak caller-level `expected_revision` kullanmadığı için external snapshot/CAS contract'ı yoktur. Daha kritik bulgu, mevcut `migrated_at` atamasının ikinci çalıştırmada değişebilmesidir. Bu haliyle “veri alanları aynı kaldı” idempotence iddiası zayıftır; implementation öncesi contract, metadata'nın yalnız ilk gerçek dönüşümde yazılmasını veya eşdeğer no-change davranışını zorunlu kılmalıdır. Bu plan mevcut davranışı sessizce değiştirmez; bug/contract kararı C2 implementasyonunda açıkça kanıtlanmalıdır.
 
-**Kullanım sorusu:** production ve behavioral test caller'ı sıfırdır. `tests/test_pre12_memory_state_caller_migration.py:146-149` static `LEGACY_MIGRATION_CALLERS` listesidir; `.coveragerc` one-off migration olarak exclude eder; `CODEX-RESULTS.md` CLI'yi listeler. Bu araç için de C0 insan kararı olmadan “taşı” veya “sil” kararı verilmeyecektir.
+**Kullanım sorusu:** production ve behavioral test caller'ı sıfırdır. `tests/test_pre12_memory_state_caller_migration.py:146-149` static `LEGACY_MIGRATION_CALLERS` listesidir; `.coveragerc` one-off migration olarak exclude eder; `docs/history/evidence/CODEX-RESULTS.md` CLI'yi listeler. Bu araç için de C0 insan kararı olmadan “taşı” veya “sil” kararı verilmeyecektir.
 
 ### 2.3 `migrate-memory-scope.py`
 

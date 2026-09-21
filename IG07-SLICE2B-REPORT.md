@@ -123,9 +123,9 @@ Independent review/acceptance is the only open gate for this package.
 ## INDEPENDENT REVIEW
 
 - B2.1: **SHIP**, independently recorded in
-  `IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`.
+  `docs/history/reviews/IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`.
 - B2.2 and the combined Slice 2B package: **SHIP**, recorded 2026-09-11. See
-  `IG07-SLICE2B-INDEPENDENT-REVIEW.md` — the entity move was verified
+  `docs/history/reviews/IG07-SLICE2B-INDEPENDENT-REVIEW.md` — the entity move was verified
   byte-for-byte against the pre-migration script, full suite and all focused
   tests reproduced exactly, `brain_eleven/graph/*` and canonical authority
   paths confirmed untouched by diff.

@@ -46,7 +46,7 @@ Caller sayımı gerçek import/dynamic-loader/function call'larını içerir. Do
 - Windows Git Bash/WSL hook path rendering;
 - exact legacy hook command replacement.
 
-`CLAUDE.md:71` CLI kullanımını belgeler; `CODEX-RESULTS.md:43` operasyonel script listesinde tutar. Bunlar kullanım niyetini gösterir, canlı başka makinelerde gerçekten çalıştırıldığına dair telemetry değildir.
+`CLAUDE.md:71` CLI kullanımını belgeler; `docs/history/evidence/CODEX-RESULTS.md:43` operasyonel script listesinde tutar. Bunlar kullanım niyetini gösterir, canlı başka makinelerde gerçekten çalıştırıldığına dair telemetry değildir.
 
 **C0 operational-use gate:** Ahmet, bu installer'ın başka makinelerde/projelerde aktif kurulum aracı olarak tutulacağını mı, yoksa historical/manual migration tool olarak mı kalacağını açıkça seçmelidir. Production caller sayısının sıfır olması tek başına silme veya package'a taşıma yetkisi vermez. Seçenekler: `retain and migrate`, `archive as operational legacy`, veya ayrı deletion/retirement contract. Bu plan seçim yapmaz.
 

@@ -101,9 +101,9 @@ pushed history and were what was reviewed.)*
 
 ## INDEPENDENT REVIEW
 
-C1 bağımsız review sonucu: **SHIP** (`IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`).
+C1 bağımsız review sonucu: **SHIP** (`docs/history/reviews/IG07-SLICE2C-C1-INDEPENDENT-REVIEW.md`).
 C3 bağımsız review sonucu: **SHIP**, 2026-09-12 —
-`IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`. Rollback CAS fix, gerçekten
+`docs/history/reviews/IG07-SLICE2C-C3-INDEPENDENT-REVIEW.md`. Rollback CAS fix, gerçekten
 zorlanmış bir concurrent-writer testiyle doğrulandı (`MemoryStore.replace`
 monkeypatch'lenerek stale `expected_revision` ile gerçek bir yarış
 koşulu tetiklendi); tam suite 927 passed olarak yeniden üretildi.

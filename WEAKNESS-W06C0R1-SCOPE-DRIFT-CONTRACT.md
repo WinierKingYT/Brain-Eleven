@@ -92,7 +92,7 @@ retrieval, capture, canonical store, or Phase 20 file may change.
    exception paths owned by this maintenance package are exactly:
    `WEAKNESS-W06C0R1-SCOPE-DRIFT-CONTRACT.md`,
    `WEAKNESS-W06C0R1-SCOPE-DRIFT-PACKAGE-REPORT.md`,
-   `WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`, and
+   `docs/history/reviews/WEAKNESS-W06C0R1-SCOPE-DRIFT-INDEPENDENT-REVIEW.md`, and
    `ENGINEERING-WEAK-POINTS-AUDIT.md`. Their edits do not change evaluator
    scope and are allowed; they must never be used to permit an evaluator,
    corpus, evidence, or test edit. The existing
