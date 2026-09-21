@@ -10,7 +10,9 @@ the end of a work session; keep entries to a few lines.
 is still **NOT SHIP**. A remote run of the same SHA (`c61e072`, on the
 non-publishing branch `ig/srt-00-ig07-ci`) is green for Ubuntu and Windows unit,
 integration, privacy, coverage, security and PRE-13 runtime; the 11 master-only
-Validation jobs are skipped by design; PRE-13 quality (the frozen holdout,
+Validation jobs are skipped there by design, but ran green (30 of 30 jobs, none
+skipped) on a throwaway branch whose conditions were relaxed, without pushing
+`master`; PRE-13 quality (the frozen holdout,
 precision 0.169 / required recall 0.676) is still an honest FAIL. Root causes:
 the W-03B fixtures were one byte off on Linux; the task CLIs' `--json` output
 could not be encoded under a cp1252 Windows pipe (a real bug, now UTF-8); the
@@ -21,6 +23,14 @@ the earlier claims and the evidence. Nothing is pushed to `master`.
 merged into the local `master` as `b30c6d5`; its remote run at `a4a3411` was
 green apart from the holdout. The frozen W06C0R1 scope contract only fails while
 the tree has uncommitted changes; it was not relaxed.
+
+Capture fix (2026-09-20, approved by Ahmet): automatic capture had never
+succeeded on the real install (205/205 jobs dead-lettered on unknown transcript
+record types). The reader now skips unknown string types and counts them;
+merged into the local `master` as a fast-forward to `f0a0a4f`, not pushed. New
+sessions will now fill the review queue; in `SHADOW` those items cannot be
+accepted. Still open and Ahmet's call: the pilot gate and whether to requeue
+the 205 old jobs. Details in `SRT00-PLAN.md`.
 
 Holdout decision (2026-09-20, delegated by Ahmet): the frozen corpus-v2 gate
 stays exactly as it is and PRE-13 promotion is deferred. No corpus, label or
@@ -304,10 +314,11 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## What's next
 
-- Keep `master` unpushed until it is a deliberate choice: a push runs the 11
-  master-only Validation jobs but also lets `build.yml` publish
-  `ghcr.io/…:latest` while PRE-13 quality is red. Independent review of the
-  final SHA is still required before SRT-00 can be called SHIP.
+- Keep `master` unpushed until it is a deliberate choice. The 11 master-only
+  jobs are already verified on GitHub, so a push would only add the
+  `ghcr.io/…:latest` image publication by `build.yml`, which happens while
+  PRE-13 quality is red. Independent review of the final SHA is still required
+  before SRT-00 can be called SHIP.
 - Retrieval quality is the only thing that can turn PRE-13 quality green. It
   needs its own bounded contract; the W-06C0R1 answerability corpus is the
   starting evidence. It is not started.

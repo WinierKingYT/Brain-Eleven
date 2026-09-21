@@ -1,3 +1,8 @@
+**Çalışma sırası (2026-09-21): SRT-00 (CI yeşil) → IG-05 ulaşılabilirlik kontrolü → IG-05 → IG-06 → IG-07.**
+Yeni faz açılmaz; bunlar mevcut IG paketleridir. D0-RECHECK 2026-09-12'de tamamlandı
+(`D0-RECHECK-FINDINGS.md`). Hatırlama testi `TEST-LOG.md`'de ölçülür. V2 SHADOW ve
+Phase 20 FROZEN kalır; eşik gevşetme, skip ve holdout ayarı yasak.
+
 # Brain-Eleven: Eleven'in ikinci beyni
 
 Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.

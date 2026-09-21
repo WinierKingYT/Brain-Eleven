@@ -20,6 +20,7 @@ from .state_boundary import StateBoundary
 from .storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
 from .evidence import EvidenceStore, EvidenceBatch, read_increment
 from .ownership import TranscriptOwnershipError, verify_transcript_ownership
+from .path_safety import RuntimePathError
 from .review import ReviewStore
 from .model import propose
 from brain_eleven.memory.truth import MemoryTruthEngine, TruthCandidate
@@ -713,15 +714,33 @@ class Worker:
         stored_cursor = read_json(checkpoint) if cursor_override is None else cursor_override
         if stored_cursor is not None:
             stored_cursor = _validate_cursor(stored_cursor)
+        read_stats = {}
         try:
             batch, cursor = read_increment(self.vault, transcript_path, client, session,
                                            project['project_id'], event['event_at'], stored_cursor,
-                                           binding=binding)
+                                           binding=binding, stats=read_stats)
         except FileNotFoundError as exc:
             raise WorkerProcessingError('TRANSCRIPT_NOT_FOUND') from exc
         except OSError as exc:
             raise WorkerProcessingError('EVIDENCE_IO_FAILED') from exc
         cursor = _validate_cursor(cursor)
+        if read_stats:
+            # Drift signal (read by `doctor`): how many records were conversation
+            # and which unrecognised record types (bounded ASCII names, never
+            # content) were skipped in this increment. It is advisory, so an I/O
+            # failure must never fail or replay the capture; a path-safety
+            # violation is a real boundary error and still propagates.
+            try:
+                write_json(self.config.root / 'last-transcript-stats.json', {
+                    'at': now(),
+                    'records_seen': int(read_stats.get('records_seen', 0)),
+                    'conversation_records': int(read_stats.get('conversation_records', 0)),
+                    'ignored_record_types': dict(read_stats.get('ignored_record_types', {})),
+                })
+            except RuntimePathError:
+                raise
+            except OSError:
+                pass
         EvidenceStore(self.vault).persist(batch.records)
         outcomes = []
         effect_ids = []

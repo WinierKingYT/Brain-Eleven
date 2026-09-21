@@ -262,7 +262,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .phase15-evidence-input
@@ -549,7 +549,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .phase16-evidence-input
@@ -587,7 +587,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .phase17-evidence-input
@@ -640,7 +640,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .phase18-evidence-input
@@ -688,7 +688,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .phase19-evidence-input
@@ -745,27 +745,27 @@ jobs:
           pytest tests/context_engine tests/test_state_failure_injection.py -m graduation
           --junitxml=foundation-graduation-junit.xml
       - name: Download Phase 15 evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: phase15-evaluation-evidence
           path: .foundation-evidence-input/phase15
       - name: Download Phase 16 evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: phase16-task-state-evidence
           path: .foundation-evidence-input/phase16
       - name: Download Phase 17 evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: phase17-task-aware-router-evidence
           path: .foundation-evidence-input/phase17
       - name: Download Phase 18 evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: phase18-authority-conflict-evidence
           path: .foundation-evidence-input/phase18
       - name: Download Phase 19 evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: phase19-context-compiler-v2-evidence
           path: .foundation-evidence-input/phase19
@@ -812,9 +812,9 @@ jobs:
           coverage report --fail-under=80
           python scripts/check_context_engine_coverage.py --coverage coverage.json
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -913,9 +913,9 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build validation image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           load: true
@@ -959,7 +959,7 @@ jobs:
           trivyignores: .trivyignore
       - name: Upload Trivy results
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
 
@@ -975,7 +975,7 @@ jobs:
       - name: Install evidence parser
         run: python -m pip install --upgrade pip defusedxml==0.7.1
       - name: Download runtime test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: coverage-report
           path: .evidence-input
@@ -1045,7 +1045,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
       - name: Download exact IG01-D pair evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ig01d-baseline-evidence
           path: .ig01d-evidence
