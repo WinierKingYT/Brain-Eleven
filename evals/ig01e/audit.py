@@ -89,16 +89,16 @@ def _check_file(root: Path, relative: str, *, required_markers: Iterable[str] = 
 def _audit_documentation(root: Path) -> list[dict[str, Any]]:
     files = {
         "PROJECT-STATUS.md": ("PHASE 20: FROZEN", "V2 remains SHADOW"),
-        "IG01-EVALUATION-FOUNDATION.md": ("IG01-E", "HOLDOUT"),
-        "IG01-A-EVALUATION-CONTRACT.md": ("answerability", "HOLDOUT"),
-        "IG01-B-CORPUS-CONTRACT.md": ("PUBLIC_SYNTHETIC", "PRIVATE_REALISTIC"),
-        "IG01-C-EVALUATOR-CONTRACT.md": ("No production intelligence", "anti-gaming"),
-        "IG01-D-BASELINE-CONTRACT.md": ("V1", "V2", "HOLDOUT"),
+        "docs/contracts/IG01-EVALUATION-FOUNDATION.md": ("IG01-E", "HOLDOUT"),
+        "docs/contracts/IG01-A-EVALUATION-CONTRACT.md": ("answerability", "HOLDOUT"),
+        "docs/contracts/IG01-B-CORPUS-CONTRACT.md": ("PUBLIC_SYNTHETIC", "PRIVATE_REALISTIC"),
+        "docs/contracts/IG01-C-EVALUATOR-CONTRACT.md": ("No production intelligence", "anti-gaming"),
+        "docs/contracts/IG01-D-BASELINE-CONTRACT.md": ("V1", "V2", "HOLDOUT"),
         "DOCUMENTATION-AUTHORITY.md": ("evals/ig01e", "IG01-D-PACKAGE-REPORT.md"),
     }
     evidence = [_check_file(root, relative, required_markers=markers) for relative, markers in files.items()]
     status = (root / "PROJECT-STATUS.md").read_text(encoding="utf-8").lower()
-    d_report = (root / "IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower()
+    d_report = (root / "docs/history/reports/IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower()
     e_active = "active package: ig01-e" in status
     # Later IG packages may be active after IG-01 has shipped.  Keep this
     # audit valid by checking the durable IG-01 acceptance markers instead of
@@ -267,7 +267,7 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
         raise AuditError("IG01-D baseline does not prove public DEV+TEST-only execution")
     if "validate_pair_report" not in contracts.read_text(encoding="utf-8"):
         raise AuditError("IG01-D strict pair contract is missing")
-    report = root / "IG01-D-PACKAGE-REPORT.md"
+    report = root / "docs/history/reports/IG01-D-PACKAGE-REPORT.md"
     _check_file(root, report.name, required_markers=("SEMANTIC_UNAVAILABLE", "holdout_included=false", "V2 precision"))
     report_text = report.read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in report_text:
@@ -341,10 +341,10 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
     if missing:
         raise AuditError("required immutable package tags are missing")
     reports = {
-        "IG01-A-PACKAGE-REPORT.md": "SHIP",
-        "IG01-B-PACKAGE-REPORT.md": "SHIP",
-        "IG01-C-PACKAGE-REPORT.md": "SHIP",
-        "IG01-D-PACKAGE-REPORT.md": "SHIP",
+        "docs/history/reports/IG01-A-PACKAGE-REPORT.md": "SHIP",
+        "docs/history/reports/IG01-B-PACKAGE-REPORT.md": "SHIP",
+        "docs/history/reports/IG01-C-PACKAGE-REPORT.md": "SHIP",
+        "docs/history/reports/IG01-D-PACKAGE-REPORT.md": "SHIP",
     }
     report_evidence: dict[str, str] = {}
     for relative, expected in reports.items():
@@ -352,15 +352,20 @@ def _audit_parent_packages(root: Path) -> dict[str, Any]:
         if expected not in text:
             raise AuditError(f"{relative} does not record {expected}")
         report_evidence[relative] = _sha256(root / relative)
-    d_text = (root / "IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8")
-    c_text = (root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8")
+    d_text = (root / "docs/history/reports/IG01-D-PACKAGE-REPORT.md").read_text(encoding="utf-8")
+    c_text = (root / "docs/history/reports/IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in d_text or "a95fa31079acdb2de3a26c767923accaf084a274" not in c_text:
         raise AuditError("parent package reports are not revision-bound")
     return {"immutable_ship_tags": tag_revisions, "missing": [], "report_sha256": report_evidence}
 
 
 def _audit_benchmark_eligibility(root: Path) -> dict[str, Any]:
-    report = " ".join((root / "IG01-C-PACKAGE-REPORT.md").read_text(encoding="utf-8").lower().split())
+    report = " ".join(
+        (root / "docs/history/reports/IG01-C-PACKAGE-REPORT.md")
+        .read_text(encoding="utf-8")
+        .lower()
+        .split()
+    )
     if "release-mode benchmark validation will reject" not in report or "exploratory smoke" not in report:
         raise AuditError("IG01-C benchmark eligibility limitation is not visible")
     return {

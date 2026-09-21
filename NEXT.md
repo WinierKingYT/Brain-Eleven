@@ -124,7 +124,7 @@ W-19B is independently `SHIP`ped at `5555318`: warning-bearing native
 hook output and exceptions persist as `DEGRADED`, and doctor surfaces that as
 `ATTENTION` without changing canonical data. Native client trust, latency and
 dogfood still belong to W-07B. The remaining read-only findings are recorded
-in `ENGINEERING-WEAK-POINTS-AUDIT.md`: legacy embedding-cache
+in `docs/audits/ENGINEERING-WEAK-POINTS-AUDIT.md`: legacy embedding-cache
 durability/staleness (W-20), V2 authority coverage (W-21) and optional
 omission enforcement (W-22) are now closed. The remaining acceptance gap is
 W-07B's native trust/latency/dogfood evidence.

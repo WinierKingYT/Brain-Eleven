@@ -54,12 +54,20 @@ def test_audit_report_write_is_content_free(tmp_path):
 
 def test_audit_rejects_missing_contract_marker(tmp_path):
     # The audit must fail closed if a required contract is unavailable.
-    for source in ("IG01-EVALUATION-FOUNDATION.md", "IG01-A-EVALUATION-CONTRACT.md"):
+    for source in (
+        "docs/contracts/IG01-EVALUATION-FOUNDATION.md",
+        "docs/contracts/IG01-A-EVALUATION-CONTRACT.md",
+    ):
         target = tmp_path / source
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("incomplete", encoding="utf-8")
     with pytest.raises(AuditError):
         from evals.ig01e.audit import _check_file
-        _check_file(tmp_path, "IG01-EVALUATION-FOUNDATION.md", required_markers=("IG01-E",))
+        _check_file(
+            tmp_path,
+            "docs/contracts/IG01-EVALUATION-FOUNDATION.md",
+            required_markers=("IG01-E",),
+        )
 
 
 def test_audit_report_writer_rejects_unknown_verdict(tmp_path):

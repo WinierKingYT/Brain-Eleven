@@ -27,23 +27,23 @@ authorize opening Phase 20 or promoting V2.
 | `NEXT.md` | CURRENT plain-language status/next-steps summary for humans; not evidence and not a substitute for `PROJECT-STATUS.md`'s revision-bound claims. |
 | `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
 | `ARCHITECTURE.md`, `CONTRIBUTING.md` | CURRENT project orientation and contribution guidance; neither is release or package authority. |
-| `ENGINEERING-WEAK-POINTS-AUDIT.md` | CURRENT evidence-backed weakness baseline; cited revisions and package contracts remain the authority for implementation decisions. |
+| `docs/audits/ENGINEERING-WEAK-POINTS-AUDIT.md` | CURRENT evidence-backed weakness baseline; cited revisions and package contracts remain the authority for implementation decisions. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `docs/programs/INTELLIGENCE-GRADUATION.md`, `docs/contracts/IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
 | `docs/history/reviews/IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
 | `docs/history/reports/IG00-PACKAGE-REPORT.md` | REVIEW/evidence record bound to the IG-00 review HEAD; its SHIP verdict closes IG-00 but does not authorize Phase 20 by itself. |
 | `docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-00; bound to reviewed HEAD `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`. |
-| `IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
-| `IG01-A-EVALUATION-CONTRACT.md` | CURRENT **CONTRACT** for the shipped IG01-A measurement-contract package; it freezes evaluation semantics and remains the governing input to later corpus/evaluator work. |
-| `IG01-A-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-A; its `SHIP` verdict and `ig01a-ship` tag close IG01-A. |
-| `IG01-B-CORPUS-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG01-B corpus, ground-truth, provenance and privacy boundary; it does not authorize evaluator or production changes. |
+| `docs/contracts/IG01-EVALUATION-FOUNDATION.md` | CURRENT **CONTRACT** for the active IG-01 measurement package; opens only the evaluation foundation sequence and forbids production intelligence tuning. |
+| `docs/contracts/IG01-A-EVALUATION-CONTRACT.md` | CURRENT **CONTRACT** for the shipped IG01-A measurement-contract package; it freezes evaluation semantics and remains the governing input to later corpus/evaluator work. |
+| `docs/history/reports/IG01-A-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-A; its `SHIP` verdict and `ig01a-ship` tag close IG01-A. |
+| `docs/contracts/IG01-B-CORPUS-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG01-B corpus, ground-truth, provenance and privacy boundary; it does not authorize evaluator or production changes. |
 | `docs/history/evidence/IG01-B-PRIOR-ART.md` | GENERATED EVIDENCE / targeted read-only prior-art input for corpus design; it does not authorize production changes. |
-| `IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; exact revision `6cb4e2b584addf7ac66aa5330266c80db096c5c2` has independent `SHIP`. |
+| `docs/history/reports/IG01-B-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-B; exact revision `6cb4e2b584addf7ac66aa5330266c80db096c5c2` has independent `SHIP`. |
 | `docs/history/reviews/IG01-B-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG01-B; bound to reviewed head `6cb4e2b584addf7ac66aa5330266c80db096c5c2`. |
-| `IG01-C-EVALUATOR-CONTRACT.md` | CURRENT **CONTRACT** for the production-independent deterministic evaluator; it does not authorize production intelligence tuning, V2 promotion or Phase 20. |
-| `IG01-C-PACKAGE-REPORT.md` | REVIEW/evidence record for the bounded IG01-C evaluator; exact revision and CI evidence are recorded in the report and its independent verdict is `SHIP`. |
-| `IG01-D-BASELINE-CONTRACT.md` | CURRENT **CONTRACT** for the bounded V1/V2 baseline measurement; it forbids tuning, holdout execution, V2 promotion and Phase 20 work. |
-| `IG01-D-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-D; exact paired evidence, independent technical `SHIP` and user `IG01-D human checkpoint PASS` close the package. |
+| `docs/contracts/IG01-C-EVALUATOR-CONTRACT.md` | CURRENT **CONTRACT** for the production-independent deterministic evaluator; it does not authorize production intelligence tuning, V2 promotion or Phase 20. |
+| `docs/history/reports/IG01-C-PACKAGE-REPORT.md` | REVIEW/evidence record for the bounded IG01-C evaluator; exact revision and CI evidence are recorded in the report and its independent verdict is `SHIP`. |
+| `docs/contracts/IG01-D-BASELINE-CONTRACT.md` | CURRENT **CONTRACT** for the bounded V1/V2 baseline measurement; it forbids tuning, holdout execution, V2 promotion and Phase 20 work. |
+| `docs/history/reports/IG01-D-PACKAGE-REPORT.md` | REVIEW/evidence record for IG01-D; exact paired evidence, independent technical `SHIP` and user `IG01-D human checkpoint PASS` close the package. |
 | `docs/contracts/IG01-E-AUDIT-CONTRACT.md` | CURRENT **CONTRACT** for the read-only independent evaluation-foundation audit; it does not change production intelligence, open Phase 20 or promote V2. |
 | `docs/history/reports/IG01-E-AUDIT-REPORT.md` | GENERATED EVIDENCE / revision-bound IG01-E and IG-01 closure output; independent review and human closure are `SHIP` at `a384330`; it does not authorize production tuning or open the next package. |
 | `docs/history/evidence/IG03-SEMANTIC-EXTRACTION-AUDIT.md` | REVIEW / read-only IG-03 reality audit bound to the IG-01 closure head; it records the deterministic extraction baseline and provider gap, and does not authorize implementation. |
@@ -61,7 +61,7 @@ authorize opening Phase 20 or promoting V2.
 | `docs/history/evidence/CODEX-RESULTS-R0.md` | GENERATED EVIDENCE / real semantic + embedding provider socket probe at `88821a8`; adds provider adapters behind explicit switches with no canonical-store import and a green regression. Evaluation-only; it does not open IG-04, wire production retrieval or promote V2. |
 | `docs/history/evidence/CODEX-RESULTS-D0.md` | GENERATED EVIDENCE / IG-04-adjacent retrieval-ceiling probe (package D0) at `5deebe8`; measures scope, corpus balance and a retrieval-tuned-model spike ahead of a RETHINK branch decision. Evaluation-only, bound to `evals/ig01d/d0-probe-real.json`; it does not open IG-04 by itself or authorize production tuning. |
 | `docs/history/evidence/CODEX-RESULTS.md`, `docs/history/reports/W-06B-PACKAGE-REPORT.md` | HISTORICAL / GENERATED EVIDENCE from the earlier engineering-goal task stream; retain for provenance, but do not infer current quality or authorization from them. |
-| `WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md` | HISTORICAL compatibility-scope input retained at the root because the frozen W-06C0R1 evaluator allowlist addresses this exact path; it does not authorize new implementation. |
+| `docs/contracts/WEAKNESS-W06C0R1-HOLDOUT-REPLAY-FIX-CONTRACT.md` | HISTORICAL compatibility-scope input retained at its documented location; the frozen W-06C0R1 evaluator keeps the former root path only as a historical replay token. It does not authorize new implementation. |
 | `docs/history/evidence/IG07-INVENTORY.md` | GENERATED EVIDENCE / read-only audit of the `scripts/` ↔ `brain_eleven/` implementation-authority split at `cb02554`; independently spot-checked (LOC and module counts confirmed, one caller-count undercount found for `cache_manager.py`, not risk-changing). Its first-slice proposal is approved; it does not itself authorize touching `MemoryStore`/`StateStore`/`ProjectRegistry` or any capture/retrieval path. |
 | `docs/history/reports/IG07-SLICE1-REPORT.md` | REVIEW / GENERATED EVIDENCE for the four-module slice 1 migration (`logging_config`, `cache_manager`, `summarizer`, `anomaly_detector`) at implementation revision `44c9d80`; independently accepted. |
 | `docs/history/reviews/IG07-SLICE1-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-07 slice 1; bound to reviewed HEAD `639e130a5127553480026f74c121e000983b7941`. Verdict `SHIP`. Does not authorize the next slice, which needs its own bounded plan. |

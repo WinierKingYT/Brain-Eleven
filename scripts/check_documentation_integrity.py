@@ -45,7 +45,7 @@ ARCHIVE_INDEX = "docs/history/README.md"
 AUTHORITY_DOCUMENTS = (
     "DOCUMENTATION-AUTHORITY.md",
     "PROJECT-STATUS.md",
-    "ENGINEERING-WEAK-POINTS-AUDIT.md",
+    "docs/audits/ENGINEERING-WEAK-POINTS-AUDIT.md",
 )
 # Names used in prose ("applicable AGENTS.md files") rather than as paths that
 # must exist in this repository.

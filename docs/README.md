@@ -8,6 +8,7 @@ Start with the repository `README.md`. Current project state is maintained in
 - `contracts/` — governing or reusable package contracts that are not root-path
   dependencies of frozen evaluators.
 - `programs/` — program-level direction, including Intelligence Graduation.
+- `audits/` — maintained engineering audit and weakness baseline.
 - `CANARY-GATE-FEASIBILITY-PROPOSAL.md` and `IG05-REACHABILITY-CHECK.md` —
   bounded current decision inputs.
 

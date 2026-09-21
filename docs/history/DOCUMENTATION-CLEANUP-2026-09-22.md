@@ -29,6 +29,16 @@ status surface plus evaluation-bound documents whose exact root paths are part
 of frozen source/scope checks. Moving those remaining evaluation documents
 would change code-backed evidence contracts, so they were deliberately kept.
 
+## Final root consolidation
+
+The remaining IG01 and W06C0/W06C0R1 documents were subsequently moved after
+their code-backed path consumers were updated explicitly. IG contracts now
+live in `docs/contracts/`, package evidence in `docs/history/reports/`, and the
+engineering weakness baseline in `docs/audits/`. Historical path names remain
+accepted by frozen scope allowlists where replay compatibility requires them.
+
+The repository root is reduced to nine maintained entry-point documents.
+
 ## Status correction
 
 `NEXT.md` was aligned with `PROJECT-STATUS.md`: SRT-00 is closed with green CI,

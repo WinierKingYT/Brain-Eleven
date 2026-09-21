@@ -330,7 +330,7 @@ The repository previously allowed a normal V2-rendered result to cross the
 native model boundary while the product status was `SHADOW`. This was a
 rollout-boundary defect, not a retrieval-quality result. The bounded contract
 is
-[`docs/contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](docs/contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
+[`docs/contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](../contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
 at `a867f2d`; it defines the explicit legacy V1 source for normal turns,
 keeps the W06B path separate, and requires V2 comparison output to stay out of
 client injection while SHADOW. Status: **CLOSED / SHIP** at exact code/test
@@ -350,7 +350,7 @@ invalidate future evaluation. The bounded selector fix uses canonical
 `infer_memory_scope()` and preserves foreign-project exclusion. Status:
 **CLOSED / SHIP** at exact implementation revision `2efb943`; focused
 isolation and full-regression evidence are recorded in
-[`docs/history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md).
+[`docs/history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md`](../history/reports/WEAKNESS-W11-GLOBAL-MEMORY-SELECTOR-PACKAGE-REPORT.md).
 
 ### W-12 — Derived router/compiler cache read-modify-write is unsynchronized (P2)
 
@@ -364,14 +364,14 @@ The bounded fix applies the existing sidecar lock to complete read-modify-write
 and access refresh paths, uses atomic fsync/replace, and fails open on cache
 lock/write errors. Status: **CLOSED / SHIP** at exact implementation revision
 `4cde804`; focused, process-stress, and full-regression evidence is recorded in
-[`docs/history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
+[`docs/history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](../history/reports/WEAKNESS-W12-DERIVED-CACHE-CONCURRENCY-PACKAGE-REPORT.md).
 `authority/cache.py` had the same pre-existing race. The bounded W-12A fix now
 guards its full store and validated-hit refresh operations with the existing
 sidecar lock and atomic writer. Status: **CLOSED / SHIP** at exact
 implementation revision `d33b38d`; process-stress, raw-reader, failure-path
 and full-regression evidence is recorded in
-[`docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md) and the independent review in
-[`docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`](docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md).
+[`docs/history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md`](../history/reports/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-PACKAGE-REPORT.md) and the independent review in
+[`docs/history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md`](../history/reviews/WEAKNESS-W12A-AUTHORITY-CACHE-CONCURRENCY-INDEPENDENT-REVIEW.md).
 
 ### W-13 — Supplied project root and project ID can disagree (P1)
 
@@ -420,9 +420,9 @@ caller was found. Status: **CLOSED / SHIP** at exact review head `3406d7b`;
 `_validate_record()` now rejects malformed required fields, explicit null
 lifecycle/scope fields, invalid supplied types and inconsistent scope metadata
 before the existing lock/revision/atomic transaction. Evidence is recorded in
-[`docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md`](docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md)
+[`docs/history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md`](../history/reports/WEAKNESS-W16-MEMORY-APPEND-PACKAGE-REPORT.md)
 and the independent review in
-[`docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md).
+[`docs/history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md`](../history/reviews/WEAKNESS-W16-MEMORY-APPEND-INDEPENDENT-REVIEW.md).
 
 ### W-17 — Runtime config writes follow symlinked/reparse runtime paths (P2)
 
@@ -591,7 +591,7 @@ W-22 optional-omission enforcement — `SHIP` at exact review head `736c6c9`,
 report in `docs/history/reports/WEAKNESS-W22-OPTIONAL-OMISSION-PACKAGE-REPORT.md` and independent
 review recorded there.
 W-06C0R1 evaluation corpus/provenance remediation — `SHIP` at exact review
-head `32d158f`, report in `WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
+head `32d158f`, report in `docs/history/reports/WEAKNESS-W06C0R1-PACKAGE-REPORT.md` and independent
 review `docs/history/reviews/WEAKNESS-W06C0-REMEDIATION-CONTRACT-INDEPENDENT-REVIEW.md`.
 W-03B transcript ownership/provenance — `SHIP` at exact review head `f1d8896`,
 report in `docs/history/reports/WEAKNESS-W03B-PACKAGE-REPORT.md` and independent review in
