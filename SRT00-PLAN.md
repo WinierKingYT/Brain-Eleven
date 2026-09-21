@@ -140,6 +140,8 @@ Remote runs on `ig/…` branches (`ig/srt-00-ig07-ci`, and
 | `03920bb` | **success** (#820) — 30 of 30 jobs green, **0 skipped**, **0 annotations**; `f3dfa6f` plus the `ig/**` relaxation, merged onto the earlier throwaway so the push was a fast-forward | green / green | FAIL (holdout) | success |
 | `6103a3d` | **success** (#822) — 19 jobs green, 11 skipped by design, **0 annotations**; includes the opt-in router scope sweep (off by default) and the `retrieval_decision_v2` fix | not read | FAIL (holdout) | not read |
 | `00fddcf` | **success** (#823) — 30 of 30 jobs green, **0 skipped**, **0 annotations**; `6103a3d` plus the `ig/**` relaxation; the three Phase 17 router jobs (shadow smoke, public suite, evidence) ran against the new router code | not read | FAIL (holdout) | not read |
+| `2441aaf` | **success** (#824-branch) — 19 jobs green, 11 skipped by design, **0 annotations**; includes `shadow_accept` (off by default) | not read | FAIL (holdout) | not read |
+| `6ffd8cc` | **success after one re-run** — 30 of 30 jobs green, 0 skipped, 0 annotations. First attempt: `Phase 19 compiler V2 evidence` failed only at its `Upload Phase 19 evidence` step with `FinalizeArtifact ... (403) Forbidden` from the GitHub artifact service; every evidence-producing step of that job had succeeded and the dependent graduation job was skipped. Re-running the failed jobs (no new push) passed. Treated as transient infrastructure, not a code failure | not read | FAIL (holdout) | not read |
 
 `dc2fae5` is the local `master` tip at the time of writing, so the whole
 current code state has run on GitHub. Its first push (`fd9bbc0`) failed the

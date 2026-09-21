@@ -404,6 +404,8 @@ Decisions recorded the same day (`INTELLIGENCE-GRADUATION.md`, "Owner decisions"
 unreachable on this corpus, V2 stays SHADOW, IG-06/IG-07 not opened, Phase 20 locked, scope sweep
 off, and human-approved accept in SHADOW added behind the default-off `shadow_accept` flag
 (`python -m brain_eleven shadow-accept ON`); it awaits independent review and is not enabled.
+CI for that batch: branch 19 green / 11 skipped by design; preview 30 of 30 green after one re-run of a
+GitHub artifact-upload 403 (see `SRT00-PLAN.md`), 0 annotations.
 
 **2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
 one independent contract `FIX-FIRST` cycle and one independent implementation
