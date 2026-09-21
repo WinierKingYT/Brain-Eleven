@@ -1,23 +1,28 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-16
+**Last updated:** 2026-09-21
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
 (independent review `SHIP` at review head `775d0d2`; bounded implementation
 `335b6df` plus focused tests `f0866b6`).
-**ACTIVE PACKAGE: SRT-00 exact-head CI failure stabilization — ACTIVE / OPEN**
-(SRT-01 is closed; unrelated runtime, quality, Windows and W-03B failures
-remain open and are tracked separately).
+**LAST STABILIZATION PACKAGE: SRT-00 exact-head CI failure stabilization — CLOSED (CI green), not independently reviewed**
+(closed 2026-09-21 at `f5b8c1b`: Validation #821 green 30 of 30 on Ubuntu 24.04
+and Windows, Build & Push #820 published; PRE-13 `quality` remains FAIL by the
+holdout decision; see `SRT00-PLAN.md`).
 
 **LATEST ENGINEERING WEAK-POINT CLOSURE:** SRT-01 Linux runtime lock protocol
 repair — **SHIP** after fresh independent review recorded in
 `SRT01-LINUX-RUNTIME-LOCK-INDEPENDENT-REVIEW.md`; the POSIX context-manager
 defect is closed without changing workflow gates. W-25 HTTP project-scope/
 authorization remains the preceding application closure (`fe1318b`).
-**ACTIVE STABILIZATION PACKAGE:** SRT-00 exact-head CI failure reproduction at
-`92fa1a0` (current-head remote Validation and PRE-13 remain red for unrelated
-failures; no threshold or skip change is authorized).
+**CLOSED STABILIZATION PACKAGE:** SRT-00 (2026-09-21, master `f5b8c1b`). The
+four deterministic unit failures on `5dc0121` and the timing-sensitive w08b test
+are fixed at their root cause, the Node 20 and CodeQL v3 workflow warnings are
+removed, and no threshold or skip was added. Not `SHIP`: the final SHA has no
+independent review, and the PRE-13 holdout quality gate stays red by decision
+(`docs/CANARY-GATE-FEASIBILITY-PROPOSAL.md`). Phase 20 stays FROZEN and V2 stays
+SHADOW.
 
 The engineering weak-point goal is active alongside the frozen IG program.
 W-20 legacy embedding-cache durability (`db6ae44`), W-21 V2 authority
