@@ -38,6 +38,7 @@ reviews stay at the root.
 | Closed package reports | `reports/` — completed package reports retained as revision-bound evidence |
 | Independent reviews | `reviews/` — completed independent review records retained with their original content |
 | Generated investigation evidence | `evidence/` — historical Codex/D0/R0 result records; not current authority |
+| Completed plans | `plans/` — closed implementation and stabilization plans retained for provenance |
 | Documentation cleanup records | `DOCUMENTATION-CLEANUP-2026-09-18` |
 | Documentation cleanup records | `DOCUMENTATION-CLEANUP-2026-09-22` |
 | Misc | `hamle6_notes_content.txt` |

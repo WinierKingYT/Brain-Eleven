@@ -45,7 +45,7 @@ isolated vault. Claude and Codex both invoked native hook entry points without a
 visible window, but the local Claude API authentication and Codex network
 failure prevented a client-owned transcript from reaching the queue. This is
 recorded as a bounded unverified trust result in
-`IG02-NATIVE-SMOKE-EVIDENCE.md`; the launcher golden path separately verifies
+`docs/history/evidence/IG02-NATIVE-SMOKE-EVIDENCE.md`; the launcher golden path separately verifies
 queue completion, effect receipt and canonical verification.
 
 ## Paths and node states

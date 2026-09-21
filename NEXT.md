@@ -9,7 +9,7 @@ the end of a work session; keep entries to a few lines.
 **2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is
 green on Ubuntu and Windows and Build & Push #820 published. It remains a
 stabilization closure rather than an independent `SHIP`; the frozen PRE-13
-holdout quality gate is still an honest FAIL. `SRT00-PLAN.md` retains the
+holdout quality gate is still an honest FAIL. `docs/history/plans/SRT00-PLAN.md` retains the
 detailed evidence and corrections.
 
 Capture fix (2026-09-20, approved by Ahmet): automatic capture had never
@@ -18,7 +18,7 @@ record types). The reader now skips unknown string types and counts them;
 merged into the local `master` as a fast-forward to `f0a0a4f`, not pushed. New
 sessions will now fill the review queue; in `SHADOW` those items cannot be
 accepted. Still open and Ahmet's call: the pilot gate and whether to requeue
-the 205 old jobs. Details in `SRT00-PLAN.md`.
+the 205 old jobs. Details in `docs/history/plans/SRT00-PLAN.md`.
 
 Holdout decision (2026-09-20, delegated by Ahmet): the frozen corpus-v2 gate
 stays exactly as it is and PRE-13 promotion is deferred. No corpus, label or
@@ -31,7 +31,7 @@ Active program: **Intelligence Graduation (IG)**, replacing the old
 review head `775d0d2`; implementation `335b6df`, focused tests `f0866b6`.
 B1 and B2 are both closed; the earlier IG-04 B2 review queue package remains
 closed as well. No later document should describe SRT-00 as active.
-`INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
+`docs/programs/INTELLIGENCE-GRADUATION.md` documents the Branch B pivot — IG-04's slot is
 the Branch B track, not the original reference/correction scope (deferred,
 not deleted). The earlier D0/R0 feasibility probes remain evaluation-only
 evidence; see `docs/history/evidence/CODEX-RESULTS-D0.md` / `docs/history/evidence/CODEX-RESULTS-R0.md`.
@@ -129,7 +129,7 @@ durability/staleness (W-20), V2 authority coverage (W-21) and optional
 omission enforcement (W-22) are now closed. The remaining acceptance gap is
 W-07B's native trust/latency/dogfood evidence.
 
-**IG-07 (architecture consolidation) — Slice 1 is closed.** `IG07-INVENTORY.md`
+**IG-07 (architecture consolidation) — Slice 1 is closed.** `docs/history/evidence/IG07-INVENTORY.md`
 catalogs all 58 `scripts/` modules (14,014 impl LOC, 20 low/12 medium/26 high
 risk). Slice 1's four bridge-only, non-authority modules (`logging_config`,
 `cache_manager`, `summarizer`, `anomaly_detector`) are all migrated into
@@ -139,7 +139,7 @@ One P2 finding open (unnecessary `sys.modules` dependency lookup in
 `anomaly.py` — not blocking). `MemoryStore`/`StateStore`/`ProjectRegistry`
 and capture/retrieval paths remain untouched and out of scope.
 
-**IG-07 Slice 2A is closed.** `IG07-SLICE2-PLAN.md` reassessed all 11
+**IG-07 Slice 2A is closed.** `docs/history/plans/IG07-SLICE2-PLAN.md` reassessed all 11
 remaining medium-risk modules more deeply than slice 1's coarse pass —
 several got reclassified to HIGH (`entity_extractor`, `knowledge_graph`,
 `remember`, both `migrate-*` scripts, `install-cross-project-memory`,
@@ -154,7 +154,7 @@ remain open and unaffected.
 `task_state_context.py` (26-27 callers, highest blast radius in the whole
 inventory) is excluded from Slice 2 entirely, needs its own plan later.
 
-**Slice 2B plan approved, not yet implemented.** `IG07-SLICE2B-PLAN.md`
+**Slice 2B plan approved, not yet implemented.** `docs/history/plans/IG07-SLICE2B-PLAN.md`
 covers `entity_extractor.py` and `knowledge_graph.py` — unlike slices 1/2A,
 this is a bridge-direction *inversion* (package currently re-exports the
 script; target is the reverse). Independently spot-checked: every cited
@@ -178,7 +178,7 @@ wrapping differ, no logic changed. Full suite reproduces at 913 passed;
 `brain_eleven/graph/*` and all canonical authority paths confirmed untouched
 by diff at each step. Independent reviews: `docs/history/reviews/IG07-SLICE2B-B21-INDEPENDENT-REVIEW.md`
 and `docs/history/reviews/IG07-SLICE2B-INDEPENDENT-REVIEW.md`, both `SHIP`. This closes all of
-Slice 2 (2A + 2B) from `IG07-SLICE2-PLAN.md`.
+Slice 2 (2A + 2B) from `docs/history/plans/IG07-SLICE2-PLAN.md`.
 
 **Two-track workflow started (2026-09-11).** Codex continues on relayed
 instructions as before; Claude now also implements small bounded pieces
@@ -195,7 +195,7 @@ was applied — the test's 3s budget matches a real host-enforced hook
 stop validating a real contract. Left as-is; still worth a future look if it
 recurs.
 
-**Slice 2C plan approved with a scope change.** `IG07-SLICE2C-PLAN.md`
+**Slice 2C plan approved with a scope change.** `docs/history/plans/IG07-SLICE2C-PLAN.md`
 covers the three canonical-memory-writing migration tools; unlike Slice
 2A/2B these touch real writes, so the plan requires idempotence, backup,
 rollback, and CAS evidence, not just object-identity/adapter checks. It also
@@ -241,7 +241,7 @@ commit-chain citations didn't exist in git history (pre-push local rewrite),
 corrected in-file.
 
 **IG-07 Slice 2D plan approved, scoped down to D1 only.**
-`IG07-SLICE2D-PLAN.md` covers `install-cross-project-memory.py` and
+`docs/history/plans/IG07-SLICE2D-PLAN.md` covers `install-cross-project-memory.py` and
 `remember.py`; independently spot-checked (found and verified two real bugs
 by reading the code: `uninstall()` deletes manifest-listed paths with no
 containment check against `home/.claude`, and `_atomic_json_write` never
@@ -269,7 +269,7 @@ constructed too early; a real `ThreadPoolExecutor` race), independently
 re-run, not just asserted. Full suite reproduces at 936 passed. Independent
 review: `docs/history/reviews/IG07-SLICE2D-D1-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
 
-**IG-07 Slice 2E is fully closed.** `IG07-SLICE2E-PLAN.md` covered
+**IG-07 Slice 2E is fully closed.** `docs/history/plans/IG07-SLICE2E-PLAN.md` covered
 `task_model.py` → `brain_eleven/runtime/task.py`; plan independently
 spot-checked (roughly 20 line-number/structural citations, all accurate)
 and approved for E1 (baseline) then E2 (inversion) implementation. E1/E2
@@ -282,7 +282,7 @@ diff empty across the whole range, exact before/after evaluator JSON
 equality on smoke/public/holdout, full suite reproduces at 943 passed,
 focused suite at 114 passed. Independent review: `docs/history/reviews/IG07-SLICE2E-INDEPENDENT-REVIEW.md`,
 verdict `SHIP`. One documentation-hygiene note: a later commit
-(`0a8f26a`) regenerated `IG07-SLICE2E-PLAN.md` from the pre-inversion
+(`0a8f26a`) regenerated `docs/history/plans/IG07-SLICE2E-PLAN.md` from the pre-inversion
 baseline for an unrelated reason and left a stale "PLAN ONLY/REVIEW
 PENDING" header despite implementation already being complete — corrected
 in-file, not a functional finding.
@@ -291,7 +291,7 @@ in-file, not a functional finding.
 caller inventory, task/state/lineage contract, AST/identity/fixture/CLI and
 fail-closed tests, package inversion, thin legacy adapter, canonical coverage
 and source-fingerprint paths, and full regression evidence are recorded in
-`IG07-SLICE2F-PLAN.md` and `docs/history/reports/IG07-SLICE2F-PACKAGE-REPORT.md`. The focused suite
+`docs/history/plans/IG07-SLICE2F-PLAN.md` and `docs/history/reports/IG07-SLICE2F-PACKAGE-REPORT.md`. The focused suite
 passed at 143 tests; the established full baseline passed at 1359 tests with
 4 skips and 82 deselections. No task/state schema, routing, persistence or
 evaluation label behavior changed. A separately commissioned independent
@@ -331,16 +331,16 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
   `state_store.py`, `project_registry.py`, `memory_scope.py`,
   `memory_store_lock.py`, `memory_backup.py`, `memory-validator.py`, the
   capture/safety/truth chain) is the largest remaining untouched share of
-  `IG07-INVENTORY.md`'s 26 high-risk modules (~8,500 of 14,014 total impl
+  `docs/history/evidence/IG07-INVENTORY.md`'s 26 high-risk modules (~8,500 of 14,014 total impl
   LOC) and does not depend on the retrieval-quality question below.
   Embedding/search/`context-compiler.py` remain correctly deferred per
-  `IG07-INVENTORY.md` §5 until Branch B's daily-use quality resolves.
+  `docs/history/evidence/IG07-INVENTORY.md` §5 until Branch B's daily-use quality resolves.
 - The retrieval-quality research track (D0 recheck + BGE-M3) has run its
   cheap experiments; the next move there is Ahmet's call — see
-  `D0-RECHECK-FINDINGS.md` for the options (try a third angle like eval
+  `docs/history/evidence/D0-RECHECK-FINDINGS.md` for the options (try a third angle like eval
   corpus representativeness, or treat Branch B as settled for now).
 - Claude-track pivoted to retrieval/recall quality research (2026-09-12).
-  First finding is significant: `D0-RECHECK-FINDINGS.md` shows the D1
+  First finding is significant: `docs/history/evidence/D0-RECHECK-FINDINGS.md` shows the D1
   decision's own evidence has a metric-design flaw (0.45/0.60 thresholds
   are below/at the mathematical ceiling of D0's `precision@5` metric on its
   own corpus — oracle ceiling is 0.425, independently re-derived twice) and
@@ -387,12 +387,12 @@ It is the recall/precision trade, so it stays off. The D1 call that opens IG-05 
 still not recorded. Validation on both CI branches was green with 0 annotations
 (#822, #823).
 
-Decisions recorded the same day (`INTELLIGENCE-GRADUATION.md`, "Owner decisions"): IG-05 closed as
+Decisions recorded the same day (`docs/programs/INTELLIGENCE-GRADUATION.md`, "Owner decisions"): IG-05 closed as
 unreachable on this corpus, V2 stays SHADOW, IG-06/IG-07 not opened, Phase 20 locked, scope sweep
 off, and human-approved accept in SHADOW added behind the default-off `shadow_accept` flag
 (`python -m brain_eleven shadow-accept ON`); it awaits independent review and is not enabled.
 CI for that batch: branch 19 green / 11 skipped by design; preview 30 of 30 green after one re-run of a
-GitHub artifact-upload 403 (see `SRT00-PLAN.md`), 0 annotations.
+GitHub artifact-upload 403 (see `docs/history/plans/SRT00-PLAN.md`), 0 annotations.
 
 **2026-09-16** — Closed W-24 direct memory-truth safety and provenance after
 one independent contract `FIX-FIRST` cycle and one independent implementation
@@ -438,7 +438,7 @@ saw it, and Linux-side local checks used a different scope). Fixed at
 pilot, not more engineering, before deciding IG-04's next sub-package.
 
 **2026-09-11** — Closed IG-07 Slice 1 (independent `SHIP`). Planned and
-approved Slice 2A (`IG07-SLICE2-PLAN.md`, several modules reclassified to
+approved Slice 2A (`docs/history/plans/IG07-SLICE2-PLAN.md`, several modules reclassified to
 HIGH risk vs. slice 1's coarse pass; `task_state_context.py` excluded).
 Codex implemented all three Slice 2A modules (`memory_provenance.py`,
 `chat_interface.py`, `post_session_maintenance.py`) into
@@ -446,7 +446,7 @@ Codex implemented all three Slice 2A modules (`memory_provenance.py`,
 reviewed, full suite re-run at 895 passed, CI's exact lint command clean,
 adapter-only/identity/parity checks re-verified rather than trusted from the
 report. Closed with `docs/history/reviews/IG07-SLICE2A-INDEPENDENT-REVIEW.md`, verdict `SHIP`.
-No new P0/P1/P2 findings. Same day: Codex produced `IG07-SLICE2B-PLAN.md`
+No new P0/P1/P2 findings. Same day: Codex produced `docs/history/plans/IG07-SLICE2B-PLAN.md`
 (a bridge-direction inversion for `entity_extractor.py`/`knowledge_graph.py`,
 not a simple move); independently spot-checked every cited line reference
 against actual code and approved for implementation in the plan's

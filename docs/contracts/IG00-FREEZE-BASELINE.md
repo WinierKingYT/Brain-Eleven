@@ -6,7 +6,7 @@ evidence. Updated: 2026-09-08.
 Implementation/evidence review HEAD:
 `a6f9d3a04ae23e13e9d20b7b75f679a23076c467`.
 
-Independent review: [docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md](docs/history/reviews/IG-00-INDEPENDENT-REVIEW.md).
+Independent review: [IG-00-INDEPENDENT-REVIEW.md](../history/reviews/IG-00-INDEPENDENT-REVIEW.md).
 Verdict: **SHIP**. P0: **0**. P1: **0**.
 
 ## Bounded contract

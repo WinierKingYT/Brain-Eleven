@@ -1,7 +1,7 @@
 **Durum (2026-09-21): SRT-00 kapandı (CI yeşil). IG-05 ulaşılamaz diye kapatıldı; V2 SHADOW
 kalır, IG-06/IG-07 açılmaz, Phase 20 kilitli. Yeni faz açılmaz.** Hafıza: SHADOW'da insan
 onaylı kabul `python -m brain_eleven shadow-accept ON` ile açılır (varsayılan kapalı);
-ölçüm `TEST-LOG.md`'de. Eşik gevşetme, skip ve holdout ayarı yasak.
+ölçüm `docs/history/evidence/TEST-LOG.md`'de. Eşik gevşetme, skip ve holdout ayarı yasak.
 
 # Brain-Eleven: Eleven'in ikinci beyni
 
@@ -10,7 +10,7 @@ Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
 ## Güncel program ve belge otoritesi
 
 **PHASE 20: FROZEN. ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG).**
-Önce PROJECT-STATUS.md, INTELLIGENCE-GRADUATION.md, IG00-FREEZE-BASELINE.md ve
+Önce PROJECT-STATUS.md, docs/programs/INTELLIGENCE-GRADUATION.md, docs/contracts/IG00-FREEZE-BASELINE.md ve
 DOCUMENTATION-AUTHORITY.md oku. IG-00 bağımsız kabul edilmeden IG-01 açılmaz.
 Eski faz planları tarihsel/gelecek tasarımdır; Knowledge Engine başlatılmaz.
 Feature freeze, teknik kapanış veya intelligence graduation demek değildir.

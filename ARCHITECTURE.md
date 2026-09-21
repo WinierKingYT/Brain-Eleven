@@ -32,7 +32,7 @@ path and caches it, so callers get one module identity instead of two copies
 of the same logic. When you need to change behavior, find the real
 implementation in `scripts/` first — `brain_eleven/` may just be a thin
 re-export until that file's migration lands (tracked as IG-07 in
-`INTELLIGENCE-GRADUATION.md`).
+`docs/programs/INTELLIGENCE-GRADUATION.md`).
 
 ## Canonical authority (who owns which fact)
 

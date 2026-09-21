@@ -17,6 +17,18 @@ or canonical stores.
 - Left all pre-existing untracked evaluation output and unrelated working-tree
   changes untouched.
 
+## Second pass
+
+After reviewing the published GitHub root, a second pass moved another 56
+documents. Current program material now lives under `docs/programs/`, reusable
+contract records under `docs/contracts/`, and closed plans, reports, reviews,
+audits, and evidence under their corresponding `docs/history/` groups.
+
+The repository root now retains 25 Markdown paths: the small navigation and
+status surface plus evaluation-bound documents whose exact root paths are part
+of frozen source/scope checks. Moving those remaining evaluation documents
+would change code-backed evidence contracts, so they were deliberately kept.
+
 ## Status correction
 
 `NEXT.md` was aligned with `PROJECT-STATUS.md`: SRT-00 is closed with green CI,

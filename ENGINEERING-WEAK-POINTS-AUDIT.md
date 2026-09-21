@@ -330,7 +330,7 @@ The repository previously allowed a normal V2-rendered result to cross the
 native model boundary while the product status was `SHADOW`. This was a
 rollout-boundary defect, not a retrieval-quality result. The bounded contract
 is
-[`WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
+[`docs/contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md`](docs/contracts/WEAKNESS-W10-V2-DELIVERY-GATE-CONTRACT.md)
 at `a867f2d`; it defines the explicit legacy V1 source for normal turns,
 keeps the W06B path separate, and requires V2 comparison output to stay out of
 client injection while SHADOW. Status: **CLOSED / SHIP** at exact code/test
@@ -465,7 +465,7 @@ focused suite has 22 passing tests and the full suite has 1298 passed, 4
 skipped and 2 dependency warnings. No canonical store, retrieval, V2 or
 Phase 20 behavior changed. Evidence is recorded in
 `docs/history/reports/WEAKNESS-W19A-STALE-REMINDER-PACKAGE-REPORT.md` and the contract review is
-recorded in `WEAKNESS-W19A-STALE-REMINDER-CONTRACT.md`.
+recorded in `docs/contracts/WEAKNESS-W19A-STALE-REMINDER-CONTRACT.md`.
 
 ### W-19B — Native hook health can report false green (P1 candidate)
 
@@ -692,7 +692,7 @@ state/context probe and the existing resolver suite establish the failure and
 provisionally **6.5/10** (composition 7.0; scope/authority 7.5–8.0), below the
 goal threshold.
 
-`WEAKNESS-TSC-01-TIMEZONE-CONTRACT.md` is independently reviewed `SHIP` at
+`docs/contracts/WEAKNESS-TSC-01-TIMEZONE-CONTRACT.md` is independently reviewed `SHIP` at
 contract revision `0eac731`. It requires explicit-offset validation, bounded
 `STATE_CORRUPT` mapping, path/content-free errors and no-write/no-rewrite
 behavior. Native `compile_context` exception translation, project identity
@@ -726,7 +726,7 @@ candidate. The context currently has no registry revision or root lineage
 state revision (`context_router/router.py:43-71`), and Authority has no root
 check (`authority/resolver.py:60-70`).
 
-`WEAKNESS-TSC-02-IDENTITY-CONTRACT.md` is independently reviewed **SHIP** at
+`docs/contracts/WEAKNESS-TSC-02-IDENTITY-CONTRACT.md` is independently reviewed **SHIP** at
 contract revision `62dfedf` (review artifact `90fd416`). The bounded design
 requires an opaque normalized-root identity, registry revision, two-phase
 composer revalidation, pre-cache Router/Authority checks, explicit unresolved/

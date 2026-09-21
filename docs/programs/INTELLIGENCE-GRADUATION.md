@@ -1,7 +1,7 @@
 # Intelligence Graduation (IG)
 
 Authority: **CONTRACT**. Program decision: 2026-09-07. Execution status belongs
-to [PROJECT-STATUS.md](PROJECT-STATUS.md); evidence belongs to each package.
+to [PROJECT-STATUS.md](../../PROJECT-STATUS.md); evidence belongs to each package.
 
 ## Purpose and invariants
 

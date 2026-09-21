@@ -14,7 +14,7 @@ promote V2, or change Phase 20.
 ## Files changed
 
 - `IG01-B-CORPUS-CONTRACT.md`
-- `IG01-B-PRIOR-ART.md`
+- `docs/history/evidence/IG01-B-PRIOR-ART.md`
 - `evals/ig01b/schema.py`
 - `evals/ig01b/generator.py`
 - `evals/ig01b/annotator_b.py`
