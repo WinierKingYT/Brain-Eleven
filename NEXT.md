@@ -377,6 +377,20 @@ environment (Codex-side trust still open), and the latency matrix and
 dogfood sample are separate, unstarted sections of the same plan. Not
 independently reviewed.
 
+Continued the same session into the "Latency" section (Claude side only):
+`evals/w07b/latency_matrix.py`, 10 real invocations, SessionStart cold p50/p95
+1365/1385 ms and warm 174/193 ms (5/5 each), UserPromptSubmit/Stop/SessionEnd
+warm-only p50/p95 all under 240 ms (10/10 each) — all comfortably inside the
+existing 3 s hook timeout, nothing loosened. Caught and fixed a real bug in
+the harness itself mid-step (a stale-event double-count in the Stop/SessionEnd
+poller inflated one run to 19 SessionEnd samples from 10 invocations; the
+corrected run is the one reported). Cold latency for the three non-SessionStart
+events is architecturally unmeasurable via the public CLI (documented, not
+faked) and Codex is still unmeasured. Report:
+`docs/history/weakness/WEAKNESS-W07B-CLAUDE-LATENCY-MATRIX-EVIDENCE-REPORT.md`.
+Still open: `NATIVE_CODEX_TRUST_UNVERIFIED`, `NATIVE_DOGFOOD_SAMPLE_MISSING`.
+Not independently reviewed.
+
 **2026-09-21** — Work order changed (see `CLAUDE.md`): SRT-00 → IG-05
 reachability check → IG-05 → IG-06 → IG-07. SRT-00: the red `origin/master`
 (`5dc0121`, four unit tests failing on every run since 2026-09-18) is explained
