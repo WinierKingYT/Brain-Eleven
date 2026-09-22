@@ -127,6 +127,35 @@ def test_forbidden_rejected_memory_is_never_a_provider_candidate(tmp_path):
     assert forbidden["memory_id"] not in {item.id for item in result.selected_items}
 
 
+def test_resolved_canonical_blocker_is_never_a_provider_candidate(tmp_path):
+    row = copy.deepcopy(_rows()[0])
+    resolved = copy.deepcopy(row["memories"][0])
+    resolved["memory_id"] = "mem-ig01f-resolved000"
+    resolved["type"] = "blocker"
+    resolved["content"] = "Resolved canonical blocker must never be selected."
+    resolved["status"] = "resolved"
+    resolved["updated_at"] = "2099-01-01T00:00:00Z"
+    resolved["resolved_at"] = "2099-01-01T00:00:01Z"
+    resolved["resolved_by"] = "ig01f-test"
+    resolved["resolution_note"] = "closed before provider selection"
+    vault = _vault(tmp_path, row)
+    memory_path = vault / ".claude" / "validated-memory.json"
+    document = json.loads(memory_path.read_text(encoding="utf-8"))
+    document["validated_memory"].append(resolved)
+    memory_path.write_text(json.dumps(document), encoding="utf-8")
+
+    provider = RecencyContinuityProvider()
+    candidate_ids = {item.id for item in provider._candidate_items(_task(row), vault)}
+    selected_ids = {item.id for item in provider.select(_task(row), vault).selected_items}
+
+    assert any(
+        item["memory_id"] == resolved["memory_id"] and item["status"] == "resolved"
+        for item in json.loads(memory_path.read_text(encoding="utf-8"))["validated_memory"]
+    )
+    assert resolved["memory_id"] not in candidate_ids
+    assert resolved["memory_id"] not in selected_ids
+
+
 def test_budget_is_enforced_on_exact_rendered_selection(tmp_path):
     row = _rows()[0]
     for index, memory in enumerate(row["memories"]):
