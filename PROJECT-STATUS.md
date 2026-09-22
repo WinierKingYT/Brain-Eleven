@@ -1,8 +1,14 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-21
+**Last updated:** 2026-09-22
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
+**IG01-F naive recency baseline: IMPLEMENTED / INDEPENDENT REVIEW REQUIRED.**
+The frozen public DEV+VALIDATION evidence finds Recency tied with V1 on
+aggregate P/R/F1 and ahead of V2 (F1/F2/F3 apply), with zero four-class leakage.
+Exact-head remote Validation and independent read-only acceptance are still
+required; V2 remains SHADOW and no tuning or promotion is authorized. See
+`docs/history/reports/IG01-F-PACKAGE-REPORT.md`.
 **LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
 (independent review `SHIP` at review head `775d0d2`; bounded implementation
 `335b6df` plus focused tests `f0866b6`).

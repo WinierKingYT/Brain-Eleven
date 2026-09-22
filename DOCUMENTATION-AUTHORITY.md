@@ -133,6 +133,8 @@ authorize opening Phase 20 or promoting V2.
 | `evals/ig01e/**` | CURRENT **IG01-E read-only audit implementation**; it verifies the evaluation foundation and emits content-free evidence only. |
 | `docs/audits/IG01-F-AUDIT-NOTE.md` | CURRENT **IG01-F Phase 0 audit**; records the exact-head prerequisites, verified provider/corpus/budget boundaries, and the mandatory STOP pending an owner-defined equal-budget and corpus-projection contract. It authorizes no implementation or measurement. |
 | `docs/contracts/IG01-F-PREREGISTRATION.md` | CURRENT **IG01-F frozen contract and pre-registration**; records the owner-resolved public-only derived corpus, common budget, query-blind selector, pre-result 17-phenomenon classification, reporting plan, and decision meanings. |
+| `docs/history/reports/IG01-F-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for the IG01-F naive recency comparison; records the frozen DEV+VALIDATION measurement, S/F1/F2/F3 interpretation, limitations, verification state, and the requirement for separate read-only acceptance. It does not promote or tune V2. |
+| `evals/ig01f/ig01f-naive-baseline-evidence.json` | GENERATED EVIDENCE / strict source-bound IG01-F DEV+VALIDATION artifact with per-case selections, aggregate/phenomenon/language metrics, paired comparisons, abstention counts, IG01-C anti-gaming controls, and explicit no-HOLDOUT metadata. |
 
 ## Default path rules (first match)
 
