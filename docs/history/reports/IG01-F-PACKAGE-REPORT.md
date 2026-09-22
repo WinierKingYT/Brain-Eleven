@@ -1,9 +1,13 @@
 # IG01-F Package Report — Naive Recency Baseline
 
-**Status:** FINAL REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED
+**Status:** SHIPPED
 
-**Acceptance:** Not self-approved. Remote exact-head Validation and a separate
-read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
+**Acceptance:** Independent final review returned **SHIP** with confidence
+**8.5/10** at reviewed head `498e009603e5bbbb7d4507cbf7815648aed57b0a`.
+That exact head passed Validation in
+[run 35781871264](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35781871264).
+This documentation closure records the verdict and introduces no implementation
+change.
 
 ## Boundary and revisions
 
@@ -15,6 +19,8 @@ read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
 - Final-review predecessor revision: `279891fb03f1b5fa8ae1155bd1d3328d3fe7334b`;
   exact-head Validation succeeded in run `35775567184` before the current
   final closure tests and documentation.
+- Independently reviewed head: `498e009603e5bbbb7d4507cbf7815648aed57b0a`;
+  verdict `SHIP`, confidence `8.5/10`, Validation run `35781871264`.
 - IG01-E path-regression prerequisite: merged from `origin/master` at
   `9200a7506b47249e0b145f693fc7b40b51aea666`; integration revision
   `b295c0a97308e47c00b4a83d4568f2c0e18b3982`.
@@ -204,12 +210,15 @@ retrieval view; this is preserved rather than coerced to zero.
   passed exact-head Validation in
   [run 35779221670](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35779221670),
   including Ubuntu and Windows unit/evidence jobs plus the IG01-E audit.
-- This documentation-only stale-wording closure intentionally does not embed
-  its own future run URL. The authoritative revision-bound exact SHA/run result
-  for the branch head is the latest literal-SHA closure comment on
+- Independently reviewed head `498e009603e5bbbb7d4507cbf7815648aed57b0a`
+  passed Ubuntu and Windows unit/evidence jobs plus the IG01-E audit in
+  [run 35781871264](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35781871264);
+  the independent verdict is **SHIP**, confidence **8.5/10**.
+- This documentation-only verdict record introduces no implementation change.
+  The authoritative revision-bound exact SHA/run result for documentation
+  closure heads is the latest literal-SHA closure comment on
   [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2), avoiding a
   new documentation commit and Validation cycle merely to record that result.
-- Independent read-only re-review: pending; this report is not acceptance.
 
 ## Limitations and owner questions
 

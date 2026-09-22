@@ -3,19 +3,21 @@
 **Last updated:** 2026-09-22
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
-**IG01-F naive recency baseline: FINAL REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED.**
+**IG01-F naive recency baseline: SHIPPED.**
 The frozen public DEV+VALIDATION evidence finds Recency tied with V1 on
 aggregate P/R/F1 and ahead of V2 (F1/F2/F3 apply), with zero four-class leakage.
-Final-review closure `cbc42108c602e38bccbb9b89dc4f2521880ee096` passed
+Independent final review returned **SHIP** with confidence **8.5/10** at
+reviewed head `498e009603e5bbbb7d4507cbf7815648aed57b0a`. That head passed
 exact-head Validation on Ubuntu and Windows in
-[run 35779221670](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35779221670),
-including both IG01-F evidence jobs and the IG01-E audit; its focused suite was
-18 passed. For subsequent documentation-only closure heads, the authoritative
+[run 35781871264](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35781871264),
+including both IG01-F evidence jobs and the IG01-E audit; the focused suite was
+18 passed and the full local regression was 1567 passed with four pre-existing
+skips. This documentation closure records that verdict and introduces no
+implementation change. For documentation-only closure heads, the authoritative
 revision-bound exact SHA/run result is the latest literal-SHA closure comment
 on [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2), so recording
-CI does not create an endless commit/run cycle. Independent re-review remains
-pending. F3 owner triage remains open there without tuning authorization. Independent
-read-only acceptance remains required. V2 remains SHADOW and no tuning or promotion is authorized. See
+CI does not create an endless commit/run cycle. F3 owner triage remains open
+there without tuning authorization. V2 remains SHADOW and no tuning or promotion is authorized. See
 `docs/history/reports/IG01-F-PACKAGE-REPORT.md`.
 The historical PRE-13 holdout quality failure remains separate from IG01-F and
 is neither changed nor reclassified by this measurement package.
