@@ -1,0 +1,49 @@
+{
+  "client_version": "2.1.278 (Claude Code)",
+  "repo_head": "9200a7506b47249e0b145f693fc7b40b51aea666",
+  "live_global_settings_untouched": true,
+  "runs": [
+    {
+      "repetition": 1,
+      "exit_code": 0,
+      "elapsed_s": 9.174,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 2,
+        "CLAIMED": 2,
+        "PROCESSING": 2,
+        "COMMITTED": 2
+      },
+      "review_item_count": 1,
+      "memory_revision_unchanged": true
+    },
+    {
+      "repetition": 2,
+      "exit_code": 0,
+      "elapsed_s": 11.476,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 4,
+        "CLAIMED": 4,
+        "PROCESSING": 4,
+        "COMMITTED": 4
+      },
+      "review_item_count": 2,
+      "memory_revision_unchanged": true
+    },
+    {
+      "repetition": 3,
+      "exit_code": 0,
+      "elapsed_s": 5.025,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 6,
+        "CLAIMED": 6,
+        "PROCESSING": 6,
+        "COMMITTED": 6
+      },
+      "review_item_count": 3,
+      "memory_revision_unchanged": true
+    }
+  ]
+}

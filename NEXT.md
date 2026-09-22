@@ -363,6 +363,20 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## Recent sessions
 
+**2026-09-22** — Claude worked W-07B (Codex owns the IG/SRT-00 doc-reorg track
+this session). Closed the Claude half of the "Isolated native smoke" evidence
+gap: a real, authenticated `claude` CLI, invoked against a throwaway
+vault/config (`--settings`/`--setting-sources ""`, live global settings and
+this repo's own project config never loaded), completed
+hook → queue → terminal receipt → review-effect end to end, verified by
+opaque ID, 5/5 clean repetitions, 0 canonical writes (SHADOW), live config
+byte-identical before/after. Reusable harness: `evals/w07b/native_smoke.py`.
+Report: `docs/history/weakness/WEAKNESS-W07B-CLAUDE-ISOLATED-SMOKE-EVIDENCE-REPORT.md`.
+W-07B stays `FIX-FIRST / NOT ACCEPTED`: no `codex` executable in this
+environment (Codex-side trust still open), and the latency matrix and
+dogfood sample are separate, unstarted sections of the same plan. Not
+independently reviewed.
+
 **2026-09-21** — Work order changed (see `CLAUDE.md`): SRT-00 → IG-05
 reachability check → IG-05 → IG-06 → IG-07. SRT-00: the red `origin/master`
 (`5dc0121`, four unit tests failing on every run since 2026-09-18) is explained
