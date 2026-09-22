@@ -11,6 +11,9 @@ read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
 - Frozen pre-registration: `2b18372` (before provider, runner, and evidence).
 - Measurement-source revision: `f486009341577d32392d2fa8d136b4f27155e5f2`.
 - Evidence revision: `0b4818f`; CI definition revision: `81fbbd3`.
+- IG01-E path-regression prerequisite: merged from `origin/master` at
+  `9200a7506b47249e0b145f693fc7b40b51aea666`; integration revision
+  `b295c0a97308e47c00b4a83d4568f2c0e18b3982`.
 - Corpus: `ig01f-recency-v1`, public DEV + VALIDATION only (114 cases), plus
   six public abstention cases. `holdout_included=false`.
 - Source fingerprint:
@@ -130,7 +133,11 @@ coerced to zero.
   W06C0R1 worktree-scope failures plus one transient cold-hook failure; the
   affected 24-test slice passed after the docs commit, and the full rerun above
   was green.
-- Exact-head remote Validation on Ubuntu and Windows: pending.
+- Remote Validation at prerequisite integration head `b295c0a`: PASS in
+  [run 35739220242](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35739220242).
+  Both Ubuntu and Windows unit jobs and both IG01-F evidence jobs passed; the
+  corrected IG01-E independent evaluation audit also passed. The final
+  report-only documentation head must retain the same green exact-head gate.
 - Independent read-only review: pending; this report is not acceptance.
 
 ## Limitations and owner questions
