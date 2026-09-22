@@ -3,17 +3,21 @@
 **Last updated:** 2026-09-22
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
-**IG01-F naive recency baseline: SECOND REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED.**
+**IG01-F naive recency baseline: FINAL REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED.**
 The frozen public DEV+VALIDATION evidence finds Recency tied with V1 on
 aggregate P/R/F1 and ahead of V2 (F1/F2/F3 apply), with zero four-class leakage.
-The earlier `c19316e` Validation is historical and is not claimed for the
-current remediation head. Full-payload evidence validation, nested tamper
-rejection, a provider-level forbidden fixture, and a runner-wide HOLDOUT access
-sentinel are implemented; final exact-head Validation and independent re-review
-remain required. F3 owner triage is recorded without tuning authorization in
+Final-review predecessor `279891f` passed exact-head Validation on Ubuntu and
+Windows in [run 35775567184](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35775567184),
+including both IG01-F evidence jobs and the IG01-E audit; its focused suite was
+16 passed. The current closure series additionally makes the superseded fixture
+fail-capable and verifies MemoryStore/StateStore revisions across the complete
+measurement runner (18 focused tests locally); its new exact-head Validation
+and independent re-review remain pending. F3 owner triage is recorded without tuning authorization in
 [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2). Independent
 read-only acceptance remains required. V2 remains SHADOW and no tuning or promotion is authorized. See
 `docs/history/reports/IG01-F-PACKAGE-REPORT.md`.
+The historical PRE-13 holdout quality failure remains separate from IG01-F and
+is neither changed nor reclassified by this measurement package.
 **LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
 (independent review `SHIP` at review head `775d0d2`; bounded implementation
 `335b6df` plus focused tests `f0866b6`).

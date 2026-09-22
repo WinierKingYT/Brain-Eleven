@@ -1,6 +1,6 @@
 # IG01-F Package Report — Naive Recency Baseline
 
-**Status:** SECOND REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED
+**Status:** FINAL REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED
 
 **Acceptance:** Not self-approved. Remote exact-head Validation and a separate
 read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
@@ -12,6 +12,9 @@ read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
 - Original measurement-source revision: `f486009341577d32392d2fa8d136b4f27155e5f2`.
 - Hardened validator/test revision: `3e379bd887a51b90cbe626dc87562317f9effc21`;
   rebound evidence revision: `4fca188`; CI definition revision: `81fbbd3`.
+- Final-review predecessor revision: `279891fb03f1b5fa8ae1155bd1d3328d3fe7334b`;
+  exact-head Validation succeeded in run `35775567184` before the current
+  final closure tests and documentation.
 - IG01-E path-regression prerequisite: merged from `origin/master` at
   `9200a7506b47249e0b145f693fc7b40b51aea666`; integration revision
   `b295c0a97308e47c00b4a83d4568f2c0e18b3982`.
@@ -171,7 +174,9 @@ retrieval view; this is preserved rather than coerced to zero.
 ## Verification
 
 - `python -m evals.baseline_snapshot --baseline baseline-v2 --check`: PASS.
-- `pytest tests/test_ig01f_recency.py -q`: 12 passed.
+- Initial package-focused suite: 12 passed. Final-review predecessor `279891f`
+  expanded it to 16 passed; the current superseded/store-revision closure is
+  18 passed locally.
 - Evidence regeneration followed by `--check`: byte-identical locally.
 - Full local non-integration/non-graduation regression at documentation head
   `4672f93`: 1478 passed, 4 skipped, 82 deselected. The four skips are
@@ -185,8 +190,18 @@ retrieval view; this is preserved rather than coerced to zero.
   It is retained as history, not claimed as validation of the current head.
 - Second-review remediation adds deterministic full-payload validation,
   nested metric/paired tamper rejection, an explicit provider-level forbidden
-  fixture, and a runner-wide no-HOLDOUT-open sentinel. Focused suite: 15 passed;
+  fixture, and a runner-wide no-HOLDOUT-open sentinel. Focused suite at that
+  stage: 15 passed;
   evidence regeneration check: byte-identical after rebinding source identity.
+- Final-review predecessor `279891f`: PASS in
+  [run 35775567184](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35775567184).
+  Ubuntu and Windows unit jobs, Ubuntu and Windows IG01-F evidence jobs, and
+  the IG01-E independent evaluation audit all passed; its focused suite was
+  16 passed.
+- The current closure adds a fail-capable canonical superseded-memory fixture
+  plus full-runner MemoryStore/StateStore revision preservation. Focused suite:
+  18 passed locally. Its new exact-head remote Validation is pending at this
+  documentation commit.
 - Current final-head remote Validation: pending at this documentation commit.
   The terminal exact SHA/run pair is recorded as closure evidence on issue #2,
   avoiding an endless report-URL/commit cycle.
@@ -201,6 +216,8 @@ safe candidate set; the main V1/Recency difference is ranking (MRR), not set
 membership. The comparison therefore strongly supports the recorded finding
 inside this fixture but does not estimate live-user utility. V1 and Recency also
 do not abstain on the separate abstention set.
+The historical PRE-13 holdout quality failure is outside this package and is
+not altered, superseded, or reclassified by IG01-F evidence.
 
 Owner follow-ups after independent acceptance: decide through issue #2 whether
 F3 warrants a separate V2 investigation package, and whether a future separately pre-registered
