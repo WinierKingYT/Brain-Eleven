@@ -1,6 +1,6 @@
 # IG01-F Package Report — Naive Recency Baseline
 
-**Status:** IMPLEMENTED / INDEPENDENT REVIEW REQUIRED
+**Status:** SECOND REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED
 
 **Acceptance:** Not self-approved. Remote exact-head Validation and a separate
 read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
@@ -9,15 +9,16 @@ read-only `SHIP / FIX-FIRST / RETHINK` review remain required.
 
 - Branch point: `a93e54215d09be5af13ce718810a6bb955a60e10`.
 - Frozen pre-registration: `2b18372` (before provider, runner, and evidence).
-- Measurement-source revision: `f486009341577d32392d2fa8d136b4f27155e5f2`.
-- Evidence revision: `0b4818f`; CI definition revision: `81fbbd3`.
+- Original measurement-source revision: `f486009341577d32392d2fa8d136b4f27155e5f2`.
+- Hardened validator/test revision: `3e379bd887a51b90cbe626dc87562317f9effc21`;
+  rebound evidence revision: `4fca188`; CI definition revision: `81fbbd3`.
 - IG01-E path-regression prerequisite: merged from `origin/master` at
   `9200a7506b47249e0b145f693fc7b40b51aea666`; integration revision
   `b295c0a97308e47c00b4a83d4568f2c0e18b3982`.
 - Corpus: `ig01f-recency-v1`, public DEV + VALIDATION only (114 cases), plus
   six public abstention cases. `holdout_included=false`.
 - Source fingerprint:
-  `sha256:e76ff1c26b417af0a5b672f2a60a3092eb2828e604fcd802ed73040091516a82`.
+  `sha256:806a4a80c893462a7392c09f7e55f0074fbb30ac84754334af6ab1e41a1345db`.
 - Budget: 2048 maximum conservative tokens, 128 headroom, 1920 usable,
   24,000 rendered UTF-8 bytes.
 
@@ -179,14 +180,17 @@ retrieval view; this is preserved rather than coerced to zero.
   W06C0R1 worktree-scope failures plus one transient cold-hook failure; the
   affected 24-test slice passed after the docs commit, and the full rerun above
   was green.
-- Exact-head remote Validation at `c19316e`: PASS in
+- Historical pre-remediation Validation at `c19316e`: PASS in
   [run 35740598678](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35740598678).
-  Both Ubuntu and Windows unit jobs and both IG01-F evidence jobs passed; the
-  corrected IG01-E independent evaluation audit also passed. A subsequent
-  docs-only FIX-FIRST closure commit expands this report and records issue #2;
-  its own exact-head run is recorded as closure evidence on that issue to avoid
-  an endless report-URL/commit cycle.
-- Independent read-only review: pending; this report is not acceptance.
+  It is retained as history, not claimed as validation of the current head.
+- Second-review remediation adds deterministic full-payload validation,
+  nested metric/paired tamper rejection, an explicit provider-level forbidden
+  fixture, and a runner-wide no-HOLDOUT-open sentinel. Focused suite: 15 passed;
+  evidence regeneration check: byte-identical after rebinding source identity.
+- Current final-head remote Validation: pending at this documentation commit.
+  The terminal exact SHA/run pair is recorded as closure evidence on issue #2,
+  avoiding an endless report-URL/commit cycle.
+- Independent read-only re-review: pending; this report is not acceptance.
 
 ## Limitations and owner questions
 
