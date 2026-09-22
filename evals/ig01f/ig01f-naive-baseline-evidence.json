@@ -67967,9 +67967,9 @@
   "schema_version": 1,
   "source": {
     "corpus_version": "ig01f-recency-v1",
-    "git_sha": "f486009341577d32392d2fa8d136b4f27155e5f2",
+    "git_sha": "3e379bd887a51b90cbe626dc87562317f9effc21",
     "holdout_included": false,
-    "source_fingerprint": "sha256:e76ff1c26b417af0a5b672f2a60a3092eb2828e604fcd802ed73040091516a82",
+    "source_fingerprint": "sha256:806a4a80c893462a7392c09f7e55f0074fbb30ac84754334af6ab1e41a1345db",
     "splits": [
       "dev",
       "validation"
