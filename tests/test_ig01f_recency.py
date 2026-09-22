@@ -11,6 +11,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from brain_eleven.memory import MemoryStore
+from brain_eleven.state import StateStore
+from evals.ig01f import measure as ig01f_measure
 from evals.ig01f.corpus import (
     DEFAULT_OUTPUT,
     SOURCE_ROOT,
@@ -156,6 +159,33 @@ def test_resolved_canonical_blocker_is_never_a_provider_candidate(tmp_path):
     assert resolved["memory_id"] not in selected_ids
 
 
+def test_superseded_canonical_memory_is_never_a_provider_candidate(tmp_path):
+    row = copy.deepcopy(_rows()[0])
+    superseded = copy.deepcopy(row["memories"][0])
+    superseded["memory_id"] = "mem-ig01f-superseded0"
+    superseded["content"] = "Superseded canonical memory must never be selected."
+    superseded["status"] = "superseded"
+    superseded["updated_at"] = "2099-01-01T00:00:00Z"
+    superseded["superseded_by"] = row["memories"][0]["memory_id"]
+    superseded["supersession_note"] = "replaced before provider selection"
+    vault = _vault(tmp_path, row)
+    memory_path = vault / ".claude" / "validated-memory.json"
+    document = json.loads(memory_path.read_text(encoding="utf-8"))
+    document["validated_memory"].append(superseded)
+    memory_path.write_text(json.dumps(document), encoding="utf-8")
+
+    provider = RecencyContinuityProvider()
+    candidate_ids = {item.id for item in provider._candidate_items(_task(row), vault)}
+    selected_ids = {item.id for item in provider.select(_task(row), vault).selected_items}
+
+    assert any(
+        item["memory_id"] == superseded["memory_id"] and item["status"] == "superseded"
+        for item in json.loads(memory_path.read_text(encoding="utf-8"))["validated_memory"]
+    )
+    assert superseded["memory_id"] not in candidate_ids
+    assert superseded["memory_id"] not in selected_ids
+
+
 def test_budget_is_enforced_on_exact_rendered_selection(tmp_path):
     row = _rows()[0]
     for index, memory in enumerate(row["memories"]):
@@ -298,3 +328,71 @@ def test_measurement_runner_never_opens_holdout(monkeypatch):
     report = build_evidence()
     assert report["source"]["holdout_included"] is False
     assert opened
+
+
+def test_full_measurement_preserves_canonical_store_revisions(monkeypatch):
+    observations = []
+    original_write_vault = ig01f_measure._write_vault
+
+    def write_canonical_fixture(vault, row):
+        original_write_vault(vault, row)
+        StateStore(vault).init_project(
+            row["project_id"],
+            source={"type": "system", "reference": "ig01f-read-only-test"},
+            now="2025-01-01T00:00:00Z",
+        )
+
+    def instrument(provider_type):
+        class InstrumentedProvider:
+            def __init__(self, *args, **kwargs):
+                self.delegate = provider_type(*args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self.delegate, name)
+
+            def select(self, task, vault):
+                memory_store = MemoryStore(vault)
+                state_store = StateStore(vault)
+                before = (
+                    memory_store.revision(),
+                    state_store.load()["store_revision"],
+                    state_store.project_revision(task.project_id),
+                )
+                result = self.delegate.select(task, vault)
+                after = (
+                    memory_store.revision(),
+                    state_store.load()["store_revision"],
+                    state_store.project_revision(task.project_id),
+                )
+                observations.append((before, after, result.source_memory_revision))
+                return result
+
+        return InstrumentedProvider
+
+    monkeypatch.setattr(
+        ig01f_measure,
+        "BaselineContextProvider",
+        instrument(ig01f_measure.BaselineContextProvider),
+    )
+    monkeypatch.setattr(
+        ig01f_measure,
+        "CompilerV2ContextProvider",
+        instrument(ig01f_measure.CompilerV2ContextProvider),
+    )
+    monkeypatch.setattr(
+        ig01f_measure,
+        "RecencyContinuityProvider",
+        instrument(ig01f_measure.RecencyContinuityProvider),
+    )
+    monkeypatch.setattr(ig01f_measure, "_write_vault", write_canonical_fixture)
+
+    report = build_evidence()
+
+    expected_runs = 3 * (
+        len(_rows()) + len(_rows("validation.jsonl")) + len(_rows("abstention.jsonl"))
+    )
+    assert report["source"]["holdout_included"] is False
+    assert len(observations) == expected_runs
+    for before, after, _ in observations:
+        assert before == after, (before, after)
+    assert all(source_revision == before[0] for before, _, source_revision in observations)
