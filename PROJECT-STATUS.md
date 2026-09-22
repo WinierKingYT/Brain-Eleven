@@ -6,10 +6,11 @@
 **IG01-F naive recency baseline: IMPLEMENTED / INDEPENDENT REVIEW REQUIRED.**
 The frozen public DEV+VALIDATION evidence finds Recency tied with V1 on
 aggregate P/R/F1 and ahead of V2 (F1/F2/F3 apply), with zero four-class leakage.
-Prerequisite-integration Validation is green on Ubuntu and Windows at `b295c0a`
-([run 35739220242](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35739220242));
-final report-head Validation and independent read-only acceptance remain
-required. V2 remains SHADOW and no tuning or promotion is authorized. See
+Exact-head Validation is green on Ubuntu and Windows at `c19316e`
+([run 35740598678](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35740598678));
+F3 owner triage is recorded without tuning authorization in
+[issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2). Independent
+read-only acceptance remains required. V2 remains SHADOW and no tuning or promotion is authorized. See
 `docs/history/reports/IG01-F-PACKAGE-REPORT.md`.
 **LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
 (independent review `SHIP` at review head `775d0d2`; bounded implementation

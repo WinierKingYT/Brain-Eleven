@@ -72,31 +72,75 @@ leakage over the full measurement.
 | tr-en / V2 | 0.036842 | 0.304348 | 0.101449 | 0.282609 | 0.052632 | 0.304348 | 0.157895 |
 | tr-en / Recency | 0.110526 | 0.913043 | 0.304348 | 0.847826 | 0.578947 | 0.913043 | 0.368421 |
 
-## Per-phenomenon F1
+## Per-phenomenon metrics
 
-`—` means the metric is not applicable because that phenomenon has no relevant
-retrieval target in the projected retrieval view; this is preserved rather than
-coerced to zero.
+These are the existing evaluator metrics recorded in the frozen evidence; no
+derived or post-hoc metric was added. `—` means the metric is not applicable
+because that phenomenon has no relevant retrieval target in the projected
+retrieval view; this is preserved rather than coerced to zero.
 
-| Phenomenon | V1 | V2 | Recency |
-|---|---:|---:|---:|
-| ambiguous_reference | — | — | — |
-| assistant_proposal | — | — | — |
-| correction | 0.333333 | 0.055556 | 0.333333 |
-| explicit_decision | 0.333333 | 0.166667 | 0.333333 |
-| hypothetical | — | — | — |
-| irrelevant_recent_memory | 0.333333 | 0.000000 | 0.333333 |
-| lesson | 0.333333 | 0.047619 | 0.333333 |
-| negation | — | — | — |
-| old_critical_decision | 0.333333 | 0.095238 | 0.333333 |
-| preference | 0.333333 | 0.142857 | 0.333333 |
-| question | — | — | — |
-| quoted_material | — | — | — |
-| requirement | 0.333333 | 0.142857 | 0.333333 |
-| resolved_blocker | 0.333333 | 0.333333 | 0.333333 |
-| suggestion | — | — | — |
-| superseded_memory | 0.000000 | 0.000000 | 0.000000 |
-| wrong_project_candidate | 0.333333 | 0.142857 | 0.333333 |
+### V1
+| Phenomenon | Cases | P@5 | R@5 | F1 | MRR | Noise | Mandatory recall | Context precision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ambiguous_reference | 6 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| assistant_proposal | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| correction | 6 | 0.200000 | 1.000000 | 0.333333 | 0.833333 | 0.500000 | 1.000000 | 0.500000 |
+| explicit_decision | 6 | 0.200000 | 1.000000 | 0.333333 | 0.916667 | 0.500000 | 1.000000 | 0.500000 |
+| hypothetical | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| irrelevant_recent_memory | 6 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+| lesson | 7 | 0.200000 | 1.000000 | 0.333333 | 0.928571 | 0.500000 | 1.000000 | 0.500000 |
+| negation | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| old_critical_decision | 7 | 0.200000 | 1.000000 | 0.333333 | 0.714286 | 0.500000 | 1.000000 | 0.500000 |
+| preference | 7 | 0.200000 | 1.000000 | 0.333333 | 0.714286 | 0.500000 | 1.000000 | 0.500000 |
+| question | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| quoted_material | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| requirement | 7 | 0.200000 | 1.000000 | 0.333333 | 0.714286 | 0.500000 | 1.000000 | 0.500000 |
+| resolved_blocker | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+| suggestion | 6 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| superseded_memory | 7 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
+| wrong_project_candidate | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+
+### V2
+| Phenomenon | Cases | P@5 | R@5 | F1 | MRR | Noise | Mandatory recall | Context precision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ambiguous_reference | 6 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| assistant_proposal | 7 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| correction | 6 | 0.033333 | 0.166667 | 0.055556 | 0.166667 | 0.083333 | 0.166667 | 0.083333 |
+| explicit_decision | 6 | 0.100000 | 0.500000 | 0.166667 | 0.500000 | 0.166667 | 0.500000 | 0.333333 |
+| hypothetical | 7 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| irrelevant_recent_memory | 6 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
+| lesson | 7 | 0.028571 | 0.142857 | 0.047619 | 0.142857 | 0.071429 | 0.142857 | 0.071429 |
+| negation | 7 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| old_critical_decision | 7 | 0.057143 | 0.285714 | 0.095238 | 0.142857 | 0.142857 | 0.285714 | 0.142857 |
+| preference | 7 | 0.085714 | 0.428571 | 0.142857 | 0.285714 | 0.214286 | 0.428571 | 0.214286 |
+| question | 7 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| quoted_material | 7 | 0.000000 | — | — | — | 0.285714 | — | 0.000000 |
+| requirement | 7 | 0.085714 | 0.428571 | 0.142857 | 0.428571 | 0.000000 | 0.428571 | 0.428571 |
+| resolved_blocker | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+| suggestion | 6 | 0.000000 | — | — | — | 0.000000 | — | 0.000000 |
+| superseded_memory | 7 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
+| wrong_project_candidate | 7 | 0.085714 | 0.428571 | 0.142857 | 0.428571 | 0.000000 | 0.428571 | 0.428571 |
+
+### Recency
+| Phenomenon | Cases | P@5 | R@5 | F1 | MRR | Noise | Mandatory recall | Context precision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ambiguous_reference | 6 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| assistant_proposal | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| correction | 6 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.500000 | 1.000000 | 0.500000 |
+| explicit_decision | 6 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.500000 | 1.000000 | 0.500000 |
+| hypothetical | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| irrelevant_recent_memory | 6 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+| lesson | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.500000 | 1.000000 | 0.500000 |
+| negation | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| old_critical_decision | 7 | 0.200000 | 1.000000 | 0.333333 | 0.500000 | 0.500000 | 1.000000 | 0.500000 |
+| preference | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.500000 | 1.000000 | 0.500000 |
+| question | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| quoted_material | 7 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| requirement | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.500000 | 1.000000 | 0.500000 |
+| resolved_blocker | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
+| suggestion | 6 | 0.000000 | — | — | — | 1.000000 | — | 0.000000 |
+| superseded_memory | 7 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 | 0.000000 |
+| wrong_project_candidate | 7 | 0.200000 | 1.000000 | 0.333333 | 1.000000 | 0.000000 | 1.000000 | 1.000000 |
 
 ## Paired and abstention results
 
@@ -119,7 +163,9 @@ coerced to zero.
   not demonstrate additional V1 selection value over the naive arm.
 - **F3 applies:** On the four recency-favorable phenomena, Recency macro F1 is
   `0.333333` while V2 macro F1 is `0.128205`. This is a suspected V2 regression
-  for owner triage; it is not fixed in IG01-F.
+  for owner triage; it is not fixed in IG01-F. Follow-up is recorded in
+  [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2), which
+  deliberately does not authorize tuning.
 
 ## Verification
 
@@ -133,11 +179,13 @@ coerced to zero.
   W06C0R1 worktree-scope failures plus one transient cold-hook failure; the
   affected 24-test slice passed after the docs commit, and the full rerun above
   was green.
-- Remote Validation at prerequisite integration head `b295c0a`: PASS in
-  [run 35739220242](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35739220242).
+- Exact-head remote Validation at `c19316e`: PASS in
+  [run 35740598678](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35740598678).
   Both Ubuntu and Windows unit jobs and both IG01-F evidence jobs passed; the
-  corrected IG01-E independent evaluation audit also passed. The final
-  report-only documentation head must retain the same green exact-head gate.
+  corrected IG01-E independent evaluation audit also passed. A subsequent
+  docs-only FIX-FIRST closure commit expands this report and records issue #2;
+  its own exact-head run is recorded as closure evidence on that issue to avoid
+  an endless report-URL/commit cycle.
 - Independent read-only review: pending; this report is not acceptance.
 
 ## Limitations and owner questions
@@ -150,7 +198,7 @@ membership. The comparison therefore strongly supports the recorded finding
 inside this fixture but does not estimate live-user utility. V1 and Recency also
 do not abstain on the separate abstention set.
 
-Owner follow-ups after independent acceptance: decide whether F3 warrants a
-separate V2 issue/package, and whether a future separately pre-registered
+Owner follow-ups after independent acceptance: decide through issue #2 whether
+F3 warrants a separate V2 investigation package, and whether a future separately pre-registered
 real-use or denser-candidate corpus is worth measuring. Neither is authorized
 inside IG01-F.
