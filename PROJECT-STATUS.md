@@ -6,14 +6,15 @@
 **IG01-F naive recency baseline: FINAL REVIEW REMEDIATION IMPLEMENTED / INDEPENDENT RE-REVIEW REQUIRED.**
 The frozen public DEV+VALIDATION evidence finds Recency tied with V1 on
 aggregate P/R/F1 and ahead of V2 (F1/F2/F3 apply), with zero four-class leakage.
-Final-review predecessor `279891f` passed exact-head Validation on Ubuntu and
-Windows in [run 35775567184](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35775567184),
+Final-review closure `cbc42108c602e38bccbb9b89dc4f2521880ee096` passed
+exact-head Validation on Ubuntu and Windows in
+[run 35779221670](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35779221670),
 including both IG01-F evidence jobs and the IG01-E audit; its focused suite was
-16 passed. The current closure series additionally makes the superseded fixture
-fail-capable and verifies MemoryStore/StateStore revisions across the complete
-measurement runner (18 focused tests locally); its new exact-head Validation
-and independent re-review remain pending. F3 owner triage is recorded without tuning authorization in
-[issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2). Independent
+18 passed. For subsequent documentation-only closure heads, the authoritative
+revision-bound exact SHA/run result is the latest literal-SHA closure comment
+on [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2), so recording
+CI does not create an endless commit/run cycle. Independent re-review remains
+pending. F3 owner triage remains open there without tuning authorization. Independent
 read-only acceptance remains required. V2 remains SHADOW and no tuning or promotion is authorized. See
 `docs/history/reports/IG01-F-PACKAGE-REPORT.md`.
 The historical PRE-13 holdout quality failure remains separate from IG01-F and

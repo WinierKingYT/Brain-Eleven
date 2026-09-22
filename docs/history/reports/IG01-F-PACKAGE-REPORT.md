@@ -200,11 +200,15 @@ retrieval view; this is preserved rather than coerced to zero.
   16 passed.
 - The current closure adds a fail-capable canonical superseded-memory fixture
   plus full-runner MemoryStore/StateStore revision preservation. Focused suite:
-  18 passed locally. Its new exact-head remote Validation is pending at this
-  documentation commit.
-- Current final-head remote Validation: pending at this documentation commit.
-  The terminal exact SHA/run pair is recorded as closure evidence on issue #2,
-  avoiding an endless report-URL/commit cycle.
+  18 passed locally. Revision `cbc42108c602e38bccbb9b89dc4f2521880ee096`
+  passed exact-head Validation in
+  [run 35779221670](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35779221670),
+  including Ubuntu and Windows unit/evidence jobs plus the IG01-E audit.
+- This documentation-only stale-wording closure intentionally does not embed
+  its own future run URL. The authoritative revision-bound exact SHA/run result
+  for the branch head is the latest literal-SHA closure comment on
+  [issue #2](https://github.com/WinierKingYT/Brain-Eleven/issues/2), avoiding a
+  new documentation commit and Validation cycle merely to record that result.
 - Independent read-only re-review: pending; this report is not acceptance.
 
 ## Limitations and owner questions
