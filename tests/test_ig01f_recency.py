@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import copy
+import builtins
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -16,7 +18,7 @@ from evals.ig01f.corpus import (
     build_projection,
     check_projection,
 )
-from evals.ig01f.measure import MeasurementError, _load, validate_evidence
+from evals.ig01f.measure import MeasurementError, _load, build_evidence, validate_evidence
 from evals.ig01f.provider import RecencyContinuityProvider
 from evals.ig01c.engine import evaluate_corpus, validate_report
 
@@ -108,6 +110,23 @@ def test_scope_and_lifecycle_leakage_are_zero(tmp_path):
             assert item.status == "active"
 
 
+def test_forbidden_rejected_memory_is_never_a_provider_candidate(tmp_path):
+    row = copy.deepcopy(_rows()[0])
+    forbidden = copy.deepcopy(row["memories"][0])
+    forbidden["memory_id"] = "mem-ig01f-forbidden00"
+    forbidden["content"] = "Forbidden rejected record must never be selected."
+    forbidden["updated_at"] = "2099-01-01T00:00:00Z"
+    vault = _vault(tmp_path, row)
+    memory_path = vault / ".claude" / "validated-memory.json"
+    document = json.loads(memory_path.read_text(encoding="utf-8"))
+    document["rejected_memory"] = [forbidden]
+    memory_path.write_text(json.dumps(document), encoding="utf-8")
+
+    result = RecencyContinuityProvider().select(_task(row), vault)
+
+    assert forbidden["memory_id"] not in {item.id for item in result.selected_items}
+
+
 def test_budget_is_enforced_on_exact_rendered_selection(tmp_path):
     row = _rows()[0]
     for index, memory in enumerate(row["memories"]):
@@ -137,34 +156,15 @@ def test_projection_has_no_label_bearing_candidate_ids_or_content():
             assert len(memory["memory_id"]) == len("mem-ig01f-") + 20
 
 
-def _evidence_envelope():
-    summary = {"leakage": {name: 0 for name in (
-        "forbidden_leakage", "wrong_project_leakage", "superseded_leakage", "resolved_leakage"
-    )}}
-    provider = {
-        "aggregate": summary,
-        "by_phenomenon": {},
-        "by_language": {},
-        "case_results": [],
-        "controls": {},
-    }
-    return {
-        "schema_version": 1,
-        "report_type": "ig01f-naive-baseline-evidence",
-        "source": {"git_sha": "a" * 40, "source_fingerprint": "sha256:" + "b" * 64,
-                   "corpus_version": "ig01f-recency-v1", "splits": ["dev", "validation"],
-                   "holdout_included": False},
-        "budget": {},
-        "providers": {name: copy.deepcopy(provider) for name in ("v1", "v2", "recency")},
-        "paired": {"recency_vs_v1": {}, "recency_vs_v2": {}},
-        "abstention": {},
-    }
+def _committed_evidence():
+    path = Path("evals/ig01f/ig01f-naive-baseline-evidence.json")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_measurement_contract_rejects_holdout_and_tampered_leakage():
     with pytest.raises(MeasurementError, match="HOLDOUT"):
         _load("holdout")
-    evidence = _evidence_envelope()
+    evidence = _committed_evidence()
     assert validate_evidence(evidence, source_bound=False) == evidence
     evidence["providers"]["recency"]["aggregate"]["leakage"]["forbidden_leakage"] = 1
     with pytest.raises(MeasurementError, match="leakage"):
@@ -172,7 +172,7 @@ def test_measurement_contract_rejects_holdout_and_tampered_leakage():
 
 
 def test_measurement_contract_is_closed():
-    evidence = _evidence_envelope()
+    evidence = _committed_evidence()
     evidence["unexpected"] = True
     with pytest.raises(MeasurementError, match="envelope"):
         validate_evidence(evidence, source_bound=False)
@@ -200,8 +200,72 @@ def test_ig01c_controls_expose_select_everything_gaming():
 
 
 def test_evidence_rejects_source_fingerprint_tampering(monkeypatch):
-    evidence = _evidence_envelope()
-    monkeypatch.setattr("evals.ig01f.measure._source_git_sha", lambda: "a" * 40)
+    evidence = _committed_evidence()
+    monkeypatch.setattr("evals.ig01f.measure._source_git_sha", lambda: evidence["source"]["git_sha"])
     monkeypatch.setattr("evals.ig01f.measure._fingerprint", lambda: "sha256:" + "c" * 64)
     with pytest.raises(MeasurementError, match="fingerprint"):
         validate_evidence(evidence)
+
+
+def test_evidence_rejects_nested_metric_and_paired_tampering(monkeypatch):
+    evidence = _committed_evidence()
+    pristine = copy.deepcopy(evidence)
+    monkeypatch.setattr("evals.ig01f.measure._source_git_sha", lambda: pristine["source"]["git_sha"])
+    monkeypatch.setattr("evals.ig01f.measure._fingerprint", lambda: pristine["source"]["source_fingerprint"])
+    monkeypatch.setattr("evals.ig01f.measure._build_evidence_payload", lambda: copy.deepcopy(pristine))
+
+    tampered_reports = []
+    aggregate = copy.deepcopy(pristine)
+    aggregate["providers"]["v1"]["aggregate"]["mrr"] = 0.123456
+    tampered_reports.append(aggregate)
+    phenomenon = copy.deepcopy(pristine)
+    phenomenon["providers"]["v2"]["by_phenomenon"]["correction"]["recall_at_k"] = 0.999999
+    tampered_reports.append(phenomenon)
+    language = copy.deepcopy(pristine)
+    language["providers"]["recency"]["by_language"]["tr"]["noise_ratio"] = 0.111111
+    tampered_reports.append(language)
+    abstention = copy.deepcopy(pristine)
+    abstention["abstention"]["v2"]["empty_selection_count"] -= 1
+    tampered_reports.append(abstention)
+    paired = copy.deepcopy(pristine)
+    paired["paired"]["recency_vs_v2"]["wins"] -= 1
+    paired["paired"]["recency_vs_v2"]["ties"] += 1
+    tampered_reports.append(paired)
+
+    for report in tampered_reports:
+        with pytest.raises(MeasurementError, match="deterministic regeneration"):
+            validate_evidence(report)
+
+
+def test_measurement_runner_never_opens_holdout(monkeypatch):
+    opened = []
+    original_builtin_open = builtins.open
+    original_path_open = Path.open
+    original_os_open = os.open
+
+    def guard_path(path):
+        rendered = os.fspath(path)
+        if isinstance(rendered, bytes):
+            rendered = os.fsdecode(rendered)
+        opened.append(rendered)
+        assert "holdout" not in rendered.casefold(), f"HOLDOUT access attempted: {rendered}"
+
+    def watched_builtin_open(file, *args, **kwargs):
+        guard_path(file)
+        return original_builtin_open(file, *args, **kwargs)
+
+    def watched_path_open(path, *args, **kwargs):
+        guard_path(path)
+        return original_path_open(path, *args, **kwargs)
+
+    def watched_os_open(path, *args, **kwargs):
+        guard_path(path)
+        return original_os_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", watched_builtin_open)
+    monkeypatch.setattr(Path, "open", watched_path_open)
+    monkeypatch.setattr(os, "open", watched_os_open)
+
+    report = build_evidence()
+    assert report["source"]["holdout_included"] is False
+    assert opened

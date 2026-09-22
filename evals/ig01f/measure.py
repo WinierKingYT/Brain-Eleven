@@ -23,6 +23,13 @@ from .provider import RecencyContinuityProvider, _render_item
 
 ROOT = Path(__file__).resolve().parents[2]
 PROVIDERS = ("v1", "v2", "recency")
+SUMMARY_METRICS = (
+    "precision_at_k", "recall_at_k", "f1", "mrr", "mandatory_recall",
+    "noise_ratio", "token_waste", "context_precision",
+)
+LEAKAGE_GATES = (
+    "forbidden_leakage", "wrong_project_leakage", "superseded_leakage", "resolved_leakage",
+)
 SOURCE_PATHS = (
     ROOT / "evals/ig01f/corpus.py",
     ROOT / "evals/ig01f/provider.py",
@@ -113,16 +120,11 @@ def _metric_value(case_result: Mapping[str, Any], name: str) -> float | None:
 
 
 def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    names = (
-        "precision_at_k", "recall_at_k", "f1", "mrr", "mandatory_recall",
-        "noise_ratio", "token_waste", "context_precision",
-    )
     result: dict[str, Any] = {"case_count": len(rows)}
-    for name in names:
+    for name in SUMMARY_METRICS:
         values = [value for row in rows if (value := _metric_value(row, name)) is not None]
         result[name] = round(sum(values) / len(values), 6) if values else None
-    result["leakage"] = {gate: sum(gate in row["violations"] for row in rows) for gate in
-                         ("forbidden_leakage", "wrong_project_leakage", "superseded_leakage", "resolved_leakage")}
+    result["leakage"] = {gate: sum(gate in row["violations"] for row in rows) for gate in LEAKAGE_GATES}
     return result
 
 
@@ -140,7 +142,41 @@ def _paired(left: Mapping[str, Mapping[str, Any]], right: Mapping[str, Mapping[s
     return result
 
 
-def validate_evidence(report: Mapping[str, Any], *, source_bound: bool = True) -> dict[str, Any]:
+def _closed_mapping(value: object, keys: set[str], label: str) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping) or set(value) != keys:
+        raise MeasurementError(f"invalid IG01-F {label}")
+    return value
+
+
+def _non_negative_int(value: object, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise MeasurementError(f"invalid IG01-F {label}")
+    return value
+
+
+def _validate_summary(value: object, label: str) -> Mapping[str, Any]:
+    summary = _closed_mapping(
+        value,
+        {"case_count", *SUMMARY_METRICS, "leakage"},
+        f"{label} summary",
+    )
+    case_count = _non_negative_int(summary["case_count"], f"{label} case_count")
+    for metric in SUMMARY_METRICS:
+        number = summary[metric]
+        if number is None:
+            continue
+        if isinstance(number, bool) or not isinstance(number, (int, float)) or not 0.0 <= float(number) <= 1.0:
+            raise MeasurementError(f"invalid IG01-F {label} metric {metric}")
+    leakage = _closed_mapping(summary["leakage"], set(LEAKAGE_GATES), f"{label} leakage")
+    for gate, count in leakage.items():
+        if _non_negative_int(count, f"{label} {gate}") > case_count:
+            raise MeasurementError(f"invalid IG01-F {label} leakage count")
+    return summary
+
+
+def validate_evidence(
+    report: Mapping[str, Any], *, source_bound: bool = True, _verify_regeneration: bool = True
+) -> dict[str, Any]:
     required = {"schema_version", "report_type", "source", "budget", "providers", "paired", "abstention"}
     if set(report) != required or report.get("schema_version") != 1 or report.get("report_type") != "ig01f-naive-baseline-evidence":
         raise MeasurementError("invalid IG01-F evidence envelope")
@@ -149,6 +185,8 @@ def validate_evidence(report: Mapping[str, Any], *, source_bound: bool = True) -
         raise MeasurementError("invalid IG01-F source envelope")
     if source.get("holdout_included") is not False or source.get("splits") != ["dev", "validation"]:
         raise MeasurementError("IG01-F evidence must be DEV+VALIDATION without HOLDOUT")
+    if source.get("corpus_version") != "ig01f-recency-v1":
+        raise MeasurementError("invalid IG01-F corpus version")
     if source_bound and (
         source.get("git_sha") != _source_git_sha()
         or source.get("source_fingerprint") != _fingerprint()
@@ -156,13 +194,44 @@ def validate_evidence(report: Mapping[str, Any], *, source_bound: bool = True) -
         raise MeasurementError("IG01-F evidence source fingerprint does not match frozen inputs")
     if set(report.get("providers", {})) != set(PROVIDERS):
         raise MeasurementError("IG01-F evidence must contain all providers")
+    budget = _closed_mapping(
+        report.get("budget"),
+        {"max_context_tokens", "minimum_headroom_tokens", "usable_tokens", "hard_byte_limit", "estimator"},
+        "budget",
+    )
+    if budget != {"max_context_tokens": 2048, "minimum_headroom_tokens": 128,
+                  "usable_tokens": 1920, "hard_byte_limit": 24_000,
+                  "estimator": "utf8-conservative-v1"}:
+        raise MeasurementError("invalid IG01-F frozen budget")
     for provider in PROVIDERS:
         provider_report = report["providers"].get(provider)
         if not isinstance(provider_report, Mapping) or set(provider_report) != {
             "aggregate", "by_phenomenon", "by_language", "case_results", "controls"
         }:
             raise MeasurementError("invalid IG01-F provider evidence")
-        case_ids = {row.get("case_id") for row in provider_report["case_results"]}
+        aggregate = _validate_summary(provider_report["aggregate"], f"{provider} aggregate")
+        for grouping_name in ("by_phenomenon", "by_language"):
+            grouping = provider_report[grouping_name]
+            if not isinstance(grouping, Mapping) or not grouping:
+                raise MeasurementError(f"invalid IG01-F {provider} {grouping_name}")
+            for group, summary in grouping.items():
+                if not isinstance(group, str) or not group:
+                    raise MeasurementError(f"invalid IG01-F {provider} {grouping_name} key")
+                _validate_summary(summary, f"{provider} {grouping_name} {group}")
+        case_results = provider_report["case_results"]
+        if not isinstance(case_results, list) or len(case_results) != aggregate["case_count"]:
+            raise MeasurementError("invalid IG01-F provider case results")
+        case_ids = set()
+        for row in case_results:
+            row = _closed_mapping(row, {"case_id", "selected_ids", "metrics", "violations"}, "case result")
+            case_id = row["case_id"]
+            if not isinstance(case_id, str) or not case_id or case_id in case_ids:
+                raise MeasurementError("invalid IG01-F case id")
+            case_ids.add(case_id)
+            if not isinstance(row["selected_ids"], list) or not all(isinstance(item, str) for item in row["selected_ids"]):
+                raise MeasurementError("invalid IG01-F selected ids")
+            if not isinstance(row["metrics"], Mapping) or not isinstance(row["violations"], list):
+                raise MeasurementError("invalid IG01-F case metrics")
         controls = provider_report.get("controls")
         if not isinstance(controls, Mapping) or set(controls) != case_ids:
             raise MeasurementError("IG01-F anti-gaming controls are incomplete")
@@ -177,10 +246,26 @@ def validate_evidence(report: Mapping[str, Any], *, source_bound: bool = True) -
             raise MeasurementError("recency evidence contains leakage")
     if set(report.get("paired", {})) != {"recency_vs_v1", "recency_vs_v2"}:
         raise MeasurementError("invalid IG01-F paired evidence")
+    for comparison, counts in report["paired"].items():
+        counts = _closed_mapping(counts, {"wins", "ties", "losses"}, f"paired {comparison}")
+        total = sum(_non_negative_int(counts[key], f"paired {comparison} {key}") for key in counts)
+        if total != report["providers"]["recency"]["aggregate"]["case_count"]:
+            raise MeasurementError("invalid IG01-F paired case count")
+    abstention = _closed_mapping(report.get("abstention"), set(PROVIDERS), "abstention")
+    for provider, counts in abstention.items():
+        counts = _closed_mapping(counts, {"case_count", "empty_selection_count"}, f"{provider} abstention")
+        case_count = _non_negative_int(counts["case_count"], f"{provider} abstention case_count")
+        empty = _non_negative_int(counts["empty_selection_count"], f"{provider} empty_selection_count")
+        if empty > case_count:
+            raise MeasurementError("invalid IG01-F abstention count")
+    if source_bound and _verify_regeneration:
+        expected = _build_evidence_payload()
+        if report != expected:
+            raise MeasurementError("IG01-F evidence differs from deterministic regeneration")
     return dict(report)
 
 
-def build_evidence() -> dict[str, Any]:
+def _build_evidence_payload() -> dict[str, Any]:
     check_projection()
     cases = _load("dev") + _load("validation")
     abstention = _load("abstention")
@@ -233,7 +318,11 @@ def build_evidence() -> dict[str, Any]:
                    "recency_vs_v2": _paired(evaluated["recency"], evaluated["v2"])},
         "abstention": abstention_report,
     }
-    return validate_evidence(report)
+    return report
+
+
+def build_evidence() -> dict[str, Any]:
+    return validate_evidence(_build_evidence_payload(), _verify_regeneration=False)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
