@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from evals.ig01e.audit import AuditError, audit_repository, write_audit_report
+from evals.ig01d.baseline import build_pair_report, write_pair_report
+from evals.ig01e.audit import AuditError, _audit_baseline_boundary, audit_repository, write_audit_report
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,6 +43,22 @@ def test_audit_reports_parent_tag_revisions_and_adjudicated_holdout_count():
     }
     assert corpus["status"] == "PASS"
     assert corpus["evidence"]["holdout_adjudicated"] == 39
+
+
+def test_baseline_boundary_accepts_real_pair_report_after_report_move(tmp_path):
+    pair_path = tmp_path / "ig01d-baseline-pair.json"
+    write_pair_report(pair_path, build_pair_report(root=ROOT))
+
+    evidence = _audit_baseline_boundary(ROOT, pair_path, require_pair_report=True)
+
+    assert evidence["artifact"] == pair_path.name
+    assert evidence["git_sha"] == __import__("subprocess").run(
+        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    assert evidence["split"] == ["dev", "test"]
+    assert evidence["holdout_included"] is False
+    assert evidence["metric_deltas_recomputed"] is True
+    assert evidence["candidate_gate_recomputed"] is True
 
 
 def test_audit_report_write_is_content_free(tmp_path):
