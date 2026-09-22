@@ -193,6 +193,49 @@ jobs:
             ig01d-baseline-tests.xml
           if-no-files-found: error
 
+  ig01f-naive-baseline:
+    name: IG01-F naive recency baseline (${{ matrix.os }})
+    needs: evaluation-smoke
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runner: ubuntu-24.04
+          - os: windows-latest
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install measurement dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Regenerate and check frozen IG01-F evidence
+        run: >-
+          python -m evals.ig01f.measure
+          --output evals/ig01f/ig01f-naive-baseline-evidence.json
+          --check
+      - name: Test IG01-F provider and evidence gates
+        run: >-
+          pytest tests/test_ig01f_recency.py -q
+          --junitxml=ig01f-naive-baseline-tests-${{ matrix.os }}.xml
+      - name: Upload IG01-F evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ig01f-naive-baseline-evidence-${{ matrix.os }}
+          path: |
+            evals/ig01f/ig01f-naive-baseline-evidence.json
+            ig01f-naive-baseline-tests-${{ matrix.os }}.xml
+          if-no-files-found: error
+
   evaluation-public:
     name: Evaluation public suite
     needs: evaluation-smoke
