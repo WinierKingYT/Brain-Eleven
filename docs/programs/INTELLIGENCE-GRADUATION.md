@@ -155,9 +155,20 @@ duplicate/replayed events, corrupt queue and StateStore conflict.
 
 Dogfood failures use CAPTURE_MISS, FALSE_CAPTURE, WRONG_TYPE, WRONG_SCOPE,
 WRONG_TARGET, FALSE_SUPERSESSION, RETRIEVAL_MISS, RETRIEVAL_NOISE,
-AUTHORITY_ERROR, STALE_CONTEXT and TOKEN_WASTE. Retain only privacy-safe usage
-metadata (counts, selected IDs/hashes, ranking signals, size, abstention,
-fallback and latency); raw prompts/memories are not long-term telemetry.
+AUTHORITY_ERROR, STALE_CONTEXT, TOKEN_WASTE and CAPTURE_SILENT_GAP. Retain
+only privacy-safe usage metadata (counts, selected IDs/hashes, ranking
+signals, size, abstention, fallback and latency); raw prompts/memories are
+not long-term telemetry.
+
+`CAPTURE_SILENT_GAP` (added by the W-07B capture-silent-gap contract,
+`docs/history/weakness/WEAKNESS-W07B-CAPTURE-SILENT-GAP-EVIDENCE-REPORT.md`):
+a project's `SessionEnd`/`Stop` capture is dead-lettered with a terminal
+ownership code (no retry, no error surfaced anywhere else in the pipeline)
+because its registered root's computed transcript-directory slug does not
+match the native client's own slug for that same path. Root-caused to
+`brain_eleven/runtime/ownership.py`'s `_project_slug` not converting every
+non-alphanumeric character the same way the real client does; fixed in that
+report's revision.
 
 ## Phase 20 unlock
 
