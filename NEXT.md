@@ -363,6 +363,14 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## Recent sessions
 
+**2026-09-22 (continued, handoff)** — Assigned Finding 3 above (the open
+`CAPTURE_SILENT_GAP`) to Codex: `docs/contracts/WEAKNESS-W07B-CAPTURE-SILENT-GAP-CONTRACT.md`.
+Bounded to reproducing/root-causing/fixing (or re-attributing to the harness)
+one project's capture path silently producing nothing under two-project
+dogfood load; explicitly does not reopen W-07B's other open gates, thresholds,
+Phase 20 or V2. Per `CONTRIBUTING.md`'s Roles section, this is Claude writing
+the contract and Ahmet relaying it to Codex, which executes.
+
 **2026-09-22 (continued)** — Attempted the "Dogfood" section of the same
 W-07B plan: 5 sessions/20 turns/2 registered projects/1 project switch, all
 real, all clean (exit 0). Found and fixed two real bugs in the harness along
