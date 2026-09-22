@@ -15,6 +15,7 @@ from evals.baseline import BaselineContextProvider
 from evals.compiler_v2_provider import CompilerV2ContextProvider
 from evals.contracts import NormalizedEvaluationResult
 from evals.ig01c.metrics import evaluate_retrieval_case
+from evals.ig01c.engine import evaluate_corpus, validate_report as validate_ig01c_report
 
 from .corpus import DEFAULT_OUTPUT, check_projection
 from .provider import RecencyContinuityProvider, _render_item
@@ -112,7 +113,10 @@ def _metric_value(case_result: Mapping[str, Any], name: str) -> float | None:
 
 
 def _summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    names = ("precision_at_k", "recall_at_k", "f1", "mrr", "mandatory_recall", "noise_ratio", "context_precision")
+    names = (
+        "precision_at_k", "recall_at_k", "f1", "mrr", "mandatory_recall",
+        "noise_ratio", "token_waste", "context_precision",
+    )
     result: dict[str, Any] = {"case_count": len(rows)}
     for name in names:
         values = [value for row in rows if (value := _metric_value(row, name)) is not None]
@@ -136,7 +140,7 @@ def _paired(left: Mapping[str, Mapping[str, Any]], right: Mapping[str, Mapping[s
     return result
 
 
-def validate_evidence(report: Mapping[str, Any]) -> dict[str, Any]:
+def validate_evidence(report: Mapping[str, Any], *, source_bound: bool = True) -> dict[str, Any]:
     required = {"schema_version", "report_type", "source", "budget", "providers", "paired", "abstention"}
     if set(report) != required or report.get("schema_version") != 1 or report.get("report_type") != "ig01f-naive-baseline-evidence":
         raise MeasurementError("invalid IG01-F evidence envelope")
@@ -145,12 +149,30 @@ def validate_evidence(report: Mapping[str, Any]) -> dict[str, Any]:
         raise MeasurementError("invalid IG01-F source envelope")
     if source.get("holdout_included") is not False or source.get("splits") != ["dev", "validation"]:
         raise MeasurementError("IG01-F evidence must be DEV+VALIDATION without HOLDOUT")
+    if source_bound and (
+        source.get("git_sha") != _source_git_sha()
+        or source.get("source_fingerprint") != _fingerprint()
+    ):
+        raise MeasurementError("IG01-F evidence source fingerprint does not match frozen inputs")
     if set(report.get("providers", {})) != set(PROVIDERS):
         raise MeasurementError("IG01-F evidence must contain all providers")
     for provider in PROVIDERS:
         provider_report = report["providers"].get(provider)
-        if not isinstance(provider_report, Mapping) or set(provider_report) != {"aggregate", "by_phenomenon", "by_language", "case_results"}:
+        if not isinstance(provider_report, Mapping) or set(provider_report) != {
+            "aggregate", "by_phenomenon", "by_language", "case_results", "controls"
+        }:
             raise MeasurementError("invalid IG01-F provider evidence")
+        case_ids = {row.get("case_id") for row in provider_report["case_results"]}
+        controls = provider_report.get("controls")
+        if not isinstance(controls, Mapping) or set(controls) != case_ids:
+            raise MeasurementError("IG01-F anti-gaming controls are incomplete")
+        for case_id, control in controls.items():
+            if not isinstance(control, Mapping) or set(control) != {"select_all", "select_none"}:
+                raise MeasurementError("invalid IG01-F anti-gaming control")
+            if control["select_all"].get("case_id") != case_id:
+                raise MeasurementError("IG01-F select_all control case mismatch")
+            if control["select_none"].get("selected_ids") != []:
+                raise MeasurementError("IG01-F select_none control is not empty")
         if provider == "recency" and any(provider_report["aggregate"]["leakage"].values()):
             raise MeasurementError("recency evidence contains leakage")
     if set(report.get("paired", {})) != {"recency_vs_v1", "recency_vs_v2"}:
@@ -170,15 +192,32 @@ def build_evidence() -> dict[str, Any]:
             selected = _select(provider, case)
             outputs[provider][case_id] = selected
             evaluated[provider][case_id] = evaluate_retrieval_case(case, selected, k=5)
-    provider_reports = {provider: {
-        "aggregate": _summary(list(evaluated[provider].values())),
-        "by_phenomenon": _group(cases, evaluated[provider], "category"),
-        "by_language": _group(cases, evaluated[provider], "language"),
-        "case_results": [{"case_id": case_id, "selected_ids": outputs[provider][case_id],
-                          "metrics": evaluated[provider][case_id]["metrics"],
-                          "violations": evaluated[provider][case_id]["violations"]}
-                         for case_id in sorted(outputs[provider])],
-    } for provider in PROVIDERS}
+    provider_reports = {}
+    for provider in PROVIDERS:
+        ig01c_report = evaluate_corpus(
+            cases,
+            {case_id: {"retrieved_ids": selected} for case_id, selected in outputs[provider].items()},
+            corpus_version="ig01f-recency-v1",
+            split="dev+validation",
+            retrieval_k=5,
+            seed=0,
+            source_fingerprint=_fingerprint(),
+            git_sha=_source_git_sha(),
+            enforce_benchmark=False,
+        )
+        validate_ig01c_report(ig01c_report)
+        provider_reports[provider] = {
+            "aggregate": _summary(list(evaluated[provider].values())),
+            "by_phenomenon": _group(cases, evaluated[provider], "category"),
+            "by_language": _group(cases, evaluated[provider], "language"),
+            "case_results": [{
+                "case_id": case_id,
+                "selected_ids": outputs[provider][case_id],
+                "metrics": evaluated[provider][case_id]["metrics"],
+                "violations": evaluated[provider][case_id]["violations"],
+            } for case_id in sorted(outputs[provider])],
+            "controls": ig01c_report["controls"],
+        }
     abstention_report = {provider: {"case_count": len(abstention),
                                     "empty_selection_count": sum(not _select(provider, case) for case in abstention)}
                          for provider in PROVIDERS}

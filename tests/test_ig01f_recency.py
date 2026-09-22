@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import copy
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -16,8 +16,9 @@ from evals.ig01f.corpus import (
     build_projection,
     check_projection,
 )
-from evals.ig01f.provider import RecencyContinuityProvider
 from evals.ig01f.measure import MeasurementError, _load, validate_evidence
+from evals.ig01f.provider import RecencyContinuityProvider
+from evals.ig01c.engine import evaluate_corpus, validate_report
 
 
 PINNED_HOLDOUT_SHA256 = "8afb7d3964a806cc04d606a7e49891f1fed53d72fd06b01c1e5dbd13c8504fa1"
@@ -140,7 +141,13 @@ def _evidence_envelope():
     summary = {"leakage": {name: 0 for name in (
         "forbidden_leakage", "wrong_project_leakage", "superseded_leakage", "resolved_leakage"
     )}}
-    provider = {"aggregate": summary, "by_phenomenon": {}, "by_language": {}, "case_results": []}
+    provider = {
+        "aggregate": summary,
+        "by_phenomenon": {},
+        "by_language": {},
+        "case_results": [],
+        "controls": {},
+    }
     return {
         "schema_version": 1,
         "report_type": "ig01f-naive-baseline-evidence",
@@ -158,14 +165,43 @@ def test_measurement_contract_rejects_holdout_and_tampered_leakage():
     with pytest.raises(MeasurementError, match="HOLDOUT"):
         _load("holdout")
     evidence = _evidence_envelope()
-    assert validate_evidence(evidence) == evidence
+    assert validate_evidence(evidence, source_bound=False) == evidence
     evidence["providers"]["recency"]["aggregate"]["leakage"]["forbidden_leakage"] = 1
     with pytest.raises(MeasurementError, match="leakage"):
-        validate_evidence(evidence)
+        validate_evidence(evidence, source_bound=False)
 
 
 def test_measurement_contract_is_closed():
     evidence = _evidence_envelope()
     evidence["unexpected"] = True
     with pytest.raises(MeasurementError, match="envelope"):
+        validate_evidence(evidence, source_bound=False)
+
+
+def test_ig01c_controls_expose_select_everything_gaming():
+    row = next(
+        item for item in _rows()
+        if item["required_ids"] and len(item["candidate_ids"]) > len(item["required_ids"])
+    )
+    report = evaluate_corpus(
+        [row],
+        {row["case_id"]: {"retrieved_ids": row["candidate_ids"]}},
+        corpus_version="ig01f-recency-v1",
+        split="dev",
+        retrieval_k=5,
+        enforce_benchmark=False,
+    )
+    validate_report(report)
+    control = report["controls"][row["case_id"]]
+    assert control["select_all"]["metrics"]["recall_at_k"]["value"] == 1.0
+    assert control["select_all"]["metrics"]["precision_at_k"]["value"] < 1.0
+    assert control["select_all"]["metrics"]["noise_ratio"]["value"] > 0.0
+    assert control["select_none"]["selected_ids"] == []
+
+
+def test_evidence_rejects_source_fingerprint_tampering(monkeypatch):
+    evidence = _evidence_envelope()
+    monkeypatch.setattr("evals.ig01f.measure._source_git_sha", lambda: "a" * 40)
+    monkeypatch.setattr("evals.ig01f.measure._fingerprint", lambda: "sha256:" + "c" * 64)
+    with pytest.raises(MeasurementError, match="fingerprint"):
         validate_evidence(evidence)
