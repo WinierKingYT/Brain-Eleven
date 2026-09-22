@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from brain_eleven.projects.registry import ProjectRegistry, normalize_registry_r
 
 
 MAX_TRANSCRIPT_BYTES = 128 * 1024 * 1024
+_SLUG_NON_ALNUM = re.compile(r'[^A-Za-z0-9]')
 
 
 class TranscriptOwnershipError(ValueError):
@@ -56,8 +58,24 @@ def _file_identity(stat_result: Any) -> tuple[int, int, int, int]:
 
 
 def _project_slug(project_root: str) -> str:
+    """Reproduce the real Claude Code CLI's project-directory slug exactly.
+
+    Empirically verified (W-07B capture-silent-gap): the native client turns
+    every character outside ``[A-Za-z0-9]`` into a literal ``-``, one hyphen
+    per character, with no collapsing of adjacent separators (a bare ``C:\\``
+    becomes ``C--`` on Windows, not ``C-``). The previous implementation only
+    substituted ``:``, ``/`` and ``\\`` and left every other separator (most
+    notably ``_``, which Python's own ``tempfile`` suffixes routinely
+    contain) unconverted. Any registered project whose absolute root
+    contained such a character got a slug that could never match the real
+    transcript directory the client actually wrote to, so
+    ``verify_transcript_ownership`` found zero matching registry entries and
+    permanently dead-lettered (``TRANSCRIPT_OWNERSHIP_UNVERIFIED``, a
+    terminal code) every one of that project's captures -- silently, with no
+    error surfaced anywhere outside the queue's own ledger.
+    """
     normalized = str(Path(project_root).expanduser().resolve(strict=False))
-    return normalized.replace(":", "-").replace("/", "-").replace("\\", "-")
+    return _SLUG_NON_ALNUM.sub("-", normalized)
 
 
 def _hash_normalized(client: str, value: Any) -> str | None:

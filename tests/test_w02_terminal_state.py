@@ -1,6 +1,7 @@
 """W-02 terminal closure fault injection; existing queue/IG-02 tests stay intact."""
 
 import json
+import re
 
 import pytest
 
@@ -219,7 +220,10 @@ def test_worker_crash_recovery_has_one_effect_and_receipt(tmp_path, monkeypatch,
         "schema_version": 1, "mode": "CANARY", "project_ids": [project["project_id"]],
         "local_model": None, "transcript_roots": {"claude": [str(tmp_path)], "codex": [str(tmp_path)]},
     })
-    slug = str(vault.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    # Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    # Claude Code CLI's own slug: every non-alphanumeric character becomes
+    # "-", one hyphen per character -- W-07B capture-silent-gap).
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(vault.resolve()))
     directory = tmp_path / slug
     directory.mkdir()
     transcript = directory / "w02-crash.jsonl"

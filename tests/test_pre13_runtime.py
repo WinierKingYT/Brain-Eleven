@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import replace
 from types import SimpleNamespace as N
 import pytest
@@ -41,7 +42,10 @@ def replace_namespace(value, **changes):
 
 def _native_path(tmp_path, project_root, client, session_id, documents):
     if client == 'claude':
-        slug = str(project_root.resolve()).replace(':', '-').replace('/', '-').replace('\\', '-')
+        # Mirror brain_eleven.runtime.ownership._project_slug exactly (the
+        # real Claude Code CLI's own slug: every non-alphanumeric character
+        # becomes "-", one hyphen per character -- W-07B capture-silent-gap).
+        slug = re.sub(r'[^A-Za-z0-9]', '-', str(project_root.resolve()))
         directory = tmp_path / slug
         directory.mkdir(exist_ok=True)
         path = directory / (session_id + '.jsonl')

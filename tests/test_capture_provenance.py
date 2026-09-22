@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -162,7 +163,10 @@ def test_late_file_arrival_reuses_one_durable_job(tmp_path):
     trusted = tmp_path / "trusted"
     trusted.mkdir()
     vault, _ = _runtime(tmp_path, roots=trusted)
-    slug = str(vault.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    # Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    # Claude Code CLI's own slug: every non-alphanumeric character becomes
+    # "-", one hyphen per character -- W-07B capture-silent-gap).
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(vault.resolve()))
     transcript_dir = trusted / slug
     transcript_dir.mkdir()
     transcript = transcript_dir / "late-arrival.jsonl"

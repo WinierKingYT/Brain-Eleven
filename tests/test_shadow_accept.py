@@ -6,6 +6,7 @@ the automatic worker path and never applies while the runtime is OFF.
 """
 
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -48,7 +49,10 @@ def _runtime(tmp_path, *, shadow_accept=None):
 
 def _pending_item(tmp_path, vault):
     """Capture one real transcript in SHADOW so a genuine review item exists."""
-    slug = str(vault.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    # Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    # Claude Code CLI's own slug: every non-alphanumeric character becomes
+    # "-", one hyphen per character -- W-07B capture-silent-gap).
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(vault.resolve()))
     directory = tmp_path / slug
     directory.mkdir(exist_ok=True)
     path = directory / "shadow-session.jsonl"

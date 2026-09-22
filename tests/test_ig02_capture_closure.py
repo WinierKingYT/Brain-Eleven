@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -35,7 +36,10 @@ def runtime(tmp_path):
 
 
 def _claude_slug(project_root):
-    return str(project_root.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    """Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    Claude Code CLI's own project-directory slug: every character outside
+    [A-Za-z0-9] becomes a literal "-", one hyphen per character)."""
+    return re.sub(r"[^A-Za-z0-9]", "-", str(project_root.resolve()))
 
 
 def _transcript(tmp_path, text="We decided to use SQLite for persistent storage.", *, session_id="session"):

@@ -1,6 +1,7 @@
 """Focused IG-04 B1 human-approval boundary tests."""
 
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -37,7 +38,10 @@ def b1_runtime(tmp_path):
 
 def _transcript(tmp_path, text="We decided to use SQLite for B1 capture."):
     root = tmp_path / "vault"
-    slug = str(root.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    # Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    # Claude Code CLI's own slug: every non-alphanumeric character becomes
+    # "-", one hyphen per character -- W-07B capture-silent-gap).
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(root.resolve()))
     directory = tmp_path / slug
     directory.mkdir(exist_ok=True)
     path = directory / "b1-session.jsonl"

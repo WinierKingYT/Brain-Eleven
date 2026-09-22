@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 
 import pytest
 
@@ -19,7 +20,10 @@ from brain_eleven.state import StateService
 
 
 def _slug(root):
-    return str(root.resolve()).replace(":", "-").replace("/", "-").replace("\\", "-")
+    """Mirror brain_eleven.runtime.ownership._project_slug exactly (the real
+    Claude Code CLI's own project-directory slug: every character outside
+    [A-Za-z0-9] becomes a literal "-", one hyphen per character)."""
+    return re.sub(r"[^A-Za-z0-9]", "-", str(root.resolve()))
 
 
 @pytest.fixture
@@ -209,6 +213,63 @@ def test_worker_preserves_changed_code_and_writes_no_effect(runtime, tmp_path, m
     assert result["error"] == "TRANSCRIPT_CHANGED"
     assert not list((vault / ".brain-eleven" / "capture" / "evidence").glob("*.json"))
     assert not MemoryStore(vault).load()["validated_memory"]
+
+
+def test_project_root_with_underscore_is_captured_not_dead_lettered(tmp_path):
+    """W-07B capture-silent-gap: a project root containing an underscore (or
+    any other non-alphanumeric character besides ``:``/``/``/``\\``) must
+    still resolve to the real Claude Code CLI's transcript directory slug.
+
+    The CLI converts *every* character outside ``[A-Za-z0-9]`` to ``-``
+    (verified empirically against a real ``claude`` invocation whose cwd
+    contained ``_``, ``.``, a space, ``+``, parentheses and ``~`` -- every
+    one became a single ``-``). Before this fix, ``_project_slug`` only
+    substituted ``:``, ``/`` and ``\\``, so a project root with an
+    underscore anywhere in it (routine for ``tempfile.TemporaryDirectory``
+    suffixes) produced a slug that could never match the directory the real
+    client actually wrote transcripts to. ``verify_transcript_ownership``
+    then found zero matching registry entries and dead-lettered every
+    capture for that project with the terminal code
+    ``TRANSCRIPT_OWNERSHIP_UNVERIFIED`` -- silently, with no error surfaced
+    anywhere else in the pipeline (not stuck, not retried, never enqueued
+    again), while a sibling project with no underscore in its root captured
+    normally in the same run. This is what made W-07B's dogfood harness
+    report Finding 3 as an inconsistent multi-project capture gap: the
+    dependency was never "which project" or "how many projects" -- it was
+    always "does this project's absolute path contain a character the old
+    slug function did not convert."
+    """
+    vault = tmp_path / "vault_with_underscore"
+    vault.mkdir()
+    project = ProjectRegistry(vault).register(vault, proactive_capture=True)
+    StateService(vault).init_project(project["project_id"], source={"type": "user", "reference": "w07b"})
+    migrate(vault)
+    write_json(RuntimeConfig(vault).path, {
+        "schema_version": 1,
+        "mode": "CANARY",
+        "project_ids": [project["project_id"]],
+        "local_model": None,
+        "transcript_roots": {"claude": [str(tmp_path)], "codex": [str(tmp_path)]},
+    })
+
+    # Mirror the real client: every non-alphanumeric character (including
+    # the underscore this test root deliberately contains) becomes "-".
+    directory = tmp_path / _slug(vault)
+    directory.mkdir(exist_ok=True)
+    path = directory / "underscore-session.jsonl"
+    path.write_bytes((json.dumps({
+        "type": "user", "sessionId": "underscore-session",
+        "message": {"role": "user", "content": "We decided to use SQLite."},
+    }, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
+
+    enqueue(vault, "claude", {"session_id": "underscore-session", "cwd": str(vault), "transcript_path": str(path)})
+    result = Worker(vault).once()
+
+    assert result["status"] == "PROCESSED", result
+    assert len(MemoryStore(vault).load()["validated_memory"]) == 1
+    ledger = (vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl").read_text(encoding="utf-8")
+    assert "DEAD_LETTER" not in ledger
+    assert not list((vault / ".brain-eleven" / "capture" / "dead-letter").glob("*.json"))
 
 
 def test_claude_slug_collision_abstains_before_read(runtime, tmp_path, monkeypatch):

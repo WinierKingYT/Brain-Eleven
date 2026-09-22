@@ -5,6 +5,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -136,7 +137,10 @@ def run(samples=40, records=1000):
         # provenance boundary before any timing is measured.
         claude_root = Path(temporary) / 'claude-projects'
         codex_root = Path(temporary) / 'codex-sessions'
-        claude_slug = str(vault.resolve()).replace(':', '-').replace('/', '-').replace('\\', '-')
+        # Mirror brain_eleven.runtime.ownership._project_slug exactly (the
+        # real Claude Code CLI's own slug: every non-alphanumeric character
+        # becomes "-", one hyphen per character -- W-07B capture-silent-gap).
+        claude_slug = re.sub(r'[^A-Za-z0-9]', '-', str(vault.resolve()))
         claude_project_root = claude_root / claude_slug
         claude_project_root.mkdir(parents=True)
         codex_root.mkdir(parents=True)
