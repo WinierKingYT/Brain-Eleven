@@ -123,7 +123,13 @@ coerced to zero.
 - `python -m evals.baseline_snapshot --baseline baseline-v2 --check`: PASS.
 - `pytest tests/test_ig01f_recency.py -q`: 12 passed.
 - Evidence regeneration followed by `--check`: byte-identical locally.
-- Full local regression: pending final documentation head.
+- Full local non-integration/non-graduation regression at documentation head
+  `4672f93`: 1478 passed, 4 skipped, 82 deselected. The four skips are
+  pre-existing suite markers; IG01-F adds no skip/xfail. An initial run while
+  status/authority files were still uncommitted produced five expected
+  W06C0R1 worktree-scope failures plus one transient cold-hook failure; the
+  affected 24-test slice passed after the docs commit, and the full rerun above
+  was green.
 - Exact-head remote Validation on Ubuntu and Windows: pending.
 - Independent read-only review: pending; this report is not acceptance.
 
