@@ -267,8 +267,9 @@ def _audit_baseline_boundary(root: Path, pair_report: Path | None = None, *, req
         raise AuditError("IG01-D baseline does not prove public DEV+TEST-only execution")
     if "validate_pair_report" not in contracts.read_text(encoding="utf-8"):
         raise AuditError("IG01-D strict pair contract is missing")
-    report = root / "docs/history/reports/IG01-D-PACKAGE-REPORT.md"
-    _check_file(root, report.name, required_markers=("SEMANTIC_UNAVAILABLE", "holdout_included=false", "V2 precision"))
+    report_relative = "docs/history/reports/IG01-D-PACKAGE-REPORT.md"
+    report = root / report_relative
+    _check_file(root, report_relative, required_markers=("SEMANTIC_UNAVAILABLE", "holdout_included=false", "V2 precision"))
     report_text = report.read_text(encoding="utf-8")
     if "61c89e9934f669b5c624e5e1a921cd62e4f49b04" not in report_text:
         raise AuditError("IG01-D historical report binding is missing")
