@@ -363,6 +363,23 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## Recent sessions
 
+**2026-09-22 (continued)** — Attempted the "Dogfood" section of the same
+W-07B plan: 5 sessions/20 turns/2 registered projects/1 project switch, all
+real, all clean (exit 0). Found and fixed two real bugs in the harness along
+the way (a Windows `TemporaryDirectory` cleanup race against the still-running
+background service; `ProjectRegistry.register()` alone does not make a
+project capturable — `RuntimeConfig.project_ids` must also list it, or every
+capture for it is silently `SCOPE_DISABLED`). After both fixes, a third,
+**unresolved** finding remained: across repeated identical runs, one of the
+two projects' sessions consistently produced zero captures (not
+dead-lettered — never enqueued) while the other project's worked, and which
+one failed was not consistent between separate attempts; isolating either
+project alone never reproduces it. Did not chase this into production code
+(out of this evidence-only step's scope) — reported honestly as an open
+finding (`CAPTURE_SILENT_GAP`, proposed taxonomy entry) needing its own
+follow-up. `NATIVE_DOGFOOD_SAMPLE_MISSING` is **not** closed. Report:
+`docs/history/weakness/WEAKNESS-W07B-CLAUDE-DOGFOOD-EVIDENCE-REPORT.md`.
+
 **2026-09-22** — Claude worked W-07B (Codex owns the IG/SRT-00 doc-reorg track
 this session). Closed the Claude half of the "Isolated native smoke" evidence
 gap: a real, authenticated `claude` CLI, invoked against a throwaway

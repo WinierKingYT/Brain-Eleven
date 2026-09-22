@@ -1,0 +1,163 @@
+{
+  "sessions": [
+    {
+      "session_index": 1,
+      "project_label": "project-a",
+      "session_id_present": true,
+      "turns": [
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        }
+      ],
+      "review_items_delta": 0,
+      "maintenance_intent_status": null,
+      "memory_revision": 0
+    },
+    {
+      "session_index": 2,
+      "project_label": "project-a",
+      "session_id_present": true,
+      "turns": [
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        }
+      ],
+      "review_items_delta": 0,
+      "maintenance_intent_status": null,
+      "memory_revision": 0
+    },
+    {
+      "session_index": 3,
+      "project_label": "project-a",
+      "session_id_present": true,
+      "turns": [
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        }
+      ],
+      "review_items_delta": 0,
+      "maintenance_intent_status": null,
+      "memory_revision": 0
+    },
+    {
+      "session_index": 4,
+      "project_label": "project-b",
+      "session_id_present": true,
+      "turns": [
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        }
+      ],
+      "review_items_delta": 4,
+      "maintenance_intent_status": "QUEUED",
+      "memory_revision": 0
+    },
+    {
+      "session_index": 5,
+      "project_label": "project-b",
+      "session_id_present": true,
+      "turns": [
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        },
+        {
+          "exit_code": 0,
+          "is_error": false
+        }
+      ],
+      "review_items_delta": 4,
+      "maintenance_intent_status": "QUEUED",
+      "memory_revision": 0
+    }
+  ],
+  "total_turns": 20,
+  "distinct_projects": [
+    "project-a",
+    "project-b"
+  ],
+  "project_switch_observed": true,
+  "handoff_checks": [
+    {
+      "after_session": 1,
+      "ledger_committed_total": 0
+    },
+    {
+      "after_session": 2,
+      "ledger_committed_total": 0
+    },
+    {
+      "after_session": 3,
+      "ledger_committed_total": 0
+    },
+    {
+      "after_session": 4,
+      "ledger_committed_total": 8
+    },
+    {
+      "after_session": 5,
+      "ledger_committed_total": 16
+    }
+  ],
+  "all_turns_ok": true
+}
