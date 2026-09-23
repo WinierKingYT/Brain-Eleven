@@ -132,7 +132,7 @@ authorize opening Phase 20 or promoting V2.
 | `evals/intelligence_taxonomy.py` | CURRENT **IG-00 shared evaluation vocabulary** retained for IG-01; category/metric names only, with no evaluator, ranking or tuning implementation. |
 | `evals/ig01e/**` | CURRENT **IG01-E read-only audit implementation**; it verifies the evaluation foundation and emits content-free evidence only. |
 
-| `docs/history/evidence/IG04-B3-AUDIT-NOTE.md` | GENERATED EVIDENCE / partial read-only Phase 0 audit at branch base `9472dc2`; records an explicit STOP because the current review listing requires full candidate records and mutates expiry/duplicate metadata. It is not a B3 contract, implementation authorization, or acceptance verdict; remaining audit surfaces are marked unverified. |
+| `docs/history/evidence/IG04-B3-AUDIT-NOTE.md` | GENERATED EVIDENCE / completed read-only Phase 0 audit at `99c080d`, on exact-green base `6142c2c` (Validation `35820195178`). Records the owner's approved content-free review-index and SessionEnd-only counter revisions, queue/index crash-consistency requirements, hook identity, V1/gate/telemetry findings and same-host Claude latency baseline. Passes to a revised frozen contract only; it does not authorize code implementation or constitute package acceptance. Live native hook trust and Codex latency remain unverified. |
 
 ## Default path rules (first match)
 
