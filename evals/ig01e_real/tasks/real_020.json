@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "task_id": "real-020",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Neden wrapper guven modelini sectik?",
+    "intent": ["reference"],
+    "domains": ["architecture"]
+  },
+  "expected_context": {
+    "required": ["mc_adr_0013_wrapper_trust_model"],
+    "useful": ["dersler_verification_chain_trust"],
+    "forbidden": []
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

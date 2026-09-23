@@ -1,0 +1,202 @@
+{
+  "metrics": {
+    "mrr": 0.9523809523809523,
+    "precision_at_5": 0.2571428571428572,
+    "precision_at_min5_relevant": 0.8333333333333334,
+    "recall_at_5": 1.0
+  },
+  "oracle_precision_at_5": 0.2761904761904762,
+  "per_case": [
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-001"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-002"
+    },
+    {
+      "mrr": 0.5,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 0.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-003"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-004"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-005"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 0.5,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-006"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-007"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-008"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-009"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-010"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-011"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-012"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-013"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-014"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.4,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-015"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-016"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-017"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 1.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-018"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 0.5,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-019"
+    },
+    {
+      "mrr": 1.0,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 0.5,
+      "recall_at_5": 1.0,
+      "relevant_count": 2,
+      "task_id": "real-020"
+    },
+    {
+      "mrr": 0.5,
+      "precision_at_5": 0.2,
+      "precision_at_min5_relevant": 0.0,
+      "recall_at_5": 1.0,
+      "relevant_count": 1,
+      "task_id": "real-021"
+    }
+  ],
+  "production_mutation": false,
+  "provider_identity": {
+    "embedding_model": "C:/Users/faruk/.cache/huggingface/hub/models--sentence-transformers--paraphrase-multilingual-mpnet-base-v2/snapshots/4328cf26390c98c5e3c738b4460a05b95f4911f5",
+    "embedding_provider": "sentence-transformers",
+    "reranker_model": "C:/Users/faruk/.cache/huggingface/hub/models--cross-encoder--mmarco-mMiniLMv2-L12-H384-v1/snapshots/1427fd652930e4ba29e8149678df786c240d8825",
+    "reranker_provider": "cross-encoder"
+  },
+  "report_type": "ig01e_real_content_probe",
+  "safety": {
+    "forbidden_leakage": 0,
+    "resolved_leakage": 0,
+    "superseded_leakage": 0,
+    "wrong_project_leakage": 0
+  },
+  "schema_version": 1,
+  "source": {
+    "case_count": 21,
+    "corpus": "ig01e_real/real-content-v1",
+    "git_sha": "6142c2c02d5ea13d1260f0ce10597918f58c4afc",
+    "k": 5,
+    "noise_count": 0,
+    "seed": 0
+  }
+}

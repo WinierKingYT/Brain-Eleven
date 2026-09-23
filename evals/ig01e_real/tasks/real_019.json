@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "task_id": "real-019",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Protokol neden durumsuz (stateless)?",
+    "intent": ["reference"],
+    "domains": ["architecture"]
+  },
+  "expected_context": {
+    "required": ["mc_adr_0008_stateless_protocol"],
+    "useful": ["mc_adr_0002_stdio_transport"],
+    "forbidden": []
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}

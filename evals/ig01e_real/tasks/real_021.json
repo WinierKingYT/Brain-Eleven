@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "task_id": "real-021",
+  "task": {
+    "project_id": "minecraft_mcp",
+    "prompt": "Supervisor mekanizmasi neden boyle?",
+    "intent": ["reference"],
+    "domains": ["architecture"]
+  },
+  "expected_context": {
+    "required": ["mc_adr_0003_run_supervisor"],
+    "useful": [],
+    "forbidden": []
+  },
+  "expected_behavior": {
+    "wrong_project_allowed": false,
+    "inactive_allowed": false
+  }
+}
