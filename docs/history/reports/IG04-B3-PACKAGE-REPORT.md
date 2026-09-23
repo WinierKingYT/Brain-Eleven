@@ -4,7 +4,7 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `5bef99180abcd1a2a7985e242dc34475818cecdc`
+**Implementation/test head:** `f0e0787fc896ec9d24527b6dcef3c1bbb5ad7668`
 **Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
@@ -46,6 +46,8 @@ The implementation/test commits, in order after the frozen contract, are:
 - `5bef991` — reject path-like project IDs before B3 counter/marker writes or
   review-index publication, prompted by a bounded P2 finding in the latest
   independent review.
+- `f0e0787` — replay interrupted grouped terminal transitions without leaving
+  an actionable duplicate after one canonical acceptance.
 
 Changed code: `brain_eleven/runtime/review.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
@@ -72,6 +74,8 @@ Focused verification on the implementation/test head passed:
   affected integration suites: **40 passed**.
 - Path-like project-ID rejection for counters, markers and review metadata:
   **38 passed** across the affected B3 suites.
+- Grouped finish recovery, B2 duplicate handling and SessionStart regressions:
+  **34 passed**; the review-index suite rerun was **14 passed**.
 - Integration, SessionStart and SessionEnd group: **23 passed**; the final
   integration-only rerun was **4 passed**.
 - `python -m compileall -q brain_eleven/runtime`: passed.
@@ -140,18 +144,27 @@ review of `9c480bc2416fef6fa191ff58ebec1b93b9806e35` found that path-like
 project IDs could enter B3 metadata; `5bef991` now rejects path separators,
 drive-prefixed values and dot-directory IDs in both the nudge ledger and
 review metadata index. The new path-ID
-regressions passed. A fresh independent review and exact final
+regressions passed. Independent review of
+`829628c70df0a370fb3131359344ee154d777938` then found grouped acceptance could
+recover to a mixed actionable group after a partial record write. `f0e0787`
+now journals the bounded metadata delta and primary review ID, writes the
+primary before duplicates, and replays an interrupted terminal group before
+publishing a ready index. If no record transition reached disk, recovery
+leaves the group pending for retry under the existing idempotency receipt.
+Rejection and acceptance interruption regressions passed. A fresh
+independent review and exact final
 documentation-head Validation remain required; neither this report nor the
 implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-After the project-ID privacy fix, `python -m pytest -q -rs` passed on
-implementation/documentation snapshot
+The previous full suite after the project-ID privacy fix passed on
 `4cec5ac3ebd698a1d769a36f77768a069028c49d`: **1601 passed, 4 skipped** in
-276.79 seconds. All four skips are existing Windows directory-fsync
-limitations in `tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were
-skipped. Exact final-documentation-head Validation and a fresh separate
-independent read-only review remain pending after this report update. The
-final handoff records the exact documentation-head Validation URL, SHA and
-review outcome; this report does not self-approve IG04-B3.
+276.79 seconds. The current grouped-recovery fix has passed the focused suites
+above; a full regression rerun is pending on this report-finalization snapshot.
+All four previous skips were existing Windows directory-fsync limitations in
+`tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were skipped. Exact
+final-documentation-head Validation and a fresh separate independent
+read-only review remain pending. The final handoff records the exact
+documentation-head Validation URL, SHA and review outcome; this report does
+not self-approve IG04-B3.
