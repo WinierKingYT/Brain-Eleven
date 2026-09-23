@@ -55,6 +55,24 @@ adayı tamamen atmak yerine.
 edici bir yön, doğrulanmış bir çözüm değil — herhangi bir uygulama, kendi
 eşiğini kendi verisiyle (D0/D1/IG01E gibi) yeniden kalibre etmeyi gerektirir.
 
+## Güncelleme (2026-09-23) — vdb'nin kendi retrieval'ı ayrıca ölçüldü, entegre edilmedi
+
+Ahmet'in onayıyla, vdb'nin **retrieval'ının kendisi** (bu notun konusu olan
+abstention-calibration mekanizması değil) Brain-Eleven'in IG01E-real gerçek
+içerik/sorgu setiyle, Brain-Eleven'in kendi skor koduyla ölçüldü
+(`docs/history/reports/VDB-COMPARISON-EVIDENCE-REPORT.md`). Sonuç: vdb'nin en
+iyi hali (dense-only, 0.833) bile Brain-Eleven'in kendi IG01E Run 2 sonucunu
+(0.917) geçemedi — **entegrasyonu haklı çıkaran bir kanıt yok, bu yüzden
+yapılmadı.** Ayrıca: vdb'nin `--rerank`'i lexical-overlap tabanlı (nöral değil)
+ve onu açmak sonucu kötüleştirdi (0.833 → 0.714) — bu notun yukarıdaki asıl
+konusuyla (sözcük-örtüşmesi yaklaşımlarının güvenilmezliği) **bağımsız bir
+doğrulama**, tamamen ayrı bir kod tabanından.
+
+Bu ölçüm, yukarıdaki abstention-calibration fikrini test etmedi (o mekanizma
+hâlâ spekülatif) — sadece vdb'nin ham sıralama/rerank çıktısını ölçtü. Fikir
+hâlâ geçerli bir referans, ama artık "vdb'yi entegre edelim" sonucuna
+bağlanmıyor.
+
 ## Bağlantılar
 
 [[WEAKNESS-IG01F-V2-REGRESSION-INVESTIGATION-EVIDENCE-REPORT|IG01-F V2 Regression Investigation]]

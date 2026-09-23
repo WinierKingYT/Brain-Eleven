@@ -1,0 +1,355 @@
+[
+  {
+    "task_id": "real-001",
+    "prompt": "minecraftmcp'de MCP stdio tasimasi karari hala gecerli mi, yoksa degistirildi mi?",
+    "required": [
+      "mc_adr_0008_stateless_protocol"
+    ],
+    "useful": [],
+    "forbidden": [
+      "mc_adr_0002_stdio_transport"
+    ],
+    "retrieved": [
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0008_stateless_protocol",
+      "mc_adr_0010_mcp_sdk_2",
+      "mc_adr_0002_stdio_transport",
+      "mc_adr_0001_process_topology"
+    ]
+  },
+  {
+    "task_id": "real-002",
+    "prompt": "What does the Run Supervisor process own in minecraftmcp?",
+    "required": [
+      "mc_adr_0003_run_supervisor"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0001_process_topology",
+      "mc_adr_0003_run_supervisor",
+      "mc_adr_0013_wrapper_trust_model",
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0007_security_honesty"
+    ]
+  },
+  {
+    "task_id": "real-003",
+    "prompt": "minecraftmcp ADR-0022 hangi eski karari gecersiz kiliyor?",
+    "required": [
+      "mc_adr_0022_mcp_tasks"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0004_execution_backend",
+      "mc_adr_0005_plugin_yml",
+      "mc_adr_0020_maven_wrapper_provisioning",
+      "mc_adr_0012_maven_profile_split"
+    ]
+  },
+  {
+    "task_id": "real-004",
+    "prompt": "petsistemi'de neden WAL modlu SQLite secildi, ayri bir DB sunucusu yerine?",
+    "required": [
+      "ps_adr_0001_sqlite_wal"
+    ],
+    "useful": [
+      "ps_adr_0003_single_db_executor"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "ps_adr_0001_sqlite_wal",
+      "ps_adr_0003_single_db_executor",
+      "pg_local_first_no_cloud",
+      "dersler_silent_backup_failure",
+      "ps_adr_0004_immutable_migration"
+    ]
+  },
+  {
+    "task_id": "real-005",
+    "prompt": "petsistemi'de pet secimi (selection) ile runtime state neden ayri tutuluyor?",
+    "required": [
+      "ps_adr_0002_selection_runtime_separation"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "ps_adr_0002_selection_runtime_separation",
+      "ps_adr_0005_pet_load_error_modes",
+      "ps_adr_0003_single_db_executor",
+      "mc_adr_0003_run_supervisor",
+      "ps_adr_0004_immutable_migration"
+    ]
+  },
+  {
+    "task_id": "real-006",
+    "prompt": "petsistemi'de paralel yazma kilitlenmesini onlemek icin ne yapildi?",
+    "required": [
+      "ps_adr_0003_single_db_executor"
+    ],
+    "useful": [
+      "ps_adr_0001_sqlite_wal"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "ps_adr_0003_single_db_executor",
+      "ps_adr_0004_immutable_migration",
+      "ps_adr_0005_pet_load_error_modes",
+      "ps_adr_0001_sqlite_wal",
+      "ps_adr_0002_selection_runtime_separation"
+    ]
+  },
+  {
+    "task_id": "real-007",
+    "prompt": "promackro macro'lari toplu olarak nasil import ediliyor ve hata durumunda ne oluyor?",
+    "required": [
+      "pm_macro_scheduler_decisions"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "pm_macro_scheduler_decisions",
+      "dersler_silent_backup_failure",
+      "mc_adr_0011_maven_wrapper_profile",
+      "referans_cap_theorem",
+      "referans_test_pyramid"
+    ]
+  },
+  {
+    "task_id": "real-008",
+    "prompt": "Why does promtgen avoid cloud sync and accounts, and is that reasoning still valid today?",
+    "required": [
+      "pg_local_first_no_cloud"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "pg_code_gen_not_core_product",
+      "pg_local_first_no_cloud",
+      "dersler_silent_backup_failure",
+      "referans_cap_theorem",
+      "referans_argon2_hashing"
+    ]
+  },
+  {
+    "task_id": "real-009",
+    "prompt": "promtgen kod uretimini ana urun akisina dahil ediyor mu?",
+    "required": [
+      "pg_code_gen_not_core_product"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "pg_code_gen_not_core_product",
+      "pg_local_first_no_cloud",
+      "dersler_silent_backup_failure",
+      "mc_adr_0003_run_supervisor",
+      "mc_adr_0011_maven_wrapper_profile"
+    ]
+  },
+  {
+    "task_id": "real-010",
+    "prompt": "Is there a lesson about a backup mechanism that failed silently without raising an error?",
+    "required": [
+      "dersler_silent_backup_failure"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "dersler_silent_backup_failure",
+      "dersler_verification_chain_trust",
+      "referans_domain_events",
+      "referans_circuit_breaker",
+      "referans_bulkhead_pattern"
+    ]
+  },
+  {
+    "task_id": "real-011",
+    "prompt": "Bir dogrulama zincirinde mvnw gibi baslatici script'in kendisi neden checksum'lanmalidir?",
+    "required": [
+      "dersler_verification_chain_trust"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "dersler_verification_chain_trust",
+      "mc_adr_0013_wrapper_trust_model",
+      "mc_adr_0020_maven_wrapper_provisioning",
+      "referans_domain_events",
+      "dersler_silent_backup_failure"
+    ]
+  },
+  {
+    "task_id": "real-012",
+    "prompt": "Explain the difference between the circuit breaker pattern and the bulkhead pattern.",
+    "required": [
+      "referans_circuit_breaker",
+      "referans_bulkhead_pattern"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "referans_bulkhead_pattern",
+      "referans_circuit_breaker",
+      "referans_decorator_pattern",
+      "referans_factory_pattern",
+      "referans_saga_pattern"
+    ]
+  },
+  {
+    "task_id": "real-013",
+    "prompt": "CQRS ile domain event'lerin iliskisi nedir?",
+    "required": [
+      "referans_cqrs_pattern"
+    ],
+    "useful": [
+      "referans_domain_events"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "referans_cqrs_pattern",
+      "referans_domain_events",
+      "pm_macro_scheduler_decisions",
+      "referans_cap_theorem",
+      "ps_adr_0002_selection_runtime_separation"
+    ]
+  },
+  {
+    "task_id": "real-014",
+    "prompt": "PRE-13 kalite kapisi neden CANARY moduna geciste hala engel, B1 insan onayi zaten devredeyken?",
+    "required": [
+      "ig_pre13_canary_gate"
+    ],
+    "useful": [
+      "ig_branch_b_pivot"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "ig_pre13_canary_gate",
+      "ig_branch_b_pivot",
+      "dersler_silent_backup_failure",
+      "dersler_verification_chain_trust",
+      "referans_cap_theorem"
+    ]
+  },
+  {
+    "task_id": "real-015",
+    "prompt": "minecraftmcp'de mvnw script'inin kendisi neden asla dogrudan calistirilmiyor?",
+    "required": [
+      "mc_adr_0013_wrapper_trust_model"
+    ],
+    "useful": [
+      "dersler_verification_chain_trust"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0013_wrapper_trust_model",
+      "mc_adr_0020_maven_wrapper_provisioning",
+      "dersler_verification_chain_trust",
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0004_execution_backend"
+    ]
+  },
+  {
+    "task_id": "real-016",
+    "prompt": "Which minecraftmcp decision pinned Node.js to a specific security version?",
+    "required": [
+      "mc_adr_0009_nodejs_pin"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0009_nodejs_pin",
+      "mc_adr_0010_mcp_sdk_2",
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0007_security_honesty",
+      "mc_adr_0004_execution_backend"
+    ]
+  },
+  {
+    "task_id": "real-017",
+    "prompt": "minecraftmcp API versioning stratejisi protocol ve product surface'ini nasil ayiriyor?",
+    "required": [
+      "mc_adr_0021_api_versioning"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0021_api_versioning",
+      "mc_adr_0001_process_topology",
+      "mc_adr_0022_mcp_tasks",
+      "mc_adr_0004_execution_backend",
+      "mc_adr_0012_maven_profile_split"
+    ]
+  },
+  {
+    "task_id": "real-018",
+    "prompt": "petsistemi'de migration'lar neden degistirilemez (immutable) tasarlandi?",
+    "required": [
+      "ps_adr_0004_immutable_migration"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "ps_adr_0004_immutable_migration",
+      "ps_adr_0003_single_db_executor",
+      "ps_adr_0005_pet_load_error_modes",
+      "ps_adr_0001_sqlite_wal",
+      "ps_adr_0002_selection_runtime_separation"
+    ]
+  },
+  {
+    "task_id": "real-019",
+    "prompt": "Protokol neden durumsuz (stateless)?",
+    "required": [
+      "mc_adr_0008_stateless_protocol"
+    ],
+    "useful": [
+      "mc_adr_0002_stdio_transport"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0008_stateless_protocol",
+      "ps_adr_0002_selection_runtime_separation",
+      "mc_adr_0001_process_topology",
+      "dersler_silent_backup_failure",
+      "mc_adr_0002_stdio_transport"
+    ]
+  },
+  {
+    "task_id": "real-020",
+    "prompt": "Neden wrapper guven modelini sectik?",
+    "required": [
+      "mc_adr_0013_wrapper_trust_model"
+    ],
+    "useful": [
+      "dersler_verification_chain_trust"
+    ],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0013_wrapper_trust_model",
+      "mc_adr_0020_maven_wrapper_provisioning",
+      "mc_adr_0012_maven_profile_split",
+      "mc_adr_0011_maven_wrapper_profile",
+      "referans_test_pyramid"
+    ]
+  },
+  {
+    "task_id": "real-021",
+    "prompt": "Supervisor mekanizmasi neden boyle?",
+    "required": [
+      "mc_adr_0003_run_supervisor"
+    ],
+    "useful": [],
+    "forbidden": [],
+    "retrieved": [
+      "mc_adr_0001_process_topology",
+      "mc_adr_0003_run_supervisor",
+      "mc_adr_0013_wrapper_trust_model",
+      "dersler_silent_backup_failure",
+      "referans_rate_limiting"
+    ]
+  }
+]
