@@ -393,6 +393,23 @@ This `NEXT.md` entry itself was late (last touch before this session was
 next handoff-track step is making the GitHub-check-at-session-start
 practice harder to silently skip, not just documented.
 
+**2026-09-23 (continued)** — Followed through on the handoff-track next
+step named above: added a bounded, non-fatal GitHub-state check (git
+fetch + unmerged branches, `gh issue list --state open`) to
+`.claude/hooks/session-start.sh`. Verified it works (correctly surfaced
+issue #2) by running the script directly with its native-hooks early-exit
+bypassed — and in doing so found that script does **not** actually run on
+this machine today: `.brain-eleven/runtime/native-hooks-installed.json`
+exits it at line 12, and the real global SessionStart hook
+(`~/.claude/settings.json`) is an unrelated generic reminder, not this
+project's bootstrap. Not new (`RESULTS.md` already documents SessionStart
+serving a frozen snapshot; IG-00/Phase 20 territory, not reopened here).
+Kept the hook edit as defense-in-depth for whenever that's resolved, but
+since `CLAUDE.md` is the one file confirmed to load every session
+regardless of hook wiring, added a one-line pointer there to
+`CONTRIBUTING.md`'s GitHub-check practice so it doesn't silently depend on
+a path known to be inactive.
+
 **2026-09-22 (continued, handoff)** — Assigned Finding 3 above (the open
 `CAPTURE_SILENT_GAP`) to Codex: `docs/contracts/WEAKNESS-W07B-CAPTURE-SILENT-GAP-CONTRACT.md`.
 Bounded to reproducing/root-causing/fixing (or re-attributing to the harness)
