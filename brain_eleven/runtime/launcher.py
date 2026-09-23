@@ -84,8 +84,19 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
 def hook(vault, client, event, payload):
     from brain_eleven.runtime.worker import allowed, enqueue
     cfg = RuntimeConfig(vault)
+    if cfg.load()['mode'] == 'OFF':
+        return {}
+    if event == 'SessionEnd':
+        # Finalize all project counters from stable session metadata before
+        # the existing B1 queue path. This does not depend on cwd, transcript,
+        # candidate extraction, or queue success; failures are best effort.
+        try:
+            from brain_eleven.runtime.review_nudge import finalize_session
+            finalize_session(vault, client, payload.get('session_id'))
+        except Exception:
+            pass
     project = allowed(vault, payload.get('cwd'))
-    if cfg.load()['mode'] == 'OFF' or not project:
+    if not project:
         return {}
     if event in {'Stop', 'SessionEnd'}:
         # This path never reads a transcript or waits for service startup.

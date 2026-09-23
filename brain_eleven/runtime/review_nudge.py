@@ -24,10 +24,10 @@ _PROJECT_ID_RE = re.compile(r"^[^\x00-\x1f\x7f]{1,256}$")
 _LEDGER_NAME = "review-nudge.json"
 _LOCK_NAME = "review-nudge-state"
 _COUNTER_FIELDS = {
-    "session_id_hash", "project_id", "prompt_count", "last_seen_at", "expires_at",
+    "schema_version", "session_id_hash", "project_id", "prompt_count", "last_seen_at", "expires_at",
 }
 _MARKER_FIELDS = {
-    "session_id_hash", "project_id", "prompt_count", "ended_at", "expires_at",
+    "schema_version", "session_id_hash", "project_id", "prompt_count", "ended_at", "expires_at",
 }
 
 
@@ -60,7 +60,8 @@ def _session_id_hash(client, raw_session_id):
 
 
 def _valid_row(value, fields):
-    if not isinstance(value, dict) or set(value) != fields:
+    if (not isinstance(value, dict) or set(value) != fields
+            or value.get("schema_version") != _SCHEMA_VERSION):
         return False
     if not isinstance(value.get("session_id_hash"), str) or _SHA256_RE.fullmatch(value["session_id_hash"]) is None:
         return False
@@ -157,6 +158,7 @@ def record_prompt(vault, client, raw_session_id, project_id) -> bool:
                         if item["session_id_hash"] == session_hash and item["project_id"] == project_id), None)
             if row is None:
                 row = {
+                    "schema_version": _SCHEMA_VERSION,
                     "session_id_hash": session_hash,
                     "project_id": project_id,
                     "prompt_count": 1,
@@ -165,6 +167,7 @@ def record_prompt(vault, client, raw_session_id, project_id) -> bool:
                 }
                 counters.append(row)
             else:
+                row["schema_version"] = _SCHEMA_VERSION
                 row["prompt_count"] = min(row["prompt_count"] + 1, 2**31 - 1)
                 row["last_seen_at"] = _format_timestamp(current)
                 row["expires_at"] = _format_timestamp(current + COUNTER_TTL)
@@ -173,4 +176,71 @@ def record_prompt(vault, client, raw_session_id, project_id) -> bool:
         return True
     except Exception:
         # A convenience counter failure must never fail the prompt hook.
+        return False
+
+
+def finalize_session(vault, client, raw_session_id) -> bool:
+    """Finalize all eligible project counters at the per-session SessionEnd."""
+    session_hash = _session_id_hash(client, raw_session_id)
+    if session_hash is None:
+        return False
+    try:
+        runtime = RuntimeConfig(vault)
+        if runtime.load()["mode"] == "OFF":
+            return False
+        state_path = runtime.root / _LEDGER_NAME
+        with runtime_file_lock(runtime.root / _LOCK_NAME, timeout=0.5):
+            config = runtime.load()
+            if config["mode"] == "OFF":
+                return False
+            registry = ProjectRegistry(vault)
+            ledger = _read_ledger(runtime.root, state_path)
+            current = _utc_now()
+            unexpired_counters = [
+                row for row in ledger["counters"]
+                if _timestamp(row["expires_at"]) > current
+            ]
+            markers = [
+                row for row in ledger["markers"]
+                if _timestamp(row["expires_at"]) > current
+            ]
+            changed = (len(unexpired_counters) != len(ledger["counters"])
+                       or len(markers) != len(ledger["markers"]))
+            session_counters = [
+                row for row in unexpired_counters
+                if row["session_id_hash"] == session_hash
+            ]
+            remaining = [
+                row for row in unexpired_counters
+                if row["session_id_hash"] != session_hash
+            ]
+            if len(remaining) != len(ledger["counters"]):
+                changed = True
+            for counter in session_counters:
+                project_id = counter["project_id"]
+                if (counter["prompt_count"] < MIN_PROMPTS_FOR_NUDGE
+                        or not _eligible_project(config, registry, project_id)):
+                    continue
+                existing = next((marker for marker in markers
+                                 if marker["session_id_hash"] == session_hash
+                                 and marker["project_id"] == project_id), None)
+                if existing is not None:
+                    continue
+                markers.append({
+                    "schema_version": _SCHEMA_VERSION,
+                    "session_id_hash": session_hash,
+                    "project_id": project_id,
+                    "prompt_count": counter["prompt_count"],
+                    "ended_at": _format_timestamp(current),
+                    "expires_at": _format_timestamp(current + MARKER_TTL),
+                })
+                changed = True
+            if changed:
+                ledger["counters"] = remaining
+                ledger["markers"] = markers
+                write_json(state_path, ledger)
+        return True
+    except Exception:
+        # SessionEnd cleanup is independent best-effort work; it cannot affect
+        # the B1 transcript/worker path or prevent the host from closing.
         return False
