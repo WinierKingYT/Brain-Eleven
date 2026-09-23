@@ -73,6 +73,11 @@ bandit-report.json
 evals/private/
 evals/reports/local/
 evals/reports/*-review-*.json
+# IG01E real-vault corpus remains local; only its reusable harness is versioned.
+evals/ig01e_real/fixtures/
+evals/ig01e_real/results-mpnet.json
+evals/ig01e_real/tasks/real_00[1-9].json
+evals/ig01e_real/tasks/real_01[0-8].json
 task-state-*-report.json
 router-*-report.json
 authority-*-report.json
