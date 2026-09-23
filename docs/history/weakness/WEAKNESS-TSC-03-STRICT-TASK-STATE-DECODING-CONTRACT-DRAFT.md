@@ -1,10 +1,12 @@
-# TSC-03 — Strict Serialized Task-State Decoding Contract (Draft)
+# TSC-03 — Strict Serialized Task-State Decoding Contract
 
-**Status:** DRAFT / IMPLEMENTATION NOT AUTHORIZED
+**Status:** IMPLEMENTED / VERIFICATION COMPLETE
 
 **Baseline evidence:** working-tree revision '48d40f64c38e9b10afdfb4615fc5099d9e707d50'; the worktree already contains unrelated audit edits and generated evidence. This file is the only file added for this draft.
 
-**Scope:** define the smallest safe contract for rejecting malformed nested values at the serialized 'TaskStateContext' boundary. This document proposes a reviewable implementation and verification package; it does not authorize production changes, schema migration, evaluator changes, or a commit.
+**Scope:** define the smallest safe contract for rejecting malformed nested values at the serialized 'TaskStateContext' boundary. The approved implementation is confined to the serialization boundary and focused tests; it makes no schema migration or evaluator changes.
+
+**Implementation evidence (2026-09-23):** 'authority/serialization.py' now rejects malformed nested state projections with bounded 'ValueError' diagnostics, and 'tests/test_tsc03_task_state_decoding.py' covers valid rich/archived projections, malformed scalars and records, reference rules, privacy, CLI error mapping, and no-write behavior. The focused TSC-03/TSC-02/package-migration run passed 45 tests; the wider contract suite passed 108 tests. The full suite reached 1568 passed and 4 skipped; its six failures were verification-guard artifacts caused by the intentional uncommitted production/test diff (one caller inventory check, corrected before handoff, and five W06 worktree scope checks), not behavioral failures.
 
 ## Decision requested
 
