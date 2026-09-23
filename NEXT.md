@@ -393,6 +393,38 @@ This `NEXT.md` entry itself was late (last touch before this session was
 next handoff-track step is making the GitHub-check-at-session-start
 practice harder to silently skip, not just documented.
 
+**2026-09-23 (continued, first real recall result)** — Ahmet asked Claude
+to curate the review backlog directly ("review sayfasından ben değil sen
+değerli bilgileri seç ve onayla"). Reviewed all ~700 pending candidates by
+category: accepted 13 genuine, non-duplicate, current project decisions/
+findings (out of 682); explicitly rejected everything UNCERTAIN/QUESTION/
+QUOTED/NEGATED/HYPOTHETICAL and all 81 STATE_MUTATION candidates.
+Investigating the STATE_MUTATION rejection surfaced a real pattern: dozens
+of candidates (both NEW_MEMORY and STATE_MUTATION) were Unity/"KargoGemisi"
+game-dev content tagged with brain-eleven's own project_id. Traced this to
+its root cause rather than assuming a bug: a real past session
+(`bb2ea007-...`, transcript confirmed) where Ahmet used Brain-Eleven's own
+Claude Code window to also work on an unrelated Unity project via ~20
+subagents -- correct capture behavior, not a scope-isolation defect; the
+practical takeaway is to open a separate session in a project's own
+directory for unrelated work going forward.
+
+Then ran the actual protocol: Ahmet opened a genuinely fresh session
+(separate window, no file/git access) and asked Question 1 from
+`docs/history/evidence/TEST-LOG.md`. Result: **correct**, verbatim recall
+of today's newly-accepted content -- the first "evet, hatırladı" since the
+2026-09-20 diagnosis found real recall score was 0/5 (root cause:
+`.claude/validated-memory.json` frozen at 2026-09-04, review-accept
+blocked by SHADOW without `shadow_accept`). That file is now confirmed
+live (revision 18, updated today). The fresh session also honestly
+flagged a real staleness conflict (an accepted "SRT-00 remains NOT SHIP"
+memory vs. CLAUDE.md's current "SRT-00 kapandı" status) instead of
+guessing -- fixed with a proper `SUPERSEDE_EXISTING` correction, not a
+silent edit. Full writeup and the daily-log's first real row: `TEST-LOG.md`
+("İlk gerçek sonuç" section). n=1, not a program-wide number, but the
+first concrete evidence the whole pipeline (capture → review → accept →
+compile → deliver) works end-to-end when actually used.
+
 **2026-09-23 (continued, semantic extraction)** — Ahmet asked for review
 candidates to be "konuşmalardaki değerli şeyler" (valuable things in the
 conversation), not verbatim/lightly-classified segments of what he typed —
