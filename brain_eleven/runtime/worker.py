@@ -3,6 +3,7 @@ from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from contextlib import contextmanager
 import hashlib
+import os
 from pathlib import Path
 import re
 import threading
@@ -231,8 +232,13 @@ class Worker:
         self.review = ReviewStore(vault)
         # Falls back to UnavailableProvider (a cheap no-op) unless a semantic
         # provider is explicitly configured via IG_SEMANTIC_PROVIDER or
-        # .claude/ig-provider-config.json -- see brain_eleven/extraction/providers.
-        self.semantic_provider = create_semantic_provider()
+        # this vault's .claude/ig-provider-config.json.  A worker must not
+        # inherit another project's provider policy merely from process cwd.
+        # IG_PROVIDER_CONFIG remains an explicit operator override.
+        provider_config = os.environ.get('IG_PROVIDER_CONFIG')
+        if provider_config is None:
+            provider_config = self.vault / '.claude' / 'ig-provider-config.json'
+        self.semantic_provider = create_semantic_provider(config_path=provider_config)
 
     def _add_review(self, candidate, reason, source):
         """Persist a review item and suppress terminal fingerprint replays.
