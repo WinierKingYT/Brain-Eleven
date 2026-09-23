@@ -23,6 +23,8 @@
 .claude/remember-config.json
 .claude/project-registry.json
 .claude/project-registry.json.lock
+.claude/project-registry.backup.json
+.claude/ig-provider-config.json
 .claude/project-state.json
 .claude/project-state.json.lock
 .claude/project-state.backup.json
@@ -85,6 +87,11 @@ authority-*-report.json
 # Loose local test/coverage artifacts (regenerated)
 coverage.json
 pytest-results-local.xml
+.pytest-temp-*/
+.local-*
+.ig01e-audit-local.stdout
+pre13-*.xml
+pre13-*.json
 
 # Claude Code agent-isolation worktrees; never source-controlled.
 .claude/worktrees/
