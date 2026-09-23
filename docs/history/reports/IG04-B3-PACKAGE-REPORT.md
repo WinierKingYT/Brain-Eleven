@@ -4,7 +4,7 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `f0e0787fc896ec9d24527b6dcef3c1bbb5ad7668`
+**Implementation/test head:** `dbd15c48a4cb467818fe2bf5caeb0d1cf00659e5`
 **Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
@@ -26,7 +26,10 @@ No canonical MemoryStore, StateStore, project authority, gate, threshold, IG01,
 HOLDOUT or V2 behavior was changed. The B3 state is operational metadata only.
 Review index reconstruction for a legacy queue is deliberately deferred to an
 explicit visit to the existing review-list path; SessionStart never initiates
-that migration.
+that migration. Direct accept/reject against a missing or invalid index now
+fails with a conflict before canonical application; the user must visit the
+existing review-list path first. Grouped terminalization also refuses to write
+records without a ready index and durable intent.
 
 ## Changed implementation and evidence
 
@@ -48,8 +51,12 @@ The implementation/test commits, in order after the frozen contract, are:
   independent review.
 - `f0e0787` — replay interrupted grouped terminal transitions without leaving
   an actionable duplicate after one canonical acceptance.
+- `dbd15c4` — fail closed before direct review acceptance/rejection when a
+  pre-index or invalid-index queue has not gone through the explicit list
+  rebuild path; add missing/invalid-index recovery regressions.
 
 Changed code: `brain_eleven/runtime/review.py`,
+`brain_eleven/runtime/service.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
 `brain_eleven/runtime/launcher.py`, and `brain_eleven/runtime/context.py`.
 Added tests: `tests/test_ig04b3_review_index.py`,
@@ -76,6 +83,8 @@ Focused verification on the implementation/test head passed:
   **38 passed** across the affected B3 suites.
 - Grouped finish recovery, B2 duplicate handling and SessionStart regressions:
   **34 passed**; the review-index suite rerun was **14 passed**.
+- Unknown-index fail-closed review action and grouped-finish regressions:
+  **37 passed** across the affected B3/B2/integration/SessionStart suites.
 - Integration, SessionStart and SessionEnd group: **23 passed**; the final
   integration-only rerun was **4 passed**.
 - `python -m compileall -q brain_eleven/runtime`: passed.
@@ -151,17 +160,21 @@ now journals the bounded metadata delta and primary review ID, writes the
 primary before duplicates, and replays an interrupted terminal group before
 publishing a ready index. If no record transition reached disk, recovery
 leaves the group pending for retry under the existing idempotency receipt.
-Rejection and acceptance interruption regressions passed. A fresh
-independent review and exact final
-documentation-head Validation remain required; neither this report nor the
-implementer self-approves IG04-B3.
+Rejection and acceptance interruption regressions passed. Independent review
+of `353936cddccb41cdf84559286acc5254882cfc70` found one additional P2: direct
+accept/reject against a legacy queue with no ready index could bypass the
+group-recovery journal. `dbd15c4` now rejects such actions before canonical
+application, and `FINISH_GROUP` refuses unjournaled writes. Focused missing-
+and invalid-index tests passed. A fresh independent review of the final
+documentation head and exact-head Validation remain required; neither this
+report nor the implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-After the grouped-recovery fix, `python -m pytest -q -rs` passed on
-implementation/documentation snapshot
-`39d80d693375e245b09286b6d05523e563b9b812`: **1602 passed, 4 skipped** in
-288.04 seconds. All four skips are existing Windows directory-fsync
+After the unknown-index fail-closed fix, `python -m pytest -q -rs` passed on
+implementation/test head
+`dbd15c48a4cb467818fe2bf5caeb0d1cf00659e5`: **1605 passed, 4 skipped** in
+274.73 seconds. All four skips are existing Windows directory-fsync
 limitations in `tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were
 skipped. Exact final-documentation-head Validation and a fresh separate
 independent read-only review remain pending after this report update. The
