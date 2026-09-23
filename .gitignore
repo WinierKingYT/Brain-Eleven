@@ -39,6 +39,7 @@
 .claude/authority-cache.json
 .claude/memory-usage.json
 .claude/memory-usage.json.lock
+.claude/hooks/.state/
 
 # Archive (historical reference only)
 .archived/
