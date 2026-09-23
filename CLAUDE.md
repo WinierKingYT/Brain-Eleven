@@ -4,6 +4,11 @@ onaylı kabul `python -m brain_eleven shadow-accept ON` ile açılır (varsayıl
 ölçüm `docs/history/evidence/TEST-LOG.md`'de. Eşik gevşetme, skip ve holdout ayarı yasak.
 **Yeni iş açma kuralı:** `docs/programs/WORK-INTAKE-RULE.md` — her yeni paket/sözleşme
 önce "bu, hatırlama testini ölçülebilir şekilde ilerletiyor mu?" sorusuna cevap vermeli.
+**Devir kontrolü (her oturum başında, iş açmadan önce):** `CONTRIBUTING.md`'nin "Check
+GitHub before assuming you know the whole picture" bölümündeki üç komutu çalıştır —
+`.claude/hooks/session-start.sh` bu makinede native hook'lar tarafından devre dışı
+bırakıldığından (`.brain-eleven/runtime/native-hooks-installed.json`) otomatik çalışmıyor;
+bu satır CLAUDE.md'nin kendisi her oturumda yüklendiği için buraya eklendi.
 
 # Brain-Eleven: Eleven'in ikinci beyni
 

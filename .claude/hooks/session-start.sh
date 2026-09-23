@@ -130,6 +130,55 @@ else
     echo "   ℹ️  No maintenance report yet (legacy/manual maintenance may not have run)"
 fi
 
+# Step 3.75: Check GitHub state (unmerged branches, open issues) so this
+# session doesn't assume chat/NEXT.md alone is the whole picture. Added
+# 2026-09-23 after an entire completed package (IG01-F) and an open
+# owner-decision issue sat invisible for days on an unmerged branch — see
+# CONTRIBUTING.md's "Check GitHub before assuming you know the whole
+# picture." Bounded and non-fatal: any failure here (no network, gh not
+# authenticated, git/gh missing) is reported and skipped, never blocks the
+# rest of this hook.
+echo ""
+echo "3️⃣75️⃣  Checking GitHub state..."
+
+if command -v gh >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
+    if timeout 8 git -C "$VAULT_PATH" fetch origin --quiet 2>/dev/null; then
+        UNMERGED=$(git -C "$VAULT_PATH" for-each-ref --format='%(refname:short)' refs/remotes/origin --no-merged=origin/master 2>/dev/null | grep -v '^origin/HEAD$' || true)
+        UNMERGED_COUNT=$(printf '%s' "$UNMERGED" | grep -c . || true)
+        if [ "$UNMERGED_COUNT" -gt 0 ]; then
+            echo "   ⚠️  $UNMERGED_COUNT remote branch(es) not merged into origin/master:"
+            printf '%s\n' "$UNMERGED" | sed 's/^/      /' | head -10
+        else
+            echo "   ✅ No unmerged remote branches"
+        fi
+    else
+        echo "   ℹ️  git fetch failed or timed out; skipping branch check (not fatal)"
+    fi
+
+    if OPEN_ISSUES=$(timeout 8 gh issue list --state open --limit 20 --json number,title 2>/dev/null); then
+        ISSUE_LINES=$(printf '%s' "$OPEN_ISSUES" | python3 -c "
+import json, sys
+try:
+    issues = json.load(sys.stdin)
+except Exception:
+    issues = []
+for i in issues:
+    print(f\"#{i['number']}: {i['title']}\")
+" 2>/dev/null)
+        if [ -n "$ISSUE_LINES" ]; then
+            ISSUE_COUNT=$(printf '%s\n' "$ISSUE_LINES" | grep -c .)
+            echo "   ⚠️  $ISSUE_COUNT open GitHub issue(s):"
+            printf '%s\n' "$ISSUE_LINES" | sed 's/^/      /'
+        else
+            echo "   ✅ No open GitHub issues"
+        fi
+    else
+        echo "   ℹ️  gh issue list failed or timed out; skipping (not fatal, may need 'gh auth login')"
+    fi
+else
+    echo "   ℹ️  git or gh CLI unavailable; skipping GitHub state check"
+fi
+
 # Step 4: Display ready status
 echo ""
 echo "========================================"
