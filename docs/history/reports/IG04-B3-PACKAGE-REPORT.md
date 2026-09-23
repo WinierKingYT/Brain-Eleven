@@ -4,8 +4,8 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `ad824a55c6dfddfce652679f197da351e9c93fe0`  
-**Branch:** `ig/ig04b3-review-nudge`  
+**Implementation/test head:** `bd3e4c3555456421956665cab8e5c16cb125dda3`
+**Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
 
@@ -32,11 +32,11 @@ that migration.
 
 The implementation/test commits, in order after the frozen contract, are:
 
-- `2ed7030` — content-free review metadata index and queue lifecycle recovery.
-- `21dddf6` — per-session content-free prompt counter.
-- `e581819` — SessionEnd-only marker finalization; Stop preservation.
-- `c9f5eee` — optional V1 SessionStart rendering and at-most-once consumption.
-- `ad824a5` — cross-boundary, concurrency, failure and latency tests.
+- `2fb93a0` — content-free review metadata index and queue lifecycle recovery.
+- `29950e3` — per-session content-free prompt counter.
+- `bd12874` — SessionEnd-only marker finalization; Stop preservation.
+- `479e2c5` — optional V1 SessionStart rendering and at-most-once consumption.
+- `bd3e4c3` — cross-boundary, concurrency, failure and latency tests.
 
 Changed code: `brain_eleven/runtime/review.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
@@ -104,16 +104,15 @@ used. SessionEnd may be delayed until the client ends or idles a session.
 The existing PRE-13 runtime-quality failure remains visible and is a separate
 decision; this package does not tune it or any rollout gate.
 
-The current master precondition was rechecked at `c0726d0d3bc91c351c034e2a919b9806441d7f1a`;
-Validation run [35827179864](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35827179864)
+The branch was rebased on the latest green master `4a62b40b17bcb11bddbde867ce321048afeeb180`;
+Validation run [35830565871](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35830565871)
 passed on Ubuntu and Windows. The exact final documentation-head Validation
 and separate independent read-only review are still required; neither this
 report nor the implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-The report itself is being finalized after the committed-tree full-suite run;
-the full suite is rerun on the report-finalization commit. Exact final-head
-Validation and separate independent read-only review remain pending. The final
-handoff records the exact documentation-head Validation URL and SHA; this
-report does not self-approve IG04-B3.
+After this master rebase, the full suite is rerun on the report-finalization
+commit. Exact final-head Validation and separate independent read-only review
+remain pending. The final handoff records the exact documentation-head
+Validation URL and SHA; this report does not self-approve IG04-B3.
