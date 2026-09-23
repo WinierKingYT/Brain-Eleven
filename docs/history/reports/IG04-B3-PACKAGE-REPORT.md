@@ -135,19 +135,21 @@ with fewer than five prompts were accepted; `448809a` now validates the frozen
 threshold and its focused failure test passed. Review of `44b9d7b` then found
 that malformed prompt events could count and add/expire could migrate a legacy
 index; `94912b6` gates the count on a valid prompt shape and limits migration
-to the explicit list path. The affected focused suites passed. The latest
-independent review found that path-like project IDs could enter B3 metadata;
-`5bef991` now rejects path separators, drive-prefixed values and dot-directory
-IDs in both the nudge ledger and review metadata index. The new path-ID
+to the explicit list path. The affected focused suites passed. Independent
+review of `9c480bc2416fef6fa191ff58ebec1b93b9806e35` found that path-like
+project IDs could enter B3 metadata; `5bef991` now rejects path separators,
+drive-prefixed values and dot-directory IDs in both the nudge ledger and
+review metadata index. The new path-ID
 regressions passed. A fresh independent review and exact final
 documentation-head Validation remain required; neither this report nor the
 implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-After the master rebase, `python -m pytest -q -rs` passed on code/test head
-`fefac291de32c1d2e05b2d7ca3569f8ad1d038f8`: **1599 passed, 4 skipped** in
-274.19 seconds. All four skips are existing Windows directory-fsync
+After the project-ID privacy fix, `python -m pytest -q -rs` passed on
+implementation/documentation snapshot
+`4cec5ac3ebd698a1d769a36f77768a069028c49d`: **1601 passed, 4 skipped** in
+276.79 seconds. All four skips are existing Windows directory-fsync
 limitations in `tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were
 skipped. Exact final-documentation-head Validation and a fresh separate
 independent read-only review remain pending after this report update. The
