@@ -70,6 +70,26 @@ This is a default, not a hard boundary; either can do either when it makes
 sense. Whoever is doing hands-on work in a given session still follows the
 branch/`NEXT.md` discipline above — the role split doesn't relax it.
 
+**Check GitHub before assuming you know the whole picture.** 2026-09-23:
+Claude found an entire completed package (`IG01-F`, branch
+`ig/ig01f-naive-baseline`, ~20 commits, independent `SHIP`) and an open
+owner-decision issue (`#2`) that had never reached it — Codex had used
+GitHub itself (branches, PRs, issue comments posted through Ahmet's account)
+as its own audit trail, and relay hadn't carried it across. `NEXT.md` and a
+live chat session are not a complete picture of the repository's state by
+themselves. Before treating "nothing else is happening" as true, run:
+
+```bash
+git fetch origin && git ls-remote --heads origin   # branches you don't recognize
+gh pr list --state all --limit 10                  # open/recent PRs
+gh issue list --state open                          # open issues, especially owner-decision requests
+```
+
+Do this at the start of a work session and before opening new work under the
+intake rule (`docs/programs/WORK-INTAKE-RULE.md`) — an unrecognized branch or
+an open issue asking for a decision is exactly the kind of thing that rule's
+proposer needs to already know about.
+
 ## Documentation
 
 - End a work session by updating `NEXT.md` (a few lines: what changed, what's
