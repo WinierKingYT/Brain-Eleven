@@ -4,7 +4,7 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `bd3e4c3555456421956665cab8e5c16cb125dda3`
+**Implementation/test head:** `236a5b08c5d33436dfcecc5a63ebbec0041a8ad2`
 **Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
@@ -37,6 +37,8 @@ The implementation/test commits, in order after the frozen contract, are:
 - `bd12874` — SessionEnd-only marker finalization; Stop preservation.
 - `479e2c5` — optional V1 SessionStart rendering and at-most-once consumption.
 - `bd3e4c3` — cross-boundary, concurrency, failure and latency tests.
+- `236a5b0` — final V1 source-revision recheck before marker consumption,
+  prompted by a bounded P2 finding in the first independent review.
 
 Changed code: `brain_eleven/runtime/review.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
@@ -55,6 +57,8 @@ Focused verification on the implementation/test head passed:
 - Prompt counter plus PRE-13/W-10/IG02 hook regressions: **119 passed**.
 - SessionEnd marker/counter and prior end-hook regressions: **50 passed**.
 - SessionStart nudge and IG-00/W-07a/W-10 regressions: **40 passed**.
+- Post-review revision-recheck fix plus V1/IG-00 bootstrap regressions:
+  **23 passed**.
 - Integration, SessionStart and SessionEnd group: **23 passed**; the final
   integration-only rerun was **4 passed**.
 - `python -m compileall -q brain_eleven/runtime`: passed.
@@ -106,9 +110,13 @@ decision; this package does not tune it or any rollout gate.
 
 The branch was rebased on the latest green master `4a62b40b17bcb11bddbde867ce321048afeeb180`;
 Validation run [35830565871](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35830565871)
-passed on Ubuntu and Windows. The exact final documentation-head Validation
-and separate independent read-only review are still required; neither this
-report nor the implementer self-approves IG04-B3.
+passed on Ubuntu and Windows. The first independent review of prior head
+`499cd0925fe9cc7f0a320bbf2b31cd304ed49c6b` found one P2 gap: the optional line
+was appended after the source-revision guard. Commit `236a5b0` adds a final
+lineage recheck immediately before marker consumption; focused verification
+passed. A fresh independent review and exact final documentation-head
+Validation remain required; neither this report nor the implementer
+self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
