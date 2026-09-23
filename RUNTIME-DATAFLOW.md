@@ -1,14 +1,31 @@
 # Runtime dataflow and authority
 
-Authority: **CURRENT**. Audit date: 2026-09-09. This map distinguishes repository
+Authority: **CURRENT**. Audit date: 2026-09-23. This map distinguishes repository
 implementation, installed configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
-See IG00-FREEZE-BASELINE for exact revision and review limitations. The latest
-revision-bound workflows are Validation run 34387725841 and PRE-13 runtime run
-34387725837 for exact head
-`72a8475a8d01d50a632f25c23f1fc8a507053c42`. Validation completed successfully.
-PRE-13 runtime infrastructure and coverage passed on Ubuntu and Windows; its
-historical quality job remains a visible failure for later intelligence work.
+The IG04-B3 implementation/test head is `ad824a5` on its feature branch; it is
+not merged or deployed. The current master precondition is `c0726d0`, whose
+Validation run [35827179864](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35827179864)
+passed on Ubuntu and Windows. PRE-13 runtime quality remains a separate visible
+failure by decision. See IG00-FREEZE-BASELINE for program-level review limits.
+
+## IG04-B3 feature-branch state — implementation complete, acceptance pending
+
+The feature branch implements a content-free, per-session/per-project prompt
+counter in `.brain-eleven/runtime/review-nudge.json`. Five or more valid
+UserPromptSubmit events are finalized only at SessionEnd into an expiring
+project marker; per-turn Stop does not change the counter. The next SessionStart
+can query only this marker ledger and the ready content-free B2 review index,
+then offer one optional line through the existing V1 renderer. The hook itself
+never writes the line, and SessionStart does not read, list, expire or rebuild
+candidate records. Counters, markers, sidecar and intent contain no prompt,
+candidate body or filesystem path.
+
+This is code/test evidence on an unmerged branch, not installed configuration
+or proof that a native client displayed the B3 line. Exact-head Validation and
+independent read-only review remain pending. A real isolated Claude CLI latency
+matrix measured hook timings, but did not assert B3 line delivery; Codex native
+trust and latency remain unverified. Existing rollout gates are unchanged.
 
 ## Observed checkpoint behavior and delivery ownership
 
@@ -52,6 +69,7 @@ queue completion, effect receipt and canonical verification.
 
 | Node / entry | State | Actual behavior and boundary |
 |---|---|---|
+| IG04-B3 review nudge | IMPLEMENTED on an unmerged feature branch; acceptance pending | Content-free prompt counter and SessionEnd marker; next SessionStart V1 may render one budgeted visible-pending-group line using only the marker ledger and ready review metadata index. Local tests cover the path; remote exact-head Validation and independent review are still pending. No native B3 line delivery or Codex trust is claimed. |
 | Native Claude/Codex SessionStart | ACTIVE V1 path in current implementation | Opt-in scope/config check, local service startup and bounded canonical V1 bootstrap. OFF emits none; focused tests and installed reconciliation passed. Native trust remains unverified. Checkpoint behavior differed as recorded above. |
 | Native UserPromptSubmit | SHADOW | Service context request runs TaskStateComposer → Router → Authority → Retrieval Decision → Density → V2 Compiler; baseline comparison records IDs. No V2 injection in SHADOW. |
 | Native Stop / SessionEnd | ACTIVE capture handoff | Bounded event metadata enters durable queue; hook does not read the full transcript or perform extraction. Duplicate events are idempotent. |
@@ -78,6 +96,14 @@ planned. Retirement/deprecation is an explicit later IG-06/07 decision.
 ## Data flow and gates
 
 ```text
+IG04-B3:
+UserPromptSubmit → content-free (session hash, project) counter
+  → Stop preserves counter → SessionEnd finalizes 5+ prompt marker
+  → next SessionStart V1 reads marker + ready review metadata index
+  → unknown index: retain marker / no line
+  → zero visible groups: consume marker / no line
+  → positive count: at most one optional budgeted V1 line / consume marker
+
 Native Stop/SessionEnd → bounded event → Queue → local Worker
   → incremental Evidence → deterministic Extraction → structured candidate
   → SHADOW: Review
@@ -107,3 +133,9 @@ cleanup waits if the service is offline. Telemetry excludes prompt/context text.
 Windows native launchers use windowless Python; agent verification must also
 remain hidden. Service startup is on demand, idle shutdown is fifteen minutes,
 and native trust is never inferred from `doctor` saying configured.
+
+For IG04-B3, pre-index/legacy review queues become countable only after a user
+opens the existing review-queue listing path once; that owner path may build the
+content-free index while it already reads queue records. SessionStart and hook
+paths never trigger this migration. An unknown index yields no line and leaves
+an unexpired marker available for a later retry.

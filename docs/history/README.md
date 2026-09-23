@@ -35,7 +35,7 @@ reviews stay at the root.
 | Historical operational guides | `TESTING`, `TESTING-FRAMEWORK`, `DEPLOYMENT-STACK`, `INTEGRATION-CHECKLIST`, `ORCHESTRATION-STATUS`, `PARALLEL-ORCHESTRATION` |
 | Superseded review snapshots, baseline contract and vault audit | `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-02`, `WEAKNESS-W24-MEMORY-TRUTH-SAFETY-INDEPENDENT-REVIEW-03`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW`, `WEAKNESS-W25-HTTP-SCOPE-AUTHORIZATION-CONTRACT-INDEPENDENT-REVIEW-02`, `IG07-SLICE2E-E1-CONTRACT`, `VAULT-HYGIENE-REPORT` |
 | Historical weakness contracts/reviews | `weakness/` — 30 W-01–W-18 and TSC-03 records moved after authority and reference checks |
-| Closed package reports | `reports/` — completed package reports retained as revision-bound evidence |
+| Package reports | `reports/` — revision-bound implementation/evidence summaries; each report states whether review and acceptance are complete or pending |
 | Independent reviews | `reviews/` — completed independent review records retained with their original content |
 | Generated investigation evidence | `evidence/` — historical Codex/D0/R0 result records; not current authority |
 | Completed plans | `plans/` — closed implementation and stabilization plans retained for provenance |
