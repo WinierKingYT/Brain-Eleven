@@ -3,7 +3,7 @@
 Authority: **CURRENT**. Audit date: 2026-09-23. This map distinguishes repository
 implementation, installed configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
-The IG04-B3 implementation/test head is `448809a` on its feature branch; it is
+The IG04-B3 implementation/test head is `94912b6` on its feature branch; it is
 not merged or deployed. The current master precondition is `4a62b40`, whose
 Validation run [35830565871](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35830565871)
 passed on Ubuntu and Windows. PRE-13 runtime quality remains a separate visible

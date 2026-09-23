@@ -4,7 +4,7 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `448809a3d121d7a5ebc696283c0db9d43fab3885`
+**Implementation/test head:** `94912b6fa683c29ef9905ea01e461f830d26fc84`
 **Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
@@ -41,6 +41,8 @@ The implementation/test commits, in order after the frozen contract, are:
   prompted by a bounded P2 finding in the first independent review.
 - `448809a` — reject structurally invalid markers below the five-prompt
   threshold, prompted by a bounded P2 finding in the second review.
+- `94912b6` — count only valid non-empty prompt events and restrict legacy
+  metadata-index reconstruction to the explicit review-list path.
 
 Changed code: `brain_eleven/runtime/review.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
@@ -63,6 +65,8 @@ Focused verification on the implementation/test head passed:
   **23 passed**.
 - Subthreshold-marker validation plus SessionStart/SessionEnd regressions:
   **21 passed**.
+- Valid-prompt gating and explicit-only legacy-index migration, with the
+  affected integration suites: **40 passed**.
 - Integration, SessionStart and SessionEnd group: **23 passed**; the final
   integration-only rerun was **4 passed**.
 - `python -m compileall -q brain_eleven/runtime`: passed.
@@ -108,7 +112,9 @@ The package is not merged or deployed. Live Claude/Codex native B3 display,
 Codex-specific latency, authenticated native capture trust, and actual
 SessionEnd timing in a user's live client remain unverified. A pre-index legacy
 queue needs one explicit review-list visit before a known pending count can be
-used. SessionEnd may be delayed until the client ends or idles a session.
+used; ordinary add/expire paths preserve the unknown count, while an empty new
+queue can initialize its index without migrating candidate bodies. SessionEnd
+may be delayed until the client ends or idles a session.
 The existing PRE-13 runtime-quality failure remains visible and is a separate
 decision; this package does not tune it or any rollout gate.
 
@@ -120,9 +126,12 @@ was appended after the source-revision guard. Commit `236a5b0` adds a final
 lineage recheck immediately before marker consumption; focused verification
 passed. A second independent review of `40912f8` found that malformed markers
 with fewer than five prompts were accepted; `448809a` now validates the frozen
-threshold and its focused failure test passed. A fresh independent review and
-exact final documentation-head Validation remain required; neither this report
-nor the implementer self-approves IG04-B3.
+threshold and its focused failure test passed. Review of `44b9d7b` then found
+that malformed prompt events could count and add/expire could migrate a legacy
+index; `94912b6` gates the count on a valid prompt shape and limits migration
+to the explicit list path. The affected focused suites passed. A fresh
+independent review and exact final documentation-head Validation remain
+required; neither this report nor the implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
