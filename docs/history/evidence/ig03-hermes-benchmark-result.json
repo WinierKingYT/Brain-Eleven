@@ -1,0 +1,1206 @@
+{
+  "providers": {
+    "hermes_cli": {
+      "production_mutation": false,
+      "splits": {
+        "dev": {
+          "measurement": {
+            "applicable_case_count": 49,
+            "case_count": 49,
+            "elapsed_ms": 450813.29
+          },
+          "metrics": {
+            "assistant_as_user_rate": {
+              "denominator": 9.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "decision_precision": {
+              "denominator": 24.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 4.0,
+              "value": 0.16666666666666666
+            },
+            "decision_recall": {
+              "denominator": 4.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 4.0,
+              "value": 1.0
+            },
+            "ece": {
+              "denominator": 43.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 38.019999999999996,
+              "value": 0.8841860465116278
+            },
+            "false_commitment_rate": {
+              "denominator": 4.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "question_hypothetical_commitment_rate": {
+              "denominator": 9.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_scope_rate": {
+              "denominator": 43.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_type_rate": {
+              "denominator": 43.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 21.0,
+              "value": 0.4883720930232558
+            }
+          },
+          "per_language": {
+            "en": {
+              "applicable_case_count": 16,
+              "case_count": 16,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.14285714285714285
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 12.639999999999999,
+                  "value": 0.9028571428571428
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 6.0,
+                  "value": 0.42857142857142855
+                }
+              }
+            },
+            "tr": {
+              "applicable_case_count": 17,
+              "case_count": 17,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 9.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 2.0,
+                  "value": 0.2222222222222222
+                },
+                "decision_recall": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 2.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 15.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 12.72,
+                  "value": 0.8480000000000001
+                },
+                "false_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 15.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 15.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 9.0,
+                  "value": 0.6
+                }
+              }
+            },
+            "tr-en": {
+              "applicable_case_count": 16,
+              "case_count": 16,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.125
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 12.66,
+                  "value": 0.9042857142857142
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 6.0,
+                  "value": 0.42857142857142855
+                }
+              }
+            }
+          },
+          "provider": {
+            "id": "hermes-cli",
+            "model": "hermes-default",
+            "production_mutation": false,
+            "provenance": [
+              {
+                "availability_code": "available",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "filtered",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "invalid_output",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              }
+            ]
+          },
+          "safety": {
+            "event_count": 20,
+            "gate_counts": {
+              "false_commitment": 20
+            },
+            "gates": [
+              "false_commitment"
+            ],
+            "question_hypothetical_commitment_attempts": 0
+          },
+          "status_counts": {
+            "FILTERED": 5,
+            "INVALID_OUTPUT": 1,
+            "MEASURED": 43
+          }
+        },
+        "validation": {
+          "measurement": {
+            "applicable_case_count": 25,
+            "case_count": 25,
+            "elapsed_ms": 223940.751
+          },
+          "metrics": {
+            "assistant_as_user_rate": {
+              "denominator": 5.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "decision_precision": {
+              "denominator": 9.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 2.0,
+              "value": 0.2222222222222222
+            },
+            "decision_recall": {
+              "denominator": 2.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 2.0,
+              "value": 1.0
+            },
+            "ece": {
+              "denominator": 20.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 17.65,
+              "value": 0.8825
+            },
+            "false_commitment_rate": {
+              "denominator": 2.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "question_hypothetical_commitment_rate": {
+              "denominator": 5.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_scope_rate": {
+              "denominator": 20.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_type_rate": {
+              "denominator": 20.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 8.0,
+              "value": 0.4
+            }
+          },
+          "per_language": {
+            "en": {
+              "applicable_case_count": 9,
+              "case_count": 9,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.3333333333333333
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 5.880000000000001,
+                  "value": 0.8400000000000001
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 2.0,
+                  "value": 0.2857142857142857
+                }
+              }
+            },
+            "tr": {
+              "applicable_case_count": 8,
+              "case_count": 8,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_recall": {
+                  "denominator": 0,
+                  "empty_selection": false,
+                  "not_applicable": true,
+                  "numerator": 0,
+                  "value": null
+                },
+                "ece": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 6.88,
+                  "value": 0.9828571428571429
+                },
+                "false_commitment_rate": {
+                  "denominator": 0,
+                  "empty_selection": false,
+                  "not_applicable": true,
+                  "numerator": 0,
+                  "value": null
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 3.0,
+                  "value": 0.42857142857142855
+                }
+              }
+            },
+            "tr-en": {
+              "applicable_case_count": 8,
+              "case_count": 8,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.3333333333333333
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 6.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 4.89,
+                  "value": 0.815
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 6.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 6.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 3.0,
+                  "value": 0.5
+                }
+              }
+            }
+          },
+          "provider": {
+            "id": "hermes-cli",
+            "model": "hermes-default",
+            "production_mutation": false,
+            "provenance": [
+              {
+                "availability_code": "available",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "filtered",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "invalid_output",
+                "project_bound": true,
+                "provider_revision": "hermes-cli-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              }
+            ]
+          },
+          "safety": {
+            "event_count": 7,
+            "gate_counts": {
+              "false_commitment": 7
+            },
+            "gates": [
+              "false_commitment"
+            ],
+            "question_hypothetical_commitment_attempts": 0
+          },
+          "status_counts": {
+            "FILTERED": 2,
+            "INVALID_OUTPUT": 3,
+            "MEASURED": 20
+          }
+        }
+      }
+    },
+    "regex": {
+      "production_mutation": false,
+      "splits": {
+        "dev": {
+          "measurement": {
+            "applicable_case_count": 49,
+            "case_count": 49,
+            "elapsed_ms": 5.439
+          },
+          "metrics": {
+            "assistant_as_user_rate": {
+              "denominator": 9.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "decision_precision": {
+              "denominator": 6.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 3.0,
+              "value": 0.5
+            },
+            "decision_recall": {
+              "denominator": 4.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 3.0,
+              "value": 0.75
+            },
+            "ece": {
+              "denominator": 44.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 41.0,
+              "value": 0.9318181818181818
+            },
+            "false_commitment_rate": {
+              "denominator": 4.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "question_hypothetical_commitment_rate": {
+              "denominator": 9.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_scope_rate": {
+              "denominator": 44.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_type_rate": {
+              "denominator": 44.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 41.0,
+              "value": 0.9318181818181818
+            }
+          },
+          "per_language": {
+            "en": {
+              "applicable_case_count": 16,
+              "case_count": 16,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.3333333333333333
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 13.0,
+                  "value": 0.9285714285714286
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 13.0,
+                  "value": 0.9285714285714286
+                }
+              }
+            },
+            "tr": {
+              "applicable_case_count": 17,
+              "case_count": 17,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "decision_recall": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.5
+                },
+                "ece": {
+                  "denominator": 16.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 15.0,
+                  "value": 0.9375
+                },
+                "false_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 16.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 16.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 15.0,
+                  "value": 0.9375
+                }
+              }
+            },
+            "tr-en": {
+              "applicable_case_count": 16,
+              "case_count": 16,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 0.5
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 13.0,
+                  "value": 0.9285714285714286
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 3.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 14.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 13.0,
+                  "value": 0.9285714285714286
+                }
+              }
+            }
+          },
+          "provider": {
+            "id": "deterministic-regex-baseline",
+            "model": "scripts.extraction:ig03-semantic-proposal-v1",
+            "production_mutation": false,
+            "provenance": [
+              {
+                "availability_code": "available",
+                "project_bound": true,
+                "provider_revision": "ig03-semantic-proposal-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "filtered",
+                "project_bound": true,
+                "provider_revision": "ig03-semantic-proposal-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              }
+            ]
+          },
+          "safety": {
+            "event_count": 3,
+            "gate_counts": {
+              "false_commitment": 3
+            },
+            "gates": [
+              "false_commitment"
+            ],
+            "question_hypothetical_commitment_attempts": 0
+          },
+          "status_counts": {
+            "FILTERED": 5,
+            "MEASURED": 44
+          }
+        },
+        "validation": {
+          "measurement": {
+            "applicable_case_count": 25,
+            "case_count": 25,
+            "elapsed_ms": 4.826
+          },
+          "metrics": {
+            "assistant_as_user_rate": {
+              "denominator": 5.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "decision_precision": {
+              "denominator": 2.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 1.0,
+              "value": 0.5
+            },
+            "decision_recall": {
+              "denominator": 2.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 1.0,
+              "value": 0.5
+            },
+            "ece": {
+              "denominator": 23.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 22.0,
+              "value": 0.9565217391304348
+            },
+            "false_commitment_rate": {
+              "denominator": 2.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "question_hypothetical_commitment_rate": {
+              "denominator": 5.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_scope_rate": {
+              "denominator": 23.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 0.0,
+              "value": 0.0
+            },
+            "wrong_type_rate": {
+              "denominator": 23.0,
+              "empty_selection": false,
+              "not_applicable": false,
+              "numerator": 22.0,
+              "value": 0.9565217391304348
+            }
+          },
+          "per_language": {
+            "en": {
+              "applicable_case_count": 9,
+              "case_count": 9,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 0,
+                  "empty_selection": false,
+                  "not_applicable": true,
+                  "numerator": 0,
+                  "value": null
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "ece": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 8.0,
+                  "value": 1.0
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 8.0,
+                  "value": 1.0
+                }
+              }
+            },
+            "tr": {
+              "applicable_case_count": 8,
+              "case_count": 8,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_recall": {
+                  "denominator": 0,
+                  "empty_selection": false,
+                  "not_applicable": true,
+                  "numerator": 0,
+                  "value": null
+                },
+                "ece": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 7.0,
+                  "value": 1.0
+                },
+                "false_commitment_rate": {
+                  "denominator": 0,
+                  "empty_selection": false,
+                  "not_applicable": true,
+                  "numerator": 0,
+                  "value": null
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 2.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 7.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 7.0,
+                  "value": 1.0
+                }
+              }
+            },
+            "tr-en": {
+              "applicable_case_count": 8,
+              "case_count": 8,
+              "metrics": {
+                "assistant_as_user_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "decision_precision": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "decision_recall": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 1.0,
+                  "value": 1.0
+                },
+                "ece": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 7.0,
+                  "value": 0.875
+                },
+                "false_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "question_hypothetical_commitment_rate": {
+                  "denominator": 1.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_scope_rate": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 0.0,
+                  "value": 0.0
+                },
+                "wrong_type_rate": {
+                  "denominator": 8.0,
+                  "empty_selection": false,
+                  "not_applicable": false,
+                  "numerator": 7.0,
+                  "value": 0.875
+                }
+              }
+            }
+          },
+          "provider": {
+            "id": "deterministic-regex-baseline",
+            "model": "scripts.extraction:ig03-semantic-proposal-v1",
+            "production_mutation": false,
+            "provenance": [
+              {
+                "availability_code": "available",
+                "project_bound": true,
+                "provider_revision": "ig03-semantic-proposal-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              },
+              {
+                "availability_code": "filtered",
+                "project_bound": true,
+                "provider_revision": "ig03-semantic-proposal-v1",
+                "requested_schema_version": "ig01-a-proposition-v1",
+                "schema_version": "ig01-a-proposition-v1"
+              }
+            ]
+          },
+          "safety": {
+            "event_count": 1,
+            "gate_counts": {
+              "false_commitment": 1
+            },
+            "gates": [
+              "false_commitment"
+            ],
+            "question_hypothetical_commitment_attempts": 0
+          },
+          "status_counts": {
+            "FILTERED": 2,
+            "MEASURED": 23
+          }
+        }
+      }
+    }
+  },
+  "report_type": "ig03_semantic_extraction_benchmark_real",
+  "schema_version": 1,
+  "source": {
+    "corpus_version": "ig-eval-v2",
+    "dataset_class": "PUBLIC_SYNTHETIC",
+    "git_sha": "76fefb1cb1f684e77c2182f2540d263f452a6fd1",
+    "holdout_included": false,
+    "split_metadata": {
+      "dev": {
+        "case_count": 49,
+        "holdout_included": false,
+        "split_fingerprint": "sha256:5c0b9e357120df782d2668edfc6096dc305dd7fa20e09ad8f952ff2c653439c6"
+      },
+      "validation": {
+        "case_count": 25,
+        "holdout_included": false,
+        "split_fingerprint": "sha256:5d0576919003aca935963620b7069b90e5a618010c719e07d08c2ff1b1fa825a"
+      }
+    },
+    "splits": [
+      "dev",
+      "validation"
+    ]
+  }
+}
