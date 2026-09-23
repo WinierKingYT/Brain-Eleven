@@ -84,17 +84,27 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
 def hook(vault, client, event, payload):
     from brain_eleven.runtime.worker import allowed, enqueue
     cfg = RuntimeConfig(vault)
-    if cfg.load()['mode'] == 'OFF' or not allowed(vault, payload.get('cwd')):
+    project = allowed(vault, payload.get('cwd'))
+    if cfg.load()['mode'] == 'OFF' or not project:
         return {}
     if event in {'Stop', 'SessionEnd'}:
         # This path never reads a transcript or waits for service startup.
         result = enqueue(vault, client, payload)
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
-    deadline = time.monotonic() + 2.5
-    ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
+    if event == 'UserPromptSubmit':
+        # Count before service startup/context work so a degraded retrieval
+        # path cannot erase a substantive session. The B3 helper receives no
+        # prompt argument and swallows its own convenience-state failures.
+        try:
+            from brain_eleven.runtime.review_nudge import record_prompt
+            record_prompt(vault, client, payload.get('session_id'), project['project_id'])
+        except Exception:
+            pass
+    deadline = time.monotonic() + 2.5
+    ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
     if not ready:
         return {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
     prompt = payload.get('prompt', '')
