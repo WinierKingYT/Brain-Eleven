@@ -4,7 +4,7 @@
 This report is not an independent review, package acceptance, or `SHIP` verdict.
 
 **Package:** IG-04 Branch B, B3 — review-queue SessionStart nudge  
-**Implementation/test head:** `94912b6fa683c29ef9905ea01e461f830d26fc84`
+**Implementation/test head:** `5bef99180abcd1a2a7985e242dc34475818cecdc`
 **Branch:** `ig/ig04b3-review-nudge`
 **Contract:** [IG04-B3-CONTRACT.md](../../contracts/IG04-B3-CONTRACT.md)  
 **Phase 0 audit:** [IG04-B3-AUDIT-NOTE.md](../evidence/IG04-B3-AUDIT-NOTE.md)
@@ -43,6 +43,9 @@ The implementation/test commits, in order after the frozen contract, are:
   threshold, prompted by a bounded P2 finding in the second review.
 - `94912b6` — count only valid non-empty prompt events and restrict legacy
   metadata-index reconstruction to the explicit review-list path.
+- `5bef991` — reject path-like project IDs before B3 counter/marker writes or
+  review-index publication, prompted by a bounded P2 finding in the latest
+  independent review.
 
 Changed code: `brain_eleven/runtime/review.py`,
 `brain_eleven/runtime/review_nudge.py` (new),
@@ -67,6 +70,8 @@ Focused verification on the implementation/test head passed:
   **21 passed**.
 - Valid-prompt gating and explicit-only legacy-index migration, with the
   affected integration suites: **40 passed**.
+- Path-like project-ID rejection for counters, markers and review metadata:
+  **38 passed** across the affected B3 suites.
 - Integration, SessionStart and SessionEnd group: **23 passed**; the final
   integration-only rerun was **4 passed**.
 - `python -m compileall -q brain_eleven/runtime`: passed.
@@ -113,8 +118,9 @@ Codex-specific latency, authenticated native capture trust, and actual
 SessionEnd timing in a user's live client remain unverified. A pre-index legacy
 queue needs one explicit review-list visit before a known pending count can be
 used; ordinary add/expire paths preserve the unknown count, while an empty new
-queue can initialize its index without migrating candidate bodies. SessionEnd
-may be delayed until the client ends or idles a session.
+queue can initialize its index without migrating candidate bodies. Path-like
+project IDs fail closed before entering B3 sidecars. SessionEnd may be delayed
+until the client ends or idles a session.
 The existing PRE-13 runtime-quality failure remains visible and is a separate
 decision; this package does not tune it or any rollout gate.
 
@@ -129,9 +135,13 @@ with fewer than five prompts were accepted; `448809a` now validates the frozen
 threshold and its focused failure test passed. Review of `44b9d7b` then found
 that malformed prompt events could count and add/expire could migrate a legacy
 index; `94912b6` gates the count on a valid prompt shape and limits migration
-to the explicit list path. The affected focused suites passed. A fresh
-independent review and exact final documentation-head Validation remain
-required; neither this report nor the implementer self-approves IG04-B3.
+to the explicit list path. The affected focused suites passed. The latest
+independent review found that path-like project IDs could enter B3 metadata;
+`5bef991` now rejects path separators, drive-prefixed values and dot-directory
+IDs in both the nudge ledger and review metadata index. The new path-ID
+regressions passed. A fresh independent review and exact final
+documentation-head Validation remain required; neither this report nor the
+implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
