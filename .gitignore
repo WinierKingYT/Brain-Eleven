@@ -72,6 +72,7 @@ bandit-report.json
 # a user's real local prompts, fixtures, and reports never are.
 evals/private/
 evals/reports/local/
+evals/reports/*-review-*.json
 task-state-*-report.json
 router-*-report.json
 authority-*-report.json
