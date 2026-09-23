@@ -393,6 +393,25 @@ This `NEXT.md` entry itself was late (last touch before this session was
 next handoff-track step is making the GitHub-check-at-session-start
 practice harder to silently skip, not just documented.
 
+**2026-09-23 (continued, vdb comparison)** — Ahmet showed Claude two of his
+own separate personal projects (PMIRI, an evidence/retrieval runtime; "vdb",
+a Qdrant-based personal RAG) and asked whether integrating either with
+Brain-Eleven would be worthwhile if the cost stayed bounded. Claude judged
+PMIRI functionally redundant with Brain-Eleven's own evidence/authority
+layer (skipped, no benefit case regardless of cost) and ran a bounded,
+read-only measurement for vdb instead of guessing: IG01E-real's same 48
+memories/21 queries through vdb's `search`, scored with Brain-Eleven's own
+unmodified precision@min(5,|relevant|) code. Result: neither vdb variant
+(dense-only 0.833, dense+lexical-rerank 0.714) beat Brain-Eleven's own
+IG01E Run 2 (0.9167) — no integration made. The lexical-rerank regression
+independently reconfirms, from an unrelated codebase, today's IG01-F
+finding that lexical/term-overlap relevance scoring is structurally
+unreliable. Full report:
+`docs/history/reports/VDB-COMPARISON-EVIDENCE-REPORT.md`; reusable scripts
+in `evals/vdb-comparison/`; the speculative abstention-calibration
+reference note updated with this result (idea itself still untested).
+Committed locally (`9867c8b`); not yet pushed pending Ahmet's return.
+
 **2026-09-23 (continued, first real recall result)** — Ahmet asked Claude
 to curate the review backlog directly ("review sayfasından ben değil sen
 değerli bilgileri seç ve onayla"). Reviewed all ~700 pending candidates by
