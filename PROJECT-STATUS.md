@@ -286,7 +286,7 @@ a content-free project-scoped review metadata index with crash-safe lifecycle
 maintenance, and preserving prompt counts across per-turn `Stop` until
 `SessionEnd`. Phase 0 found no remaining STOP and changed no product code.
 Implementation and focused integration tests are committed through code/test
-head `236a5b0` on `ig/ig04b3-review-nudge`. The current green master
+head `448809a` on `ig/ig04b3-review-nudge`. The current green master
 precondition is `4a62b40`, Validation
 [`35830565871`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35830565871).
 The frozen scope is [IG04-B3-CONTRACT.md](docs/contracts/IG04-B3-CONTRACT.md);
