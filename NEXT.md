@@ -363,6 +363,36 @@ measured 557 (Windows) and 555 (Ubuntu) tests at 82.93% and 83.13%.
 
 ## Recent sessions
 
+**2026-09-23** — Three weak-area tracks opened (retrieval, work-intake
+value balance, Claude↔Codex handoff mechanism), per Ahmet's request for a
+harsh-but-fair project assessment. Retrieval: Ahmet wrote 3
+independently-authored `minecraft_mcp` questions (blind to fixture
+wording); measured 2/3 rank-1, 1/3 rank-2, 0 leakage — confirms the
+confound `RESULTS.md`'s Run 1/2 flagged is now actually removed; small
+sample (n=3), not program-wide, not blocking (`evals/ig01e_real/RESULTS.md`
+Run 3). Value balance: `docs/programs/WORK-INTAKE-RULE.md` written — every
+new package must answer "does this measurably move the recall test?"
+before opening. Handoff mechanism: while checking GitHub before assuming
+"nothing else is happening" (a practice this session formalized into
+`CONTRIBUTING.md`), found an entire completed package (`IG01-F`, branch
+`ig/ig01f-naive-baseline`) and an open owner-decision issue
+([#2](https://github.com/WinierKingYT/Brain-Eleven/issues/2)) that had
+never reached Claude via chat/`NEXT.md` alone. Executed the resulting
+owner-approved `docs/contracts/IG01F-V2-REGRESSION-INVESTIGATION-CONTRACT.md`:
+tested whether `CompilerV2ContextProvider`'s missing `selection=` wiring
+explained V2 underperforming V1/recency-baseline on `ig01f-recency-v1`
+(114 DEV+VALIDATION cases) — hypothesis **refuted** (wiring it in makes V2
+worse, 0.114→0.060 macro F1); real finding is `retrieval_decision_v2`'s
+lexical relevance filter over-excluding short correct prompts, the
+opposite-direction twin of the over-inclusion bug fixed earlier this
+session (`d965015`) — classified structural, not a narrow fix; no V2 code
+changed. Full evidence:
+`docs/history/weakness/WEAKNESS-IG01F-V2-REGRESSION-INVESTIGATION-EVIDENCE-REPORT.md`.
+This `NEXT.md` entry itself was late (last touch before this session was
+2026-09-22) — a live instance of the exact handoff gap being worked on;
+next handoff-track step is making the GitHub-check-at-session-start
+practice harder to silently skip, not just documented.
+
 **2026-09-22 (continued, handoff)** — Assigned Finding 3 above (the open
 `CAPTURE_SILENT_GAP`) to Codex: `docs/contracts/WEAKNESS-W07B-CAPTURE-SILENT-GAP-CONTRACT.md`.
 Bounded to reproducing/root-causing/fixing (or re-attributing to the harness)
