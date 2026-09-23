@@ -6,22 +6,33 @@ can be suppressed on replay without retaining the candidate text.
 """
 import hashlib
 import json
+import os
 from datetime import datetime, timedelta, timezone
 import math
 import re
 from context_compiler_v2.safety import contains_secret
 from .capture_safety import evaluate_capture
-from .storage import read_json, write_json, identity, now, RuntimeConfig, runtime_file_lock as file_lock
+from .storage import (
+    read_json, write_json, identity, now, RuntimeConfig,
+    runtime_file_lock as file_lock, guard_runtime_path,
+)
 
 _REVIEW_CANDIDATE_TYPE_ORDER = {
     'STATE_MUTATION': 0,
     'NEW_MEMORY': 1,
 }
+_PENDING_INDEX_SCHEMA = 1
+_REVIEW_STATUSES = {'PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED'}
+_FINGERPRINT_PATTERN = re.compile(r'fp_[a-f0-9]{64}')
+_REVIEW_ID_PATTERN = re.compile(r'rev_[a-f0-9]{64}')
 
 
 class ReviewStore:
     def __init__(self, vault):
-        self.root = RuntimeConfig(vault).root / 'review'
+        self.runtime_root = RuntimeConfig(vault).root
+        self.root = self.runtime_root / 'review'
+        self.pending_index_path = self.root / 'pending-index.json'
+        self.index_intent_path = self.root / 'pending-index-intent.json'
 
     def path(self, candidate_id):
         if not re.fullmatch(r'rev_[a-f0-9]{64}', candidate_id):
@@ -86,6 +97,208 @@ class ReviewStore:
         if isinstance(candidate, dict):
             return cls.content_fingerprint(candidate)
         return None
+
+    @staticmethod
+    def _valid_expiry(value):
+        if not isinstance(value, str):
+            return False
+        try:
+            parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            return parsed.tzinfo is not None
+        except (TypeError, ValueError, OverflowError):
+            return False
+
+    @classmethod
+    def _metadata_entry(cls, item, review_id=None):
+        if not isinstance(item, dict):
+            return None
+        item_id = item.get('id') or review_id
+        project_id = cls._project_id(item)
+        fingerprint = cls._content_fingerprint(item)
+        status = item.get('status')
+        expires_at = item.get('expires_at')
+        if (not isinstance(item_id, str) or not _REVIEW_ID_PATTERN.fullmatch(item_id)
+                or not isinstance(project_id, str) or not project_id
+                or not isinstance(fingerprint, str) or not _FINGERPRINT_PATTERN.fullmatch(fingerprint)
+                or status not in _REVIEW_STATUSES
+                or not cls._valid_expiry(expires_at)):
+            return None
+        return {
+            'project_id': project_id,
+            'status': status,
+            'expires_at': expires_at,
+            'content_fingerprint': fingerprint,
+        }
+
+    @classmethod
+    def _valid_index(cls, value):
+        if (not isinstance(value, dict)
+                or set(value) != {'schema_version', 'ready', 'generation', 'entries'}
+                or value.get('schema_version') != _PENDING_INDEX_SCHEMA
+                or value.get('ready') is not True or type(value.get('generation')) is not int
+                or value['generation'] < 0 or not isinstance(value.get('entries'), dict)):
+            return False
+        for review_id, entry in value['entries'].items():
+            if not isinstance(review_id, str) or not _REVIEW_ID_PATTERN.fullmatch(review_id):
+                return False
+            if (not isinstance(entry, dict)
+                    or set(entry) != {'project_id', 'status', 'expires_at', 'content_fingerprint'}):
+                return False
+            if cls._metadata_entry({'id': review_id, **entry}, review_id) is None:
+                return False
+        return True
+
+    def _read_index_locked(self):
+        """Read only the content-free index; never fall back to review records."""
+        try:
+            if os.path.lexists(self.index_intent_path):
+                return None
+            if not os.path.lexists(self.pending_index_path):
+                return None
+            guard_runtime_path(self.runtime_root, self.pending_index_path, create=False)
+            value = read_json(self.pending_index_path)
+            return value if self._valid_index(value) else None
+        except Exception:
+            return None
+
+    def _build_index(self, items, generation):
+        entries = {}
+        for item in items:
+            entry = self._metadata_entry(item)
+            if entry is None:
+                return None
+            entries[item['id']] = entry
+        return {
+            'schema_version': _PENDING_INDEX_SCHEMA,
+            'ready': True,
+            'generation': generation,
+            'entries': entries,
+        }
+
+    def _publish_index_locked(self, items, *, generation=None):
+        try:
+            if os.path.lexists(self.pending_index_path):
+                guard_runtime_path(self.runtime_root, self.pending_index_path, create=False)
+                current = read_json(self.pending_index_path)
+            else:
+                current = None
+            current_generation = current.get('generation', 0) if isinstance(current, dict) else 0
+            if type(current_generation) is not int or current_generation < 0:
+                current_generation = 0
+            target_generation = generation
+            if type(target_generation) is not int or target_generation < current_generation:
+                target_generation = current_generation + 1
+            value = self._build_index(items, target_generation)
+            if value is None:
+                return False
+            write_json(self.pending_index_path, value)
+            return True
+        except Exception:
+            return False
+
+    def _recover_index_intent_locked(self):
+        """Reconcile a crashed queue/index update on a queue-owner path only."""
+        if not os.path.lexists(self.index_intent_path):
+            return True
+        try:
+            guard_runtime_path(self.runtime_root, self.index_intent_path, create=False)
+            intent = read_json(self.index_intent_path)
+            target_index = intent.get('target_index') if isinstance(intent, dict) else None
+            target_generation = (
+                target_index.get('generation')
+                if self._valid_index(target_index) else None
+            )
+            items = self._items()
+            if not self._publish_index_locked(items, generation=target_generation):
+                return False
+            guard_runtime_path(self.runtime_root, self.index_intent_path, create=False)
+            self.index_intent_path.unlink()
+            return True
+        except Exception:
+            return False
+
+    def _refresh_index_locked(self, items=None):
+        if not self._recover_index_intent_locked():
+            return False
+        if self._read_index_locked() is not None:
+            return True
+        if items is None:
+            items = self._items()
+        return self._publish_index_locked(items)
+
+    def _apply_indexed_change_locked(self, operation, changes, apply_records):
+        """Journal a content-free queue/index mutation under the shared lock."""
+        if os.path.lexists(self.index_intent_path):
+            raise RuntimeError('Review metadata index recovery is pending')
+        index = self._read_index_locked()
+        if index is None:
+            # The queue remains usable while an absent or invalid sidecar is
+            # rebuilt by an ordinary queue-owner path. SessionStart then
+            # treats the count as unknown.
+            apply_records()
+            return
+
+        target_index = {
+            'schema_version': _PENDING_INDEX_SCHEMA,
+            'ready': True,
+            'generation': index['generation'] + 1,
+            'entries': dict(index['entries']),
+        }
+        for review_id, entry in changes.items():
+            if entry is None:
+                target_index['entries'].pop(review_id, None)
+            else:
+                target_index['entries'][review_id] = entry
+        intent = {
+            'schema_version': _PENDING_INDEX_SCHEMA,
+            'operation': operation,
+            'base_generation': index['generation'],
+            'target_index': target_index,
+        }
+        write_json(self.index_intent_path, intent)
+        apply_records()
+        write_json(self.pending_index_path, target_index)
+        guard_runtime_path(self.runtime_root, self.index_intent_path, create=False)
+        self.index_intent_path.unlink()
+
+    def pending_visible_count(self, project_id, *, at=None):
+        """Return a B2-visible pending count, or None when metadata is unknown.
+
+        This SessionStart-safe query reads only the metadata sidecar. It does not
+        scan, parse, expire, or otherwise touch candidate records.
+        """
+        if not isinstance(project_id, str) or not project_id:
+            return None
+        try:
+            if not self.root.exists():
+                if self.root.is_symlink():
+                    return None
+                # An absent review directory means a known-empty queue only
+                # after validating the existing runtime ancestry without
+                # creating directories or following a swapped symlink.
+                guard_runtime_path(
+                    self.runtime_root,
+                    self.runtime_root / 'pending-index-probe',
+                    create=False,
+                )
+                return 0
+            with file_lock(self.root / 'index', timeout=0.25):
+                index = self._read_index_locked()
+                if index is None:
+                    return None
+                current = at or datetime.now(timezone.utc)
+                if current.tzinfo is None:
+                    return None
+                groups = set()
+                for entry in index['entries'].values():
+                    if entry['project_id'] != project_id or entry['status'] != 'PENDING':
+                        continue
+                    expiry = datetime.fromisoformat(entry['expires_at'].replace('Z', '+00:00'))
+                    if expiry > current:
+                        groups.add((entry['project_id'], entry['content_fingerprint']))
+                return len(groups)
+        except Exception:
+            return None
 
     @staticmethod
     def _created_timestamp(value):
@@ -156,9 +369,36 @@ class ReviewStore:
         # same capture.  Without it two concurrent deliveries could both pass
         # the fingerprint scan and create duplicate review records.
         with file_lock(self.root / 'index'):
-            existing = self.find_by_event_fingerprint(candidate.get('project_id'), event_fingerprint)
-            if existing:
-                return existing
+            if not self._recover_index_intent_locked():
+                raise RuntimeError('Review metadata index recovery is pending')
+            items = self._items()
+            self._refresh_index_locked(items)
+            for item in items:
+                if not isinstance(item, dict) or self._project_id(item) != candidate.get('project_id'):
+                    continue
+                stored = item.get('event_fingerprint')
+                existing_candidate = item.get('candidate')
+                if stored is None and isinstance(existing_candidate, dict):
+                    stored = self.event_fingerprint(existing_candidate)
+                if stored == event_fingerprint:
+                    return item.get('id')
+
+            record = {
+                'id': key,
+                'status': 'PENDING',
+                'created_at': now(),
+                'expires_at': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                'candidate': candidate,
+                'candidate_fingerprint': fingerprint,
+                'event_fingerprint': event_fingerprint,
+                'content_fingerprint': fingerprint,
+                'project_id': candidate['project_id'],
+                'reason': reason,
+                'source': source,
+            }
+            entry = self._metadata_entry(record)
+            if entry is None:
+                return None
             with file_lock(path):
                 if path.exists():
                     existing_item = read_json(path)
@@ -173,23 +413,27 @@ class ReviewStore:
                         # materially different proposal.
                         return None
                     return None
-                write_json(path, {'id': key, 'status': 'PENDING', 'created_at': now(),
-                                 'expires_at': (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-                                 'candidate': candidate, 'candidate_fingerprint': fingerprint,
-                                 'event_fingerprint': event_fingerprint,
-                                 'content_fingerprint': fingerprint,
-                                 'project_id': candidate['project_id'], 'reason': reason, 'source': source})
+                self._apply_indexed_change_locked(
+                    'ADD', {key: entry}, lambda: write_json(path, record)
+                )
         return key
 
     def expire(self):
         with file_lock(self.root / 'index'):
-            for path in self.root.glob('rev_*.json'):
+            if not self._recover_index_intent_locked():
+                raise RuntimeError('Review metadata index recovery is pending')
+            items = self._items()
+            self._refresh_index_locked(items)
+            for offset, path in enumerate(sorted(self.root.glob('rev_*.json'))):
                 item = read_json(path)
                 if (isinstance(item, dict) and item.get('status') == 'PENDING'
                         and datetime.fromisoformat(item['expires_at']) <= datetime.now(timezone.utc)):
                     # Expiry remains a per-candidate B1 lifecycle operation.
                     # A surviving duplicate may become the next visible item.
-                    self.finish(item, 'EXPIRED', grouped=False)
+                    items[offset] = self.finish(item, 'EXPIRED', grouped=False)
+            if (not os.path.lexists(self.index_intent_path)
+                    and self._read_index_locked() is None):
+                self._publish_index_locked(items)
 
     def primary(self, item):
         """Return the deterministic visible item for an item's B2 group."""
@@ -236,7 +480,12 @@ class ReviewStore:
             return item
         if not grouped:
             value = self._terminal_value(item, status, result)
-            write_json(self.path(item['id']), value)
+            entry = self._metadata_entry(value)
+            self._apply_indexed_change_locked(
+                'FINISH',
+                {item['id']: entry},
+                lambda: write_json(self.path(item['id']), value),
+            )
             return value
         group = [candidate for candidate in self._items()
                  if isinstance(candidate, dict) and candidate.get('status') == 'PENDING'
@@ -245,18 +494,31 @@ class ReviewStore:
         primary = sorted(group, key=self._sort_key)[0] if group else item
         primary_id = primary.get('id')
         primary_value = None
+        values = {}
         for candidate in group or [item]:
             duplicate_of = None if candidate.get('id') == primary_id else primary_id
             candidate_result = result if duplicate_of is None else {'status': status, 'duplicate_of': primary_id}
             value = self._terminal_value(candidate, status, candidate_result, duplicate_of=duplicate_of)
-            write_json(self.path(candidate['id']), value)
+            values[candidate['id']] = value
             if candidate.get('id') == primary_id:
                 primary_value = value
+        changes = {
+            review_id: self._metadata_entry(value)
+            for review_id, value in values.items()
+        }
+
+        def write_group():
+            for review_id, value in values.items():
+                write_json(self.path(review_id), value)
+
+        self._apply_indexed_change_locked('FINISH_GROUP', changes, write_group)
         return primary_value or self._terminal_value(item, status, result)
 
     def list(self):
         self.expire()
         with file_lock(self.root / 'index'):
+            if not self._recover_index_intent_locked():
+                raise RuntimeError('Review metadata index recovery is pending')
             items = self._items()
             groups = {}
             for item in items:
