@@ -200,10 +200,15 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
                         # Repeat the final gate immediately before at-most-once
                         # marker consumption. If it changed, retain the marker.
                         final_project = allowed(vault, project_root)
-                        if (runtime.load()['mode'] != 'OFF' and final_project
-                                and final_project['project_id'] == project['project_id']
-                                and consume_project_markers(vault, project['project_id'], marker_hashes)):
-                            context = candidate_context
+                        final_mode = runtime.load()['mode']
+                        if (final_mode != 'OFF' and final_project
+                                and final_project['project_id'] == project['project_id']):
+                            # The optional line is part of this V1 output too:
+                            # recheck its canonical source lineage immediately
+                            # before consuming the marker and approving delivery.
+                            compiler._ensure_output_is_current(lineage)
+                            if consume_project_markers(vault, project['project_id'], marker_hashes):
+                                context = candidate_context
         except Exception:
             # Nudge failures are silent convenience failures; V1 bootstrap
             # continues with its already-validated context unchanged.

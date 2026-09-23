@@ -175,6 +175,34 @@ def test_failed_final_scope_recheck_retains_marker(runtime_fixture, monkeypatch)
     assert len(_markers(vault)) == 1
 
 
+def test_failed_final_revision_recheck_retains_marker(runtime_fixture, monkeypatch):
+    from brain_eleven._legacy import load_legacy_module
+
+    vault, project_id = runtime_fixture
+    _add_pending(ReviewStore(vault), project_id, "revision-proposal", "Pending text", "revision-evidence")
+    _prepare_marker(vault, project_id, "revision-session-start")
+    compiler = load_legacy_module(
+        "brain_eleven_legacy_context_compiler", "context-compiler.py"
+    ).ContextCompiler
+    original = compiler._ensure_output_is_current
+    calls = 0
+
+    def stale_on_final_check(self, lineage):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("source changed before nudge delivery")
+        return original(self, lineage)
+
+    monkeypatch.setattr(compiler, "_ensure_output_is_current", stale_on_final_check)
+
+    result = compile_bootstrap(vault, vault, session="new-session")
+
+    assert calls == 2
+    assert "review candidate" not in result["context"]
+    assert len(_markers(vault)) == 1
+
+
 def test_corrupt_marker_ledger_fails_open_without_nudge(runtime_fixture):
     vault, project_id = runtime_fixture
     _add_pending(ReviewStore(vault), project_id, "corrupt-ledger-proposal", "Pending text", "bad-state-evidence")
