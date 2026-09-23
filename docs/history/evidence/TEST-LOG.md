@@ -207,9 +207,41 @@ Kilit kaldırıldı ama **açılmadı**: `shadow_accept` varsayılan kapalı, ba
 Beklenti: onayladığın kayıtlar SessionStart bağlamına V1 yolundan girer (testle doğrulandı).
 Bayrağı geri almak için `shadow-accept OFF`; onaylanmış kayıtlar canonical'da kalır.
 
+## İlk gerçek sonuç (2026-09-23) — pilot fiilen çalıştı
+
+09-20'deki teşhis (`SessionStart teşhisi` yukarıda) "gerçek hafıza skoru fiilen 0/5" idi
+ve kök nedeni `.claude/validated-memory.json`'ın 09-04'te donmuş kalması + SHADOW'da
+review-accept'in CANARY/ACTIVE gerektirmesiydi. Bugün: `shadow-accept ON` açıldı, review
+kuyruğundan (682 bekleyen) 13 gerçek, tekrarsız karar/bulgu elle seçilip kabul edildi
+(Claude tarafından, Ahmet'in açık isteğiyle — "review sayfasından ben değil sen değerli
+bilgileri seç ve onayla"). `.claude/validated-memory.json` doğrulandı: artık **canlı**
+(revision 18, `updated_at: 2026-09-23`, 61 kayıt) — 09-20'deki "donmuş dosya" bulgusu
+artık geçerli değil.
+
+**Protokole göre yeni, taze bir oturumda** (bu konuşmadan ayrı, Ahmet tarafından açılan)
+Soru #1 soruldu, dosya/git erişimi olmadan:
+
+| # | Puan | Not |
+|---|---|---|
+| 1 | **doğru** | Anahtar cevabı ("kırmızı bilerek bırakıldı, corpus-v2 kapısı korunur, PRE-13 ertelendi, eşik düşürülmez") birebir üretti; ayrıca bugün kabul edilen "holdout gate red by decision" ve "remote CI green except holdout quality (by decision)" kayıtlarını kelimesi kelimesine doğru aktardı. Kendi başına bir tutarsızlık da yakaladı (aşağıya bakın) ve bunu dürüstçe "bilmiyorum" diye işaretledi — uydurmadı. |
+
+**Yan bulgu — gerçek bir hafıza çelişkisi yakalandı ve düzeltildi:** Oturum, bağlamda hem
+eski "SRT-00 remains NOT SHIP" kaydını hem `CLAUDE.md`'nin güncel "SRT-00 kapandı"
+durumunu gördü ve hangisinin güncel olduğunu bilemediğini açıkça belirtti. Kontrol edildi:
+kabul edilen kayıt 09-20 tarihliydi, `CLAUDE.md`'nin durumu 09-23'te değişmiş. Eski kayıt
+`SUPERSEDE_EXISTING` ile düzeltildi (`mem_83f4ae0a...` → `superseded`, yeni doğru kayıt
+`mem_0a830a55...` → `active`). Bu, hem canonical hafızanın canlı/düzeltilebilir olduğunu
+hem de test protokolünün gerçek hataları yakaladığını gösteriyor — beklenen ve istenen bir
+sonuç.
+
+**Özet: 1/1 doğru (bugüne kadarki tek soru).** 09-20'deki 0/5'ten ilk kez gerçek bir
+"evet, hatırladı" örneği. Küçük örneklem (n=1) — program çapında bir sayı değil, ama
+mekanizmanın artık uçtan uca çalıştığının ilk somut kanıtı.
+
 ## Günlük (iki hafta)
 
 Her gün bir satır: "Bugün hatırladı mı? Evet/hayır, neyi."
 
 | Tarih | Hatırladı mı? | Neyi |
 |---|---|---|
+| 2026-09-23 | Evet | Soru #1 (holdout/corpus-v2 kararı) — doğru, bkz. "İlk gerçek sonuç" yukarıda. |
