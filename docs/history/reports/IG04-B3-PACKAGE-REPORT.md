@@ -135,7 +135,11 @@ required; neither this report nor the implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-After this master rebase, the full suite is rerun on the report-finalization
-commit. Exact final-head Validation and separate independent read-only review
-remain pending. The final handoff records the exact documentation-head
-Validation URL and SHA; this report does not self-approve IG04-B3.
+After the master rebase, `python -m pytest -q -rs` passed on code/test head
+`fefac291de32c1d2e05b2d7ca3569f8ad1d038f8`: **1599 passed, 4 skipped** in
+274.19 seconds. All four skips are existing Windows directory-fsync
+limitations in `tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were
+skipped. Exact final-documentation-head Validation and a fresh separate
+independent read-only review remain pending after this report update. The
+final handoff records the exact documentation-head Validation URL, SHA and
+review outcome; this report does not self-approve IG04-B3.
