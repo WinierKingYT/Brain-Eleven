@@ -103,7 +103,7 @@ Uygulamadan sonra TEST-LOG protokolüyle yeni bir soru sorulur. Başarı: cevap 
 ve güncel, oturum çelişki bildirmiyor. n küçük olduğu için bu, program çapında
 bir sayı değildir.
 
-## Uygulama kanıtı (2026-09-24, commit edilmedi)
+## Uygulama kanıtı (2026-09-24, branch `memclaim-01`, commit `21077e5`)
 
 - Değişen dosyalar:
   - `scripts/memory_truth.py`: normalizasyon, açık supersede çakışma kontrolü, yeni kayıt alanları.
@@ -123,7 +123,8 @@ bir sayı değildir.
   `tests/test_w06c0r1_contract.py` kapsam korumasıdır ve HEAD'e göre commit
   edilmemiş diff'i reddeder (`evals/w06c0r1/evaluation.py:504-505`). Temiz HEAD
   worktree'sinde aynı dosyadaki 23 testin hepsi geçti. TSC-03 raporundaki
-  durumla aynıdır. Commit sonrası tekrar çalıştırılıp teyit edilmelidir.
+  durumla aynıdır. Commit sonrası teyit edildi: `test_w06c0r1_contract.py` 23/23
+  ve `test_memclaim01_claim_key.py` 19/19 geçti.
 - Bilinen sınır: Worker artık `occurred_at`'ı geçirdiği için istek özeti
   değişti. Bu değişiklikten önce yarıda kalmış bir kabul niyeti (çökme
   kurtarması) veya CANARY/ACTIVE otomatik yolunda aynı adayın tekrarı
