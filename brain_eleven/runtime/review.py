@@ -363,6 +363,10 @@ class ReviewStore:
             raise RuntimeError('Review metadata index recovery is pending')
         index = self._read_index_locked()
         if index is None:
+            if operation == 'FINISH_GROUP':
+                raise ValueError(
+                    'Review metadata index is unknown; open the review list before accepting or rejecting'
+                )
             # The queue remains usable while an absent or invalid sidecar is
             # rebuilt by an ordinary queue-owner path. SessionStart then
             # treats the count as unknown.

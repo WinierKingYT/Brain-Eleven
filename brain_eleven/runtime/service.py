@@ -32,6 +32,10 @@ def review_action(vault, review_id, action, payload):
             raise ValueError('Review candidate not found')
         if requested['status'] != 'PENDING':
             return requested
+        if store._read_index_locked() is None:
+            raise ValueError(
+                'Review metadata index is unknown; open the review list before accepting or rejecting'
+            )
         # B2 hides duplicate pending records, but a stale/direct caller may
         # still address one by ID. Resolve it to the deterministic primary so
         # acceptance can never create a second canonical effect.

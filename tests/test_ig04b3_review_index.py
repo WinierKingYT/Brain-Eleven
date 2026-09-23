@@ -287,6 +287,57 @@ def test_interrupted_group_accept_cannot_reapply_duplicate(review_store, monkeyp
     assert len(apply_calls) == 1
 
 
+@pytest.mark.parametrize('index_state', ['missing', 'invalid'])
+def test_accept_fails_closed_before_canonical_apply_when_index_unknown(
+        review_store, monkeypatch, index_state):
+    vault, store = review_store
+    config = RuntimeConfig(vault)
+    settings = config.load()
+    settings['mode'] = 'CANARY'
+    settings['project_ids'] = ['project-a']
+    write_json(config.path, settings)
+    first = _add(store, 'project-a', 'cand-accept-a', 'Same accepted content', 'evd-accept-a')
+    second = _add(store, 'project-a', 'cand-accept-b', 'Same accepted content', 'evd-accept-b')
+    primary = store.primary(read_json(store.path(first)))
+
+    if index_state == 'missing':
+        store.pending_index_path.unlink()
+    else:
+        write_json(store.pending_index_path, {'schema_version': 999, 'entries': {}})
+
+    apply_calls = []
+    monkeypatch.setattr(
+        service_module,
+        'apply_candidate',
+        lambda *_args, **_kwargs: apply_calls.append(True),
+    )
+    with pytest.raises(ValueError, match='open the review list'):
+        review_action(vault, primary['id'], 'accept', {'expected_revision': 0})
+
+    assert apply_calls == []
+    assert not store.index_intent_path.exists()
+    assert read_json(store.path(first))['status'] == 'PENDING'
+    assert read_json(store.path(second))['status'] == 'PENDING'
+    assert store._read_index_locked() is None
+
+
+def test_group_finish_fails_closed_when_index_unknown(review_store):
+    _, store = review_store
+    first = _add(store, 'project-a', 'cand-a1', 'Same content', 'evd-a1')
+    second = _add(store, 'project-a', 'cand-a2', 'Same content', 'evd-a2')
+    item = read_json(store.path(first))
+    store.pending_index_path.unlink()
+
+    with runtime_file_lock(store.root / 'index'), pytest.raises(
+            ValueError, match='open the review list'):
+        store.finish(item, 'REJECTED')
+
+    assert not store.index_intent_path.exists()
+    assert read_json(store.path(first))['status'] == 'PENDING'
+    assert read_json(store.path(second))['status'] == 'PENDING'
+    assert not store.pending_index_path.exists()
+
+
 def test_legacy_queue_is_reindexed_only_by_review_list_not_by_count(review_store):
     _, store = review_store
     _add(store, 'project-a', 'cand-a1', 'Legacy content', 'evd-a1')
