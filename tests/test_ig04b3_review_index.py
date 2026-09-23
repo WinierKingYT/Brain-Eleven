@@ -272,3 +272,33 @@ def test_index_and_intent_contain_no_candidate_text_or_paths(review_store):
     intent_text = store.index_intent_path.read_text(encoding='utf-8')
     assert text not in intent_text
     assert str(vault) not in intent_text
+
+
+def test_path_like_project_id_is_rejected_before_index_or_candidate_write(review_store):
+    vault, store = review_store
+    path_id = str(vault / "private-project-root")
+
+    result = store.add(
+        _candidate(path_id, "path-id-candidate", "Safe candidate text", "path-id-evidence"),
+        "HUMAN_APPROVAL_REQUIRED",
+        {"client": "claude", "evidence_id": "path-id-evidence", "role": "user"},
+    )
+
+    assert result is None
+    assert not list(store.root.glob("rev_*.json"))
+    assert store.pending_index_path.exists()
+    index_text = store.pending_index_path.read_text(encoding="utf-8")
+    assert path_id not in index_text
+    assert store._valid_index({
+        "schema_version": 1,
+        "ready": True,
+        "generation": 0,
+        "entries": {
+            "rev_" + "a" * 64: {
+                "project_id": path_id,
+                "status": "PENDING",
+                "expires_at": "2026-09-24T00:00:00+00:00",
+                "content_fingerprint": "fp_" + "b" * 64,
+            },
+        },
+    }) is False

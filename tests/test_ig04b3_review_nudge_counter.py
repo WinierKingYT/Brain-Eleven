@@ -47,6 +47,34 @@ def test_invalid_session_unknown_project_and_opt_out_do_not_count(runtime_fixtur
     assert not (RuntimeConfig(vault).root / "review-nudge.json").exists()
 
 
+def test_path_like_project_id_fails_closed_without_b3_state(runtime_fixture):
+    vault, _ = runtime_fixture
+    path_id = str(vault / "private-project-root")
+    record = ProjectRegistry(vault).register(
+        vault.parent / "path-id-project", project_id=path_id, proactive_capture=True
+    )
+    assert record["project_id"] == path_id
+    config = RuntimeConfig(vault).load()
+    config["project_ids"].append(path_id)
+    write_json(RuntimeConfig(vault).path, config)
+
+    assert not review_nudge.record_prompt(vault, "claude", "path-id-session", path_id)
+    state_path = RuntimeConfig(vault).root / "review-nudge.json"
+    assert not state_path.exists()
+
+    path_marker = {
+        "schema_version": 1,
+        "session_id_hash": "a" * 64,
+        "project_id": path_id,
+        "prompt_count": review_nudge.MIN_PROMPTS_FOR_NUDGE,
+        "ended_at": "2026-09-23T00:00:00Z",
+        "expires_at": "2026-09-24T00:00:00Z",
+    }
+    assert not review_nudge._valid_ledger({
+        "schema_version": 1, "counters": [], "markers": [path_marker],
+    })
+
+
 def test_off_mode_suppresses_counter(runtime_fixture):
     vault, project_id = runtime_fixture
     RuntimeConfig(vault).set_mode("OFF")

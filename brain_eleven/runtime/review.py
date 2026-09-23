@@ -25,6 +25,7 @@ _PENDING_INDEX_SCHEMA = 1
 _REVIEW_STATUSES = {'PENDING', 'ACCEPTED', 'REJECTED', 'EXPIRED'}
 _FINGERPRINT_PATTERN = re.compile(r'fp_[a-f0-9]{64}')
 _REVIEW_ID_PATTERN = re.compile(r'rev_[a-f0-9]{64}')
+_PROJECT_ID_PATTERN = re.compile(r'^(?![A-Za-z]:)(?!\.{1,2}$)[^\x00-\x1f\x7f/\\]{1,256}$')
 
 
 class ReviewStore:
@@ -118,7 +119,7 @@ class ReviewStore:
         status = item.get('status')
         expires_at = item.get('expires_at')
         if (not isinstance(item_id, str) or not _REVIEW_ID_PATTERN.fullmatch(item_id)
-                or not isinstance(project_id, str) or not project_id
+                or not isinstance(project_id, str) or _PROJECT_ID_PATTERN.fullmatch(project_id) is None
                 or not isinstance(fingerprint, str) or not _FINGERPRINT_PATTERN.fullmatch(fingerprint)
                 or status not in _REVIEW_STATUSES
                 or not cls._valid_expiry(expires_at)):
