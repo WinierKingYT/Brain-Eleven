@@ -1,7 +1,9 @@
-**Durum (2026-09-21): SRT-00 kapandı (CI yeşil). IG-05 ulaşılamaz diye kapatıldı; V2 SHADOW
+**Durum (2026-09-23): SRT-00 kapandı (CI yeşil). IG-05 ulaşılamaz diye kapatıldı; V2 SHADOW
 kalır, IG-06/IG-07 açılmaz, Phase 20 kilitli. Yeni faz açılmaz.** Hafıza: SHADOW'da insan
 onaylı kabul `python -m brain_eleven shadow-accept ON` ile açılır (varsayılan kapalı);
 ölçüm `docs/history/evidence/TEST-LOG.md`'de. Eşik gevşetme, skip ve holdout ayarı yasak.
+**Yeni iş açma kuralı:** `docs/programs/WORK-INTAKE-RULE.md` — her yeni paket/sözleşme
+önce "bu, hatırlama testini ölçülebilir şekilde ilerletiyor mu?" sorusuna cevap vermeli.
 
 # Brain-Eleven: Eleven'in ikinci beyni
 
