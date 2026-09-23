@@ -50,6 +50,8 @@ def test_legacy_anomaly_file_is_only_an_adapter() -> None:
     }
 
     assert "brain_eleven.support.anomaly" in source
+    assert "spec_from_file_location" not in source
+    assert "_load_canonical" not in defined_functions
     assert not defined_classes & {"AnomalyDetector"}
     assert not defined_functions & {
         "detect_all",
