@@ -177,6 +177,37 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
         except Exception:
             delivered = False
         context = reminder_context if delivered else context
+
+    # Review-queue nudges are optional V1 output. SessionStart reads only the
+    # content-free marker ledger and pending metadata index; it never asks the
+    # review owner to list, expire, or rebuild candidate records.
+    if status == 'SUCCESS':
+        try:
+            from .review import ReviewStore
+            from .review_nudge import consume_project_markers, project_markers
+
+            marker_hashes = project_markers(vault, project['project_id'])
+            if marker_hashes:
+                pending_count = ReviewStore(vault).pending_visible_count(project['project_id'])
+                if pending_count == 0:
+                    consume_project_markers(vault, project['project_id'], marker_hashes)
+                elif pending_count is not None and pending_count > 0:
+                    noun = 'group is' if pending_count == 1 else 'groups are'
+                    nudge_line = f'{pending_count} review candidate {noun} waiting for review.'
+                    candidate_context = context + ('\n\n' if context else '') + nudge_line
+                    if (estimator.estimate(candidate_context).count <= budget
+                            and safe(candidate_context)):
+                        # Repeat the final gate immediately before at-most-once
+                        # marker consumption. If it changed, retain the marker.
+                        final_project = allowed(vault, project_root)
+                        if (runtime.load()['mode'] != 'OFF' and final_project
+                                and final_project['project_id'] == project['project_id']
+                                and consume_project_markers(vault, project['project_id'], marker_hashes)):
+                            context = candidate_context
+        except Exception:
+            # Nudge failures are silent convenience failures; V1 bootstrap
+            # continues with its already-validated context unchanged.
+            pass
     return {'status': status, 'context': context, 'selected_ids': [item['id'] for item in memories] if context else [],
             'project_id': project['project_id'], 'delivered': bool(context),
             'delivery_approved': bool(context), 'provider': 'V1',

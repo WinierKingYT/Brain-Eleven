@@ -73,10 +73,12 @@ def _valid_row(value, fields):
     if fields == _COUNTER_FIELDS:
         seen = _timestamp(value.get("last_seen_at"))
         expiry = _timestamp(value.get("expires_at"))
-        return seen is not None and expiry is not None and expiry > seen
+        return (seen is not None and expiry is not None
+                and seen < expiry <= seen + COUNTER_TTL)
     ended = _timestamp(value.get("ended_at"))
     expiry = _timestamp(value.get("expires_at"))
-    return ended is not None and expiry is not None and expiry > ended
+    return (ended is not None and expiry is not None
+            and ended < expiry <= ended + MARKER_TTL)
 
 
 def _empty_ledger():
@@ -243,4 +245,80 @@ def finalize_session(vault, client, raw_session_id) -> bool:
     except Exception:
         # SessionEnd cleanup is independent best-effort work; it cannot affect
         # the B1 transcript/worker path or prevent the host from closing.
+        return False
+
+
+def project_markers(vault, project_id):
+    """Return unexpired marker session hashes, or None when state is unknown."""
+    if not isinstance(project_id, str) or _PROJECT_ID_RE.fullmatch(project_id) is None:
+        return None
+    try:
+        runtime = RuntimeConfig(vault)
+        config = runtime.load()
+        if config["mode"] == "OFF":
+            return None
+        registry = ProjectRegistry(vault)
+        if not _eligible_project(config, registry, project_id):
+            return None
+        state_path = runtime.root / _LEDGER_NAME
+        with runtime_file_lock(runtime.root / _LOCK_NAME, timeout=0.5):
+            current_config = runtime.load()
+            if (current_config["mode"] == "OFF"
+                    or not _eligible_project(current_config, registry, project_id)):
+                return None
+            ledger = _read_ledger(runtime.root, state_path)
+            current = _utc_now()
+            markers = [
+                row for row in ledger["markers"]
+                if _timestamp(row["expires_at"]) > current
+            ]
+            expired = len(markers) != len(ledger["markers"])
+            if expired:
+                ledger["markers"] = markers
+                write_json(state_path, ledger)
+            return [row["session_id_hash"] for row in markers
+                    if row["project_id"] == project_id]
+    except Exception:
+        return None
+
+
+def consume_project_markers(vault, project_id, expected_session_hashes) -> bool:
+    """Atomically consume the observed project markers; false means do not emit."""
+    if (not isinstance(project_id, str) or _PROJECT_ID_RE.fullmatch(project_id) is None
+            or not isinstance(expected_session_hashes, (list, tuple, set))):
+        return False
+    expected = set(expected_session_hashes)
+    if not expected or any(not isinstance(item, str) or _SHA256_RE.fullmatch(item) is None for item in expected):
+        return False
+    try:
+        runtime = RuntimeConfig(vault)
+        config = runtime.load()
+        if config["mode"] == "OFF":
+            return False
+        registry = ProjectRegistry(vault)
+        if not _eligible_project(config, registry, project_id):
+            return False
+        state_path = runtime.root / _LEDGER_NAME
+        with runtime_file_lock(runtime.root / _LOCK_NAME, timeout=0.5):
+            current_config = runtime.load()
+            if (current_config["mode"] == "OFF"
+                    or not _eligible_project(current_config, registry, project_id)):
+                return False
+            ledger = _read_ledger(runtime.root, state_path)
+            current = _utc_now()
+            unexpired = [
+                row for row in ledger["markers"]
+                if _timestamp(row["expires_at"]) > current
+            ]
+            current_project_hashes = {
+                row["session_id_hash"] for row in unexpired
+                if row["project_id"] == project_id
+            }
+            if not expected.issubset(current_project_hashes):
+                return False
+            remaining = [row for row in unexpired if row["project_id"] != project_id]
+            ledger["markers"] = remaining
+            write_json(state_path, ledger)
+        return True
+    except Exception:
         return False
