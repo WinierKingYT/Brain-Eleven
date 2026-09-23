@@ -240,9 +240,14 @@ def test_legacy_queue_is_reindexed_only_by_review_list_not_by_count(review_store
     assert store.pending_visible_count('project-a') is None
     assert not store.pending_index_path.exists()
 
+    _add(store, 'project-a', 'cand-a2', 'New content after migration', 'evd-a2')
+    store.expire()
+    assert not store.pending_index_path.exists()
+    assert store.pending_visible_count('project-a') is None
+
     store.list()
     assert store.pending_index_path.exists()
-    assert store.pending_visible_count('project-a') == 1
+    assert store.pending_visible_count('project-a') == 2
 
 
 def test_index_and_intent_contain_no_candidate_text_or_paths(review_store):

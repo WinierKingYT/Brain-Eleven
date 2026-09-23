@@ -105,21 +105,24 @@ def hook(vault, client, event, payload):
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
+    prompt = payload.get('prompt', '')
+    session = payload.get('session_id', '')
+    valid_prompt_shape = isinstance(prompt, str) and bool(prompt.strip())
     if event == 'UserPromptSubmit':
         # Count before service startup/context work so a degraded retrieval
-        # path cannot erase a substantive session. The B3 helper receives no
-        # prompt argument and swallows its own convenience-state failures.
-        try:
-            from brain_eleven.runtime.review_nudge import record_prompt
-            record_prompt(vault, client, payload.get('session_id'), project['project_id'])
-        except Exception:
-            pass
+        # path cannot erase a substantive session. The existing event-shape
+        # validation gates malformed/empty submissions; the B3 helper itself
+        # receives only session and project identity, never prompt text.
+        if valid_prompt_shape:
+            try:
+                from brain_eleven.runtime.review_nudge import record_prompt
+                record_prompt(vault, client, session, project['project_id'])
+            except Exception:
+                pass
     deadline = time.monotonic() + 2.5
     ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
     if not ready:
         return {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
-    prompt = payload.get('prompt', '')
-    session = payload.get('session_id', '')
     if not isinstance(prompt, str) or not isinstance(session, str) or not session:
         raise ValueError('Invalid prompt event')
     # Native turn identity when provided; otherwise transcript position plus

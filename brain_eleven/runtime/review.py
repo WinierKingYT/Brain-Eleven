@@ -372,7 +372,12 @@ class ReviewStore:
             if not self._recover_index_intent_locked():
                 raise RuntimeError('Review metadata index recovery is pending')
             items = self._items()
-            self._refresh_index_locked(items)
+            # A legacy queue remains unindexed until the explicit list path
+            # rebuilds it. New empty queues can initialize an empty sidecar
+            # before the first ADD without migrating any existing record.
+            if (not items and not os.path.lexists(self.pending_index_path)
+                    and not os.path.lexists(self.index_intent_path)):
+                self._publish_index_locked(items)
             for item in items:
                 if not isinstance(item, dict) or self._project_id(item) != candidate.get('project_id'):
                     continue
@@ -423,7 +428,6 @@ class ReviewStore:
             if not self._recover_index_intent_locked():
                 raise RuntimeError('Review metadata index recovery is pending')
             items = self._items()
-            self._refresh_index_locked(items)
             for offset, path in enumerate(sorted(self.root.glob('rev_*.json'))):
                 item = read_json(path)
                 if (isinstance(item, dict) and item.get('status') == 'PENDING'
@@ -431,9 +435,6 @@ class ReviewStore:
                     # Expiry remains a per-candidate B1 lifecycle operation.
                     # A surviving duplicate may become the next visible item.
                     items[offset] = self.finish(item, 'EXPIRED', grouped=False)
-            if (not os.path.lexists(self.index_intent_path)
-                    and self._read_index_locked() is None):
-                self._publish_index_locked(items)
 
     def primary(self, item):
         """Return the deterministic visible item for an item's B2 group."""
@@ -520,6 +521,7 @@ class ReviewStore:
             if not self._recover_index_intent_locked():
                 raise RuntimeError('Review metadata index recovery is pending')
             items = self._items()
+            self._refresh_index_locked(items)
             groups = {}
             for item in items:
                 if isinstance(item, dict) and item.get('status') == 'PENDING':

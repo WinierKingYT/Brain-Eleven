@@ -3,6 +3,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.runtime import review_nudge
 from brain_eleven.runtime.launcher import hook
@@ -113,3 +115,26 @@ def test_launcher_counts_before_service_readiness_without_persisting_prompt(runt
     assert state["counters"][0]["prompt_count"] == 1
     assert "UNIQUE_PROMPT_SENTINEL_DO_NOT_SAVE" not in state_text
     assert "service-degraded-session" not in state_text
+
+
+@pytest.mark.parametrize(
+    "include_prompt,prompt_field",
+    [(False, None), (True, None), (True, 7), (True, ""), (True, " \t")],
+)
+def test_launcher_does_not_count_invalid_prompt_shape(
+        runtime_fixture, monkeypatch, include_prompt, prompt_field):
+    vault, _ = runtime_fixture
+    monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *_args, **_kwargs: False)
+    payload = {
+        "cwd": str(vault),
+        "session_id": "invalid-prompt-session",
+        "turn_id": "invalid-turn",
+    }
+    if include_prompt:
+        payload["prompt"] = prompt_field
+
+    result = hook(vault, "claude", "UserPromptSubmit", payload)
+
+    assert result.get("systemMessage")
+    state_path = RuntimeConfig(vault).root / "review-nudge.json"
+    assert not state_path.exists() or read_json(state_path)["counters"] == []
