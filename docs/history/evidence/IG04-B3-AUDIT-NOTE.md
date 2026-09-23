@@ -1,7 +1,9 @@
 # IG04-B3 Phase 0 Audit Note
 
-**Status: STOP — no B3 contract or implementation is authorized by this audit.**  
-**Audit date:** 2026-09-23  
+**Status: STOP — no B3 contract or implementation is authorized by this audit.**
+
+**Audit date:** 2026-09-23
+
 **Audited branch/base:** `ig/ig04b3-review-nudge` at `9472dc21bf1cbf109901b54f9e2d7fe000b4e46c`.
 
 ## Scope and result
