@@ -16,6 +16,9 @@ from .capture_provenance import TranscriptProvenanceError, resolve_transcript_pa
 from .capture_queue import CaptureQueue
 from .capture_safety import evaluate_capture
 from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
+from .extraction import CandidateKind, Commitment, MemoryType
+from brain_eleven.extraction.providers import create_semantic_provider
+from brain_eleven.extraction.semantic import UnavailableProvider
 from .state_boundary import StateBoundary
 from .storage import RuntimeConfig, canonical_accept_allowed, read_json, write_json, identity, now, runtime_file_lock as file_lock
 from .evidence import EvidenceStore, EvidenceBatch, read_increment
@@ -52,7 +55,7 @@ _STATE_RECEIPT_RECORDS = {
 _REVIEW_REASONS = frozenset({
     'LIFECYCLE_TARGET_UNKNOWN', 'REVIEW_REQUIRED', 'MODEL_PROPOSAL',
     'LOW_EVIDENCE_COMMITMENT', 'SCOPE_ERROR', 'DEGRADED',
-    'HUMAN_APPROVAL_REQUIRED',
+    'HUMAN_APPROVAL_REQUIRED', 'SEMANTIC_REVIEW_REQUIRED',
 })
 _REVIEW_SOURCE_FIELDS = frozenset({'client', 'session_hash', 'evidence_id', 'role'})
 
@@ -91,6 +94,63 @@ def _validate_cursor(value):
     if not isinstance(value['has_more'], bool):
         raise WorkerProcessingError('CAPTURE_CURSOR_CORRUPT')
     return {'offset': value['offset'], 'prefix_hash': value['prefix_hash'], 'has_more': value['has_more']}
+
+
+_SEMANTIC_CLAIM_TO_MEMORY_TYPE = {
+    'decision': MemoryType.DECISION.value,
+    'lesson': MemoryType.LESSON.value,
+    'preference': MemoryType.PREFERENCE.value,
+    'observation': MemoryType.OBSERVATION.value,
+    'open_loop': MemoryType.OPEN_LOOP.value,
+}
+
+
+def _semantic_review_candidates(provider, message, project_id):
+    """Convert validated IG-03 semantic propositions into NEW_MEMORY review
+    candidates. Deliberately narrow for a first version: only committed
+    claims whose claim_type already maps onto an existing MemoryType are
+    converted (requirement/blocker/no_commitment, and anything not
+    'committed', are left alone rather than forced into the wrong shape).
+    Never raises: provider.extract() already converts transport/parse
+    failures into a SEMANTIC_UNAVAILABLE result, and this generator treats
+    any unexpected proposition shape as skippable, not fatal."""
+    if isinstance(provider, UnavailableProvider):
+        return
+    try:
+        result = provider.extract(message, project_id=project_id)
+    except Exception:
+        return
+    if result.status != 'MEASURED':
+        return
+    for index, prop in enumerate(result.propositions):
+        try:
+            if prop.commitment != 'committed':
+                continue
+            memory_type = _SEMANTIC_CLAIM_TO_MEMORY_TYPE.get(prop.claim_type)
+            if memory_type is None:
+                continue
+            content = ' '.join(
+                str(part) for part in (prop.subject, prop.predicate, prop.value) if part
+            ).strip()
+            if not content:
+                continue
+            confidence = max(prop.confidence_components.values(), default=0.5)
+            yield {
+                'candidate_id': identity('sem_', message.record.evidence_id, 'hermes', index),
+                'candidate_type': CandidateKind.NEW_MEMORY.value,
+                'project_id': prop.project_id,
+                'commitment': Commitment.COMMITTED.value,
+                'occurred_at': None,
+                'confidence': confidence,
+                'evidence_refs': tuple(prop.evidence_refs),
+                'confidence_components': dict(prop.confidence_components),
+                'extractor_version': f'{provider.provider_id}:{getattr(provider, "provider_revision", "unknown")}',
+                'memory_type': memory_type,
+                'scope': 'unresolved',
+                'content': content,
+            }
+        except (AttributeError, TypeError, ValueError):
+            continue
 
 
 def allowed(vault, project_root):
@@ -169,6 +229,10 @@ class Worker:
         self.config = RuntimeConfig(vault)
         self.queue = CaptureQueue(vault)
         self.review = ReviewStore(vault)
+        # Falls back to UnavailableProvider (a cheap no-op) unless a semantic
+        # provider is explicitly configured via IG_SEMANTIC_PROVIDER or
+        # .claude/ig-provider-config.json -- see brain_eleven/extraction/providers.
+        self.semantic_provider = create_semantic_provider()
 
     def _add_review(self, candidate, reason, source):
         """Persist a review item and suppress terminal fingerprint replays.
@@ -826,6 +890,16 @@ class Worker:
                              'project_id': project['project_id'], 'scope': 'project', 'commitment': 'PROPOSED', 'confidence': 0,
                              'evidence_refs': [message.record.evidence_id]}
                 review_id = self._add_review(candidate, 'MODEL_PROPOSAL', source)
+                if review_id:
+                    effect_ids.append(review_id)
+                    review_effect_ids.append(review_id)
+                    review_effect_count += 1
+            # Distilled semantic candidates (IG-03 proposal boundary, e.g. the
+            # Hermes CLI provider). Deliberately always review-gated, never
+            # auto-applied regardless of mode -- this path is new and
+            # LLM-based, unlike the audited deterministic extractor above.
+            for candidate in _semantic_review_candidates(self.semantic_provider, message, project['project_id']):
+                review_id = self._add_review(candidate, 'SEMANTIC_REVIEW_REQUIRED', source)
                 if review_id:
                     effect_ids.append(review_id)
                     review_effect_ids.append(review_id)

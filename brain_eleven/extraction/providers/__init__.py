@@ -16,11 +16,12 @@ from typing import Any, Mapping
 from brain_eleven.extraction.semantic import SemanticProvider, UnavailableProvider
 
 from .codex_cli import CodexCLIProvider, CodexSemanticProvider
+from .hermes_cli import HermesCLIProvider, HermesSemanticProvider
 from .openai_api import OpenAIAPIProvider, OpenAISemanticProvider
 
 
 DEFAULT_CONFIG_PATH = Path(".claude") / "ig-provider-config.json"
-SUPPORTED_PROVIDERS = frozenset({"openai_api", "codex_cli", "unavailable"})
+SUPPORTED_PROVIDERS = frozenset({"openai_api", "codex_cli", "hermes_cli", "unavailable"})
 
 
 def _config_selection(
@@ -53,6 +54,8 @@ def create_semantic_provider(
     openai_client: Any | None = None,
     codex_executable: str | None = None,
     codex_runner: Any | None = None,
+    hermes_executable: str | None = None,
+    hermes_runner: Any | None = None,
 ) -> SemanticProvider:
     """Return the selected provider, or an unavailable provider on any failure."""
 
@@ -65,6 +68,12 @@ def create_semantic_provider(
             return UnavailableProvider("unavailable", "unavailable", "provider_not_configured")
         if selected == "openai_api":
             return OpenAIAPIProvider.from_environment(environ=values, client=openai_client)
+        if selected == "hermes_cli":
+            return HermesCLIProvider.from_environment(
+                environ=values,
+                executable=hermes_executable,
+                runner=hermes_runner,
+            )
         return CodexCLIProvider.from_environment(
             environ=values,
             executable=codex_executable,
@@ -90,6 +99,8 @@ __all__ = [
     "CodexCLIProvider",
     "CodexSemanticProvider",
     "DEFAULT_CONFIG_PATH",
+    "HermesCLIProvider",
+    "HermesSemanticProvider",
     "OpenAIAPIProvider",
     "OpenAISemanticProvider",
     "SUPPORTED_PROVIDERS",
