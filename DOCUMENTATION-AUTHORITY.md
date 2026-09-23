@@ -132,6 +132,8 @@ authorize opening Phase 20 or promoting V2.
 | `evals/intelligence_taxonomy.py` | CURRENT **IG-00 shared evaluation vocabulary** retained for IG-01; category/metric names only, with no evaluator, ranking or tuning implementation. |
 | `evals/ig01e/**` | CURRENT **IG01-E read-only audit implementation**; it verifies the evaluation foundation and emits content-free evidence only. |
 
+| `docs/history/evidence/IG04-B3-AUDIT-NOTE.md` | GENERATED EVIDENCE / partial read-only Phase 0 audit at branch base `9472dc2`; records an explicit STOP because the current review listing requires full candidate records and mutates expiry/duplicate metadata. It is not a B3 contract, implementation authorization, or acceptance verdict; remaining audit surfaces are marked unverified. |
+
 ## Default path rules (first match)
 
 1. Applicable `AGENTS.md` files are CURRENT instructions, not benchmark evidence.

@@ -277,6 +277,17 @@ runtime check is recorded in the table above.
   relevance recall than V1, so V2 stays shadow-only pending improvement and
   independent review. See `docs/history/PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md`.
 
+## IG04-B3 Phase 0 — STOP (2026-09-23)
+
+The read-only audit at `9472dc2` found that the current pending-review listing
+loads complete candidate records, expires items, and may write
+B2 duplicate metadata. No content-free, read-only pending-count path exists in
+the inspected product API; the B3 goal explicitly requires STOP in this case.
+No contract or implementation was started. See
+[`IG04-B3-AUDIT-NOTE.md`](docs/history/evidence/IG04-B3-AUDIT-NOTE.md). Any
+resumption requires an owner-approved resolution of this boundary, a fresh
+exact-head green precondition, and completion of the remaining Phase 0 audit.
+
 ## Historical planning documents
 
 Older phase plans are **HISTORICAL** execution records. They may contain
