@@ -68,7 +68,9 @@ def _valid_row(value, fields):
     if not isinstance(value.get("project_id"), str) or _PROJECT_ID_RE.fullmatch(value["project_id"]) is None:
         return False
     count = value.get("prompt_count")
-    if isinstance(count, bool) or not isinstance(count, int) or count < 1 or count > 2**31 - 1:
+    minimum_count = 1 if fields == _COUNTER_FIELDS else MIN_PROMPTS_FOR_NUDGE
+    if (isinstance(count, bool) or not isinstance(count, int)
+            or count < minimum_count or count > 2**31 - 1):
         return False
     if fields == _COUNTER_FIELDS:
         seen = _timestamp(value.get("last_seen_at"))

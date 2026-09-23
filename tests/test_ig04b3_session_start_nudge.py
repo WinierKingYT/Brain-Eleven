@@ -4,7 +4,7 @@ from brain_eleven.runtime import review as review_module
 from brain_eleven.runtime.context import compile_bootstrap
 from brain_eleven.runtime.review import ReviewStore
 from brain_eleven.runtime import review_nudge
-from brain_eleven.runtime.storage import RuntimeConfig, read_json
+from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json
 from tests.test_pre13_runtime import runtime as runtime_fixture
 
 
@@ -215,3 +215,19 @@ def test_corrupt_marker_ledger_fails_open_without_nudge(runtime_fixture):
     assert result["status"] == "SUCCESS"
     assert "review candidate" not in result["context"]
     assert path.read_text(encoding="utf-8") == '{"schema_version": 999}'
+
+
+def test_subthreshold_marker_fails_closed_without_nudge(runtime_fixture):
+    vault, project_id = runtime_fixture
+    _add_pending(ReviewStore(vault), project_id, "subthreshold-proposal", "Pending text", "subthreshold-evidence")
+    _prepare_marker(vault, project_id, "subthreshold-session")
+    path = RuntimeConfig(vault).root / "review-nudge.json"
+    state = read_json(path)
+    state["markers"][0]["prompt_count"] = review_nudge.MIN_PROMPTS_FOR_NUDGE - 1
+    write_json(path, state)
+
+    result = compile_bootstrap(vault, vault, session="new-session")
+
+    assert result["status"] == "SUCCESS"
+    assert "review candidate" not in result["context"]
+    assert read_json(path)["markers"][0]["prompt_count"] == 4
