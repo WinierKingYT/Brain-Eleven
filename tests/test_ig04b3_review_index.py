@@ -7,8 +7,12 @@ from pathlib import Path
 import pytest
 
 import brain_eleven.runtime.review as review_module
+import brain_eleven.runtime.service as service_module
 from brain_eleven.runtime.review import ReviewStore
-from brain_eleven.runtime.storage import read_json, runtime_file_lock, write_json
+from brain_eleven.runtime.service import review_action
+from brain_eleven.runtime.storage import (
+    RuntimeConfig, read_json, runtime_file_lock, write_json,
+)
 
 
 @pytest.fixture
@@ -203,33 +207,84 @@ def test_interrupted_after_index_publication_recovery_is_generation_idempotent(r
     assert store.pending_visible_count('project-a') == 1
 
 
-def test_interrupted_group_transition_rebuilds_index_from_surviving_records(review_store, monkeypatch):
+def test_interrupted_group_transition_replays_all_terminal_records(review_store, monkeypatch):
     _, store = review_store
     first = _add(store, 'project-a', 'cand-a1', 'Same content', 'evd-a1')
     second = _add(store, 'project-a', 'cand-a2', 'Same content', 'evd-a2')
-    item = read_json(store.path(first))
+    pending = [item for item in store._items() if item.get('status') == 'PENDING']
+    primary = store.primary(pending[0])
+    primary_id = primary['id']
+    duplicate_id = next(item['id'] for item in pending if item['id'] != primary_id)
     original_write_json = review_module.write_json
 
-    def fail_second_record(path, value):
-        if Path(path) == store.path(second):
+    def fail_duplicate_record(path, value):
+        if Path(path) == store.path(duplicate_id):
             raise OSError('simulated crash midway through grouped transition')
         return original_write_json(path, value)
 
-    monkeypatch.setattr(review_module, 'write_json', fail_second_record)
+    monkeypatch.setattr(review_module, 'write_json', fail_duplicate_record)
     with runtime_file_lock(store.root / 'index'), pytest.raises(OSError, match='midway'):
-        store.finish(item, 'REJECTED')
+        store.finish(primary, 'REJECTED')
 
     assert store.pending_visible_count('project-a') is None
+    intent = read_json(store.index_intent_path)
+    assert intent['operation'] == 'FINISH_GROUP'
+    assert set(intent['changes']) == {first, second}
+    intent_text = store.index_intent_path.read_text(encoding='utf-8')
+    assert 'Same content' not in intent_text
+    assert str(store.runtime_root.parent.parent) not in intent_text
     monkeypatch.setattr(review_module, 'write_json', original_write_json)
     visible = store.list()
     assert not store.index_intent_path.exists()
-    statuses = {
-        read_json(store.path(first))['status'],
-        read_json(store.path(second))['status'],
-    }
-    assert statuses == {'REJECTED', 'PENDING'}
-    assert store.pending_visible_count('project-a') == 1
-    assert sum(record['status'] == 'PENDING' for record in visible) == 1
+    assert {read_json(store.path(first))['status'],
+            read_json(store.path(second))['status']} == {'REJECTED'}
+    assert store.pending_visible_count('project-a') == 0
+    assert sum(record['status'] == 'PENDING' for record in visible) == 0
+
+
+def test_interrupted_group_accept_cannot_reapply_duplicate(review_store, monkeypatch):
+    vault, store = review_store
+    config = RuntimeConfig(vault)
+    settings = config.load()
+    settings['mode'] = 'CANARY'
+    settings['project_ids'] = ['project-a']
+    write_json(config.path, settings)
+    first = _add(store, 'project-a', 'cand-accept-a', 'Same accepted content', 'evd-accept-a')
+    second = _add(store, 'project-a', 'cand-accept-b', 'Same accepted content', 'evd-accept-b')
+    pending = [item for item in store._items() if item.get('status') == 'PENDING']
+    primary = store.primary(pending[0])
+    primary_id = primary['id']
+    duplicate_id = next(item['id'] for item in pending if item['id'] != primary_id)
+    original_write_json = review_module.write_json
+    apply_calls = []
+
+    def apply_once(*_args, **kwargs):
+        apply_calls.append(kwargs['op_id'])
+        return {'status': 'SUCCESS', 'decisions': []}
+
+    def fail_duplicate_record(path, value):
+        if Path(path) == store.path(duplicate_id) and value.get('status') == 'ACCEPTED':
+            raise OSError('simulated crash midway through accepted group')
+        return original_write_json(path, value)
+
+    monkeypatch.setattr(service_module, 'apply_candidate', apply_once)
+    monkeypatch.setattr(review_module, 'write_json', fail_duplicate_record)
+    with pytest.raises(OSError, match='accepted group'):
+        review_action(vault, primary_id, 'accept', {'expected_revision': 0})
+    intent_text = store.index_intent_path.read_text(encoding='utf-8')
+    assert 'Same accepted content' not in intent_text
+    assert str(vault) not in intent_text
+
+    monkeypatch.setattr(review_module, 'write_json', original_write_json)
+    store.list()
+    assert not store.index_intent_path.exists()
+    assert {read_json(store.path(first))['status'],
+            read_json(store.path(second))['status']} == {'ACCEPTED'}
+    assert store.pending_visible_count('project-a') == 0
+
+    result = review_action(vault, duplicate_id, 'accept', {})
+    assert result['status'] == 'ACCEPTED'
+    assert len(apply_calls) == 1
 
 
 def test_legacy_queue_is_reindexed_only_by_review_list_not_by_count(review_store):

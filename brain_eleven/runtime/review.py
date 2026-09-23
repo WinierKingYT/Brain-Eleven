@@ -149,11 +149,9 @@ class ReviewStore:
                 return False
         return True
 
-    def _read_index_locked(self):
-        """Read only the content-free index; never fall back to review records."""
+    def _read_persisted_index_locked(self):
+        """Read a ready index snapshot without applying intent readiness."""
         try:
-            if os.path.lexists(self.index_intent_path):
-                return None
             if not os.path.lexists(self.pending_index_path):
                 return None
             guard_runtime_path(self.runtime_root, self.pending_index_path, create=False)
@@ -161,6 +159,12 @@ class ReviewStore:
             return value if self._valid_index(value) else None
         except Exception:
             return None
+
+    def _read_index_locked(self):
+        """Read only the content-free index; never fall back to review records."""
+        if os.path.lexists(self.index_intent_path):
+            return None
+        return self._read_persisted_index_locked()
 
     def _build_index(self, items, generation):
         entries = {}
@@ -210,6 +214,8 @@ class ReviewStore:
                 if self._valid_index(target_index) else None
             )
             items = self._items()
+            if not self._recover_finish_records_locked(intent, target_index, items):
+                return False
             if not self._publish_index_locked(items, generation=target_generation):
                 return False
             guard_runtime_path(self.runtime_root, self.index_intent_path, create=False)
@@ -217,6 +223,129 @@ class ReviewStore:
             return True
         except Exception:
             return False
+
+    def _recover_finish_records_locked(self, intent, target_index, items):
+        """Replay an interrupted terminal transition without storing bodies."""
+        if not isinstance(intent, dict) or intent.get('operation') not in {
+                'FINISH', 'FINISH_GROUP'}:
+            return True
+        if not self._valid_index(target_index):
+            return False
+
+        operation = intent['operation']
+        changes = intent.get('changes')
+        base_generation = intent.get('base_generation')
+        if (type(base_generation) is not int
+                or target_index['generation'] != base_generation + 1):
+            return False
+        current_index = self._read_persisted_index_locked()
+        if current_index is not None:
+            if current_index['generation'] == target_index['generation']:
+                return current_index == target_index
+            if current_index['generation'] != base_generation:
+                return False
+        base_index = current_index
+        if not isinstance(changes, dict):
+            if (base_index is None or type(base_generation) is not int
+                    or base_index['generation'] != base_generation):
+                return False
+            changes = {}
+            ids = set(base_index['entries']) | set(target_index['entries'])
+            for review_id in ids:
+                before = base_index['entries'].get(review_id)
+                after = target_index['entries'].get(review_id)
+                if before != after:
+                    changes[review_id] = after
+
+        if not changes:
+            return False
+        changed_ids = set(changes)
+        for review_id, entry in changes.items():
+            if (not isinstance(review_id, str)
+                    or not _REVIEW_ID_PATTERN.fullmatch(review_id)
+                    or not isinstance(entry, dict)
+                    or target_index['entries'].get(review_id) != entry):
+                return False
+
+        if current_index is not None:
+            expected_entries = dict(current_index['entries'])
+            expected_entries.update(changes)
+            if expected_entries != target_index['entries']:
+                return False
+
+        target_statuses = {entry.get('status') for entry in changes.values()}
+        if (len(target_statuses) != 1
+                or not target_statuses <= {'ACCEPTED', 'REJECTED', 'EXPIRED'}):
+            return False
+        target_status = next(iter(target_statuses))
+        metadata = list(changes.values())
+        group_identity = {
+            (entry.get('project_id'), entry.get('content_fingerprint'))
+            for entry in metadata
+        }
+        if len(group_identity) != 1:
+            return False
+
+        records = {
+            item.get('id'): item for item in items
+            if isinstance(item, dict) and isinstance(item.get('id'), str)
+        }
+        changed_records = [records.get(review_id) for review_id in changed_ids]
+        if any(not isinstance(item, dict) for item in changed_records):
+            return False
+        for review_id, entry in changes.items():
+            item = records[review_id]
+            current = self._metadata_entry(item, review_id)
+            if (current is None
+                    or any(current[field] != entry[field]
+                           for field in ('project_id', 'expires_at', 'content_fingerprint'))
+                    or item.get('status') not in {'PENDING', target_status}):
+                return False
+
+        if operation == 'FINISH' and len(changed_ids) != 1:
+            return False
+        if (operation == 'FINISH_GROUP' and base_index is not None
+                and base_index['generation'] == base_generation):
+            project_id, fingerprint = next(iter(group_identity))
+            expected_group = {
+                review_id for review_id, entry in base_index['entries'].items()
+                if entry['project_id'] == project_id
+                and entry['content_fingerprint'] == fingerprint
+                and entry['status'] == 'PENDING'
+            }
+            if expected_group != changed_ids:
+                return False
+
+        primary_id = intent.get('primary_id')
+        if primary_id is None:
+            primary_id = sorted(changed_records, key=self._sort_key)[0]['id']
+        if primary_id not in changed_ids:
+            return False
+        primary = records[primary_id]
+        terminal_members = [item for item in changed_records
+                            if item.get('status') == target_status]
+        if not terminal_members:
+            # No record transition reached disk. Leave the queue pending so a
+            # user action or lifecycle pass can retry.
+            return True
+
+        ordered_ids = [primary_id] + sorted(changed_ids - {primary_id})
+        for review_id in ordered_ids:
+            item = records[review_id]
+            if item.get('status') == target_status:
+                continue
+            duplicate_of = None if review_id == primary_id else primary_id
+            result = (None if duplicate_of is None else
+                      {'status': target_status, 'duplicate_of': primary_id})
+            terminal = self._terminal_value(
+                item, target_status, result, duplicate_of=duplicate_of
+            )
+            write_json(self.path(review_id), terminal)
+            for offset, current in enumerate(items):
+                if isinstance(current, dict) and current.get('id') == review_id:
+                    items[offset] = terminal
+                    break
+        return True
 
     def _refresh_index_locked(self, items=None):
         if not self._recover_index_intent_locked():
@@ -227,7 +356,8 @@ class ReviewStore:
             items = self._items()
         return self._publish_index_locked(items)
 
-    def _apply_indexed_change_locked(self, operation, changes, apply_records):
+    def _apply_indexed_change_locked(
+            self, operation, changes, apply_records, *, primary_id=None):
         """Journal a content-free queue/index mutation under the shared lock."""
         if os.path.lexists(self.index_intent_path):
             raise RuntimeError('Review metadata index recovery is pending')
@@ -255,7 +385,10 @@ class ReviewStore:
             'operation': operation,
             'base_generation': index['generation'],
             'target_index': target_index,
+            'changes': changes,
         }
+        if primary_id is not None:
+            intent['primary_id'] = primary_id
         write_json(self.index_intent_path, intent)
         apply_records()
         write_json(self.pending_index_path, target_index)
@@ -493,11 +626,12 @@ class ReviewStore:
                  if isinstance(candidate, dict) and candidate.get('status') == 'PENDING'
                  and self._project_id(candidate) == self._project_id(item)
                  and self._content_fingerprint(candidate) == self._content_fingerprint(item)]
-        primary = sorted(group, key=self._sort_key)[0] if group else item
+        ordered_group = sorted(group or [item], key=self._sort_key)
+        primary = ordered_group[0]
         primary_id = primary.get('id')
         primary_value = None
         values = {}
-        for candidate in group or [item]:
+        for candidate in ordered_group:
             duplicate_of = None if candidate.get('id') == primary_id else primary_id
             candidate_result = result if duplicate_of is None else {'status': status, 'duplicate_of': primary_id}
             value = self._terminal_value(candidate, status, candidate_result, duplicate_of=duplicate_of)
@@ -513,7 +647,9 @@ class ReviewStore:
             for review_id, value in values.items():
                 write_json(self.path(review_id), value)
 
-        self._apply_indexed_change_locked('FINISH_GROUP', changes, write_group)
+        self._apply_indexed_change_locked(
+            'FINISH_GROUP', changes, write_group, primary_id=primary_id
+        )
         return primary_value or self._terminal_value(item, status, result)
 
     def list(self):
