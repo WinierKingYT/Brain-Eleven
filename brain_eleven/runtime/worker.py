@@ -73,7 +73,7 @@ def _memory_candidate_values(candidate, *, approved=False, target_id=None):
     """Build the exact TruthCandidate payload used for a memory operation."""
     values = {key: value for key, value in candidate.items()
               if key in {'candidate_id', 'content', 'memory_type', 'scope', 'project_id',
-                         'commitment', 'confidence', 'evidence_refs'}}
+                         'commitment', 'confidence', 'evidence_refs', 'claim_key', 'occurred_at'}}
     values['confidence'] = max(values.get('confidence', 0), 0.97) if approved else values.get('confidence', 0)
     values['commitment'] = 'COMMITTED' if approved else values.get('commitment', 'UNCERTAIN')
     if target_id:
