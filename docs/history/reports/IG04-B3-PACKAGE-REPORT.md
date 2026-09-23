@@ -158,13 +158,12 @@ implementer self-approves IG04-B3.
 
 ## Final local regression and final-head Validation
 
-The previous full suite after the project-ID privacy fix passed on
-`4cec5ac3ebd698a1d769a36f77768a069028c49d`: **1601 passed, 4 skipped** in
-276.79 seconds. The current grouped-recovery fix has passed the focused suites
-above; a full regression rerun is pending on this report-finalization snapshot.
-All four previous skips were existing Windows directory-fsync limitations in
-`tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were skipped. Exact
-final-documentation-head Validation and a fresh separate independent
-read-only review remain pending. The final handoff records the exact
-documentation-head Validation URL, SHA and review outcome; this report does
-not self-approve IG04-B3.
+After the grouped-recovery fix, `python -m pytest -q -rs` passed on
+implementation/documentation snapshot
+`39d80d693375e245b09286b6d05523e563b9b812`: **1602 passed, 4 skipped** in
+288.04 seconds. All four skips are existing Windows directory-fsync
+limitations in `tests/test_w18_memory_parent_fsync.py`; no IG04-B3 tests were
+skipped. Exact final-documentation-head Validation and a fresh separate
+independent read-only review remain pending after this report update. The
+final handoff records the exact documentation-head Validation URL, SHA and
+review outcome; this report does not self-approve IG04-B3.
