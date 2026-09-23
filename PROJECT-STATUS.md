@@ -277,19 +277,20 @@ runtime check is recorded in the table above.
   relevance recall than V1, so V2 stays shadow-only pending improvement and
   independent review. See `docs/history/PHASE19-CONTEXT-COMPILER-V2-CONTRACT.md`.
 
-## IG04-B3 Phase 0 — PASS TO CONTRACT (2026-09-23)
+## IG04-B3 contract frozen — implementation authorized (2026-09-23)
 
 The completed read-only audit at `99c080d` verified the queue lifecycle,
 stable documented session IDs, V1 renderer/gates, state locking, telemetry, and
 a same-host W-07B baseline. The owner approved two bounded contract revisions:
 a content-free project-scoped review metadata index with crash-safe lifecycle
 maintenance, and preserving prompt counts across per-turn `Stop` until
-`SessionEnd`. Phase 0 found no remaining STOP; no product code or tests were
-changed. The exact-green base is `6142c2c`, Validation
+`SessionEnd`. Phase 0 found no remaining STOP and changed no product code.
+The exact-green base is `6142c2c`, Validation
 [`35820195178`](https://github.com/WinierKingYT/Brain-Eleven/actions/runs/35820195178).
-See [`IG04-B3-AUDIT-NOTE.md`](docs/history/evidence/IG04-B3-AUDIT-NOTE.md).
-The revised contract must be committed before implementation; live native
-hook trust and Codex latency remain unverified.
+The frozen scope is [`IG04-B3-CONTRACT.md`](docs/contracts/IG04-B3-CONTRACT.md);
+audit evidence is [`IG04-B3-AUDIT-NOTE.md`](docs/history/evidence/IG04-B3-AUDIT-NOTE.md).
+Implementation may proceed under that contract. Live native hook trust and
+Codex latency remain unverified.
 
 ## Historical planning documents
 
