@@ -1,6 +1,6 @@
 # Documentation authority
 
-Authority: **CURRENT**. Updated: 2026-09-20. This registry classifies documentation;
+Authority: **CURRENT**. Updated: 2026-09-23. This registry classifies documentation;
 it does not make personal notes canonical MemoryStore or StateStore records.
 
 ## Reading and precedence
