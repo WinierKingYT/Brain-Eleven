@@ -234,9 +234,18 @@ kabul edilen kayıt 09-20 tarihliydi, `CLAUDE.md`'nin durumu 09-23'te değişmi�
 hem de test protokolünün gerçek hataları yakaladığını gösteriyor — beklenen ve istenen bir
 sonuç.
 
-**Özet: 1/1 doğru (bugüne kadarki tek soru).** 09-20'deki 0/5'ten ilk kez gerçek bir
-"evet, hatırladı" örneği. Küçük örneklem (n=1) — program çapında bir sayı değil, ama
-mekanizmanın artık uçtan uca çalıştığının ilk somut kanıtı.
+Aynı gün, ayrı taze bir oturumda Soru 4 de soruldu:
+
+| # | Puan | Not |
+|---|---|---|
+| 4 | doğru* | Phase 20 FROZEN / IG aktif — doğru ve güncel, artı doğru ek detay (IG-05 kapandı, IG-06/07 açılmıyor, SRT-00 kapandı). *Kaynağı kendi ifadesiyle "CLAUDE.md ve açılış hafıza özeti" — yani 09-20'deki aynı yıldızlı kayıtla tutarlı: bu soru CLAUDE.md'nin kendi metninden de cevaplanabilir, hafıza pipeline'ını Soru 1 kadar güçlü sınamıyor. Yine de burada da bir çelişkiyi (CLAUDE.md'nin alt kısmındaki eski IG-00→IG-01 ifadesinin üstteki güncel durumdan eski olduğu) kendi başına, doğru şekilde fark etti — uydurmadı. |
+
+**Özet (bugüne kadar): 1 doğru (hafızadan, Soru 1), 1 doğru\* (kısmen dosyadan, Soru 4).**
+09-20'deki 0/5'ten ilk kez gerçek "evet, hatırladı" örnekleri. Küçük örneklem (n=2) —
+program çapında bir sayı değil, ama mekanizmanın artık uçtan uca çalıştığının somut
+kanıtı. Soru 2/3/5 şu an test edilmeye uygun değil: Soru 3'ün anahtar cevabı artık bayat
+(master o zamandan beri gerçekten push edildi), Soru 2/5'in gerçeği henüz kabul edilmiş
+bir hafıza kaydı olarak yok (review kuyruğunda net bir aday bulunamadı).
 
 ## Günlük (iki hafta)
 
@@ -244,4 +253,4 @@ Her gün bir satır: "Bugün hatırladı mı? Evet/hayır, neyi."
 
 | Tarih | Hatırladı mı? | Neyi |
 |---|---|---|
-| 2026-09-23 | Evet | Soru #1 (holdout/corpus-v2 kararı) — doğru, bkz. "İlk gerçek sonuç" yukarıda. |
+| 2026-09-23 | Evet | Soru #1 (holdout/corpus-v2 kararı) — doğru; Soru #4 (Phase 20/IG durumu) — doğru* (kısmen dosyadan). Bkz. "İlk gerçek sonuç" yukarıda. |
