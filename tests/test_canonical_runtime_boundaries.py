@@ -23,7 +23,7 @@ def test_worker_uses_canonical_surfaces_for_memory_truth_and_evidence():
     assert "from .capture_provenance import TranscriptProvenanceError, resolve_transcript_path" in source
     assert "from .capture_queue import CaptureQueue" in source
     assert "from .capture_safety import evaluate_capture" in source
-    assert "from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type" in source
+    assert "from .extraction import CandidateKind, Commitment, DeterministicExtractor, MemoryType" in source
     assert "from .state_boundary import StateBoundary" in source
     assert "from scripts.memory_truth import" not in source
     assert "from scripts.evidence import" not in source

@@ -165,7 +165,7 @@ def _classify_commitment(content: str, role: str) -> Commitment:
         return Commitment.NEGATED
     if _DECISION.search(content) or re.search(r"\b(?:tamam|evet),?\s+.+\b(?:kullan|yap|geç)\w*", content, re.IGNORECASE):
         return Commitment.COMMITTED
-    if _CURRENT.search(content) or _RESOLVED.search(content) or _REQUIREMENT.search(content):
+    if any(pattern.search(content) for pattern in (_LESSON, _PREFERENCE, _CURRENT, _RESOLVED, _REQUIREMENT)):
         return Commitment.OBSERVED
     return Commitment.UNCERTAIN
 

@@ -16,8 +16,7 @@ from .capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
 from .capture_provenance import TranscriptProvenanceError, resolve_transcript_path
 from .capture_queue import CaptureQueue
 from .capture_safety import evaluate_capture
-from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
-from .extraction import CandidateKind, Commitment, MemoryType
+from .extraction import CandidateKind, Commitment, DeterministicExtractor, MemoryType
 from brain_eleven.extraction.providers import create_semantic_provider
 from brain_eleven.extraction.semantic import UnavailableProvider
 from .state_boundary import StateBoundary
@@ -875,19 +874,6 @@ class Worker:
                     else:
                         raise RuntimeError('Candidate not applied')
                 outcomes.append(outcome['status'])
-            # Preserve only bounded safe user proposals for review. Assistant
-            # text is not saved unless the optional local extractor proposes it.
-            if message.record.role == 'user' and not envelope.candidates:
-                for index, content in enumerate(_segments(message.content)):
-                    candidate = {'candidate_id': identity('cand_', message.record.evidence_id, index), 'candidate_type': 'NEW_MEMORY',
-                                 'project_id': project['project_id'], 'scope': 'project', 'content': content,
-                                 'memory_type': _memory_type(content), 'commitment': _classify_commitment(content, 'user').value,
-                                 'confidence': 0, 'evidence_refs': [message.record.evidence_id]}
-                    review_id = self._add_review(candidate, 'LOW_EVIDENCE_COMMITMENT', source)
-                    if review_id:
-                        effect_ids.append(review_id)
-                        review_effect_ids.append(review_id)
-                        review_effect_count += 1
             proposals, model_error = propose(self.config.load().get('local_model'), message)
             if model_error:
                 write_json(self.config.root / 'model-status.json', {'at': now(), 'status': model_error})
