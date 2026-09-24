@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 from pathlib import Path
 import sys
 from types import SimpleNamespace
@@ -146,6 +147,34 @@ def test_codex_cli_enforces_json_and_nonzero_contract(tmp_path):
 
     result = CodexCLIProvider(executable=str(executable), runner=nonzero_runner).extract(_message())
     assert result.status == SemanticStatus.SEMANTIC_UNAVAILABLE.value
+
+
+@pytest.mark.skipif(os.name != "nt", reason="CREATE_NO_WINDOW is Windows-only")
+def test_cli_providers_never_open_a_console_window(tmp_path):
+    """2026-09-24: the pythonw runtime worker flashed one visible hermes.EXE
+    console per captured message because provider CLIs ran without this flag."""
+    import subprocess
+
+    from brain_eleven.extraction.providers.hermes_cli import HermesCLIProvider
+
+    flags = []
+    proposals = json.dumps({"propositions": [_proposition()]})
+
+    def hermes_runner(command, **kwargs):
+        del command
+        flags.append(kwargs.get("creationflags"))
+        return SimpleNamespace(returncode=0, stdout=proposals)
+
+    def codex_runner(command, **kwargs):
+        flags.append(kwargs.get("creationflags"))
+        Path(command[command.index("--output-last-message") + 1]).write_text(proposals, encoding="utf-8")
+        return SimpleNamespace(returncode=0)
+
+    for name in ("hermes.exe", "codex.exe"):
+        (tmp_path / name).write_text("placeholder", encoding="utf-8")
+    HermesCLIProvider(executable=str(tmp_path / "hermes.exe"), runner=hermes_runner).extract(_message())
+    CodexCLIProvider(executable=str(tmp_path / "codex.exe"), runner=codex_runner).extract(_message())
+    assert flags == [subprocess.CREATE_NO_WINDOW, subprocess.CREATE_NO_WINDOW]
 
 
 def test_provider_modules_do_not_import_canonical_stores():

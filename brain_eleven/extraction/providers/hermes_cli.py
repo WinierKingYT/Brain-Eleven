@@ -33,6 +33,7 @@ from .common import (
     MODEL_INSTRUCTION,
     ProviderConfigurationError,
     finish_result,
+    hidden_console_kwargs,
     parse_json_object,
 )
 
@@ -132,6 +133,7 @@ class HermesCLIProvider:
                 text=True,
                 timeout=self.timeout_s,
                 check=False,
+                **hidden_console_kwargs(),
             )
         except (OSError, subprocess.TimeoutExpired) as error:
             raise RuntimeError("hermes cli invocation failed") from error

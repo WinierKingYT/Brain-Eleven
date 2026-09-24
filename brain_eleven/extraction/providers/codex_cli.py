@@ -29,6 +29,7 @@ from .common import (
     MODEL_INSTRUCTION,
     ProviderConfigurationError,
     finish_result,
+    hidden_console_kwargs,
     parse_json_object,
 )
 
@@ -137,6 +138,7 @@ class CodexCLIProvider:
                     text=True,
                     timeout=self.timeout_s,
                     check=False,
+                    **hidden_console_kwargs(),
                 )
             except (OSError, subprocess.TimeoutExpired) as error:
                 raise RuntimeError("codex cli invocation failed") from error
