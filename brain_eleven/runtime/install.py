@@ -1,11 +1,12 @@
 """Additive, reversible native client configuration; never changes hook trust."""
 from copy import deepcopy
+from datetime import datetime
 import importlib.util
 import os
 from pathlib import Path
 import shlex
 import sys
-from .storage import RuntimeConfig, read_json, write_json, now, runtime_file_lock as file_lock
+from .storage import RuntimeConfig, identity, read_json, write_json, now, runtime_file_lock as file_lock
 
 EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')
 
@@ -190,6 +191,7 @@ def uninstall(vault):
 
 
 def _session_start_health(vault):
+    observations = []
     path = Path(vault) / '.claude' / 'session-run-result.json'
     try:
         result = read_json(path, {})
@@ -197,15 +199,43 @@ def _session_start_health(vault):
         result = {}
     timestamp = result.get('timestamp') if isinstance(result, dict) else None
     exit_status = result.get('exit_status') if isinstance(result, dict) else None
+    state = 'unknown'
     if type(exit_status) is int:
         state = 'ok' if exit_status == 0 else 'failed'
-    else:
-        state = 'unknown'
     if isinstance(timestamp, str) and timestamp:
-        message = f'last SessionStart: {state} at {timestamp}'
-    else:
-        message = 'last SessionStart: unknown'
-    return message, state == 'failed'
+        observations.append((timestamp, f'last SessionStart: {state} at {timestamp}', state == 'failed'))
+
+    cfg = RuntimeConfig(vault)
+    bootstrap_hash = identity('turn_', 'bootstrap')
+    for receipt_path in (cfg.root / 'deliveries').glob('*.json'):
+        try:
+            receipt = read_json(receipt_path, {})
+        except (OSError, ValueError, TypeError):
+            continue
+        if not isinstance(receipt, dict) or receipt.get('status') != 'EMITTED':
+            continue
+        event = receipt.get('event')
+        if event != 'SessionStart' and not (event is None and receipt.get('turn_hash') == bootstrap_hash):
+            continue
+        observed_at = receipt.get('at')
+        delivered = receipt.get('context_delivered')
+        if not isinstance(observed_at, str) or not observed_at or not isinstance(delivered, bool):
+            continue
+        detail = 'context delivered' if delivered else 'context empty'
+        observations.append((observed_at, f'last SessionStart: ok at {observed_at} (native; {detail})', False))
+
+    if not observations:
+        return 'last SessionStart: unknown', False
+
+    def ordering(item):
+        try:
+            parsed = datetime.fromisoformat(item[0].replace('Z', '+00:00'))
+            return parsed.timestamp()
+        except (OverflowError, ValueError):
+            return float('-inf')
+
+    _timestamp, message, failed = max(observations, key=ordering)
+    return message, failed
 
 
 def _last_transcript_signal(cfg):

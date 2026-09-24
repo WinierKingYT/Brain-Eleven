@@ -128,6 +128,7 @@ def hook(vault, client, event, payload):
             output['systemMessage'] = 'Brain-Eleven: bağlam eksik veya kullanılamıyor; çalışma devam ediyor. İnceleme ekranını kontrol edin.'
         # Only the caller can acknowledge that stdout was successfully flushed.
         return output, path, {'status': 'EMITTED', 'at': now(), 'client': client,
+                              'event': event,
                               'session_hash': identity('session_', session), 'turn_hash': identity('turn_', turn),
                               'context_delivered': bool(output.get('hookSpecificOutput')),
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
