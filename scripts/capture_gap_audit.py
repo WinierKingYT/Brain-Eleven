@@ -25,7 +25,6 @@ receipts are reported, not gated: SHADOW legitimately delivers nothing. Exit cod
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from collections import defaultdict
@@ -33,17 +32,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-try:
-    from brain_eleven.runtime.ownership import _project_slug
-except ImportError:  # pragma: no cover - copied-script fallback
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from brain_eleven.runtime.ownership import _project_slug
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from brain_eleven.runtime.ownership import _project_slug  # noqa: E402
+from brain_eleven.runtime.worker import capture_session_hash  # noqa: E402
 
-SESSION_END = "SessionEnd"
-
-
-def _hash(value: str) -> str:
-    return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+# The capture queue's own event type for native Stop/SessionEnd captures.
+SESSION_END = "SESSION_END"
 
 
 def _parse_since(value: Optional[str]) -> Optional[float]:
@@ -132,7 +126,7 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
                     continue
             except OSError:
                 continue
-            key = _hash(transcript.stem)
+            key = capture_session_hash("claude", transcript.stem)
             row["sessions"] += 1
             receipt = receipts.get(key)
             stage = receipt.get("stage", "UNKNOWN") if receipt else "NO_RECEIPT"

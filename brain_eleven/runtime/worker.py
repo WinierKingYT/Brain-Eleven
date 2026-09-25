@@ -162,6 +162,16 @@ def allowed(vault, project_root):
     return record
 
 
+def capture_session_key(client, session):
+    """Native session key the capture queue stores as the event's session_id."""
+    return client + ':' + hashlib.sha256(session.encode()).hexdigest()
+
+
+def capture_session_hash(client, session):
+    """The ``session_id_hash`` the capture ledger records for this session."""
+    return 'sha256:' + hashlib.sha256(capture_session_key(client, session).encode('utf-8')).hexdigest()
+
+
 def enqueue(vault, client, payload):
     if client not in {'claude', 'codex'}:
         raise ValueError('Unsupported client')
@@ -185,7 +195,7 @@ def enqueue(vault, client, payload):
         return {'status': 'DEGRADED', 'error': error}
     except OSError:
         return {'status': 'DEGRADED', 'error': 'TRANSCRIPT_NOT_FOUND'}
-    session_key = client + ':' + hashlib.sha256(session.encode()).hexdigest()
+    session_key = capture_session_key(client, session)
     event = parse_hook_event({'event_type': 'SESSION_END', 'session_id': session_key,
                              'project_root': str(root), 'transcript_path': str(path), 'event_at': now()}, vault_path=vault)
     key = identity('capture_', session_key, str(path),

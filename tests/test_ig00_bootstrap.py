@@ -8,7 +8,7 @@ import pytest
 from tests.test_pre13_runtime import runtime, candidate
 from brain_eleven.runtime.context import compile_context
 from brain_eleven.runtime.storage import RuntimeConfig, identity, read_json, write_json
-from brain_eleven.runtime.worker import apply_candidate
+from brain_eleven.runtime.worker import apply_candidate, capture_session_hash
 from brain_eleven.projects.registry import ProjectRegistry
 
 
@@ -77,7 +77,7 @@ def test_native_bootstrap_flush_receipt_deduplicates(runtime, monkeypatch, capsy
     receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
     assert receipt['event'] == 'SessionStart' and receipt['stage'] == 'DELIVERED'
     assert receipt['compile_status'] == 'SUCCESS' and receipt['reason'] is None
-    assert receipt['capture_session_hash'] == launcher.capture_session_hash('same')
+    assert receipt['capture_session_hash'] == capture_session_hash(client, 'same')
 
 
 def test_compiled_but_unapproved_bootstrap_records_reason(runtime, monkeypatch):
@@ -102,7 +102,7 @@ def test_startup_unavailable_warns_and_continues(runtime, monkeypatch):
     # so a later SessionStart for the same session can retry.
     assert receipt['stage'] == 'NOT_COMPILED' and receipt['reason'] == 'SERVICE_NOT_READY'
     assert receipt['status'] != 'EMITTED' and receipt['context_delivered'] is False
-    assert receipt['capture_session_hash'] == launcher.capture_session_hash('s')
+    assert receipt['capture_session_hash'] == capture_session_hash('codex', 's')
 
 
 def test_recent_dead_launch_marker_does_not_block_service_restart(runtime, monkeypatch):

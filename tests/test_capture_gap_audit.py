@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -11,11 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from capture_gap_audit import audit, main, verdict  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
+from brain_eleven.runtime.migration import migrate  # noqa: E402
 from brain_eleven.runtime.ownership import _project_slug  # noqa: E402
+from brain_eleven.runtime.storage import RuntimeConfig, write_json  # noqa: E402
+from brain_eleven.runtime.worker import capture_session_hash, enqueue  # noqa: E402
 
 
 def _h(value: str) -> str:
-    return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return capture_session_hash("claude", value)
 
 
 def _setup(tmp_path, sessions, ledger):
@@ -30,7 +33,7 @@ def _setup(tmp_path, sessions, ledger):
         for sid in sessions.get(pid, []):
             (directory / f"{sid}.jsonl").write_text("{}\n", encoding="utf-8")
     (vault / ".claude" / "project-registry.json").write_text(json.dumps({"projects": projects}))
-    lines = [json.dumps({"event_type": "SessionEnd", "session_id_hash": _h(sid), "project_id": pid,
+    lines = [json.dumps({"event_type": "SESSION_END", "session_id_hash": _h(sid), "project_id": pid,
                          "action": action, **({"error_code": code} if code else {})})
              for sid, pid, action, code in ledger]
     (vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl").write_text("\n".join(lines) + "\n")
@@ -82,3 +85,25 @@ def test_bootstrap_receipts_are_joined_per_session(tmp_path):
     report = audit(vault, home)
     assert report["bootstrap_receipts"] == {"DELIVERED": 1, "COMPILED_NOT_DELIVERED:EMPTY_CONTEXT": 1,
                                             "NO_RECEIPT": 1}
+
+
+def test_real_native_enqueue_is_seen_by_the_audit(tmp_path):
+    """Regression: the audit must match what worker.enqueue actually writes
+    (hashed ``claude:<sha256>`` session key, ``SESSION_END`` event type)."""
+    vault, home = tmp_path / "vault", tmp_path / "claude"
+    vault.mkdir()
+    project = ProjectRegistry(vault).register(vault, proactive_capture=True)
+    migrate(vault)
+    write_json(RuntimeConfig(vault).path, {
+        "schema_version": 1, "mode": "CANARY", "project_ids": [project["project_id"]],
+        "local_model": None, "transcript_roots": {"claude": [str(home)], "codex": [str(home)]}})
+    directory = home / "projects" / _project_slug(project["root"])
+    directory.mkdir(parents=True)
+    for sid in ("real-1", "real-2"):
+        path = directory / f"{sid}.jsonl"
+        path.write_text(json.dumps({"type": "user", "sessionId": sid}) + "\n", encoding="utf-8")
+        if sid == "real-1":
+            enqueue(vault, "claude", {"session_id": sid, "cwd": str(vault), "transcript_path": str(path)})
+    report = audit(vault, home)
+    assert report["totals"]["sessions"] == 2
+    assert report["totals"]["enqueued"] == 1 and report["totals"]["missing"] == 1

@@ -1,7 +1,6 @@
 """Small native hook entry point. No framework or model import on fast paths."""
 import argparse
 from contextlib import nullcontext
-import hashlib
 import http.client
 import json
 import os
@@ -100,13 +99,8 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
     return False
 
 
-def capture_session_hash(session):
-    """Same session key the capture ledger records, so receipts can be joined."""
-    return 'sha256:' + hashlib.sha256(session.encode('utf-8')).hexdigest()
-
-
 def hook(vault, client, event, payload):
-    from brain_eleven.runtime.worker import allowed, enqueue
+    from brain_eleven.runtime.worker import allowed, capture_session_hash, enqueue
     cfg = RuntimeConfig(vault)
     if cfg.load()['mode'] == 'OFF' or not allowed(vault, payload.get('cwd')):
         return {}
@@ -134,7 +128,7 @@ def hook(vault, client, event, payload):
             'status': 'NOT_COMPILED', 'stage': 'NOT_COMPILED', 'reason': 'SERVICE_NOT_READY',
             'at': now(), 'client': client, 'event': event,
             'session_hash': identity('session_', session), 'turn_hash': identity('turn_', 'bootstrap'),
-            'capture_session_hash': capture_session_hash(session), 'context_delivered': False}
+            'capture_session_hash': capture_session_hash(client, session), 'context_delivered': False}
     # Native turn identity when provided; otherwise transcript position plus
     # prompt hash distinguishes repeated identical prompts in later turns.
     locator = payload.get('transcript_path')
@@ -173,7 +167,7 @@ def hook(vault, client, event, payload):
         return output, path, {'status': 'EMITTED', 'at': now(), 'client': client, 'event': event,
                               'stage': stage, 'reason': reason, 'compile_status': result.get('status'),
                               'provider': provider, 'delivery_approved': approved,
-                              'capture_session_hash': capture_session_hash(session),
+                              'capture_session_hash': capture_session_hash(client, session),
                               'session_hash': identity('session_', session), 'turn_hash': identity('turn_', turn),
                               'context_delivered': delivered,
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
