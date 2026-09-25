@@ -46,6 +46,24 @@ def _process_alive(pid):
     return True
 
 
+def _service_interpreter():
+    """Console python.exe for the background service, even when hooks run pythonw.exe.
+
+    CREATE_NO_WINDOW means nothing to GUI-subsystem pythonw.exe, so a pythonw
+    service owns no console, and every console program it later starts (the
+    Hermes/Codex provider CLIs) gets a new VISIBLE console -- measured
+    2026-09-24 as one hermes.EXE window flash per captured message. Console
+    python.exe under CREATE_NO_WINDOW owns one hidden console that all of its
+    descendants inherit instead.
+    """
+    executable = Path(sys.executable)
+    if os.name == 'nt' and executable.name.lower() == 'pythonw.exe':
+        console = executable.with_name('python.exe')
+        if console.is_file():
+            return str(console)
+    return sys.executable
+
+
 def ensure_service(vault, *, wait=False, wait_timeout=8):
     deadline = time.monotonic() + wait_timeout
     cfg = RuntimeConfig(vault)
@@ -69,7 +87,7 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
                 options['creationflags'] = subprocess.CREATE_NO_WINDOW
             else:
                 options['start_new_session'] = True
-            process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
+            process = subprocess.Popen([_service_interpreter(), str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
             write_json(cfg.root / 'launch.json', {'started': time.time(), 'pid': process.pid})
     if wait:
         while time.monotonic() < deadline:

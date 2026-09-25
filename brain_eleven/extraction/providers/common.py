@@ -6,6 +6,8 @@ from dataclasses import replace
 import hashlib
 import json
 import logging
+import os
+import subprocess  # nosec B404
 from time import perf_counter
 from typing import Any, Mapping
 
@@ -13,6 +15,20 @@ from brain_eleven.extraction.semantic import ProviderResult
 
 
 logger = logging.getLogger(__name__)
+
+
+def hidden_console_kwargs() -> dict[str, int]:
+    """Extra ``subprocess.run`` kwargs so a provider CLI never opens a window.
+
+    The runtime worker is often a console-less ``pythonw.exe``; a console
+    program it starts without CREATE_NO_WINDOW gets a brand-new VISIBLE console
+    (measured 2026-09-24: one ``hermes.EXE`` window per captured message).
+    CREATE_NO_WINDOW gives the CLI its own hidden console instead, which its
+    descendants inherit.
+    """
+    if os.name != "nt":
+        return {}
+    return {"creationflags": subprocess.CREATE_NO_WINDOW}
 
 
 class ProviderConfigurationError(RuntimeError):
