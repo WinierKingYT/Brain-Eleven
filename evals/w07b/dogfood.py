@@ -15,7 +15,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from evals.w07b.native_smoke import RetryingTemporaryDirectory
 
 from evals.w07b.native_smoke import _invoke, _prepare_client, _file_hashes, _live_files
 
@@ -180,9 +180,9 @@ def run(*, client: str = "claude") -> dict:
 
     live_files = _live_files(client)
     live_hashes = _file_hashes(live_files)
-    with TemporaryDirectory(prefix="w07b-dog-home-") as home_s, \
-            TemporaryDirectory(prefix="w07b-dog-vault-") as vault_s, \
-            TemporaryDirectory(prefix="w07b-dog-project-b-") as project_b_s:
+    with RetryingTemporaryDirectory(prefix="w07b-dog-home-") as home_s, \
+            RetryingTemporaryDirectory(prefix="w07b-dog-vault-") as vault_s, \
+            RetryingTemporaryDirectory(prefix="w07b-dog-project-b-") as project_b_s:
         home, vault = Path(home_s), Path(vault_s)
         environment, settings_path = _prepare_client(client, home, vault)
 

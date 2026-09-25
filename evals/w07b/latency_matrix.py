@@ -28,7 +28,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from evals.w07b.native_smoke import RetryingTemporaryDirectory
 
 from evals.w07b.native_smoke import (
     _client_version, _file_hashes, _invoke as _invoke_native, _live_files, _prepare_client, _repo_head,
@@ -156,7 +156,7 @@ def run(*, client: str = "claude", cold_samples: int = COLD_SAMPLES,
         raise ValueError("Both sample counts must be positive")
     live_files = _live_files(client)
     live_hashes = _file_hashes(live_files)
-    with TemporaryDirectory(prefix="w07b-lat-home-") as home_str, TemporaryDirectory(prefix="w07b-lat-vault-") as vault_str:
+    with RetryingTemporaryDirectory(prefix="w07b-lat-home-") as home_str, RetryingTemporaryDirectory(prefix="w07b-lat-vault-") as vault_str:
         home, vault = Path(home_str), Path(vault_str)
         environment, settings_path = _prepare_client(client, home, vault)
 

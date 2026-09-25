@@ -42,6 +42,19 @@ PROMPTS = [
 ]
 
 
+class RetryingTemporaryDirectory(TemporaryDirectory):
+    """Allow a stopped Windows service's final file write to finish."""
+
+    def cleanup(self):
+        for attempt in range(50):
+            try:
+                return super().cleanup()
+            except OSError as exc:
+                if getattr(exc, "winerror", None) not in {32, 145} or attempt == 49:
+                    raise
+                time.sleep(0.2)
+
+
 @dataclass
 class RunResult:
     repetition: int
@@ -216,7 +229,7 @@ def run(repetitions: int, client: str = "claude") -> Report:
     report = Report(client=client, client_version=_client_version(client), repo_head=_repo_head(),
                     live_settings_hash_before=json.dumps(before_hashes), live_settings_hash_after=None)
 
-    with TemporaryDirectory(prefix="w07b-home-") as home_str, TemporaryDirectory(prefix="w07b-vault-") as vault_str:
+    with RetryingTemporaryDirectory(prefix="w07b-home-") as home_str, RetryingTemporaryDirectory(prefix="w07b-vault-") as vault_str:
         home, vault = Path(home_str), Path(vault_str)
         environment, settings_path = _prepare_client(client, home, vault)
 
