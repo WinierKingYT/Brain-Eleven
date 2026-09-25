@@ -1,10 +1,38 @@
 """The native evidence gate must not accept a successful CLI with missing hooks."""
 
+from tempfile import TemporaryDirectory
+from pathlib import Path
+
+from evals.w07b import native_smoke
 from evals.w07b.latency_matrix import _gate
 from evals.w07b.dogfood import _exercise_failed_retry
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.runtime import maintenance_delivery
 from brain_eleven.state import StateStore
+
+
+def test_windows_native_cleanup_retries_transient_nonempty_directory(tmp_path, monkeypatch):
+    directory = native_smoke.RetryingTemporaryDirectory(dir=tmp_path)
+    target = directory.name
+    original_cleanup = TemporaryDirectory.cleanup
+    calls = 0
+
+    def busy_once(instance):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            error = OSError("transient Windows directory write")
+            error.winerror = 145
+            raise error
+        return original_cleanup(instance)
+
+    monkeypatch.setattr(TemporaryDirectory, "cleanup", busy_once)
+    monkeypatch.setattr(native_smoke.time, "sleep", lambda seconds: None)
+
+    directory.cleanup()
+
+    assert calls == 2
+    assert not Path(target).exists()
 
 
 def _report():
