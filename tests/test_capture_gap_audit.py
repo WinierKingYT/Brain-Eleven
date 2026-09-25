@@ -107,3 +107,13 @@ def test_real_native_enqueue_is_seen_by_the_audit(tmp_path):
     report = audit(vault, home)
     assert report["totals"]["sessions"] == 2
     assert report["totals"]["enqueued"] == 1 and report["totals"]["missing"] == 1
+
+
+def test_later_committed_job_recovers_an_earlier_dead_letter(tmp_path):
+    sessions = {"p_a": ["a1"], "p_b": ["b1"]}
+    ledger = [("a1", "p_a", "ENQUEUED", None), ("a1", "p_a", "DEAD_LETTER", "TRANSCRIPT_CHANGED"),
+              ("a1", "p_a", "ENQUEUED", None), ("a1", "p_a", "COMMITTED", None)] + _ok("b1", "p_b")
+    vault, home = _setup(tmp_path, sessions, ledger)
+    report = audit(vault, home)
+    assert report["totals"]["dead_letter"] == 0 and report["totals"]["dead_letter_recovered"] == 1
+    assert report["totals"]["committed"] == 2

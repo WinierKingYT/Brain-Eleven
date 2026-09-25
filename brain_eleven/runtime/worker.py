@@ -162,6 +162,12 @@ def allowed(vault, project_root):
     return record
 
 
+_EVIDENCE_READ_CODES = frozenset({
+    'TRANSCRIPT_CHANGED', 'TRANSCRIPT_REWRITTEN', 'TRANSCRIPT_TOO_LARGE',
+    'TRANSCRIPT_LINE_TOO_LARGE', 'TRANSCRIPT_TOO_MANY_MESSAGES',
+})
+
+
 def capture_session_key(client, session):
     """Native session key the capture queue stores as the event's session_id."""
     return client + ':' + hashlib.sha256(session.encode()).hexdigest()
@@ -716,8 +722,9 @@ class Worker:
                 code = getattr(exc, 'code', None)
                 if not code and isinstance(exc, (MemoryStoreConflict, StateStoreConflict)):
                     code = 'CANONICAL_CONFLICT'
-                if not code and isinstance(exc, ValueError) and str(exc) == 'TRANSCRIPT_CHANGED':
-                    code = 'TRANSCRIPT_CHANGED'
+                if not code and isinstance(exc, ValueError) and str(exc) in _EVIDENCE_READ_CODES:
+                    # Fixed constants from evidence.read_increment, never content.
+                    code = str(exc)
                 if not code and isinstance(exc, (ValueError, UnicodeError)):
                     code = 'EVIDENCE_INVALID'
                 code = code or 'WORKER_FAILED'

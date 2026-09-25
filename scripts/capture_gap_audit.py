@@ -118,7 +118,7 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
         directory = claude_home / "projects" / _project_slug(str(project["root"]))
         row = {"project_id": project["project_id"], "transcript_dir_found": directory.is_dir(),
                "sessions": 0, "enqueued": 0, "committed": 0, "dead_letter": 0,
-               "pending": 0, "missing": 0, "wrong_project": 0}
+               "pending": 0, "missing": 0, "wrong_project": 0, "dead_letter_recovered": 0}
         transcripts = sorted(directory.glob("*.jsonl")) if row["transcript_dir_found"] else []
         for transcript in transcripts:
             try:
@@ -140,15 +140,20 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
             row["enqueued"] += 1
             if ledger_projects.get(key) not in (None, project["project_id"]):
                 row["wrong_project"] += 1
-            if "DEAD_LETTER" in seen:
+            # Every Stop enqueues its own job, so one session can have a
+            # dead-lettered job and a later committed one; that is not a loss.
+            if "COMMITTED" in seen:
+                row["committed"] += 1
+                if "DEAD_LETTER" in seen:
+                    row["dead_letter_recovered"] += 1
+            elif "DEAD_LETTER" in seen:
                 row["dead_letter"] += 1
                 for code in errors.get(key, ()):
                     error_codes[code] += 1
-            elif "COMMITTED" in seen:
-                row["committed"] += 1
             else:
                 row["pending"] += 1
-        for field in ("sessions", "enqueued", "committed", "dead_letter", "pending", "missing", "wrong_project"):
+        for field in ("sessions", "enqueued", "committed", "dead_letter", "dead_letter_recovered", "pending", "missing",
+                      "wrong_project"):
             totals[field] += row[field]
         projects.append(row)
 
