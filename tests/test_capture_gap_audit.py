@@ -51,7 +51,7 @@ def test_pass_when_every_session_committed(tmp_path):
     report = audit(vault, home)
     assert report["totals"]["committed"] == 20
     assert verdict(report, min_projects=2, min_sessions=20) == "PASS"
-    assert main(["--vault", str(vault), "--claude-home", str(home)]) == 0
+    assert main(["--vault", str(vault), "--claude-home", str(home), "--codex-home", str(tmp_path / "nocodex")]) == 0
 
 
 def test_missing_enqueue_and_dead_letter_fail(tmp_path):
@@ -62,7 +62,7 @@ def test_missing_enqueue_and_dead_letter_fail(tmp_path):
     report = audit(vault, home)
     assert report["totals"]["missing"] == 1
     assert report["totals"]["dead_letter"] == 1
-    assert report["dead_letter_error_codes"] == {"TRANSCRIPT_OWNERSHIP_UNVERIFIED": 1}
+    assert report["dead_letter_error_codes"] == {"claude:TRANSCRIPT_OWNERSHIP_UNVERIFIED": 1}
     assert verdict(report, min_projects=2, min_sessions=1) == "FAIL"
 
 
@@ -83,8 +83,9 @@ def test_bootstrap_receipts_are_joined_per_session(tmp_path):
             "event": "SessionStart", "at": "2026-09-25T00:00:00Z", "stage": stage, "reason": reason,
             "capture_session_hash": _h(sid)}))
     report = audit(vault, home)
-    assert report["bootstrap_receipts"] == {"DELIVERED": 1, "COMPILED_NOT_DELIVERED:EMPTY_CONTEXT": 1,
-                                            "NO_RECEIPT": 1}
+    assert report["bootstrap_receipts"] == {"claude:DELIVERED": 1,
+                                            "claude:COMPILED_NOT_DELIVERED:EMPTY_CONTEXT": 1,
+                                            "claude:NO_RECEIPT": 1}
 
 
 def test_real_native_enqueue_is_seen_by_the_audit(tmp_path):
@@ -117,3 +118,29 @@ def test_later_committed_job_recovers_an_earlier_dead_letter(tmp_path):
     report = audit(vault, home)
     assert report["totals"]["dead_letter"] == 0 and report["totals"]["dead_letter_recovered"] == 1
     assert report["totals"]["committed"] == 2
+
+
+def test_codex_sessions_are_audited_and_gate_requires_both_clients(tmp_path):
+    sessions = {"p_a": ["a1"], "p_b": ["b1"]}
+    ledger = _ok("a1", "p_a") + _ok("b1", "p_b")
+    ledger += [("__codex__", "p_a", "ENQUEUED", None), ("__codex__", "p_a", "COMMITTED", None)]
+    vault, home = _setup(tmp_path, sessions, [row for row in ledger if row[0] != "__codex__"])
+    ledger_path = vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl"
+    codex = tmp_path / "codex"
+    day = codex / "sessions" / "2026" / "09" / "25"
+    day.mkdir(parents=True)
+    for sid, enqueued in (("cx-1", True), ("cx-2", False)):
+        (day / f"rollout-{sid}.jsonl").write_text(json.dumps({"type": "session_meta", "payload": {
+            "session_id": sid, "cwd": str(tmp_path / "proj_a")}}) + "\n", encoding="utf-8")
+        if enqueued:
+            with ledger_path.open("a", encoding="utf-8") as handle:
+                for action in ("ENQUEUED", "COMMITTED"):
+                    handle.write(json.dumps({"event_type": "SESSION_END", "project_id": "p_a", "action": action,
+                                             "session_id_hash": capture_session_hash("codex", sid)}) + "\n")
+    report = audit(vault, home, codex_home=codex, clients=("claude", "codex"))
+    assert report["clients"]["codex"] == {**report["clients"]["codex"], "sessions": 2, "committed": 1, "missing": 1}
+    assert report["clients"]["claude"]["committed"] == 2
+    assert verdict(report, min_projects=1, min_sessions=1) == "FAIL"
+    only_claude = audit(vault, home, codex_home=codex, clients=("claude",))
+    assert verdict(only_claude, min_projects=2, min_sessions=2, require_clients=("claude", "codex"),
+                   min_client_sessions=1) == "INSUFFICIENT_EVIDENCE"
