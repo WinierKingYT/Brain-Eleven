@@ -73,13 +73,36 @@ def test_native_bootstrap_flush_receipt_deduplicates(runtime, monkeypatch, capsy
         output = json.loads(capsys.readouterr().out)
         assert bool(output.get('hookSpecificOutput')) == (index == 0)
     assert len(calls) == 1 and calls[0]['event'] == 'SessionStart'
+    (receipt_path,) = (RuntimeConfig(vault).root / 'deliveries').glob('*.json')
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    assert receipt['event'] == 'SessionStart' and receipt['stage'] == 'DELIVERED'
+    assert receipt['compile_status'] == 'SUCCESS' and receipt['reason'] is None
+    assert receipt['capture_session_hash'] == launcher.capture_session_hash('same')
+
+
+def test_compiled_but_unapproved_bootstrap_records_reason(runtime, monkeypatch):
+    from brain_eleven.runtime import launcher
+    vault, _ = runtime
+    monkeypatch.setattr(launcher, 'ensure_service', lambda *a, **kw: True)
+    monkeypatch.setattr(launcher, 'request_service', lambda *a, **kw: {
+        'status': 'SUCCESS', 'context': 'bağlam', 'delivered': False,
+        'delivery_approved': False, 'provider': 'V1'})
+    output, _, receipt = launcher.hook(vault, 'claude', 'SessionStart', {'cwd': str(vault), 'session_id': 'u'})
+    assert 'hookSpecificOutput' not in output
+    assert receipt['stage'] == 'COMPILED_NOT_DELIVERED' and receipt['reason'] == 'NOT_APPROVED'
 
 
 def test_startup_unavailable_warns_and_continues(runtime, monkeypatch):
     from brain_eleven.runtime import launcher
     vault, _ = runtime
     monkeypatch.setattr(launcher, 'ensure_service', lambda *a, **kw: False)
-    assert 'systemMessage' in launcher.hook(vault, 'codex', 'SessionStart', {'cwd': str(vault), 'session_id': 's'})
+    output, _, receipt = launcher.hook(vault, 'codex', 'SessionStart', {'cwd': str(vault), 'session_id': 's'})
+    assert 'systemMessage' in output
+    # A bootstrap that never compiled is still observable, and is not EMITTED
+    # so a later SessionStart for the same session can retry.
+    assert receipt['stage'] == 'NOT_COMPILED' and receipt['reason'] == 'SERVICE_NOT_READY'
+    assert receipt['status'] != 'EMITTED' and receipt['context_delivered'] is False
+    assert receipt['capture_session_hash'] == launcher.capture_session_hash('s')
 
 
 def test_recent_dead_launch_marker_does_not_block_service_restart(runtime, monkeypatch):

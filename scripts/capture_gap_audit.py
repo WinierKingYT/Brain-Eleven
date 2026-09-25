@@ -13,7 +13,13 @@ the ledger's hashes/codes), and prints no raw paths or session ids.
 
 Gate (roadmap step 1): at least ``--min-projects`` projects and
 ``--min-sessions`` audited sessions, zero missing enqueues, zero dead
-letters. Exit code 0 = PASS, 1 = FAIL, 2 = INSUFFICIENT_EVIDENCE.
+letters.
+
+It also joins each session's SessionStart delivery receipt
+(``.brain-eleven/runtime/deliveries``) so one report shows captured ->
+compiled -> delivered per session (``bootstrap_receipts``: DELIVERED,
+COMPILED_NOT_DELIVERED:<reason>, NOT_COMPILED:<reason>, NO_RECEIPT). The
+receipts are reported, not gated: SHADOW legitimately delivers nothing. Exit code 0 = PASS, 1 = FAIL, 2 = INSUFFICIENT_EVIDENCE.
 """
 
 from __future__ import annotations
@@ -76,6 +82,22 @@ def load_ledger(vault: Path) -> Iterable[dict[str, Any]]:
     return records
 
 
+def load_bootstrap_receipts(vault: Path) -> dict[str, dict[str, Any]]:
+    """capture_session_hash -> latest SessionStart delivery receipt."""
+    receipts: dict[str, dict[str, Any]] = {}
+    for path in (vault / ".brain-eleven" / "runtime" / "deliveries").glob("*.json"):
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(record, dict) or record.get("event") != "SessionStart":
+            continue
+        key = record.get("capture_session_hash")
+        if isinstance(key, str) and str(record.get("at", "")) >= str(receipts.get(key, {}).get("at", "")):
+            receipts[key] = record
+    return receipts
+
+
 def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> dict[str, Any]:
     # session_id_hash -> set of ledger actions / error codes, SessionEnd only.
     actions: dict[str, set[str]] = defaultdict(set)
@@ -93,6 +115,8 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
         if record.get("project_id"):
             ledger_projects[key] = str(record["project_id"])
 
+    receipts = load_bootstrap_receipts(vault)
+    bootstrap: dict[str, int] = defaultdict(int)
     projects = []
     totals = defaultdict(int)
     error_codes: dict[str, int] = defaultdict(int)
@@ -110,6 +134,11 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
                 continue
             key = _hash(transcript.stem)
             row["sessions"] += 1
+            receipt = receipts.get(key)
+            stage = receipt.get("stage", "UNKNOWN") if receipt else "NO_RECEIPT"
+            if receipt and receipt.get("reason"):
+                stage += ":" + str(receipt["reason"])
+            bootstrap[stage] += 1
             seen = actions.get(key, set())
             if "ENQUEUED" not in seen and "DUPLICATE" not in seen:
                 row["missing"] += 1
@@ -130,6 +159,7 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None) -> d
         projects.append(row)
 
     return {"projects": projects, "totals": dict(totals), "dead_letter_error_codes": dict(error_codes),
+            "bootstrap_receipts": dict(bootstrap),
             "projects_with_sessions": sum(1 for row in projects if row["sessions"] > 0)}
 
 

@@ -208,6 +208,23 @@ def _session_start_health(vault):
     return message, state == 'failed'
 
 
+def _native_session_start_receipt(cfg):
+    """Latest native SessionStart receipt: its stage and why it was not delivered."""
+    latest = None
+    for path in (cfg.root / 'deliveries').glob('*.json'):
+        try:
+            record = read_json(path, {})
+        except (OSError, ValueError, TypeError):
+            continue
+        if isinstance(record, dict) and record.get('event') == 'SessionStart' and isinstance(record.get('at'), str):
+            if latest is None or record['at'] > latest['at']:
+                latest = record
+    if latest is None:
+        return 'last native SessionStart: no receipt'
+    reason = f" ({latest['reason']})" if latest.get('reason') else ''
+    return f"last native SessionStart: {latest.get('stage', 'UNKNOWN')}{reason} at {latest['at']} via {latest.get('client')}"
+
+
 def _last_transcript_signal(cfg):
     """Advisory transcript-drift signal from the last capture; {} when absent or malformed.
 
@@ -253,6 +270,7 @@ def doctor(vault, *, home=None):
         last_hook = {}
     checks['last_hook'] = last_hook if isinstance(last_hook, dict) else {}
     checks['last_session_start'], session_failed = _session_start_health(vault)
+    checks['last_native_session_start'] = _native_session_start_receipt(cfg)
     checks['last_transcript'] = _last_transcript_signal(cfg)
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (

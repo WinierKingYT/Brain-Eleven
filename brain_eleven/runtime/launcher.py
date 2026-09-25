@@ -1,6 +1,7 @@
 """Small native hook entry point. No framework or model import on fast paths."""
 import argparse
 from contextlib import nullcontext
+import hashlib
 import http.client
 import json
 import os
@@ -99,6 +100,11 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
     return False
 
 
+def capture_session_hash(session):
+    """Same session key the capture ledger records, so receipts can be joined."""
+    return 'sha256:' + hashlib.sha256(session.encode('utf-8')).hexdigest()
+
+
 def hook(vault, client, event, payload):
     from brain_eleven.runtime.worker import allowed, enqueue
     cfg = RuntimeConfig(vault)
@@ -113,12 +119,22 @@ def hook(vault, client, event, payload):
     ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
-    if not ready:
-        return {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
     prompt = payload.get('prompt', '')
     session = payload.get('session_id', '')
     if not isinstance(prompt, str) or not isinstance(session, str) or not session:
         raise ValueError('Invalid prompt event')
+    if not ready:
+        output = {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
+        if event != 'SessionStart':
+            return output
+        # A bootstrap that never compiled still leaves a receipt; its status
+        # is not EMITTED, so a later SessionStart for the session may retry.
+        key = identity('delivery_', client, session, 'bootstrap')
+        return output, cfg.root / 'deliveries' / (key + '.json'), {
+            'status': 'NOT_COMPILED', 'stage': 'NOT_COMPILED', 'reason': 'SERVICE_NOT_READY',
+            'at': now(), 'client': client, 'event': event,
+            'session_hash': identity('session_', session), 'turn_hash': identity('turn_', 'bootstrap'),
+            'capture_session_hash': capture_session_hash(session), 'context_delivered': False}
     # Native turn identity when provided; otherwise transcript position plus
     # prompt hash distinguishes repeated identical prompts in later turns.
     locator = payload.get('transcript_path')
@@ -144,10 +160,22 @@ def hook(vault, client, event, payload):
             output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': result['context']}
         if result.get('missing_critical_needs') or result.get('status') not in {'SUCCESS', 'EMPTY', 'OFF', 'SCOPE_DISABLED'}:
             output['systemMessage'] = 'Brain-Eleven: bağlam eksik veya kullanılamıyor; çalışma devam ediyor. İnceleme ekranını kontrol edin.'
+        delivered = bool(output.get('hookSpecificOutput'))
+        if delivered:
+            stage, reason = 'DELIVERED', None
+        elif not result.get('context'):
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'EMPTY_CONTEXT'
+        elif not provider_allowed:
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'PROVIDER_NOT_ALLOWED'
+        else:
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'NOT_APPROVED'
         # Only the caller can acknowledge that stdout was successfully flushed.
-        return output, path, {'status': 'EMITTED', 'at': now(), 'client': client,
+        return output, path, {'status': 'EMITTED', 'at': now(), 'client': client, 'event': event,
+                              'stage': stage, 'reason': reason, 'compile_status': result.get('status'),
+                              'provider': provider, 'delivery_approved': approved,
+                              'capture_session_hash': capture_session_hash(session),
                               'session_hash': identity('session_', session), 'turn_hash': identity('turn_', turn),
-                              'context_delivered': bool(output.get('hookSpecificOutput')),
+                              'context_delivered': delivered,
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
                               'v1_ids': result.get('v1_ids', []), 'project_id':result.get('project_id'),
                               'implementation_fingerprint':result.get('implementation_fingerprint'),

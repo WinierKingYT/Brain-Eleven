@@ -67,3 +67,18 @@ def test_too_few_sessions_is_insufficient_not_pass(tmp_path):
     sessions = {"p_a": ["a1"], "p_b": ["b1"]}
     vault, home = _setup(tmp_path, sessions, _ok("a1", "p_a") + _ok("b1", "p_b"))
     assert verdict(audit(vault, home), min_projects=2, min_sessions=20) == "INSUFFICIENT_EVIDENCE"
+
+
+def test_bootstrap_receipts_are_joined_per_session(tmp_path):
+    sessions = {"p_a": ["a1", "a2", "a3"]}
+    vault, home = _setup(tmp_path, sessions, [r for s in ("a1", "a2", "a3") for r in _ok(s, "p_a")])
+    deliveries = vault / ".brain-eleven" / "runtime" / "deliveries"
+    deliveries.mkdir(parents=True)
+    for name, sid, stage, reason in (("d1", "a1", "DELIVERED", None),
+                                     ("d2", "a2", "COMPILED_NOT_DELIVERED", "EMPTY_CONTEXT")):
+        (deliveries / f"{name}.json").write_text(json.dumps({
+            "event": "SessionStart", "at": "2026-09-25T00:00:00Z", "stage": stage, "reason": reason,
+            "capture_session_hash": _h(sid)}))
+    report = audit(vault, home)
+    assert report["bootstrap_receipts"] == {"DELIVERED": 1, "COMPILED_NOT_DELIVERED:EMPTY_CONTEXT": 1,
+                                            "NO_RECEIPT": 1}
