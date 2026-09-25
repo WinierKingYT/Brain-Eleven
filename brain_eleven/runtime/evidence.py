@@ -31,6 +31,15 @@ _safe_source_path = _legacy_evidence._safe_source_path
 _CLAUDE_CONVERSATION_TYPES = frozenset({'user', 'assistant'})
 _CLAUDE_METADATA_TYPES = frozenset({'system', 'progress', 'summary', 'file-history-snapshot', 'queue-operation',
                                     'last-prompt', 'custom-title', 'agent-name', 'agent-color'})
+_CODEX_CONVERSATION_ROLES = frozenset({'user', 'assistant'})
+_CODEX_MESSAGE_METADATA_ROLES = frozenset({'system', 'developer', 'tool'})
+_CODEX_METADATA_TYPES = frozenset({
+    'session_meta', 'event_msg', 'turn_context', 'compacted', 'world_state', 'token_usage_record',
+})
+_CODEX_ITEM_METADATA_TYPES = frozenset({
+    'function_call', 'function_call_output', 'reasoning', 'custom_tool_call',
+    'custom_tool_call_output', 'web_search_call', 'local_shell_call',
+})
 MAX_IGNORED_TYPE_NAMES = 32
 _TYPE_NAME = re.compile(r'[A-Za-z0-9_-]{1,40}')
 
@@ -118,11 +127,15 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
             if doc.get('type') == 'response_item':
                 payload = doc.get('payload', {})
                 if payload.get('type') == 'message':
-                    conversation_records += 1
-                    role, content = payload.get('role'), payload.get('content')
-                elif payload.get('type') not in {'function_call', 'function_call_output', 'reasoning', 'custom_tool_call', 'custom_tool_call_output', 'web_search_call', 'local_shell_call'}:
+                    payload_role = payload.get('role')
+                    if payload_role in _CODEX_CONVERSATION_ROLES:
+                        conversation_records += 1
+                        role, content = payload_role, payload.get('content')
+                    elif payload_role not in _CODEX_MESSAGE_METADATA_ROLES:
+                        raise ValueError('UNSUPPORTED_MESSAGE_ROLE')
+                elif payload.get('type') not in _CODEX_ITEM_METADATA_TYPES:
                     raise ValueError('UNSUPPORTED_CODEX_ITEM')
-            elif doc.get('type') not in {'session_meta', 'event_msg', 'turn_context', 'compacted'}:
+            elif doc.get('type') not in _CODEX_METADATA_TYPES:
                 raise ValueError('UNSUPPORTED_CODEX_TRANSCRIPT')
         elif client == 'claude':
             kind = doc.get('type')

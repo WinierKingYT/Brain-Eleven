@@ -1,0 +1,56 @@
+{
+  "client": "codex",
+  "client_version": "codex-cli 0.155.0-alpha.16.4",
+  "repo_head": "19c8c891b35a202412422978a36a3893d2b1c6c1",
+  "live_global_settings_untouched": true,
+  "runs": [
+    {
+      "repetition": 1,
+      "exit_code": 0,
+      "elapsed_s": 20.257,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 2,
+        "CLAIMED": 2,
+        "PROCESSING": 2,
+        "COMMITTED": 2
+      },
+      "new_review_item_count": 1,
+      "verified_terminal_count": 2,
+      "new_dead_letter_count": 0,
+      "memory_revision_unchanged": true
+    },
+    {
+      "repetition": 2,
+      "exit_code": 0,
+      "elapsed_s": 16.348,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 4,
+        "CLAIMED": 4,
+        "PROCESSING": 4,
+        "COMMITTED": 4
+      },
+      "new_review_item_count": 1,
+      "verified_terminal_count": 2,
+      "new_dead_letter_count": 0,
+      "memory_revision_unchanged": true
+    },
+    {
+      "repetition": 3,
+      "exit_code": 0,
+      "elapsed_s": 18.025,
+      "session_id_present": true,
+      "ledger_terminal_counts": {
+        "ENQUEUED": 6,
+        "CLAIMED": 6,
+        "PROCESSING": 6,
+        "COMMITTED": 6
+      },
+      "new_review_item_count": 1,
+      "verified_terminal_count": 2,
+      "new_dead_letter_count": 0,
+      "memory_revision_unchanged": true
+    }
+  ]
+}

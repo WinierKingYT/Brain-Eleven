@@ -1,0 +1,165 @@
+{
+  "client": "claude",
+  "client_version": "2.1.278 (Claude Code)",
+  "repo_head": "19c8c891b35a202412422978a36a3893d2b1c6c1",
+  "live_files_untouched": true,
+  "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "samples": [
+    {
+      "phase": "cold",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "cold",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "cold",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "cold",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "cold",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "warm",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "warm",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "warm",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "warm",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    },
+    {
+      "phase": "warm",
+      "exit_code": 0,
+      "session_id_present": true,
+      "session_start_seen": true,
+      "user_prompt_submit_seen": true,
+      "stop_seen": true,
+      "session_end_seen": true
+    }
+  ],
+  "hook_statuses": {
+    "session_start_cold": {
+      "EMITTED": 5
+    },
+    "session_start_warm": {
+      "EMITTED": 5
+    },
+    "user_prompt_submit": {
+      "EMITTED": 10
+    },
+    "stop": {
+      "OK": 10
+    },
+    "session_end": {
+      "OK": 10
+    }
+  },
+  "cells": {
+    "session_start_cold": {
+      "n": 5,
+      "p50": 1777,
+      "p95": 1784,
+      "min": 1683,
+      "max": 1784
+    },
+    "session_start_warm": {
+      "n": 5,
+      "p50": 594,
+      "p95": 621,
+      "min": 565,
+      "max": 621
+    },
+    "user_prompt_submit": {
+      "n": 10,
+      "p50": 623.5,
+      "p95": 676,
+      "min": 578,
+      "max": 676
+    },
+    "stop": {
+      "n": 10,
+      "p50": 494.5,
+      "p95": 556,
+      "min": 483,
+      "max": 556
+    },
+    "session_end": {
+      "n": 10,
+      "p50": 490.5,
+      "p95": 517,
+      "min": 445,
+      "max": 517
+    }
+  },
+  "gate_passed": true
+}
