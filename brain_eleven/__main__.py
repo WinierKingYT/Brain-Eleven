@@ -28,6 +28,8 @@ def main(argv=None):
     shadow_accept.add_argument('state', choices=['OFF', 'ON'])
     migration = sub.add_parser('migration')
     migration.add_argument('action', choices=['upgrade', 'rollback'])
+    measure = sub.add_parser('measure', help='real-use measurement snapshot (capture, review noise, staleness, bootstrap)')
+    measure.add_argument('--since', help='ISO time; default: last native install')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -62,6 +64,9 @@ def main(argv=None):
         elif args.command == 'migration':
             from .runtime.migration import migrate, rollback
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)
+        elif args.command == 'measure':
+            from .runtime.measure import measure as run_measure
+            result = run_measure(args.vault, since=args.since)
         elif args.command == 'graduation':
             from .runtime.graduation import record
             result = record(args.vault, args.labels, args.quality_report)
