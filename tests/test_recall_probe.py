@@ -9,6 +9,10 @@ def test_covers_needs_every_group_and_folds_turkish_case():
     groups = [["holdout", "corpus-v2"], ["kırmızı", "red"]]
     assert covers("Holdout kapısı KIRMIZI bırakıldı", groups)
     assert not covers("holdout gate stays", groups)
+    # English capitals must not be Turkish-folded away ("I" -> "ı").
+    q4 = [["phase 20"], ["frozen"], ["intelligence graduation"]]
+    assert covers("Phase 20 frozen; aktif program Intelligence Graduation (IG).", q4)
+    assert covers("PHASE 20: FROZEN. ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG).", q4)
 
 
 def test_probe_separates_in_context_from_in_memory_and_missing(tmp_path, monkeypatch):
@@ -50,7 +54,8 @@ def test_explain_matches_the_real_bootstrap_selection_and_names_reasons(tmp_path
     explained = explain_bootstrap(vault, vault)
     # Same steps as the real bootstrap: the explained DELIVERED set is exactly what it selects.
     assert {m for m, e in explained["memories"].items() if e["reason"] == "DELIVERED"} == delivered
-    assert len(delivered) == 5 and -1 not in delivered
+    # Seven records, one near-duplicate twin: all six distinct ones fit in the slots.
+    assert len(delivered) == 6 and -1 not in delivered
     # Scores tie here, so which twin ranks first varies; they are never delivered together.
     assert not {ids[texts[0]], ids[texts[1]]} <= delivered
     assert sum(explained["counts"].values()) == len(texts)
