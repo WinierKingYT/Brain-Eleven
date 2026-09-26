@@ -11,6 +11,9 @@ Start with the repository `README.md`. Current project state is maintained in
 - `audits/` — maintained engineering audit and weakness baseline.
 - `CANARY-GATE-FEASIBILITY-PROPOSAL.md` and `IG05-REACHABILITY-CHECK.md` —
   bounded current decision inputs.
+- `ORVANT-CLEANROOM-ANALYSIS.md` — clean-room behavior inventory of the
+  unlicensed Orvant project and a gap table against Brain-Eleven; decision
+  input only, opens no package.
 
 ## Historical material
 

@@ -33,11 +33,26 @@ async function refresh() {
       const empty=node('option','Yeni kayıt olarak ekle');empty.value='';target.append(empty);
       for(const t of item.targets || []) {const option=node('option',t.text);option.value=t.id;target.append(option);}
       if(item.targets?.length)card.append(target);
+      const keyLabel=node('label','Konu anahtarı (isteğe bağlı, ör. srt-00.ship-status)');keyLabel.htmlFor=item.id+'-key';
+      const key=node('input');key.id=item.id+'-key';key.maxLength=80;key.setAttribute('list',item.id+'-keys');
+      const keys=node('datalist');keys.id=item.id+'-keys';
+      for(const k of item.claim_keys || []) {const option=node('option');option.value=k;keys.append(option);}
+      if(item.candidate?.candidate_type==='NEW_MEMORY')card.append(keyLabel,key,keys);
       const actions=node('div',null,'actions');const reject=node('button','Reddet','secondary');const accept=node('button','Kabul et');
       accept.disabled=!canAccept;
       async function submit(action) {
         accept.disabled=reject.disabled=true;
-        try {const result=await api('/api/review/candidates/'+item.id+'/'+action,{content:input.value,expected_revision:item.expected_revision,target_id:target.value || null});
+        try {const body={content:input.value,expected_revision:item.expected_revision,target_id:target.value || null};
+          if(key.value.trim())body.claim_key=key.value;
+          const result=await api('/api/review/candidates/'+item.id+'/'+action,body);
+          if(result.conflict) {
+            el('message').textContent='Bu konu anahtarıyla aktif bir kayıt var ('+(result.conflict.occurred_at || result.conflict.timestamp || 'tarih yok')+'): “'+(result.conflict.content || result.conflict.memory_id)+'”. Yeni bilgi onun yerine geçecekse, “Değiştirilecek mevcut kayıt” listesinde seçili olarak bırakıp tekrar Kabul et.';
+            await refresh();
+            const again=el(item.id)?.closest('article')?.querySelector('select');
+            if(again)again.value=result.conflict.memory_id;
+            const againKey=el(item.id+'-key');if(againKey)againKey.value=key.value;
+            return;
+          }
           el('message').textContent=result.status==='ACCEPTED'?'Bilgi ortak hafızaya kaydedildi.':result.status==='REJECTED'?'Öneri reddedildi.':('İşlem tamamlanmadı: '+result.status+'. Kaydı yeniden gözden geçir.');await refresh();
         } catch(e) {el('message').textContent=e.message;} finally {accept.disabled=reject.disabled=false;}
       }

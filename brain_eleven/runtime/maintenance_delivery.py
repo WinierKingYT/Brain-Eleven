@@ -513,6 +513,10 @@ def ack_reminder(vault: str | Path, project_id: str, report_id: str, delivery_ke
     """Record one content-free SessionStart delivery receipt."""
     if not all(isinstance(value, str) and value for value in (project_id, report_id, delivery_key)):
         return False
+    # ``ack_reminder`` is a public boundary and may be called after runtime
+    # cleanup or without an earlier enqueue in this process.  Re-establish the
+    # guarded directory tree before deriving and atomically writing the receipt.
+    _ensure(vault)
     path = _delivery_path(vault, project_id, report_id, delivery_key)
     with file_lock(_root(vault) / "delivery", timeout=.5):
         if path.exists():

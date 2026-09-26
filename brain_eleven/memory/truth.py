@@ -22,6 +22,7 @@ TruthDecision = _legacy.TruthDecision
 TruthResult = _legacy.TruthResult
 MemoryTruthEngine = _legacy.MemoryTruthEngine
 legacy_request_projection = _legacy.legacy_request_projection
+normalize_claim_key = _legacy.normalize_claim_key
 main = _legacy.main
 
 __all__ = [
@@ -35,5 +36,6 @@ __all__ = [
     "TruthResult",
     "MemoryTruthEngine",
     "legacy_request_projection",
+    "normalize_claim_key",
     "main",
 ]

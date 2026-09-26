@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import uuid
 from dataclasses import asdict, dataclass, field, replace
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence
@@ -104,6 +105,40 @@ _LEGACY_REQUEST_FIELDS = (
 )
 
 
+# MEMCLAIM-01: a claim key names one topic ("srt-00.ship-status"); evidence
+# references stay opaque identifiers, never paths or text.
+_CLAIM_KEY_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]*(?:[.:][a-z0-9][a-z0-9_-]*)+")
+_CLAIM_KEY_MAX_LENGTH = 80
+_EVIDENCE_REF_PATTERN = re.compile(r"[A-Za-z0-9_:.-]{1,128}")
+_DAY_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def normalize_claim_key(value: Any) -> Optional[str]:
+    """Return the canonical claim key, ``""`` for none, or ``None`` if malformed."""
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        return None
+    key = value.strip().lower()
+    if not key:
+        return ""
+    if len(key) > _CLAIM_KEY_MAX_LENGTH or not _CLAIM_KEY_PATTERN.fullmatch(key):
+        return None
+    return key
+
+
+def _is_event_time(value: str) -> bool:
+    """Accept a calendar day or a timezone-aware ISO-8601 instant."""
+    try:
+        if _DAY_PATTERN.fullmatch(value):
+            date.fromisoformat(value)
+            return True
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -150,6 +185,10 @@ class TruthCandidate:
         project_label = str(value.get("project") or "").strip()
         if not project_label:
             project_label = str(value.get("project_label") or "").strip()
+        claim_key = normalize_claim_key(value.get("claim_key")) or ""
+        occurred_at = str(value.get("occurred_at") or "").strip() or None
+        if occurred_at is not None and not _is_event_time(occurred_at):
+            occurred_at = None
         candidate = cls(
             candidate_id=str(value.get("candidate_id") or "").strip(),
             content=str(value.get("content") or "").strip(),
@@ -158,11 +197,11 @@ class TruthCandidate:
             project_id=str(value.get("project_id") or "").strip(),
             project=project_label,
             dedup_fingerprint=str(value.get("dedup_fingerprint") or "").strip(),
-            claim_key=str(value.get("claim_key") or "").strip(),
+            claim_key=claim_key,
             commitment=str(value.get("commitment") or "COMMITTED").strip().upper(),
             confidence=confidence,
             evidence_refs=tuple(str(ref).strip() for ref in refs if str(ref).strip()),
-            occurred_at=str(value.get("occurred_at") or "").strip() or None,
+            occurred_at=occurred_at,
             operation=str(value.get("operation") or "NEW").strip().upper(),
             target_memory_id=str(value.get("target_memory_id") or "").strip(),
             successor_memory_id=str(value.get("successor_memory_id") or "").strip(),
@@ -191,6 +230,19 @@ class _CandidateEnvelope:
     is_approved: bool
     has_source: bool = False
     has_approval: bool = False
+    # MEMCLAIM-01: bounded reasons for values cleared by ``from_mapping``;
+    # kept here so the historical candidate shape and request hash stay fixed.
+    issues: tuple[str, ...] = ()
+
+
+def _normalization_issues(mapping: Mapping[str, Any]) -> tuple[str, ...]:
+    issues = []
+    if normalize_claim_key(mapping.get("claim_key")) is None:
+        issues.append("CLAIM_KEY_INVALID")
+    occurred_at = str(mapping.get("occurred_at") or "").strip()
+    if occurred_at and not _is_event_time(occurred_at):
+        issues.append("OCCURRED_AT_INVALID")
+    return tuple(issues)
 
 
 def legacy_request_projection(candidate: TruthCandidate) -> dict[str, Any]:
@@ -241,6 +293,7 @@ def _normalize_candidate_envelope(
         is_approved=is_approved,
         has_source=has_source,
         has_approval=has_approval,
+        issues=_normalization_issues(mapping) if mapping is not None else (),
     )
 
 
@@ -480,6 +533,9 @@ class MemoryTruthEngine:
                     return TruthDecision(candidate.candidate_id, TruthAction.REVIEW_REQUIRED.value, "TARGET_NOT_ACTIVE", target_memory_id=candidate.target_memory_id, successor_memory_id=successor_id, source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
                 if successor_id == candidate.target_memory_id or self._find_by_id(memories, successor_id) is not None:
                     return TruthDecision(candidate.candidate_id, TruthAction.REVIEW_REQUIRED.value, "SUPERSESSION_CYCLE_OR_DUPLICATE", target_memory_id=candidate.target_memory_id, successor_memory_id=successor_id, source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
+                other = self._active_claim_holder(candidate, memories, exclude_id=candidate.target_memory_id)
+                if other is not None:
+                    return TruthDecision(candidate.candidate_id, TruthAction.CONFLICT.value, "ACTIVE_CLAIM_KEY_CONFLICT", target_memory_id=_memory_id(other), source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
                 return TruthDecision(candidate.candidate_id, TruthAction.SUPERSEDE_EXISTING.value, "EXPLICIT_SUPERSESSION", target_memory_id=candidate.target_memory_id, successor_memory_id=successor_id, source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
             action = candidate.operation
             if action == TruthAction.CONFIRM_EXISTING.value:
@@ -502,6 +558,28 @@ class MemoryTruthEngine:
         return TruthDecision(candidate.candidate_id, TruthAction.NEW.value, "NO_SCOPED_MATCH", source_memory_revision=revision, evidence_refs=candidate.evidence_refs)
 
     @staticmethod
+    def _active_claim_holder(
+        candidate: TruthCandidate,
+        memories: Sequence[Mapping[str, Any]],
+        *,
+        exclude_id: str,
+    ) -> Optional[Mapping[str, Any]]:
+        """Return another active same-scope memory holding the candidate's claim key."""
+        if not candidate.claim_key:
+            return None
+        return next(
+            (
+                memory
+                for memory in memories
+                if _same_scope(candidate, memory)
+                and _memory_id(memory) != exclude_id
+                and str(memory.get("claim_key") or "") == candidate.claim_key
+                and str(memory.get("status") or "active") == "active"
+            ),
+            None,
+        )
+
+    @staticmethod
     def _new_record(
         candidate: TruthCandidate,
         memory_id: str,
@@ -511,6 +589,10 @@ class MemoryTruthEngine:
         fingerprint = candidate.dedup_fingerprint or scoped_fingerprint(candidate.content, candidate.scope, candidate.project_id, candidate.memory_type)
         source = envelope.source if envelope is not None else "extraction-v2"
         is_approved = envelope.is_approved if envelope is not None else candidate.commitment == "COMMITTED"
+        evidence_refs = [ref for ref in candidate.evidence_refs if _EVIDENCE_REF_PATTERN.fullmatch(ref)]
+        issues = list(envelope.issues) if envelope is not None else []
+        if len(evidence_refs) != len(candidate.evidence_refs):
+            issues.append("EVIDENCE_REF_DROPPED")
         return {
             "memory_id": memory_id,
             "id": -1,
@@ -520,9 +602,11 @@ class MemoryTruthEngine:
             "confidence": candidate.confidence,
             "source": source,
             "timestamp": timestamp,
+            "occurred_at": candidate.occurred_at or "",
+            "evidence_refs": evidence_refs,
             "related_notes": [],
             "section": "",
-            "issues": [],
+            "issues": issues,
             "quality_score": candidate.confidence,
             "novelty": 1.0,
             "is_approved": is_approved,

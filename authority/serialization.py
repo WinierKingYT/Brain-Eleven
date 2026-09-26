@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from typing import Any, Mapping
 
 from .models import (
@@ -32,6 +34,142 @@ def _contains_content(value: Any) -> bool:
     if isinstance(value, list):
         return any(_contains_content(item) for item in value)
     return False
+
+
+_STATE_STATUSES = frozenset({
+    "AVAILABLE", "PROJECT_UNKNOWN", "PROJECT_ARCHIVED", "STATE_NOT_FOUND",
+    "STATE_CORRUPT", "STATE_UNAVAILABLE",
+})
+_ERROR_STATE_STATUSES = frozenset({
+    "PROJECT_UNKNOWN", "STATE_NOT_FOUND", "STATE_CORRUPT", "STATE_UNAVAILABLE",
+})
+_SOURCE_TYPES = frozenset({"user", "system", "tool"})
+_SEVERITIES = frozenset({"LOW", "MEDIUM", "HIGH", "CRITICAL"})
+_SENSITIVE_PATTERNS = (
+    re.compile(r"\b(?:api[_ -]?key|password|secret|token)\s*[:=]\s*\S+", re.IGNORECASE),
+    re.compile(r"\b(?:sk|ghp|xox[baprs])_[A-Za-z0-9_-]{12,}\b"),
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+)
+
+
+def _exact_fields(
+    value: Mapping[str, Any],
+    field: str,
+    required: set[str],
+    optional: set[str] | frozenset[str] = frozenset(),
+) -> None:
+    fields = set(value)
+    if not required <= fields or fields - required - optional:
+        raise ValueError(f"{field} has invalid fields")
+
+
+def _nonempty_string(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} must be a non-empty string")
+    return value
+
+
+def _string(value: Any, field: str, *, prefix: str | None = None) -> str:
+    value = _nonempty_string(value, field)
+    if prefix is not None and not value.strip().startswith(prefix):
+        raise ValueError(f"{field} has an invalid namespace")
+    if any(pattern.search(value) for pattern in _SENSITIVE_PATTERNS):
+        raise ValueError(f"{field} contains prohibited sensitive data")
+    return value
+
+
+def _timestamp(value: Any, field: str) -> str:
+    value = _string(value, field)
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError(f"{field} must be a timezone-aware ISO-8601 timestamp") from None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{field} must be a timezone-aware ISO-8601 timestamp")
+    return value
+
+
+def _nonnegative_integer(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{field} must be a non-negative integer")
+    return value
+
+
+def _source(value: Any, field: str) -> Mapping[str, Any]:
+    value = _mapping(value, field)
+    _exact_fields(value, field, {"type"}, {"reference"})
+    source_type = _string(value["type"], f"{field}.type")
+    if source_type not in _SOURCE_TYPES:
+        raise ValueError(f"{field}.type is unsupported")
+    reference = value.get("reference")
+    if reference is not None:
+        _string(reference, f"{field}.reference")
+    return value
+
+
+def _record(
+    value: Any,
+    field: str,
+    *,
+    prefix: str,
+    statuses: frozenset[str],
+    text_field: str = "text",
+    extra_required: set[str] | frozenset[str] = frozenset(),
+    extra_optional: set[str] | frozenset[str] = frozenset(),
+) -> Mapping[str, Any]:
+    value = _mapping(value, field)
+    required = {"id", text_field, "status", "source", "created_at", "updated_at"} | extra_required
+    _exact_fields(value, field, required, extra_optional)
+    _string(value["id"], f"{field}.id", prefix=prefix)
+    _string(value[text_field], f"{field}.{text_field}")
+    status = _nonempty_string(value["status"], f"{field}.status")
+    if status not in statuses:
+        raise ValueError(f"{field}.status is unsupported")
+    _source(value["source"], f"{field}.source")
+    _timestamp(value["created_at"], f"{field}.created_at")
+    _timestamp(value["updated_at"], f"{field}.updated_at")
+    if "phase_id" in extra_required:
+        _string(value["phase_id"], f"{field}.phase_id")
+    if "severity" in extra_required:
+        severity = _string(value["severity"], f"{field}.severity")
+        if severity not in _SEVERITIES:
+            raise ValueError(f"{field}.severity is unsupported")
+    if value.get("memory_ref") is not None:
+        _string(value["memory_ref"], f"{field}.memory_ref", prefix="mem_")
+    return value
+
+
+def _records(value: Any, field: str, parser) -> tuple[Mapping[str, Any], ...]:
+    values = _sequence(value, field)
+    records = tuple(parser(item, f"{field}[{index}]") for index, item in enumerate(values))
+    if len({record["id"] for record in records}) != len(records):
+        raise ValueError(f"{field} contains duplicate IDs")
+    return records
+
+
+def _memory_ids(value: Any, field: str) -> list[str]:
+    values = _sequence(value, field)
+    for index, item in enumerate(values):
+        _string(item, f"{field}[{index}]", prefix="mem_")
+    if len(set(values)) != len(values):
+        raise ValueError(f"{field} contains duplicate IDs")
+    return values
+
+
+def _references(value: Any, field: str) -> Mapping[str, Any]:
+    value = _mapping(value, field)
+    _exact_fields(value, field, {"status", "valid", "dangling", "wrong_project"}, {"error"})
+    status = _string(value["status"], f"{field}.status")
+    if status not in {"not_checked", "checked", "unavailable"}:
+        raise ValueError(f"{field}.status is unsupported")
+    arrays = [_memory_ids(value[name], f"{field}.{name}") for name in ("valid", "dangling", "wrong_project")]
+    if status == "not_checked" and any(arrays):
+        raise ValueError(f"{field} is inconsistent with not_checked status")
+    if status != "unavailable" and "error" in value:
+        raise ValueError(f"{field}.error is not allowed for this status")
+    if "error" in value:
+        _nonempty_string(value["error"], f"{field}.error")
+    return value
 
 
 def resolution_result_from_dict(document: Mapping[str, Any]) -> ResolutionResult:
@@ -130,11 +268,109 @@ def task_state_from_dict(document: Mapping[str, Any]):
     if set(state_data) != required:
         raise ValueError("task_state.state fields are invalid")
     project_id = state_data["project_id"]
-    if project_id is not None and (not isinstance(project_id, str) or not project_id):
-        raise ValueError("task_state.state.project_id is invalid")
+    if project_id is not None:
+        _nonempty_string(project_id, "task_state.state.project_id")
+    status = _nonempty_string(state_data["status"], "task_state.state.status")
+    if status not in _STATE_STATUSES:
+        raise ValueError("task_state.state.status is unsupported")
     revision = state_data["state_revision"]
-    if revision is not None and (isinstance(revision, bool) or not isinstance(revision, int) or revision < 0):
-        raise ValueError("task_state.state.state_revision is invalid")
+    if revision is not None:
+        _nonnegative_integer(revision, "task_state.state.state_revision")
+    updated_at = state_data["updated_at"]
+    if updated_at is not None:
+        _timestamp(updated_at, "task_state.state.updated_at")
+    error = state_data["error"]
+    if error is not None:
+        _nonempty_string(error, "task_state.state.error")
+    archived = state_data["archived"]
+    if not isinstance(archived, bool):
+        raise ValueError("task_state.state.archived must be a boolean")
+
+    freshness = _mapping(state_data["freshness"], "task_state.state.freshness")
+    _exact_fields(freshness, "task_state.state.freshness", {"status", "age_days"})
+    freshness_status = _nonempty_string(freshness["status"], "task_state.state.freshness.status")
+    if freshness_status not in {"current", "stale_candidate", "unknown"}:
+        raise ValueError("task_state.state.freshness.status is unsupported")
+    age_days = freshness["age_days"]
+    if freshness_status == "unknown":
+        if age_days is not None:
+            raise ValueError("task_state.state.freshness.age_days must be null when status is unknown")
+    elif age_days is None:
+        raise ValueError("task_state.state.freshness.age_days is required for current state")
+    else:
+        _nonnegative_integer(age_days, "task_state.state.freshness.age_days")
+
+    current = _mapping(state_data["current"], "task_state.state.current")
+    _exact_fields(current, "task_state.state.current", {"phase_id", "milestone", "objective"})
+    if current["phase_id"] is not None:
+        _string(current["phase_id"], "task_state.state.current.phase_id")
+    milestone = current["milestone"]
+    if milestone is not None:
+        _record(
+            milestone, "task_state.state.current.milestone", prefix="mil_",
+            statuses=frozenset({"PLANNED", "ACTIVE", "BLOCKED", "COMPLETED", "CANCELLED"}),
+            text_field="title", extra_required={"phase_id"},
+        )
+    objective = current["objective"]
+    if objective is not None:
+        _record(objective, "task_state.state.current.objective", prefix="obj_", statuses=frozenset({"ACTIVE"}))
+
+    requirements = _records(
+        state_data["active_requirements"], "task_state.state.active_requirements",
+        lambda value, field: _record(value, field, prefix="req_", statuses=frozenset({"ACTIVE"})),
+    )
+    work_items = _records(
+        state_data["active_work_items"], "task_state.state.active_work_items",
+        lambda value, field: _record(value, field, prefix="wrk_", statuses=frozenset({"TODO", "ACTIVE", "BLOCKED"})),
+    )
+    blockers = _records(
+        state_data["active_blockers"], "task_state.state.active_blockers",
+        lambda value, field: _record(
+            value, field, prefix="blk_", statuses=frozenset({"ACTIVE"}),
+            extra_required={"severity"}, extra_optional={"memory_ref"},
+        ),
+    )
+    constraints = _records(
+        state_data["constraints"], "task_state.state.constraints",
+        lambda value, field: _record(value, field, prefix="con_", statuses=frozenset({"ACTIVE"})),
+    )
+    risks = _records(
+        state_data["risks"], "task_state.state.risks",
+        lambda value, field: _record(
+            value, field, prefix="rsk_", statuses=frozenset({"ACTIVE"}), extra_required={"severity"},
+        ),
+    )
+    references = _references(state_data["references"], "task_state.state.references")
+
+    empty_projection = (
+        revision is None and updated_at is None
+        and freshness == {"status": "unknown", "age_days": None}
+        and current == {"phase_id": None, "milestone": None, "objective": None}
+        and not requirements and not work_items and not blockers and not constraints and not risks
+        and references.get("status") == "not_checked"
+    )
+    if status in _ERROR_STATE_STATUSES:
+        if not empty_projection:
+            raise ValueError("task_state.state must use the empty error projection")
+        if error is None:
+            raise ValueError("task_state.state.error is required for error status")
+        if status in {"PROJECT_UNKNOWN", "STATE_NOT_FOUND"} and archived:
+            raise ValueError("task_state.state.archived is inconsistent with error status")
+    elif status == "AVAILABLE":
+        if archived:
+            raise ValueError("task_state.state.archived is inconsistent with AVAILABLE status")
+        if revision is None or updated_at is None or freshness_status == "unknown":
+            raise ValueError("task_state.state is incomplete for AVAILABLE status")
+        if error is not None:
+            raise ValueError("task_state.state.error is not allowed for AVAILABLE status")
+    else:
+        if not archived:
+            raise ValueError("task_state.state.archived is inconsistent with PROJECT_ARCHIVED status")
+        if empty_projection:
+            if error is None:
+                raise ValueError("task_state.state.error is required for empty PROJECT_ARCHIVED status")
+        elif revision is None or updated_at is None or freshness_status == "unknown" or error is not None:
+            raise ValueError("task_state.state is inconsistent with populated PROJECT_ARCHIVED status")
 
     lineage = TaskStateLineage.from_dict(document.get("lineage"))
     task_project_id = task.project.project_id
@@ -144,25 +380,23 @@ def task_state_from_dict(document: Mapping[str, Any]):
     elif task_project_id is not None or project_id is not None:
         raise ValueError("task_state non-resolved lineage must not carry project identity")
 
-    def records(name: str) -> tuple[Mapping[str, Any], ...]:
-        return tuple(_mapping(value, f"task_state.state.{name}") for value in _sequence(state_data[name], f"task_state.state.{name}"))
     return TaskStateContext(
         task=task,
         state=CurrentProjectState(
             project_id=project_id,
-            status=state_data["status"],
+            status=status,
             state_revision=revision,
-            updated_at=state_data["updated_at"],
-            freshness=_mapping(state_data["freshness"], "task_state.state.freshness"),
-            current=_mapping(state_data["current"], "task_state.state.current"),
-            active_requirements=records("active_requirements"),
-            active_work_items=records("active_work_items"),
-            active_blockers=records("active_blockers"),
-            constraints=records("constraints"),
-            risks=records("risks"),
-            references=_mapping(state_data["references"], "task_state.state.references"),
-            error=state_data["error"],
-            archived=state_data["archived"],
+            updated_at=updated_at,
+            freshness=freshness,
+            current=current,
+            active_requirements=requirements,
+            active_work_items=work_items,
+            active_blockers=blockers,
+            constraints=constraints,
+            risks=risks,
+            references=references,
+            error=error,
+            archived=archived,
         ),
         lineage=lineage,
     )

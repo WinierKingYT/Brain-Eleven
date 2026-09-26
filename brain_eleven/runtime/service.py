@@ -52,6 +52,14 @@ def review_action(vault, review_id, action, payload):
                 if not isinstance(payload['content'], str) or not 3 <= len(payload['content']) <= 8000:
                     raise ValueError('Candidate text must be 3..8000 characters')
                 candidate['text' if candidate['candidate_type'] == 'STATE_MUTATION' else 'content'] = payload['content']
+            if 'claim_key' in payload:
+                # MEMCLAIM-01: the reviewing person names the topic; a model never does.
+                from brain_eleven.memory.truth import normalize_claim_key
+
+                claim_key = normalize_claim_key(payload['claim_key'])
+                if claim_key is None:
+                    raise ValueError('claim_key must look like topic.attribute (lowercase, at most 80 characters)')
+                candidate['claim_key'] = claim_key
             candidate['commitment'] = 'COMMITTED'
             expected = payload.get('expected_revision')
             if isinstance(expected, bool) or not isinstance(expected, int):
@@ -73,7 +81,27 @@ def review_action(vault, review_id, action, payload):
             if result['status'] in {'STALE_INPUT', 'REVIEW_REQUIRED', 'SCOPE_ERROR', 'REJECTED', 'DEGRADED'}:
                 item.pop('accept_intent', None)
                 write_json(primary_path, item)
-            return result
+            conflict = _claim_conflict(vault, result)
+            return {**result, 'conflict': conflict} if conflict else result
+
+
+def _claim_conflict(vault, result):
+    """Describe the active memory a same-claim_key acceptance collided with."""
+    from brain_eleven.memory import MemoryStore
+    from .capture_safety import evaluate_capture
+    from context_compiler_v2.safety import contains_secret
+
+    target = next((x.get('target_memory_id') for x in result.get('decisions', [])
+                   if x.get('action') == 'CONFLICT' and x.get('reason_code') == 'ACTIVE_CLAIM_KEY_CONFLICT'), None)
+    if not target:
+        return None
+    memory = next((x for x in MemoryStore(vault).load()['validated_memory'] if x.get('memory_id') == target), None)
+    if memory is None:
+        return None
+    content = memory.get('content', '')
+    safe = isinstance(content, str) and evaluate_capture(content).accepted and not contains_secret(content)
+    return {'memory_id': target, 'claim_key': memory.get('claim_key', ''), 'content': content if safe else '',
+            'occurred_at': memory.get('occurred_at', ''), 'timestamp': memory.get('timestamp', '')}
 
 
 def runtime_status(vault):
@@ -205,8 +233,10 @@ def create_app(vault, *, token=None, background=True):
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
                 if c['candidate_type'] == 'NEW_MEMORY':
-                    targets = [{'id': x['memory_id'], 'text': x['content']} for x in memory['validated_memory']
-                               if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
+                    active = [x for x in memory['validated_memory']
+                              if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
+                    targets = [{'id': x['memory_id'], 'text': x['content'], 'claim_key': x.get('claim_key', '')} for x in active]
+                    item['claim_keys'] = sorted({x['claim_key'] for x in active if x.get('claim_key')})
                 else:
                     project = state.get_project(c['project_id']) or {}
                     bucket = {'RESOLVE_BLOCKER': 'blockers', 'RESOLVE_REQUIREMENT': 'requirements'}.get(c.get('operation'))

@@ -33,6 +33,7 @@ BASELINE_CALLERS = frozenset(
         "evals/compiler_v2_benchmark.py",
         "evals/compiler_v2_evaluation.py",
         "evals/compiler_v2_provider.py",
+        "evals/ig01f-investigation/compare_v2_probe.py",
         "evals/router_benchmark.py",
         "evals/router_evaluation.py",
         "evals/router_provider.py",
@@ -129,7 +130,7 @@ def _run_cli(module: str, vault: Path, project_root: Path, *, cwd: Path) -> subp
     )
 
 
-def test_slice2f_inventory_has_exactly_the_bounded_26_caller_files() -> None:
+def test_slice2f_inventory_has_exactly_the_bounded_27_caller_files() -> None:
     assert _task_state_import_files() == set(BASELINE_CALLERS)
 
 

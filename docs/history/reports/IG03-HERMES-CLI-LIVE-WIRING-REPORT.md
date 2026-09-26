@@ -1,9 +1,10 @@
 # IG-03 follow-up: wiring a live semantic provider (Hermes CLI) into capture
 
-**Status:** BUILT AND TESTED, **NOT ENABLED BY DEFAULT.** Requires an
-explicit operator action (`.claude/ig-provider-config.json` or
-`IG_SEMANTIC_PROVIDER=hermes_cli`) to activate in the running worker
-service — see "How to enable" below. Written 2026-09-23.
+**Status:** BUILT, TESTED, AND BENCHMARKED (2026-09-23 IG-03 run, see
+limitation 4 below). Currently **enabled** via
+`.claude/ig-provider-config.json` (`{"semantic_provider": "hermes_cli"}`).
+Every candidate it produces still requires human review before reaching
+canonical memory — see "How to enable" below. Written 2026-09-23.
 
 ## Why
 
@@ -112,12 +113,50 @@ valuable things in the conversation).
    message segment). Acceptable for background/async capture processing
    (not blocking interactive use), but real for busy sessions — not
    load-tested at volume.
-4. **Extraction quality measured manually on 2 cases, not benchmarked.**
-   `evals/ig03/benchmark.py` already exists and could score
-   `HermesCLIProvider` the same way IG-03 scored `codex_cli`/`openai_api`
-   (ECE, precision on the frozen IG-03 corpus) — not run here. The two
-   manual cases in "Tested" above are real signal but not a substitute for
-   that benchmark.
+4. **Extraction quality now benchmarked (2026-09-23).** Ran
+   `evals/ig03/run_hermes_benchmark.py` — the same `benchmark_providers()`
+   IG-03 already used for `codex_cli`/`openai_api`, applied to
+   `HermesCLIProvider` on the frozen `dev` (49 cases) and `validation`
+   (25 cases) splits, `regex` (`DeterministicRegexProvider`) as control.
+   Raw output: `docs/history/evidence/ig03-hermes-benchmark-result.json`.
+   Pooled dev+validation (74 cases):
+
+   | metric | hermes_cli | regex (control) |
+   |---|---|---|
+   | decision_recall | 1.00 (6/6) | 0.67 (4/6) |
+   | decision_precision | 0.18 (6/33) | 0.50 (4/8) |
+   | wrong_type_rate | 0.46 (29/63) | 0.94 (63/67) |
+   | false_commitment_rate | 0.00 (0/6) | 0.00 (0/6) |
+   | ece (10-bin, lower=better) | 0.88 | 0.94 |
+   | unusable (FILTERED+INVALID_OUTPUT) | 11/74 (15%) | 7/74 (9%, all FILTERED) |
+
+   Reading: Hermes classifies the correct `claim_type`/`scope` far more
+   often than the regex baseline (46% wrong-type vs 94% wrong-type — the
+   regex baseline is barely better than chance at typing, which is
+   consistent with it being a proposal control, not a real classifier) and
+   never misses a real decision (recall 1.00). But it over-labels things as
+   `decision` — precision 0.18 means roughly 5 of every 6 things it calls a
+   decision aren't one — and both providers are badly overconfident
+   (ECE 0.88-0.94 on a 0-1 scale where 0 is perfect calibration; `confidence`
+   values do not track actual correctness for either provider). Hermes also
+   produced unusable output (non-JSON or the `MAX_PROMPT_CHARS` guard) on
+   15% of cases, worse than the regex control's 9% (which is only
+   IG01-C's category-based `FILTERED`, never an invalid-output failure —
+   regex generation can't emit malformed JSON).
+
+   **Conclusion:** confirms the manual 2-case spot-check's direction (real
+   semantic typing, better than the deterministic baseline) but the
+   benchmark surfaces two problems invisible to those 2 cases: chronic
+   `decision` over-labeling and a real (not hypothetical)
+   unusable-output rate. Neither blocks the existing design — every
+   candidate is still human-review-gated (`SEMANTIC_REVIEW_REQUIRED`,
+   never auto-applied) — but the low decision-precision means a reviewer
+   should expect to reject most `decision`-typed suggestions specifically,
+   and the confidence field should not be trusted or surfaced as a
+   reliability signal until calibration improves. Not a benchmark blocker
+   for continuing to run Hermes in SHADOW-reviewed capture; worth
+   revisiting if `decision` review-queue rejection rate in practice matches
+   this prediction.
 
 ## How to enable
 

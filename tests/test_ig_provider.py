@@ -15,6 +15,7 @@ from brain_eleven.extraction.providers import create_semantic_provider
 from brain_eleven.extraction.providers.codex_cli import CodexCLIProvider
 from brain_eleven.extraction.providers.openai_api import OpenAIAPIProvider
 from brain_eleven.extraction.semantic import SemanticStatus
+from brain_eleven.runtime.worker import Worker
 from brain_eleven.retrieval.embedding_provider import (
     EmbeddingStatus,
     OpenAIEmbeddingProvider,
@@ -97,6 +98,38 @@ def test_factory_reads_config_switch_and_fails_closed_on_missing_key(tmp_path):
         openai_client=_FakeOpenAI({"propositions": []}),
     )
     assert selected.provider_id == "openai-api"
+
+
+def test_worker_provider_config_is_bound_to_its_vault(tmp_path, monkeypatch):
+    process_root = tmp_path / "process-root"
+    process_config = process_root / ".claude" / "ig-provider-config.json"
+    process_config.parent.mkdir(parents=True)
+    process_config.write_text('{"semantic_provider":"hermes_cli"}', encoding="utf-8")
+    vault = tmp_path / "vault"
+    vault.mkdir()
+
+    monkeypatch.chdir(process_root)
+    monkeypatch.delenv("IG_SEMANTIC_PROVIDER", raising=False)
+    monkeypatch.delenv("IG_PROVIDER_CONFIG", raising=False)
+
+    provider = Worker(vault).semantic_provider
+
+    assert provider.provider_id == "unavailable"
+    assert provider.reason == "provider_not_configured"
+
+
+def test_worker_honors_explicit_provider_config_override(tmp_path, monkeypatch):
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    config = tmp_path / "operator-provider.json"
+    config.write_text('{"semantic_provider":"openai_api"}', encoding="utf-8")
+    monkeypatch.delenv("IG_SEMANTIC_PROVIDER", raising=False)
+    monkeypatch.setenv("IG_PROVIDER_CONFIG", os.fspath(config))
+
+    provider = Worker(vault).semantic_provider
+
+    assert provider.provider_id == "unavailable"
+    assert provider.reason == "missing_api_key"
 
 
 def test_openai_provider_accepts_valid_payload_and_rejects_extra_field():

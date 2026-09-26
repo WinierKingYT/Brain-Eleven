@@ -23,6 +23,8 @@
 .claude/remember-config.json
 .claude/project-registry.json
 .claude/project-registry.json.lock
+.claude/project-registry.backup.json
+.claude/ig-provider-config.json
 .claude/project-state.json
 .claude/project-state.json.lock
 .claude/project-state.backup.json
@@ -70,6 +72,12 @@ bandit-report.json
 # a user's real local prompts, fixtures, and reports never are.
 evals/private/
 evals/reports/local/
+evals/reports/*-review-*.json
+# IG01E real-vault corpus remains local; only its reusable harness is versioned.
+evals/ig01e_real/fixtures/
+evals/ig01e_real/results-mpnet.json
+evals/ig01e_real/tasks/real_00[1-9].json
+evals/ig01e_real/tasks/real_01[0-8].json
 task-state-*-report.json
 router-*-report.json
 authority-*-report.json
@@ -85,6 +93,11 @@ authority-*-report.json
 # Loose local test/coverage artifacts (regenerated)
 coverage.json
 pytest-results-local.xml
+.pytest-temp-*/
+.local-*
+.ig01e-audit-local.stdout
+pre13-*.xml
+pre13-*.json
 
 # Claude Code agent-isolation worktrees; never source-controlled.
 .claude/worktrees/

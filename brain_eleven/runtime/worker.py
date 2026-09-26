@@ -3,6 +3,7 @@ from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from contextlib import contextmanager
 import hashlib
+import os
 from pathlib import Path
 import re
 import threading
@@ -72,7 +73,7 @@ def _memory_candidate_values(candidate, *, approved=False, target_id=None):
     """Build the exact TruthCandidate payload used for a memory operation."""
     values = {key: value for key, value in candidate.items()
               if key in {'candidate_id', 'content', 'memory_type', 'scope', 'project_id',
-                         'commitment', 'confidence', 'evidence_refs'}}
+                         'commitment', 'confidence', 'evidence_refs', 'claim_key', 'occurred_at'}}
     values['confidence'] = max(values.get('confidence', 0), 0.97) if approved else values.get('confidence', 0)
     values['commitment'] = 'COMMITTED' if approved else values.get('commitment', 'UNCERTAIN')
     if target_id:
@@ -249,8 +250,13 @@ class Worker:
         self.review = ReviewStore(vault)
         # Falls back to UnavailableProvider (a cheap no-op) unless a semantic
         # provider is explicitly configured via IG_SEMANTIC_PROVIDER or
-        # .claude/ig-provider-config.json -- see brain_eleven/extraction/providers.
-        self.semantic_provider = create_semantic_provider()
+        # this vault's .claude/ig-provider-config.json.  A worker must not
+        # inherit another project's provider policy merely from process cwd.
+        # IG_PROVIDER_CONFIG remains an explicit operator override.
+        provider_config = os.environ.get('IG_PROVIDER_CONFIG')
+        if provider_config is None:
+            provider_config = self.vault / '.claude' / 'ig-provider-config.json'
+        self.semantic_provider = create_semantic_provider(config_path=provider_config)
 
     def _add_review(self, candidate, reason, source):
         """Persist a review item and suppress terminal fingerprint replays.
