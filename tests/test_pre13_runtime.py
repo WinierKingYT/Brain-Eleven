@@ -921,3 +921,47 @@ def test_unknown_codex_record_types_are_counted_not_fatal(runtime, tmp_path):
     batch, _ = read_increment(vault, path, 'codex', 's', project, '2026-09-26T00:00:00Z', stats=stats)
     assert [record.role for record in batch.records] == ['user']
     assert stats['ignored_record_types'] == {'future_record': 1, 'response_item-future_item': 1}
+
+
+@pytest.mark.parametrize(
+    ('client', 'location', 'kind'),
+    [
+        ('claude', 'record', kind) for kind in (
+            'ai-title', 'artifact-autoreact-ledger', 'artifact-comment-monitor', 'atis-latch',
+            'attachment', 'bridge-session', 'cost-state', 'file-history-delta', 'frame-link',
+            'mode', 'permission-mode', 'pr-link', 'relocated', 'result', 'started', 'worktree-state',
+        )
+    ] + [
+        ('codex', 'record', kind) for kind in (
+            'inter_agent_communication_metadata', 'realtime_item', 'token_usage_record', 'world_state',
+        )
+    ] + [
+        ('codex', 'payload', kind) for kind in (
+            'agent_message', 'compaction', 'tool_search_call', 'tool_search_output',
+        )
+    ],
+)
+def test_observed_unknown_transcript_types_are_skipped_without_dropping_session(runtime, tmp_path, client, location, kind):
+    """Real type names stay content-free metadata and don't abort later records."""
+    from brain_eleven.runtime.evidence import read_increment
+
+    vault, project = runtime
+    if client == 'claude':
+        skipped = {'type': kind}
+        continuation = {'type': 'user', 'message': {'role': 'user', 'content': ''}}
+    elif location == 'record':
+        skipped = {'type': kind}
+        continuation = {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': []}}
+    else:
+        skipped = {'type': 'response_item', 'payload': {'type': kind}}
+        continuation = {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user', 'content': []}}
+
+    path = _native_path(tmp_path, vault, client, 's', [skipped, continuation])
+    stats = {}
+    batch, cursor = read_increment(vault, path, client, 's', project, '2026-09-26T00:00:00Z', stats=stats)
+
+    ignored_name = f'response_item-{kind}' if client == 'codex' and location == 'payload' else kind
+    assert not batch.records
+    assert cursor['offset'] == path.stat().st_size and not cursor['has_more']
+    assert stats['records_seen'] == 2 and stats['conversation_records'] == 1
+    assert stats['ignored_record_types'] == {ignored_name: 1}
