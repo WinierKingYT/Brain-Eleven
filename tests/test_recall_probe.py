@@ -73,3 +73,27 @@ def test_answer_waiting_in_the_review_queue_is_pointed_at_and_surfaced(tmp_path)
 
     _accept(vault, pending)
     assert {r["id"]: r for r in probe(vault)["results"]}[3]["status"] == "IN_CONTEXT"
+
+
+def test_answer_split_across_two_pending_candidates_is_pointed_at_as_split(tmp_path):
+    from fastapi.testclient import TestClient
+    from brain_eleven.runtime.service import create_app
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    first = _review_item(tmp_path, vault, "a", "We decided not to push master for now.", NEW_TIME)
+    second = _review_item(tmp_path, vault, "b", "We decided that CI publishes the ghcr latest image.", NEW_TIME)
+    _review_item(tmp_path, vault, "c", "We decided that the dashboard stays read-only.", NEW_TIME)
+
+    entry = {r["id"]: r for r in probe(vault)["results"]}[3]
+    assert entry["status"] == "IN_REVIEW_QUEUE" and entry["split"] is True
+    assert sorted(entry["review_ids"]) == sorted([first["id"], second["id"]])
+
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    listed = {x["id"]: x for x in client.get("/api/review/candidates", headers={"Authorization": "Bearer t"}).json()["candidates"]}
+    assert listed[first["id"]]["recall_questions"] == [3] and listed[second["id"]]["recall_questions"] == [3]
+
+
+def test_split_cover_needs_every_group():
+    from brain_eleven.runtime.recall_probe import split_cover
+    groups = [["master"], ["ghcr"], ["latest"]]
+    assert split_cover([("a", "master"), ("b", "ghcr latest")], groups) == ["b", "a"]
+    assert split_cover([("a", "master"), ("b", "ghcr")], groups) == []

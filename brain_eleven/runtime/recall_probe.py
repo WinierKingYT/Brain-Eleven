@@ -7,8 +7,10 @@ to a fresh session right now, and if not, is it in canonical memory at all?
 - IN_CONTEXT: every term group of the key answer is in the bootstrap context.
 - IN_MEMORY_NOT_DELIVERED: an active memory holds it, the bootstrap did not
   select it (a selection problem; the memory ids are listed).
-- IN_REVIEW_QUEUE: no active memory holds it, but a pending review candidate
-  does; accepting that candidate is the fix (review ids are listed).
+- IN_REVIEW_QUEUE: no active memory holds it, but pending review candidates
+  do; accepting them is the fix (review ids are listed). When no single
+  candidate holds every part of the answer, ``split`` is true and the ids are
+  a small set that together does, the same rule memories already follow.
 - NOT_IN_MEMORY: neither memory nor the pending queue holds it: the session
   was not captured, or its candidate expired / was rejected (their text is
   deleted by design), so the fact has to be recorded again.
@@ -62,6 +64,41 @@ def recall_questions_for(text, questions=None):
     return [q['id'] for q in questions if covers(text, q['groups'])]
 
 
+def split_cover(items, groups):
+    """Greedy small set of (id, text) items that together hold every group, or []."""
+    remaining = list(range(len(groups)))
+    chosen = []
+    while remaining:
+        best, best_hits = None, []
+        for item_id, text in items:
+            hits = [i for i in remaining if covers(text, [groups[i]])]
+            if len(hits) > len(best_hits):
+                best, best_hits = item_id, hits
+        if best is None:
+            return []
+        chosen.append(best)
+        remaining = [i for i in remaining if i not in best_hits]
+    return chosen
+
+
+def review_ids_for(pending, groups):
+    """(review ids, split) for one question's key answer in the pending queue."""
+    whole = [rid for rid, text in pending if covers(text, groups)]
+    if whole:
+        return whole, False
+    return split_cover(pending, groups), True
+
+
+def review_tags(pending, questions=None):
+    """review id -> recall question ids it helps answer (whole or as part of a split)."""
+    questions = load_questions() if questions is None else questions
+    tags = {}
+    for question in questions:
+        for rid in review_ids_for(pending, question['groups'])[0]:
+            tags.setdefault(rid, []).append(question['id'])
+    return tags
+
+
 def probe(vault, project_root=None, *, questions_path=None):
     from brain_eleven.memory import MemoryStore
     from .context import compile_bootstrap, explain_bootstrap
@@ -91,14 +128,15 @@ def probe(vault, project_root=None, *, questions_path=None):
                     holders = sorted({m.get('memory_id') for g in groups for m in memories
                                       if covers(m.get('content', ''), [g])})
             status = 'IN_MEMORY_NOT_DELIVERED' if holders else 'NOT_IN_MEMORY'
-        review_ids = []
+        review_ids, split = [], False
         if status == 'NOT_IN_MEMORY':
-            review_ids = [rid for rid, text in pending if covers(text, groups)]
+            review_ids, split = review_ids_for(pending, groups)
             if review_ids:
                 status = 'IN_REVIEW_QUEUE'
         entry = {'id': question['id'], 'question': question['question'], 'status': status, 'memory_ids': holders}
         if review_ids:
             entry['review_ids'] = review_ids
+            entry['split'] = split
         if status == 'IN_MEMORY_NOT_DELIVERED':
             entry['why_not_delivered'] = {mid: (why.get(mid) or {}).get('reason', 'NOT_RANKED') for mid in holders}
         results.append(entry)
