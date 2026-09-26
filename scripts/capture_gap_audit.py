@@ -281,7 +281,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     report["gate"] = {"min_projects": args.min_projects, "min_sessions": args.min_sessions,
                       "require_clients": list(required), "min_client_sessions": args.min_client_sessions}
     print(json.dumps(report, indent=2, sort_keys=True))
-    return {"PASS": 0, "FAIL": 1}.get(report["verdict"], 2)
+    # Exit codes: 0 gate passed, 1 gate failed, 2 insufficient evidence.
+    return _EXIT_CODES.get(report["verdict"], 2)
+
+
+_EXIT_CODES = dict(zip(("PASS", "FAIL"), (0, 1)))
 
 
 if __name__ == "__main__":
