@@ -39,6 +39,9 @@ python -m brain_eleven review
 - **Toplu temizlik:** Neden / kesinlik / biçim seç, **Önizle** ile kaç öneri
   etkileneceğini ve örnekleri gör, emin olunca **Hepsini reddet**. Hiçbir şey
   silinmez; her rete `Toplu ret: <filtre>` notu yazılır.
+- **Hızlı inceleme:** Tek öneriye odaklanır. `A` kabul (hedef seçiliyse yerine
+  geçirir), `R` reddet, `D` tekrar olarak reddet, `J`/`→` sonraki, `K`/`←` önceki,
+  `Esc` çıkış. Metin kutusunda yazarken kısayollar çalışmaz.
 - **Kart:** Proje, istemci, söylendiği zaman, son gün, tür ve kesinlik, en benzer
   üç kayıt. `%60` üzeri benzerlikte **Tekrar olarak reddet** çıkar.
 - **Konu anahtarı:** Benzer bir kaydın anahtarı önerilir; bir anahtar aktif bir
@@ -67,6 +70,26 @@ Son kurulumdan bu yana (ya da `--since <ISO zaman>`):
 
 Sonuç `.brain-eleven/runtime/measurements/<zaman>.json` dosyasına da yazılır
 (yalnız sayı ve kimlik, hafıza metni yok), ölçümler zamanla karşılaştırılabilir.
+
+## Hatırlama: neden hatırlamadı?
+
+```
+python -m brain_eleven recall-probe
+python -m brain_eleven bootstrap-explain
+```
+
+`recall-probe`, `TEST-LOG.md`'deki beş sorunun anahtar cevabının yeni bir oturumun
+başında modele verilecek bağlamda olup olmadığını bakar (model çalıştırmaz):
+
+- `IN_CONTEXT`: cevap bağlamda.
+- `IN_MEMORY_NOT_DELIVERED`: kayıt hafızada ama seçilmedi; `why_not_delivered`
+  nedeni söyler (ör. `SLOT_LIMIT`, `NEAR_DUPLICATE_OF:<id>`, `BELOW_POOL`).
+- `NOT_IN_MEMORY`: kayıt hiç yok; ilgili oturum yakalanmamış ya da öneri
+  incelemede kabul edilmemiş.
+
+`bootstrap-explain`, projedeki her aktif kaydın bağlama neden girip girmediğini
+listeler. Bu bir yaklaşık ölçümdür; asıl test yine taze oturumda sorulan sorudur.
+`measure` çıktısı da `recall_probe` skorunu içerir.
 
 ## Güncellemeden sonra
 
