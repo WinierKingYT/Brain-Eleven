@@ -59,3 +59,24 @@ def test_bom_in_codex_hooks_is_flagged_and_install_rewrites_it_without_bom(tmp_p
     write_json(hooks, read_json(hooks))  # what install does when it rewrites the file
     assert not hooks.read_bytes().startswith(b"\xef\xbb\xbf")
     assert client_file_state(hooks) == "OK"
+
+
+def test_codex_hooks_defined_in_both_files_are_flagged_but_trust_records_are_not(tmp_path):
+    from brain_eleven.runtime.install import codex_toml_hook_events
+
+    home = tmp_path / "home"
+    (home / ".codex").mkdir(parents=True)
+    (home / ".codex" / "hooks.json").write_text(json.dumps({"hooks": {}}), encoding="utf-8")
+    toml = home / ".codex" / "config.toml"
+    toml.write_text("[hooks.state.'x:session_start:0:0']\ntrusted_hash = \"sha256:ab\"\n", encoding="utf-8")
+    assert codex_toml_hook_events(toml) == []
+
+    toml.write_text(toml.read_text() + "\n[[hooks.SessionStart]]\n[[hooks.SessionStart.hooks]]\ntype = \"command\"\n"
+                    "command = \"codebase-memory-mcp\"\n", encoding="utf-8")
+    assert codex_toml_hook_events(toml) == ["SessionStart"]
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    cfg = RuntimeConfig(vault)
+    cfg.ensure_root()
+    joined = " | ".join(_pipeline_health(vault, cfg, home)["suggestions"])
+    assert "both hooks.json and config.toml (SessionStart)" in joined

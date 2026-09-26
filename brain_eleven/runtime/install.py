@@ -320,6 +320,19 @@ def client_file_state(path):
     return 'OK'
 
 
+def codex_toml_hook_events(path):
+    """Hook events defined in Codex config.toml (its [hooks.state] trust records excluded)."""
+    try:
+        import tomllib
+        document = tomllib.loads(Path(path).read_text(encoding='utf-8-sig'))
+    except (OSError, ValueError, ImportError):
+        return []
+    hooks = document.get('hooks') if isinstance(document, dict) else None
+    if not isinstance(hooks, dict):
+        return []
+    return sorted(str(key) for key in hooks if key != 'state')
+
+
 def _pipeline_health(vault, cfg, home=None):
     """Cheap day-to-day pipeline view: file counts and last records only, no scans.
 
@@ -377,6 +390,11 @@ def _pipeline_health(vault, cfg, home=None):
         if state in {'BOM', 'INVALID_JSON'}:
             suggestions.append(f'{client} hook file {path} is {state}: the client will not run any hook; '
                                'rerun python -m brain_eleven install to rewrite it')
+    config_toml = client_paths(home)['codex'].parent / 'config.toml'
+    toml_events = codex_toml_hook_events(config_toml)
+    if toml_events and client_file_state(client_paths(home)['codex']) == 'OK':
+        suggestions.append('codex loads hooks from both hooks.json and config.toml ('
+                           + ', '.join(toml_events) + '); Codex warns about this and asks for a single representation')
     health['suggestions'] = suggestions
     return health
 
