@@ -5,6 +5,9 @@ Start with the repository `README.md`. Current project state is maintained in
 
 ## Current material
 
+- `OPERATOR-RUNBOOK.md` — day-to-day operator guide: `doctor` suggestions,
+  the review screen (bulk cleanup, stale memories), weekly `measure`, and
+  updating a machine. Opens no package and changes no gate.
 - `contracts/` — governing or reusable package contracts that are not root-path
   dependencies of frozen evaluators.
 - `programs/` — program-level direction, including Intelligence Graduation.

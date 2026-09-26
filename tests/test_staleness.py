@@ -68,3 +68,24 @@ def test_staleness_api_lists_acks_and_retires(tmp_path):
     assert flag["memory_id"] == memory["memory_id"]
     assert client.post(f"/api/staleness/{memory['memory_id']}/retire", headers=headers, json={}).json()["status"] == "RETIRED"
     assert client.get("/api/staleness", headers=headers).json()["stale_candidates"] == []
+
+
+def test_worker_refreshes_staleness_at_most_once_per_interval(tmp_path, monkeypatch):
+    from brain_eleven.runtime import staleness as module
+    from brain_eleven.runtime.worker import Worker
+
+    vault, _ = _memory_about_file(tmp_path)
+    calls = []
+    real = module.scan
+    monkeypatch.setattr(module, "scan", lambda v: calls.append(v) or real(v))
+    worker = Worker(vault)
+    # The capture that created the memory already refreshed the scan.
+    assert worker._maybe_scan_staleness() == "SKIPPED_RECENT"
+    (vault / ".brain-eleven" / "runtime" / "staleness.json").unlink()
+    assert worker._maybe_scan_staleness() == "SCANNED"
+    assert worker._maybe_scan_staleness() == "SKIPPED_RECENT"
+    assert len(calls) == 1
+
+    monkeypatch.setattr(module, "scan", lambda v: (_ for _ in ()).throw(RuntimeError("boom")))
+    (vault / ".brain-eleven" / "runtime" / "staleness.json").unlink()
+    assert worker._maybe_scan_staleness() == "DEGRADED"

@@ -194,7 +194,9 @@ def read_json(path, default=None):
     path = Path(path)
     if not path.exists():
         return default
-    return json.loads(path.read_text(encoding='utf-8'))
+    # utf-8-sig tolerates a UTF-8 BOM (e.g. a file saved by Windows PowerShell
+    # 5.1 Set-Content -Encoding utf8); files are always written without one.
+    return json.loads(path.read_text(encoding='utf-8-sig'))
 
 
 class RuntimeConfigConflict(ValueError):

@@ -42,3 +42,14 @@ def test_report_runs_on_a_real_store(tmp_path, capsys):
     assert main(["--vault", str(vault)]) == 0
     (row,) = json.loads(capsys.readouterr().out).values()
     assert row["old_near_duplicate_slots"] == 1 and row["new_near_duplicate_slots"] == 0
+
+
+def test_turkish_inflections_count_as_the_same_word():
+    from brain_eleven.runtime.review import _words, rank_similar
+    assert _words("Kararlar") == _words("kararı") == _words("KARAR")
+    assert _words("ISLAK") == _words("ıslak")
+    a, b = "Veritabanı kararını SQLite olarak verdik", "SQLite veritabanı kararı verildi"
+    (score, _), = rank_similar(a, [{"memory_id": "m", "content": b}])
+    raw_a, raw_b = set(a.lower().split()), set(b.lower().split())
+    old_score = len(raw_a & raw_b) / len(raw_a | raw_b)
+    assert (round(old_score, 2), score) == (0.29, 0.5)
