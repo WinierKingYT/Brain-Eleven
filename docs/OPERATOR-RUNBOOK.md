@@ -100,6 +100,22 @@ başında modele verilecek bağlamda olup olmadığını bakar (model çalışt�
 listeler. Bu bir yaklaşık ölçümdür; asıl test yine taze oturumda sorulan sorudur.
 `measure` çıktısı da `recall_probe` skorunu içerir.
 
+## Eski konuşmaları yeniden tara
+
+```
+python -m brain_eleven backfill                 # yalnız sayar
+python -m brain_eleven backfill --apply         # inceleme kuyruğuna ekler
+python -m brain_eleven backfill --apply --reoffer-expired
+```
+
+Çıkarıcı iyileştikçe (Türkçe karar kalıpları, onayladığın asistan önerileri)
+son 14 günün (`--days`) transcript'leri yeni kurallarla yeniden okunur. Hiçbir
+şey doğrudan hafızaya yazılmaz; öneriler **BACKFILL** nedeniyle inceleme
+ekranına gelir. Kabul ettiğin ya da reddettiğin bir öneri geri gelmez. Karar
+vermeden 7 günü dolan öneriler yalnız `--reoffer-expired` ile yeniden sunulur.
+Sonra `recall-probe` ile `NOT_IN_MEMORY` cevapların `IN_REVIEW_QUEUE` olup
+olmadığına bak.
+
 ## Güncellemeden sonra
 
 ```
