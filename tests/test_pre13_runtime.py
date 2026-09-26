@@ -891,3 +891,15 @@ def test_installed_codex_shell_command_preserves_windowless_json_io(runtime, tmp
                             timeout=8, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout) == {}, result.stdout
+
+
+def test_windows_codex_hook_command_is_shell_neutral_without_spaces():
+    from brain_eleven.runtime.install import windows_codex_command
+    args = [r'C:\Users\u\Brain-Eleven\.venv\Scripts\pythonw.exe', r'C:\Users\u\Brain-Eleven\brain_eleven\runtime\launcher.py',
+            '--vault', r'C:\Users\u\Brain-Eleven', '--client', 'codex', '--event', 'Stop']
+    command = windows_codex_command(args)
+    # cmd.exe rejects a leading '&' ("& was unexpected at this time").
+    assert not command.startswith('&') and "'" not in command
+    assert command == ' '.join(args)
+    spaced = windows_codex_command([r'C:\Program Files\py\pythonw.exe', 'x'])
+    assert spaced.startswith('& ')

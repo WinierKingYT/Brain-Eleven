@@ -3,6 +3,7 @@ from copy import deepcopy
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shlex
 import sys
 from .storage import RuntimeConfig, read_json, write_json, now, runtime_file_lock as file_lock
@@ -23,9 +24,28 @@ def hook_command(vault, client, event):
     launcher = Path(__file__).with_name('launcher.py').resolve()
     args = [hook_python(), str(launcher), '--vault', str(Path(vault).resolve()), '--client', client, '--event', event]
     if os.name == 'nt':
-        # Codex uses PowerShell on Windows; Claude's default hook shell is bash.
-        return ('& ' if client == 'codex' else '') + ' '.join("'" + part.replace("'", "'\"'\"'" if client == 'claude' else "''") + "'" for part in args)
+        if client == 'codex':
+            return windows_codex_command(args)
+        # Claude's default hook shell on Windows is bash.
+        return ' '.join("'" + part.replace("'", "'\"'\"'") + "'" for part in args)
     return shlex.join(args)
+
+
+_SHELL_NEUTRAL = re.compile(r'^[A-Za-z0-9_:\\/.\-]+$')
+
+
+def windows_codex_command(args):
+    """A Codex hook command that runs under cmd.exe and PowerShell alike.
+
+    The earlier ``& '...'`` form assumed PowerShell; measured on a real
+    Windows machine it never reached the launcher (zero Codex deliveries,
+    ``cmd /c`` fails with "& was unexpected"). Bare arguments are valid in
+    both shells, so they are used whenever no argument needs quoting.
+    """
+    if all(_SHELL_NEUTRAL.match(part) for part in args):
+        return ' '.join(args)
+    # A space or metacharacter cannot be quoted for both shells at once.
+    return '& ' + ' '.join("'" + part.replace("'", "''") + "'" for part in args)
 
 
 def merge_hooks(document, additions, previous=None):
