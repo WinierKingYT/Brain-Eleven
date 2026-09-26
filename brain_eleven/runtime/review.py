@@ -19,6 +19,21 @@ _REVIEW_CANDIDATE_TYPE_ORDER = {
 }
 
 
+_SHELL_LINE = re.compile(r"^\s*(PS [A-Za-z]:\\|>>|\$ |[A-Za-z]:\\[^\n]*>|Traceback|\{\s*$|\}\s*$|\"[\w-]+\":)", re.M)
+
+
+def content_shape(text):
+    """Coarse shape of a candidate: terminal_or_code, short_ack, question or prose."""
+    stripped = text.strip()
+    if len(_SHELL_LINE.findall(stripped)) >= 2 or stripped.startswith(('{', '[', '```')):
+        return 'terminal_or_code'
+    if len(stripped) <= 20:
+        return 'short_ack'
+    if stripped.endswith('?'):
+        return 'question'
+    return 'prose'
+
+
 class ReviewStore:
     def __init__(self, vault):
         self.root = RuntimeConfig(vault).root / 'review'

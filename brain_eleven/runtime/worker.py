@@ -25,7 +25,7 @@ from .storage import RuntimeConfig, canonical_accept_allowed, read_json, write_j
 from .evidence import EvidenceStore, EvidenceBatch, read_increment
 from .ownership import TranscriptOwnershipError, verify_transcript_ownership
 from .path_safety import RuntimePathError
-from .review import ReviewStore
+from .review import ReviewStore, content_shape
 from .model import propose
 from brain_eleven.memory.truth import MemoryTruthEngine, TruthCandidate
 
@@ -169,6 +169,20 @@ _EVIDENCE_READ_CODES = frozenset({
     'UNSUPPORTED_CODEX_TRANSCRIPT', 'UNSUPPORTED_CODEX_ITEM', 'UNSUPPORTED_CLAUDE_TRANSCRIPT',
     'UNSUPPORTED_MESSAGE_ROLE', 'UNSUPPORTED_MESSAGE_CONTENT',
 })
+
+
+# Roadmap step 4, measured on the owner's queue (2026-09-26): 2885 of 3115
+# review candidates came from this fallback, 1 was ever accepted, and 2026
+# were UNCERTAIN / 711 QUOTED. Only a user statement of a decision or an
+# observation is queued now; the full message is already in the evidence
+# store, so anything skipped here can be re-proposed if this is loosened.
+_FALLBACK_REVIEW_COMMITMENTS = frozenset({'COMMITTED', 'OBSERVED'})
+
+
+def fallback_worth_review(content, commitment):
+    """Whether an extractor-less user segment is worth a human's review time."""
+    return (commitment in _FALLBACK_REVIEW_COMMITMENTS
+            and content_shape(content) not in {'terminal_or_code', 'short_ack'})
 
 
 def capture_session_key(client, session):
@@ -898,9 +912,12 @@ class Worker:
             # text is not saved unless the optional local extractor proposes it.
             if message.record.role == 'user' and not envelope.candidates:
                 for index, content in enumerate(_segments(message.content)):
+                    commitment = _classify_commitment(content, 'user').value
+                    if not fallback_worth_review(content, commitment):
+                        continue
                     candidate = {'candidate_id': identity('cand_', message.record.evidence_id, index), 'candidate_type': 'NEW_MEMORY',
                                  'project_id': project['project_id'], 'scope': 'project', 'content': content,
-                                 'memory_type': _memory_type(content), 'commitment': _classify_commitment(content, 'user').value,
+                                 'memory_type': _memory_type(content), 'commitment': commitment,
                                  'confidence': 0, 'evidence_refs': [message.record.evidence_id]}
                     review_id = self._add_review(candidate, 'LOW_EVIDENCE_COMMITMENT', source)
                     if review_id:

@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -28,19 +27,8 @@ def _length_bucket(n: int) -> str:
     return ">1500"
 
 
-_SHELL_LINE = re.compile(r"^\s*(PS [A-Za-z]:\\|>>|\$ |[A-Za-z]:\\[^\n]*>|Traceback|\{\s*$|\}\s*$|\"[\w-]+\":)", re.M)
-
-
-def _shape(text: str) -> str:
-    """Coarse content shape so noise can be grouped without printing text."""
-    stripped = text.strip()
-    if len(_SHELL_LINE.findall(stripped)) >= 2 or stripped.startswith(("{", "[", "```")):
-        return "terminal_or_code"
-    if len(stripped) <= 20:
-        return "short_ack"
-    if stripped.endswith("?"):
-        return "question"
-    return "prose"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from brain_eleven.runtime.review import content_shape as _shape  # noqa: E402
 
 
 def load_items(vault: Path) -> Iterable[dict[str, Any]]:
