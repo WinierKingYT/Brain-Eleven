@@ -18,7 +18,7 @@ def apply_candidate(*args, **kwargs):
 
 
 def review_action(vault, review_id, action, payload):
-    from .review import ReviewStore
+    from .review import DECISION_NOTE_MAX, ReviewStore
 
     cfg = RuntimeConfig(vault)
     if action == 'accept' and not canonical_accept_allowed(cfg.load(), approved=True):
@@ -43,6 +43,15 @@ def review_action(vault, review_id, action, payload):
                 raise ValueError('Review candidate not found')
             if item['status'] != 'PENDING':
                 return item
+            note = payload.get('note')
+            if note is not None:
+                from .capture_safety import evaluate_capture
+                from context_compiler_v2.safety import contains_secret
+                if (not isinstance(note, str) or len(note) > DECISION_NOTE_MAX
+                        or (note.strip() and (contains_secret(note) or not evaluate_capture(note).accepted))):
+                    raise ValueError('Decision note must be at most 280 safe characters')
+                if note.strip():
+                    item['decision_note'] = note.strip()
             if action == 'reject':
                 return store.finish(item, 'REJECTED')
             if action != 'accept':
@@ -225,23 +234,35 @@ def create_app(vault, *, token=None, background=True):
         from .capture_safety import evaluate_capture
         from .review import ReviewStore
         from context_compiler_v2.safety import contains_secret
+        from brain_eleven.projects.registry import ProjectRegistry
+        from .review import rank_similar
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
+        project_names = {p['project_id']: Path(str(p.get('root', ''))).name or p['project_id']
+                         for p in ProjectRegistry(vault).list_projects()}
         state = StateStore(vault)
         for item in items:
             if item['status'] == 'PENDING':
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
+                item['project_name'] = project_names.get(c['project_id'], c['project_id'])
                 if c['candidate_type'] == 'NEW_MEMORY':
                     active = [x for x in memory['validated_memory']
                               if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
-                    targets = [{'id': x['memory_id'], 'text': x['content'], 'claim_key': x.get('claim_key', '')} for x in active]
+                    # Most similar first, so a likely duplicate or supersede target is on top.
+                    ranked = rank_similar(c.get('content', ''), active)
+                    targets = [{'id': x['memory_id'], 'text': x['content'], 'claim_key': x.get('claim_key', ''),
+                                'similarity': score} for score, x in ranked]
+                    item['similar'] = [t for t in targets if t['similarity'] > 0][:3]
                     item['claim_keys'] = sorted({x['claim_key'] for x in active if x.get('claim_key')})
                 else:
                     project = state.get_project(c['project_id']) or {}
                     bucket = {'RESOLVE_BLOCKER': 'blockers', 'RESOLVE_REQUIREMENT': 'requirements'}.get(c.get('operation'))
                     targets = [{'id': x['id'], 'text': x['text']} for x in project.get(bucket, []) if x.get('status') in {'ACTIVE', 'OPEN', 'PLANNED', 'IN_PROGRESS'}] if bucket else []
                 item['targets'] = [x for x in targets if evaluate_capture(x['text']).accepted and not contains_secret(x['text'])]
+                if 'similar' in item:
+                    safe_ids = {x['id'] for x in item['targets']}
+                    item['similar'] = [x for x in item['similar'] if x['id'] in safe_ids]
         return {'candidates': items}
 
     @app.post('/api/review/candidates/{review_id}/{action}')

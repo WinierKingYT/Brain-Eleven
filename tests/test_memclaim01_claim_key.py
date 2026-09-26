@@ -6,6 +6,7 @@ never auto-resolved; the event time survives the worker boundary.
 """
 
 import json
+from pathlib import Path
 import re
 
 import pytest
@@ -209,3 +210,38 @@ def test_candidate_listing_offers_existing_active_claim_keys(tmp_path):
 
     (pending,) = [x for x in listed if x["status"] == "PENDING"]
     assert pending["claim_keys"] == ["srt-00.ship-status"]
+
+
+# Roadmap step 5 -- the review card carries what a decision needs.
+
+def test_candidate_listing_ranks_similar_records_and_names_the_project(tmp_path):
+    from fastapi.testclient import TestClient
+
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    old = _review_item(tmp_path, vault, "s-old", "We decided that SRT-00 is not ready to ship.", OLD_TIME)
+    _accept(vault, old)
+    _review_item(tmp_path, vault, "s-new", "We decided that SRT-00 is closed and shipped.", NEW_TIME)
+
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    (item,) = [x for x in client.get("/api/review/candidates", headers={"Authorization": "Bearer t"}).json()["candidates"]
+               if x["status"] == "PENDING"]
+    assert item["project_name"] == Path(vault).name
+    assert item["similar"] and item["similar"][0]["text"] == "We decided that SRT-00 is not ready to ship."
+    assert 0 < item["similar"][0]["similarity"] <= 1
+    assert item["targets"][0]["id"] == item["similar"][0]["id"]
+
+
+def test_decision_note_is_kept_on_the_terminal_record_and_secrets_are_refused(tmp_path):
+    from fastapi.testclient import TestClient
+
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    review_id = _review_item(tmp_path, vault, "s-note", "We decided that SRT-00 is closed and shipped.", NEW_TIME)["id"]
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    headers = {"Authorization": "Bearer t"}
+    refused = client.post(f"/api/review/candidates/{review_id}/reject", headers=headers,
+                          json={"note": "token sk-ant-api03-" + "A" * 40})
+    assert refused.status_code >= 400
+    done = client.post(f"/api/review/candidates/{review_id}/reject", headers=headers,
+                       json={"note": "Duplicate of the SRT-00 closure record."})
+    assert done.json()["status"] == "REJECTED"
+    assert done.json()["decision_note"] == "Duplicate of the SRT-00 closure record."
