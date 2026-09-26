@@ -129,6 +129,11 @@ _SENTENCE_SPLIT = re.compile(r"(?<=[.!?。！？])\s+|\s*;\s*|\s+\b(?:ama|fakat|
 _QUESTION = re.compile(r"\?|\b(?:should we|could we|shall we|do we|what if|kullansak|yapalım mı|geçelim mi|mi|mı|mu|mü)\b", re.IGNORECASE)
 _HYPOTHETICAL = re.compile(r"\b(?:maybe|perhaps|might|could|we could|we might|consider|let'?s consider|belki|olabilir|kullanabiliriz|düşünebiliriz|düşünelim)\b", re.IGNORECASE)
 _QUOTE = re.compile(r"(?:^|\s)[\"'“‘].*[\"'”’](?:$|\s)|\b(?:quoted|quote|alıntı|alıntıdaki|blogda|dokümanda)\b", re.IGNORECASE | re.DOTALL)
+# A short user turn that only approves what the assistant just proposed.
+_AFFIRMATION = re.compile(r"^\s*(?:tamam|evet|olur|onaylıyorum|onayladım|kabul(?:\s+ediyorum)?|anlaştık|uygun|"
+                          r"(?:önerin[e]?\s+)?uyalım|ok(?:ay)?|yes|agreed|approved|sounds good|go ahead|lgtm)\b[\s.!,]*"
+                          r"(?:(?:öyle|böyle|şöyle)?\s*(?:yapalım|yap|olsun)[\s.!]*)?$", re.IGNORECASE)
+_AFFIRMATION_MAX = 40
 _EXPLICIT_CORRECTION = re.compile(r"\b(?:no|hayır|yanlış|değil|instead|yerine)\b", re.IGNORECASE)
 _DECISION = re.compile(r"\b(?:decid(?:e|ed|ing)|decision|will use|we use|using|chosen|adopt|kullanacağız|kullanıyoruz|kullanılacak|seçtik|karar verdik|tercih ettik|uygulayacağız|karar verildi|kararlaştırdık|anlaştık|bundan sonra|bundan böyle|artık\s+\w+(?:acağız|eceğiz|ıyoruz|iyoruz|uyoruz|üyoruz)|\w+m[ae]y[ae]c[ae][ğk][ıi]z)\b", re.IGNORECASE)
 _LESSON = re.compile(r"\b(?:learned|lesson|taught us|öğrendik|ders|sonuç|göstere|anladık|fark ettik|meğer|dersimiz)\b", re.IGNORECASE)
@@ -170,9 +175,22 @@ def _classify_commitment(content: str, role: str) -> Commitment:
     return Commitment.UNCERTAIN
 
 
-def _confidence_components(message: EvidenceMessage, content: str, commitment: Commitment) -> tuple[float, dict[str, float]]:
+def _confirmed_proposals(messages: Sequence[EvidenceMessage]) -> dict[int, str]:
+    """Map an assistant message position to the evidence id of the user turn that approved it."""
+    confirmed = {}
+    for position in range(len(messages) - 1):
+        current, following = messages[position], messages[position + 1]
+        reply = following.content.strip()
+        if (current.record.role == "assistant" and following.record.role == "user"
+                and len(reply) <= _AFFIRMATION_MAX and _AFFIRMATION.match(reply)):
+            confirmed[position] = following.record.evidence_id
+    return confirmed
+
+
+def _confidence_components(message: EvidenceMessage, content: str, commitment: Commitment,
+                           *, confirmed: bool = False) -> tuple[float, dict[str, float]]:
     """Derive transparent confidence from independent evidence signals."""
-    role = message.record.role
+    role = "user" if confirmed else message.record.role
     commitment_signal = {
         Commitment.COMMITTED: 0.92,
         Commitment.OBSERVED: 0.68,
@@ -254,13 +272,26 @@ class DeterministicExtractor:
     def extract(self, batch: EvidenceBatch) -> ExtractionEnvelope:
         accepted: list[NewMemoryCandidate | StateMutationProposal] = []
         quarantined: list[QuarantineCandidate] = []
-        for message in batch.messages:
+        confirmations = _confirmed_proposals(batch.messages)
+        for position, message in enumerate(batch.messages):
+            approver = confirmations.get(position)
+            if position - 1 in confirmations:
+                # The approval turn carries no fact of its own; it is evidence on the approved candidate.
+                continue
             for index, content in enumerate(_segments(message.content)):
                 if len(content.strip()) < 3:
                     continue
                 commitment = _classify_commitment(content, message.record.role)
-                confidence, components = _confidence_components(message, content, commitment)
+                # An assistant decision the user explicitly approved in the next
+                # turn is the user's decision; anything else it said stays a proposal.
+                confirmed = (approver is not None and commitment is Commitment.PROPOSED
+                             and _classify_commitment(content, "user") is Commitment.COMMITTED)
+                if confirmed:
+                    commitment = Commitment.COMMITTED
+                confidence, components = _confidence_components(message, content, commitment, confirmed=confirmed)
                 base = _base(message, index, CandidateKind.NEW_MEMORY.value, commitment, confidence, components)
+                if confirmed:
+                    base["evidence_refs"] = (message.record.evidence_id, approver)
                 safety = evaluate_capture(content)
                 if not safety.accepted:
                     quarantined.append(
