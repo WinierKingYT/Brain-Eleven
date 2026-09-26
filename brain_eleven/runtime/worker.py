@@ -185,6 +185,8 @@ def fallback_worth_review(content, commitment):
             and content_shape(content) not in {'terminal_or_code', 'short_ack'})
 
 
+STALENESS_SCAN_INTERVAL_SECONDS = 3600
+
 # Dead-letter codes that `worker --retry-dead-letter` retries by default:
 # transcript-read failures a fixed reader can now process, including the
 # EVIDENCE_INVALID catch-all older builds recorded. Ownership/provenance
@@ -278,6 +280,27 @@ class Worker:
         if provider_config is None:
             provider_config = self.vault / '.claude' / 'ig-provider-config.json'
         self.semantic_provider = create_semantic_provider(config_path=provider_config)
+
+    def _maybe_scan_staleness(self):
+        """Refresh the derived stale_candidate list at most once per interval.
+
+        Runs only after a capture is durably committed, so doctor and measure
+        see a current list without opening the review screen. It is derived
+        and advisory: any failure is recorded, never raised into the capture.
+        """
+        from datetime import datetime, timezone
+        from .staleness import scan
+        try:
+            last = read_json(self.config.root / 'staleness.json', {}) or {}
+            scanned = last.get('scanned_at')
+            if scanned:
+                age = (datetime.now(timezone.utc) - datetime.fromisoformat(scanned.replace('Z', '+00:00'))).total_seconds()
+                if age < STALENESS_SCAN_INTERVAL_SECONDS:
+                    return 'SKIPPED_RECENT'
+            scan(self.vault)
+            return 'SCANNED'
+        except Exception:
+            return 'DEGRADED'
 
     def _add_review(self, candidate, reason, source):
         """Persist a review item and suppress terminal fingerprint replays.
@@ -744,6 +767,7 @@ class Worker:
                             result['maintenance_intent_status'] = intent.get('status')
                     except Exception:
                         result['maintenance_intent_status'] = 'DEGRADED'
+                    result['staleness_scan'] = self._maybe_scan_staleness()
                 write_json(self.config.root / 'last-worker.json', {'at': now(), **result})
                 return result
             except Exception as exc:
