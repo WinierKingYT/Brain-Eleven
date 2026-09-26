@@ -126,6 +126,15 @@ def backfill(vault, *, days=14, apply=False, reoffer_expired=False, claude_home=
     home = Path.home()
     since = (datetime.now(timezone.utc) - timedelta(days=days)).timestamp()
     store = ReviewStore(vault)
+    # One scan of the review folder; each add() below already rescans it, so
+    # a second per-candidate scan made --apply quadratic on large queues.
+    known = {}
+    for item in store._items():
+        if isinstance(item, dict) and item.get('id'):
+            fingerprint = item.get('event_fingerprint')
+            if fingerprint is None and isinstance(item.get('candidate'), dict):
+                fingerprint = store.event_fingerprint(item['candidate'])
+            known[(store._project_id(item), fingerprint)] = (item['id'], item.get('status'))
     summary = {'dry_run': not apply, 'days': days, 'transcripts': 0, 'unreadable': 0, 'candidates': 0,
                'added': 0, 'already_pending': 0, 'decided_before': 0, 'reoffered': 0, 'by_commitment': {}}
     for client, project, session, path in _transcripts(vault, claude_home or home / '.claude',
@@ -142,13 +151,18 @@ def backfill(vault, *, days=14, apply=False, reoffer_expired=False, claude_home=
             summary['by_commitment'][commitment] = summary['by_commitment'].get(commitment, 0) + 1
             if not apply:
                 continue
-            before = {x.get('id'): x.get('status') for x in store._items() if isinstance(x, dict)}
-            source = {'client': client, 'session_hash': identity('session_', session),
-                      'evidence_id': message.record.evidence_id, 'role': message.record.role}
-            review_id = store.add(candidate, REASON, source)
-            if not review_id:
-                continue
-            status = before.get(review_id)
+            seen = known.get((candidate.get('project_id'), store.event_fingerprint(candidate)))
+            if seen is None:
+                source = {'client': client, 'session_hash': identity('session_', session),
+                          'evidence_id': message.record.evidence_id, 'role': message.record.role}
+                review_id = store.add(candidate, REASON, source)
+                if not review_id:
+                    continue
+                item = read_json(store.path(review_id), {}) or {}
+                known[(candidate.get('project_id'), store.event_fingerprint(candidate))] = (review_id, 'PENDING')
+                status = None if item.get('reason') == REASON and item.get('status') == 'PENDING' else item.get('status')
+            else:
+                review_id, status = seen
             if status is None:
                 summary['added'] += 1
             elif status == 'PENDING':
