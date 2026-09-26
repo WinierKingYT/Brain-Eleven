@@ -127,6 +127,22 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
     return messages, records_seen, conversation_records, ignored_types
 
 
+def _oversized_line(path, offset, head):
+    """Bytes of the over-long line starting at ``offset`` through its newline, or b'' if unfinished."""
+    parts = [head]
+    with path.open('rb') as stream:
+        stream.seek(offset + len(head))
+        while True:
+            chunk = stream.read(65536)
+            if not chunk:
+                return b''
+            cut = chunk.find(b'\n')
+            if cut >= 0:
+                parts.append(chunk[:cut + 1])
+                return b''.join(parts)
+            parts.append(chunk)
+
+
 def read_increment(vault, path, client, session, project, captured_at, cursor=None, *,
                    binding: TranscriptBinding | None = None, stats: dict | None = None):
     path = _safe_source_path(path)
@@ -185,7 +201,18 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
     end = raw.rfind(b'\n') + 1
     complete = raw[:end]
     if not end and len(raw) == 2 * 1024 * 1024:
-        raise ValueError('TRANSCRIPT_LINE_TOO_LARGE')
+        # One JSONL record over 2 MB (a huge tool output or attachment) used to
+        # fail the whole transcript. Skip exactly that line, count it, and go on;
+        # a line still being written (no newline yet) waits for the next read.
+        skipped = _oversized_line(path, offset, raw)
+        if stats is not None:
+            stats.update(records_seen=0, conversation_records=0, ignored_record_types={},
+                         oversized_lines=1 if skipped else 0)
+        if not skipped:
+            return EvidenceBatch((), ()), {'offset': offset, 'prefix_hash': digest.hexdigest(), 'has_more': False}
+        digest.update(skipped)
+        return EvidenceBatch((), ()), {'offset': offset + len(skipped), 'prefix_hash': digest.hexdigest(),
+                                       'has_more': True}
     messages, records_seen, conversation_records, ignored_types = _parse_lines(
         vault, path, client, session, project, captured_at, complete, offset)
     digest.update(complete)

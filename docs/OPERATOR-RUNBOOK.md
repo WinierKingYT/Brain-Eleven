@@ -92,6 +92,8 @@ başında modele verilecek bağlamda olup olmadığını bakar (model çalışt�
 - `IN_REVIEW_QUEUE`: kayıt hafızada yok ama bekleyen bir öneride var;
   `review_ids` o öneriyi gösterir. İnceleme ekranında bu öneriler
   **Hatırlama testi #N** etiketiyle en üstte çıkar; kabul etmek yeterli.
+  `split: true` ise cevabın parçaları birden çok öneride; listedeki hepsini
+  kabul et (skor yalnız bağlamdakini sayar, kabulden sonra yeniden bak).
 - `NOT_IN_MEMORY`: ne hafızada ne bekleyen önerilerde var; oturum yakalanmamış
   ya da önerinin süresi dolmuş/reddedilmiş (metni silinir). Bilgiyi bir kez
   `/remember` ile kaydet.

@@ -239,7 +239,7 @@ def create_app(vault, *, token=None, background=True):
         from context_compiler_v2.safety import contains_secret
         from brain_eleven.projects.registry import ProjectRegistry
         from .review import content_shape, rank_similar
-        from .recall_probe import load_questions, recall_questions_for
+        from .recall_probe import load_questions, pending_candidate_texts, review_tags
         try:
             questions = load_questions()
         except (OSError, ValueError):
@@ -249,12 +249,17 @@ def create_app(vault, *, token=None, background=True):
         project_names = {p['project_id']: Path(str(p.get('root', ''))).name or p['project_id']
                          for p in ProjectRegistry(vault).list_projects()}
         state = StateStore(vault)
+        # Recall tags per project: a candidate is tagged when it holds a recall
+        # answer alone or as part of the smallest split that holds it.
+        tags = {}
+        for project_id in {item.get('project_id') for item in items if item['status'] == 'PENDING'}:
+            tags.update(review_tags(pending_candidate_texts(vault, project_id), questions))
         for item in items:
             if item['status'] == 'PENDING':
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
                 item['project_name'] = project_names.get(c['project_id'], c['project_id'])
-                item['recall_questions'] = recall_questions_for(c.get('text') or c.get('content') or '', questions)
+                item['recall_questions'] = tags.get(item['id'], [])
                 text = c.get('text') if c['candidate_type'] == 'STATE_MUTATION' else c.get('content')
                 item['shape'] = content_shape(text) if isinstance(text, str) else None
                 if c['candidate_type'] == 'NEW_MEMORY':
