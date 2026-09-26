@@ -34,6 +34,11 @@ def main(argv=None):
     explain.add_argument('--project-root', default=None)
     measure = sub.add_parser('measure', help='real-use measurement snapshot (capture, review noise, staleness, bootstrap)')
     measure.add_argument('--since', help='ISO time; default: last native install')
+    backfill = sub.add_parser('backfill', help='re-run the current extractor on recent transcripts; review queue only')
+    backfill.add_argument('--days', type=int, default=14)
+    backfill.add_argument('--apply', action='store_true', help='add to the review queue (default: count only)')
+    backfill.add_argument('--reoffer-expired', action='store_true',
+                          help='offer candidates whose 7 days ran out without a decision again')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -77,6 +82,10 @@ def main(argv=None):
         elif args.command == 'measure':
             from .runtime.measure import measure as run_measure
             result = run_measure(args.vault, since=args.since)
+        elif args.command == 'backfill':
+            from .runtime.backfill import backfill as run_backfill
+            result = run_backfill(args.vault, days=args.days, apply=args.apply,
+                                  reoffer_expired=args.reoffer_expired)
         elif args.command == 'graduation':
             from .runtime.graduation import record
             result = record(args.vault, args.labels, args.quality_report)

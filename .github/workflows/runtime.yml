@@ -55,7 +55,7 @@ jobs:
           tests/test_graduation_evidence.py tests/test_w19a_stale_reminder.py
           tests/test_phase11_graph_chat.py tests/test_staleness.py
           tests/test_bootstrap_selectivity.py tests/test_memclaim01_claim_key.py
-          tests/test_measure.py tests/test_review_bulk.py tests/test_review_retention.py tests/test_doctor_trend.py tests/test_worker_confirmed_proposal.py tests/test_doctor_pipeline.py
+          tests/test_measure.py tests/test_review_bulk.py tests/test_review_retention.py tests/test_doctor_trend.py tests/test_worker_confirmed_proposal.py tests/test_backfill.py tests/test_doctor_pipeline.py
           tests/test_recall_probe.py -q
           --junitxml=pre13-runtime.xml --cov=brain_eleven/runtime
           --cov-fail-under=80 --cov-report=xml:pre13-coverage.xml
