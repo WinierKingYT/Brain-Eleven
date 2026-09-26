@@ -19,6 +19,7 @@ async function refresh() {
   try {
     const [status, list] = await Promise.all([api('/api/runtime/status'),api('/api/review/candidates')]);
     const pending=list.candidates.filter(x=>x.status==='PENDING');
+    fillBulk(pending);
     el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=pending.length;
     el('queue').textContent=status.queue.queued;el('context').textContent=status.context?(names[status.context.status] || status.context.status):'Henüz yok';
     el('details').textContent=JSON.stringify(status,null,2);el('candidates').replaceChildren();
@@ -121,4 +122,31 @@ async function refreshStale() {
     }
   } catch(e){el('stale').replaceChildren(node('p','Eskime kontrolü yapılamadı: '+e.message,'empty'));}
 }
+const shapes={terminal_or_code:'Terminal / kod çıktısı',short_ack:'Kısa onay',question:'Soru',prose:'Düz yazı'};
+function fillBulk(pending){
+  const fill=(id,label,key,names)=>{const sel=el(id);const keep=sel.value;const counts={};
+    for(const p of pending){const v=key(p);if(v)counts[v]=(counts[v]||0)+1;}
+    sel.replaceChildren(Object.assign(node('option',label+': hepsi'),{value:''}));
+    for(const [v,n] of Object.entries(counts).sort((a,b)=>b[1]-a[1])){const o=node('option',(names[v]||v)+' ('+n+')');o.value=v;sel.append(o);}
+    sel.value=keep;};
+  fill('bulk-reason','Neden',p=>p.reason,reasons);
+  fill('bulk-commitment','Kesinlik',p=>p.candidate?.commitment,commitments);
+  fill('bulk-shape','Biçim',p=>p.shape,shapes);
+  el('bulk-apply').disabled=true;
+}
+function bulkFilter(){const f={};for(const [k,id] of [['reason','bulk-reason'],['commitment','bulk-commitment'],['shape','bulk-shape']])if(el(id).value)f[k]=el(id).value;return f;}
+for(const id of ['bulk-reason','bulk-commitment','bulk-shape'])el(id).addEventListener('change',()=>{el('bulk-apply').disabled=true;el('bulk-result').replaceChildren();});
+el('bulk-preview').addEventListener('click',async()=>{
+  try{const r=await api('/api/review/bulk-reject',bulkFilter());
+    const box=el('bulk-result');box.replaceChildren(node('p',r.matched+' öneri (tekrarlarla '+r.items+' kayıt) reddedilecek. Örnekler:'));
+    const ul=node('ul');for(const t of r.samples)ul.append(node('li',t.slice(0,200)));box.append(ul);
+    el('bulk-apply').disabled=!r.matched;
+  }catch(e){el('message').textContent=e.message;}
+});
+el('bulk-apply').addEventListener('click',async()=>{
+  if(!confirm('Seçili filtreye uyan tüm öneriler reddedilecek. Emin misin?'))return;
+  el('bulk-apply').disabled=true;
+  try{const r=await api('/api/review/bulk-reject',{...bulkFilter(),confirm:true});el('message').textContent=r.matched+' öneri reddedildi.';el('bulk-result').replaceChildren();await refresh();}
+  catch(e){el('message').textContent=e.message;}
+});
 el('refresh').addEventListener('click',()=>{refresh();refreshStale();});refresh();refreshStale();

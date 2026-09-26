@@ -168,6 +168,9 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
           codex_home: Optional[Path] = None, clients: tuple[str, ...] = ("claude",)) -> dict[str, Any]:
     # session_id_hash -> set of ledger actions / error codes, SessionEnd only.
     actions: dict[str, set[str]] = defaultdict(set)
+    # Last dead-letter transition per session: a job requeued from dead
+    # letter (worker --retry-dead-letter) is pending again, not lost.
+    last_dead_letter_event: dict[str, str] = {}
     errors: dict[str, set[str]] = defaultdict(set)
     ledger_projects: dict[str, str] = {}
     for record in load_ledger(vault):
@@ -177,6 +180,8 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
         if not isinstance(key, str):
             continue
         actions[key].add(str(record.get("action")))
+        if record.get("action") in {"DEAD_LETTER", "REQUEUED_FROM_DEAD_LETTER"}:
+            last_dead_letter_event[key] = str(record["action"])
         if record.get("error_code"):
             errors[key].add(str(record["error_code"]))
         if record.get("project_id"):
@@ -222,7 +227,7 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
             row["committed"] += 1
             if "DEAD_LETTER" in seen:
                 row["dead_letter_recovered"] += 1
-        elif "DEAD_LETTER" in seen:
+        elif "DEAD_LETTER" in seen and last_dead_letter_event.get(key) == "DEAD_LETTER":
             row["dead_letter"] += 1
             for code in errors.get(key, ()):
                 error_codes[f"{client}:{code}"] += 1

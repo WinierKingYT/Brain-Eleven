@@ -11,7 +11,10 @@ def main(argv=None):
     for name in ('install', 'uninstall', 'doctor', 'serve', 'status'):
         sub.add_parser(name)
     worker = sub.add_parser('worker')
-    worker.add_argument('--once', action='store_true', required=True)
+    worker_mode = worker.add_mutually_exclusive_group(required=True)
+    worker_mode.add_argument('--once', action='store_true')
+    worker_mode.add_argument('--retry-dead-letter', nargs='*', metavar='ERROR_CODE',
+                             help='requeue dead-lettered captures (default: fixed transcript-read codes)')
     context = sub.add_parser('context')
     context.add_argument('request')
     context.add_argument('--project-root', default='.')
@@ -25,6 +28,8 @@ def main(argv=None):
     shadow_accept.add_argument('state', choices=['OFF', 'ON'])
     migration = sub.add_parser('migration')
     migration.add_argument('action', choices=['upgrade', 'rollback'])
+    measure = sub.add_parser('measure', help='real-use measurement snapshot (capture, review noise, staleness, bootstrap)')
+    measure.add_argument('--since', help='ISO time; default: last native install')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -37,8 +42,13 @@ def main(argv=None):
             from .runtime.service import serve, runtime_status
             result = serve(args.vault) if args.command == 'serve' else runtime_status(args.vault)
         elif args.command == 'worker':
-            from .runtime.worker import Worker
-            result = Worker(args.vault).once()
+            from .runtime.worker import Worker, RETRYABLE_DEAD_LETTER_CODES
+            if args.retry_dead_letter is not None:
+                from .runtime.capture_queue import CaptureQueue
+                codes = args.retry_dead_letter or sorted(RETRYABLE_DEAD_LETTER_CODES)
+                result = {'requeued': CaptureQueue(args.vault).requeue_dead_letters(codes), 'error_codes': codes}
+            else:
+                result = Worker(args.vault).once()
         elif args.command == 'context':
             from .runtime.context import compile_context
             result = compile_context(args.vault, args.project_root, args.request)
@@ -54,6 +64,9 @@ def main(argv=None):
         elif args.command == 'migration':
             from .runtime.migration import migrate, rollback
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)
+        elif args.command == 'measure':
+            from .runtime.measure import measure as run_measure
+            result = run_measure(args.vault, since=args.since)
         elif args.command == 'graduation':
             from .runtime.graduation import record
             result = record(args.vault, args.labels, args.quality_report)

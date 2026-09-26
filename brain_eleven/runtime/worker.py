@@ -185,6 +185,13 @@ def fallback_worth_review(content, commitment):
             and content_shape(content) not in {'terminal_or_code', 'short_ack'})
 
 
+# Dead-letter codes that `worker --retry-dead-letter` retries by default:
+# transcript-read failures a fixed reader can now process, including the
+# EVIDENCE_INVALID catch-all older builds recorded. Ownership/provenance
+# codes are safety verdicts and are only retried when named explicitly.
+RETRYABLE_DEAD_LETTER_CODES = frozenset(_EVIDENCE_READ_CODES | {'EVIDENCE_INVALID'})
+
+
 def capture_session_key(client, session):
     """Native session key the capture queue stores as the event's session_id."""
     return client + ':' + hashlib.sha256(session.encode()).hexdigest()

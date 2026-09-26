@@ -31,10 +31,8 @@ def _redundant(chosen):
     return count
 
 
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--vault", default=".")
-    vault = parser.parse_args(argv).vault
+def compare(vault) -> dict:
+    """Old vs step-9 bootstrap slots for every registered project."""
     compiler_type = load_legacy_module("brain_eleven_legacy_context_compiler", "context-compiler.py").ContextCompiler
     stale = _stale_memory_ids(vault)
     report = {}
@@ -50,7 +48,13 @@ def main(argv=None) -> int:
             "old_near_duplicate_slots": _redundant(old), "old_stale_slots": sum(i in stale for i in old_ids),
             "new_near_duplicate_slots": _redundant(new), "new_stale_slots": sum(i in stale for i in new_ids),
             "added": [i for i in new_ids if i not in old_ids], "dropped": [i for i in old_ids if i not in new_ids]}
-    print(json.dumps(report, indent=2))
+    return report
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--vault", default=".")
+    print(json.dumps(compare(parser.parse_args(argv).vault), indent=2))
     return 0
 
 

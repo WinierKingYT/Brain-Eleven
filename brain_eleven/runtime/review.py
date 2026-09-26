@@ -300,6 +300,38 @@ class ReviewStore:
                 primary_value = value
         return primary_value or self._terminal_value(item, status, result)
 
+    def reject_matching(self, predicate, note, *, dry_run=True, sample=3):
+        """Reject every pending review group whose visible primary matches ``predicate``.
+
+        Reads the queue once (a per-item ``finish`` rescans it every time),
+        applies the same grouping as ``finish``/``list`` under the same index
+        lock, and records ``note`` on each rejected primary. Duplicates in a
+        group are rejected as duplicates of their primary. Nothing is deleted.
+        """
+        self.expire()
+        with file_lock(self.root / 'index'):
+            groups = {}
+            for item in self._items():
+                if isinstance(item, dict) and item.get('status') == 'PENDING':
+                    groups.setdefault((self._project_id(item), self._content_fingerprint(item)), []).append(item)
+            matched = []
+            for group in groups.values():
+                ordered = sorted(group, key=self._sort_key)
+                if predicate(ordered[0]):
+                    matched.append(ordered)
+            samples = [self._candidate(group[0]).get('content') or self._candidate(group[0]).get('text') or ''
+                       for group in matched[:sample]]
+            if not dry_run:
+                for ordered in matched:
+                    primary = {**ordered[0], 'decision_note': note}
+                    write_json(self.path(primary['id']), self._terminal_value(primary, 'REJECTED'))
+                    for duplicate in ordered[1:]:
+                        write_json(self.path(duplicate['id']), self._terminal_value(
+                            duplicate, 'REJECTED', {'status': 'REJECTED', 'duplicate_of': primary['id']},
+                            duplicate_of=primary['id']))
+            return {'matched': len(matched), 'items': sum(len(g) for g in matched),
+                    'samples': samples, 'dry_run': dry_run}
+
     def list(self):
         self.expire()
         with file_lock(self.root / 'index'):

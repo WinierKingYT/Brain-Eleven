@@ -19,7 +19,7 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Iterable, Any, Mapping, Optional, Sequence
 
 try:
     from scripts.capture_event import (
@@ -535,6 +535,37 @@ class CaptureQueue:
                 return QueueReceipt(job_id=job_id, status=QUEUED)
         except MemoryStoreLockTimeout as exc:
             raise CaptureQueueLockError("capture queue lock timed out") from exc
+
+    def requeue_dead_letters(self, error_codes: Iterable[str]) -> list[str]:
+        """Return dead-lettered jobs whose last error is in ``error_codes`` to delivery.
+
+        For use after the defect behind those codes is fixed. The attempt
+        counter restarts so the job gets the normal bounded retries again, and
+        the ledger records REQUEUED_FROM_DEAD_LETTER with the old code.
+        """
+        codes = {code for code in error_codes if isinstance(code, str) and code}
+        if not codes:
+            raise CaptureQueueStateError("dead-letter requeue requires error codes")
+        self._ensure_layout()
+        requeued = []
+        try:
+            with self._locked():
+                for source in sorted(self._directory(DEAD_LETTER).glob(f"{JOB_PREFIX}*.json")):
+                    job = self._read_job(source)
+                    if job["status"] != DEAD_LETTER or job.get("last_error_code") not in codes:
+                        continue
+                    previous = job["last_error_code"]
+                    job["status"] = QUEUED
+                    job["attempt"] = 0
+                    job["requeued_from_dead_letter_at"] = _utc_now()
+                    destination = self._job_path(QUEUED, job["job_id"])
+                    _atomic_write_json(source, job)
+                    self._move(source, destination)
+                    self._ledger(action="REQUEUED_FROM_DEAD_LETTER", job=job, error_code=previous)
+                    requeued.append(job["job_id"])
+        except MemoryStoreLockTimeout as exc:
+            raise CaptureQueueLockError("capture queue lock timed out") from exc
+        return requeued
 
     def recover_expired_claims(self, *, now: Optional[str] = None) -> int:
         """Close interrupted commits and recover claims after their lease expires."""
