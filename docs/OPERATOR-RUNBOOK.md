@@ -84,8 +84,12 @@ başında modele verilecek bağlamda olup olmadığını bakar (model çalışt�
 - `IN_CONTEXT`: cevap bağlamda.
 - `IN_MEMORY_NOT_DELIVERED`: kayıt hafızada ama seçilmedi; `why_not_delivered`
   nedeni söyler (ör. `SLOT_LIMIT`, `NEAR_DUPLICATE_OF:<id>`, `BELOW_POOL`).
-- `NOT_IN_MEMORY`: kayıt hiç yok; ilgili oturum yakalanmamış ya da öneri
-  incelemede kabul edilmemiş.
+- `IN_REVIEW_QUEUE`: kayıt hafızada yok ama bekleyen bir öneride var;
+  `review_ids` o öneriyi gösterir. İnceleme ekranında bu öneriler
+  **Hatırlama testi #N** etiketiyle en üstte çıkar; kabul etmek yeterli.
+- `NOT_IN_MEMORY`: ne hafızada ne bekleyen önerilerde var; oturum yakalanmamış
+  ya da önerinin süresi dolmuş/reddedilmiş (metni silinir). Bilgiyi bir kez
+  `/remember` ile kaydet.
 
 `bootstrap-explain`, projedeki her aktif kaydın bağlama neden girip girmediğini
 listeler. Bu bir yaklaşık ölçümdür; asıl test yine taze oturumda sorulan sorudur.

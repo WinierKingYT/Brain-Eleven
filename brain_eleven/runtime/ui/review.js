@@ -18,7 +18,8 @@ async function refresh() {
   el('refresh').disabled=true;
   try {
     const [status, list] = await Promise.all([api('/api/runtime/status'),api('/api/review/candidates')]);
-    const pending=list.candidates.filter(x=>x.status==='PENDING');
+    // Candidates carrying a recall-test answer first: accepting them moves the score.
+    const pending=list.candidates.filter(x=>x.status==='PENDING').sort((a,b)=>(b.recall_questions?.length?1:0)-(a.recall_questions?.length?1:0));
     fillBulk(pending);
     el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=pending.length;
     el('queue').textContent=status.queue.queued;el('context').textContent=status.context?(names[status.context.status] || status.context.status):'Henüz yok';
@@ -33,6 +34,7 @@ async function refresh() {
         'söylendi: '+when(c.occurred_at || item.created_at), 'son gün: '+when(item.expires_at)].join(' · '),'meta'));
       const tags=node('div',null,'tags');
       tags.append(node('span',reasons[item.reason] || item.reason,'reason'));
+      for(const q of item.recall_questions || []) tags.append(node('span','Hatırlama testi #'+q,'tag recall'));
       if(c.memory_type) tags.append(node('span',types[c.memory_type] || c.memory_type,'tag'));
       if(c.commitment) tags.append(node('span',commitments[c.commitment] || c.commitment,'tag'));
       card.append(tags);
