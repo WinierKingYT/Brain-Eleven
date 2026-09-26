@@ -104,18 +104,18 @@ def _recent(path: Path, since: Optional[float]) -> bool:
         return False
 
 
-def claude_sessions(registry, claude_home: Path, since: Optional[float]) -> list[tuple[str, str, str]]:
+def claude_sessions(registry, claude_home: Path, since: Optional[float]) -> list[tuple[str, str, tuple[str, ...]]]:
     """Claude names each transcript ``<session_id>.jsonl`` under the project's slug."""
     found = []
     for project in registry:
         directory = claude_home / "projects" / _project_slug(str(project["root"]))
         for transcript in sorted(directory.glob("*.jsonl")) if directory.is_dir() else []:
             if _recent(transcript, since):
-                found.append(("claude", project["project_id"], transcript.stem))
+                found.append(("claude", project["project_id"], (transcript.stem,)))
     return found
 
 
-def _codex_meta(path: Path) -> Optional[tuple[str, str]]:
+def _codex_meta(path: Path) -> Optional[tuple[tuple[str, ...], str]]:
     """(session_id, cwd) from the rollout's session_meta line; reads metadata lines only."""
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -126,17 +126,20 @@ def _codex_meta(path: Path) -> Optional[tuple[str, str]]:
                     continue
                 if isinstance(document, dict) and document.get("type") == "session_meta":
                     payload = document.get("payload") or {}
-                    session_id = payload.get("session_id") or payload.get("id")
+                    # session_meta carries both ``session_id`` and ``id``; the hook
+                    # payload may use either, so both are candidate identities.
+                    ids = tuple(dict.fromkeys(
+                        v for v in (payload.get("session_id"), payload.get("id")) if isinstance(v, str) and v))
                     cwd = payload.get("cwd")
-                    if isinstance(session_id, str) and session_id and isinstance(cwd, str) and cwd:
-                        return session_id, cwd
+                    if ids and isinstance(cwd, str) and cwd:
+                        return ids, cwd
                     return None
     except (OSError, UnicodeDecodeError):
         return None
     return None
 
 
-def codex_sessions(registry, codex_home: Path, since: Optional[float]) -> list[tuple[str, str, str]]:
+def codex_sessions(registry, codex_home: Path, since: Optional[float]) -> list[tuple[str, str, tuple[str, ...]]]:
     """Codex rollouts live under ``sessions/YYYY/MM/DD``; the project comes from session_meta.cwd."""
     roots = {}
     for project in registry:
@@ -196,11 +199,12 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
     if "codex" in clients:
         sessions += codex_sessions(registry, codex_home, since)
 
-    for client, project_id, session_id in sessions:
+    for client, project_id, session_ids in sessions:
         row = rows[(client, project_id)]
-        key = capture_session_hash(client, session_id)
+        keys = [capture_session_hash(client, value) for value in session_ids]
+        key = next((k for k in keys if k in actions), keys[0])
         row["sessions"] += 1
-        receipt = receipts.get(key)
+        receipt = next((receipts[k] for k in keys if k in receipts), None)
         stage = receipt.get("stage", "UNKNOWN") if receipt else "NO_RECEIPT"
         if receipt and receipt.get("reason"):
             stage += ":" + str(receipt["reason"])

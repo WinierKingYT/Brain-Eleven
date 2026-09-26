@@ -131,7 +131,7 @@ def test_codex_sessions_are_audited_and_gate_requires_both_clients(tmp_path):
     day.mkdir(parents=True)
     for sid, enqueued in (("cx-1", True), ("cx-2", False)):
         (day / f"rollout-{sid}.jsonl").write_text(json.dumps({"type": "session_meta", "payload": {
-            "session_id": sid, "cwd": str(tmp_path / "proj_a")}}) + "\n", encoding="utf-8")
+            "session_id": "other-" + sid, "id": sid, "cwd": str(tmp_path / "proj_a")}}) + "\n", encoding="utf-8")
         if enqueued:
             with ledger_path.open("a", encoding="utf-8") as handle:
                 for action in ("ENQUEUED", "COMMITTED"):
