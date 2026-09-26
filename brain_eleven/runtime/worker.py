@@ -16,13 +16,13 @@ from .capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
 from .capture_provenance import TranscriptProvenanceError, resolve_transcript_path
 from .capture_queue import CaptureQueue
 from .capture_safety import evaluate_capture
-from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type
+from .extraction import DeterministicExtractor, _segments, _classify_commitment, _memory_type, _confirmed_proposals
 from .extraction import CandidateKind, Commitment, MemoryType
 from brain_eleven.extraction.providers import create_semantic_provider
 from brain_eleven.extraction.semantic import UnavailableProvider
 from .state_boundary import StateBoundary
 from .storage import RuntimeConfig, canonical_accept_allowed, read_json, write_json, identity, now, runtime_file_lock as file_lock
-from .evidence import EvidenceStore, EvidenceBatch, read_increment
+from .evidence import EvidenceStore, EvidenceBatch, read_increment, previous_message
 from .ownership import TranscriptOwnershipError, verify_transcript_ownership
 from .path_safety import RuntimePathError
 from .review import ReviewStore, content_shape
@@ -882,9 +882,33 @@ class Worker:
         review_effect_ids = []
         canonical_effect_count = 0
         review_effect_count = 0
-        for message in batch.messages:
+        # A short approval ("tamam", "onaylıyorum") makes the assistant proposal
+        # right before it the user's decision. The proposal usually ended the
+        # previous increment, so look one message back past the cursor.
+        items = list(batch.messages)
+        if items and items[0].record.role == 'user' and stored_cursor:
+            prior = previous_message(self.vault, transcript_path, client, session, project['project_id'],
+                                     event['event_at'], stored_cursor.get('offset'))
+            if prior is not None and _confirmed_proposals([prior, items[0]]):
+                EvidenceStore(self.vault).persist((prior.record,))
+                items.insert(0, prior)
+        confirmations = _confirmed_proposals(items)
+        for position, message in enumerate(items):
             self.queue.renew(job['job_id'])
-            envelope = DeterministicExtractor().extract(EvidenceBatch((message.record,), (message,)))
+            if position - 1 in confirmations:
+                # The approval turn is evidence on the approved candidate, not a fact itself.
+                continue
+            if position in confirmations:
+                approval = items[position + 1]
+                envelope = DeterministicExtractor().extract(
+                    EvidenceBatch((message.record, approval.record), (message, approval)))
+            else:
+                envelope = DeterministicExtractor().extract(EvidenceBatch((message.record,), (message,)))
+            replay = position == 0 and items[0] is not batch.messages[0]
+            if replay:
+                # Already processed as a plain proposal in the previous increment;
+                # only the newly approved decision is added now.
+                envelope = replace(envelope, quarantined=())
             correction = any(x.reason == 'LIFECYCLE_TARGET_UNKNOWN' for x in envelope.quarantined)
             source = {'client': client, 'session_hash': identity('session_', session), 'evidence_id': message.record.evidence_id, 'role': message.record.role}
             for item in envelope.candidates:
@@ -955,6 +979,8 @@ class Worker:
                         effect_ids.append(review_id)
                         review_effect_ids.append(review_id)
                         review_effect_count += 1
+            if replay:
+                continue
             proposals, model_error = propose(self.config.load().get('local_model'), message)
             if model_error:
                 write_json(self.config.root / 'model-status.json', {'at': now(), 'status': model_error})

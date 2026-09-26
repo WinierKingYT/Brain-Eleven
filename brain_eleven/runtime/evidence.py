@@ -46,65 +46,8 @@ def _count_ignored_type(counts, kind):
     counts[name] = counts.get(name, 0) + 1
 
 
-def read_increment(vault, path, client, session, project, captured_at, cursor=None, *,
-                   binding: TranscriptBinding | None = None, stats: dict | None = None):
-    path = _safe_source_path(path)
-    before = path.stat()
-    if before.st_size > 128 * 1024 * 1024:
-        raise ValueError('TRANSCRIPT_TOO_LARGE')
-    if binding is not None:
-        if path != binding.path:
-            raise ValueError('TRANSCRIPT_CHANGED')
-        if (int(getattr(before, 'st_dev', 0)), int(getattr(before, 'st_ino', 0)),
-                int(before.st_size), int(getattr(before, 'st_mtime_ns', 0))) != binding.file_identity:
-            raise ValueError('TRANSCRIPT_CHANGED')
-    offset = (cursor or {}).get('offset', 0)
-    if not isinstance(offset, int) or offset < 0 or offset > before.st_size:
-        raise ValueError('TRANSCRIPT_REWRITTEN')
-    digest = hashlib.sha256()
-    with path.open('rb') as stream:
-        opened = os.fstat(stream.fileno())
-        opened_identity = (int(getattr(opened, 'st_dev', 0)), int(getattr(opened, 'st_ino', 0)),
-                           int(opened.st_size), int(getattr(opened, 'st_mtime_ns', 0)))
-        if binding is not None and opened_identity != binding.file_identity:
-            raise ValueError('TRANSCRIPT_CHANGED')
-        remaining = offset
-        while remaining:
-            chunk = stream.read(min(65536, remaining))
-            if not chunk:
-                raise ValueError('TRANSCRIPT_REWRITTEN')
-            digest.update(chunk)
-            remaining -= len(chunk)
-        if cursor and digest.hexdigest() != cursor['prefix_hash']:
-            raise ValueError('TRANSCRIPT_REWRITTEN')
-        raw = stream.read(2 * 1024 * 1024)
-        if binding is not None:
-            # Hash the complete opened handle so an in-place, same-size
-            # replacement cannot pass a path/stat-only check.
-            # ``digest`` already contains the cursor prefix.  Hashing the
-            # bytes after the prefix and comparing the full source below is
-            # intentionally performed from this same handle.
-            full_digest = hashlib.sha256()
-            stream.seek(0)
-            while True:
-                chunk = stream.read(65536)
-                if not chunk:
-                    break
-                full_digest.update(chunk)
-            if full_digest.hexdigest() != binding.content_sha256:
-                raise ValueError('TRANSCRIPT_CHANGED')
-    after = path.stat()
-    after_identity = (int(getattr(after, 'st_dev', 0)), int(getattr(after, 'st_ino', 0)),
-                      int(after.st_size), int(getattr(after, 'st_mtime_ns', 0)))
-    if binding is not None and after_identity != binding.file_identity:
-        raise ValueError('TRANSCRIPT_CHANGED')
-    if path.stat().st_size < before.st_size:
-        raise ValueError('TRANSCRIPT_CHANGED')
-    # A writer may append while we read; process complete lines only.
-    end = raw.rfind(b'\n') + 1
-    complete = raw[:end]
-    if not end and len(raw) == 2 * 1024 * 1024:
-        raise ValueError('TRANSCRIPT_LINE_TOO_LARGE')
+def _parse_lines(vault, path, client, session, project, captured_at, complete, offset):
+    """Parse complete transcript lines starting at byte ``offset`` into evidence messages."""
     messages = []
     position = offset
     records_seen = conversation_records = 0
@@ -181,9 +124,102 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
         messages.append(EvidenceMessage(record, content))
         if len(messages) > 10000:
             raise ValueError('TRANSCRIPT_TOO_MANY_MESSAGES')
+    return messages, records_seen, conversation_records, ignored_types
+
+
+def read_increment(vault, path, client, session, project, captured_at, cursor=None, *,
+                   binding: TranscriptBinding | None = None, stats: dict | None = None):
+    path = _safe_source_path(path)
+    before = path.stat()
+    if before.st_size > 128 * 1024 * 1024:
+        raise ValueError('TRANSCRIPT_TOO_LARGE')
+    if binding is not None:
+        if path != binding.path:
+            raise ValueError('TRANSCRIPT_CHANGED')
+        if (int(getattr(before, 'st_dev', 0)), int(getattr(before, 'st_ino', 0)),
+                int(before.st_size), int(getattr(before, 'st_mtime_ns', 0))) != binding.file_identity:
+            raise ValueError('TRANSCRIPT_CHANGED')
+    offset = (cursor or {}).get('offset', 0)
+    if not isinstance(offset, int) or offset < 0 or offset > before.st_size:
+        raise ValueError('TRANSCRIPT_REWRITTEN')
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        opened = os.fstat(stream.fileno())
+        opened_identity = (int(getattr(opened, 'st_dev', 0)), int(getattr(opened, 'st_ino', 0)),
+                           int(opened.st_size), int(getattr(opened, 'st_mtime_ns', 0)))
+        if binding is not None and opened_identity != binding.file_identity:
+            raise ValueError('TRANSCRIPT_CHANGED')
+        remaining = offset
+        while remaining:
+            chunk = stream.read(min(65536, remaining))
+            if not chunk:
+                raise ValueError('TRANSCRIPT_REWRITTEN')
+            digest.update(chunk)
+            remaining -= len(chunk)
+        if cursor and digest.hexdigest() != cursor['prefix_hash']:
+            raise ValueError('TRANSCRIPT_REWRITTEN')
+        raw = stream.read(2 * 1024 * 1024)
+        if binding is not None:
+            # Hash the complete opened handle so an in-place, same-size
+            # replacement cannot pass a path/stat-only check.
+            # ``digest`` already contains the cursor prefix.  Hashing the
+            # bytes after the prefix and comparing the full source below is
+            # intentionally performed from this same handle.
+            full_digest = hashlib.sha256()
+            stream.seek(0)
+            while True:
+                chunk = stream.read(65536)
+                if not chunk:
+                    break
+                full_digest.update(chunk)
+            if full_digest.hexdigest() != binding.content_sha256:
+                raise ValueError('TRANSCRIPT_CHANGED')
+    after = path.stat()
+    after_identity = (int(getattr(after, 'st_dev', 0)), int(getattr(after, 'st_ino', 0)),
+                      int(after.st_size), int(getattr(after, 'st_mtime_ns', 0)))
+    if binding is not None and after_identity != binding.file_identity:
+        raise ValueError('TRANSCRIPT_CHANGED')
+    if path.stat().st_size < before.st_size:
+        raise ValueError('TRANSCRIPT_CHANGED')
+    # A writer may append while we read; process complete lines only.
+    end = raw.rfind(b'\n') + 1
+    complete = raw[:end]
+    if not end and len(raw) == 2 * 1024 * 1024:
+        raise ValueError('TRANSCRIPT_LINE_TOO_LARGE')
+    messages, records_seen, conversation_records, ignored_types = _parse_lines(
+        vault, path, client, session, project, captured_at, complete, offset)
     digest.update(complete)
     if stats is not None:
         stats.update(records_seen=records_seen, conversation_records=conversation_records,
                      ignored_record_types=dict(ignored_types))
     return EvidenceBatch(tuple(x.record for x in messages), tuple(messages)), {'offset': offset + end, 'prefix_hash': digest.hexdigest(),
              'has_more': len(raw) == 2 * 1024 * 1024 and end > 0}
+
+
+PREVIOUS_WINDOW = 256 * 1024
+
+
+def previous_message(vault, path, client, session, project, captured_at, before_offset):
+    """Return the conversation message that ends right before ``before_offset``, or None.
+
+    Reads at most PREVIOUS_WINDOW bytes back so a short approval turn can be
+    paired with the assistant proposal from the previous capture increment.
+    Nothing is stored; evidence ids match the original read (absolute offsets).
+    """
+    path = _safe_source_path(path)
+    if not isinstance(before_offset, int) or before_offset <= 0:
+        return None
+    start = max(0, before_offset - PREVIOUS_WINDOW)
+    with path.open('rb') as stream:
+        stream.seek(start)
+        raw = stream.read(before_offset - start)
+    if start:
+        cut = raw.find(b'\n') + 1
+        if not cut:
+            return None
+        raw, start = raw[cut:], start + cut
+    try:
+        messages = _parse_lines(vault, path, client, session, project, captured_at, raw, start)[0]
+    except (ValueError, UnicodeDecodeError):
+        return None
+    return messages[-1] if messages else None

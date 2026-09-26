@@ -26,6 +26,8 @@ extract = _legacy.extract
 _segments = _legacy._segments
 _classify_commitment = _legacy._classify_commitment
 _memory_type = _legacy._memory_type
+# The worker pairs an approval turn with the proposal it approves across increments.
+_confirmed_proposals = _legacy._confirmed_proposals
 
 __all__ = [
     "EXTRACTION_SCHEMA_VERSION",
