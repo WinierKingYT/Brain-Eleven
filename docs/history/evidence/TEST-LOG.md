@@ -49,6 +49,26 @@ daha temel bir bulgu: precision'ın düşük olması bir şey geldiği anlamına
 5 sorudan 4'ünde **hiçbir şey gelmedi**. Yani sıradaki iş retrieval'ı iyileştirmek değil,
 `SessionStart` hook'unun bağlamı gerçekten enjekte edip etmediğini doğrulamak.
 
+### 2026-09-27 Sonuçlar
+
+**Tarih:** 2026-09-27. `recall-probe` 2026-09-26'da çalıştırıldı; taze Claude oturumları gece yarısını geçti.
+
+**Probe skoru:** **5/5** — `delivered_memories=8`; beş sorunun durumu `IN_CONTEXT`.
+
+**Gerçek oturum skoru:** **0 doğru, 1 kısmen, 0 yanlış, 4 hiç** (tam doğru: **0/5**).
+
+Yöntem: her soru için ayrı `claude -p "<soru>" --tools '' --strict-mcp-config` süreci. Q1 beş dakikadan uzun süre cevap vermedi ve sonlandırıldı. Q2, Q3 ve Q5 cevap yerine yalnızca araç çağrısı taslağı üretti; araçlar kapalı olduğu için hiçbir çağrı çalıştırılmadı. Q4, Phase 20'nin FROZEN ve Intelligence Graduation'ın aktif olduğunu söyledi, ancak anahtardaki Knowledge Engine'in başlatılmadığı bilgisini vermedi.
+
+| # | Puan | Hafıza kaynağı / not |
+|---|---|---|
+| 1 | hiç | Cevap yok. İlgili canonical kayıtlar `/remember` ve kabul edilmiş aday kaynaklarını içeriyor; ayrıca StateStore `source=user` bağlamı var. |
+| 2 | hiç | Yalnızca araç çağrısı taslağı. İlgili canonical hafıza kayıtları elle `/remember` kaynaklı. |
+| 3 | hiç | Yalnızca araç çağrısı taslağı. StateStore `source=user` bağlamı ve `source=worker` bir kayıt var; eldeki ReviewStore kayıtlarında bu worker kaydına bağlı bir kabul kararı doğrulanamadı. Bu nedenle kabul edilmiş aday olarak sayılmadı. |
+| 4 | kısmen | Phase 20 / IG bilgisi doğru, Knowledge Engine durumu eksik. İlgili canonical kayıtlar hem `/remember` hem kabul edilmiş aday kaynaklı. |
+| 5 | hiç | Yalnızca araç çağrısı taslağı. İlgili canonical hafıza kayıtları elle `/remember` kaynaklı. |
+
+Provenance özeti: Q1 ve Q4 için hem elle `/remember` hem de kabul edilmiş aday kaynaklı kayıtlar bulundu; Q2 ve Q5 için `/remember` kayıtları bulundu. Q3'te kabul kararı eldeki kayıtlarla doğrulanamadı. StateStore kullanıcı kaynaklı girdileri canonical hafıza kökeninden ayrı tutuldu. Adaylarda kabul/ret işlemi yapılmadı.
+
 ## SessionStart teşhisi (2026-09-20)
 
 **Hook kırık değil.** Her test oturumunda gerçekten çalıştı ve `additionalContext`
