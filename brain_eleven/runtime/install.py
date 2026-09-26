@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime
 import importlib.util
+import json
 import os
 from pathlib import Path
 import re
@@ -296,7 +297,30 @@ def _last_transcript_signal(cfg):
             'ignored_record_types': ignored, 'no_conversation_records': seen > 0 and conversation == 0}
 
 
-def _pipeline_health(vault, cfg):
+def client_file_state(path):
+    """Whether a native client can parse its hook file: OK, MISSING, BOM or INVALID_JSON.
+
+    A UTF-8 BOM makes Codex reject hooks.json outright ("expected value at
+    line 1 column 1") and silently run none of its hooks; our own reader
+    tolerates it, so it has to be checked on the raw bytes.
+    """
+    path = Path(path)
+    if not path.exists():
+        return 'MISSING'
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return 'INVALID_JSON'
+    if raw.startswith(b'\xef\xbb\xbf'):
+        return 'BOM'
+    try:
+        json.loads(raw.decode('utf-8'))
+    except (UnicodeDecodeError, ValueError):
+        return 'INVALID_JSON'
+    return 'OK'
+
+
+def _pipeline_health(vault, cfg, home=None):
     """Cheap day-to-day pipeline view: file counts and last records only, no scans.
 
     Advisory: it never changes READY/ATTENTION, it lists what to do next.
@@ -348,6 +372,11 @@ def _pipeline_health(vault, cfg):
     else:
         health['last_measurement'] = None
         suggestions.append('no measurement yet: python -m brain_eleven measure')
+    for client, path in client_paths(home).items():
+        state = client_file_state(path)
+        if state in {'BOM', 'INVALID_JSON'}:
+            suggestions.append(f'{client} hook file {path} is {state}: the client will not run any hook; '
+                               'rerun python -m brain_eleven install to rewrite it')
     health['suggestions'] = suggestions
     return health
 
@@ -360,9 +389,16 @@ def doctor(vault, *, home=None):
     checks['clients'] = {}
     for client, path in client_paths(home).items():
         entry = manifest['clients'].get(client)
-        document = read_json(path, {})
+        file_state = client_file_state(path)
+        try:
+            document = read_json(path, {})
+        except (OSError, ValueError):
+            document = {}
+        if not isinstance(document, dict):
+            document = {}
         installed = bool(entry) and all(item in document.get('hooks', {}).get(event, []) for event, item in entry['entries'].items())
-        checks['clients'][client] = {'configured': installed, 'trust': 'VERIFY_IN_NATIVE_CLIENT'}
+        checks['clients'][client] = {'configured': installed and file_state == 'OK', 'file': file_state,
+                                     'trust': 'VERIFY_IN_NATIVE_CLIENT'}
     checks['mode'] = cfg.load()['mode']
     from .launcher import request_service
     try:
@@ -381,7 +417,7 @@ def doctor(vault, *, home=None):
     checks['stale_memories'] = (f"{len(stale.get('stale_candidates', []))} stale_candidate at {stale.get('scanned_at')}"
                                 if stale.get('scanned_at') else 'not scanned yet (open the review screen)')
     checks['last_transcript'] = _last_transcript_signal(cfg)
-    checks.update(_pipeline_health(vault, cfg))
+    checks.update(_pipeline_health(vault, cfg, home))
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (
         all(checks['dependencies'].values())
