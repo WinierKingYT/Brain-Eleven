@@ -8,11 +8,17 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from brain_eleven.memory import (
+# Direct execution (/remember runs this file by path) puts only scripts/ on
+# sys.path; the package lives one level up.
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from brain_eleven.memory import (  # noqa: E402
     GLOBAL_SCOPE as _PACKAGE_GLOBAL_SCOPE,
     PROJECT_SCOPE as _PACKAGE_PROJECT_SCOPE,
 )
-from brain_eleven.projects.registry import (
+from brain_eleven.projects.registry import (  # noqa: E402
     ProjectRegistry as _ProjectRegistry,
     registry_path as _registry_path,
 )

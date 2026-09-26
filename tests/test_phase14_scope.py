@@ -514,3 +514,29 @@ def test_installer_replaces_only_legacy_managed_hook_commands(tmp_path):
     assert legacy_end not in commands
     assert "keep-me" in commands
     assert {command for _event, command in installer._managed_settings_entries(home)} <= set(commands)
+
+
+def test_remember_command_uses_the_vault_virtualenv_python(tmp_path):
+    installer = _load_script("phase14_python_installer", "install-cross-project-memory.py")
+    vault = tmp_path / "my vault"
+    scripts = vault / ".venv" / "bin"
+    scripts.mkdir(parents=True)
+    (scripts / "python").write_text("", encoding="utf-8")
+    rendered = installer._render(installer.TEMPLATE_ROOT / "commands" / "remember.md", vault)
+    assert "{{PYTHON}}" not in rendered and "\npython " not in rendered
+    assert installer._shell_path(scripts / "python") + ' "' in rendered
+
+
+def test_remember_command_falls_back_to_the_installing_interpreter(tmp_path):
+    installer = _load_script("phase14_fallback_installer", "install-cross-project-memory.py")
+    rendered = installer._render(installer.TEMPLATE_ROOT / "commands" / "remember.md", tmp_path)
+    assert installer._shell_path(installer.Path(sys.executable)) in rendered
+
+
+def test_remember_script_runs_by_path_outside_the_repository(tmp_path):
+    import os
+    import subprocess
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    result = subprocess.run([sys.executable, str(SCRIPTS / "remember.py"), "--help"],
+                            cwd=tmp_path, env=env, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stderr
