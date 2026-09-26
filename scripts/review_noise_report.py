@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -27,6 +28,21 @@ def _length_bucket(n: int) -> str:
     return ">1500"
 
 
+_SHELL_LINE = re.compile(r"^\s*(PS [A-Za-z]:\\|>>|\$ |[A-Za-z]:\\[^\n]*>|Traceback|\{\s*$|\}\s*$|\"[\w-]+\":)", re.M)
+
+
+def _shape(text: str) -> str:
+    """Coarse content shape so noise can be grouped without printing text."""
+    stripped = text.strip()
+    if len(_SHELL_LINE.findall(stripped)) >= 2 or stripped.startswith(("{", "[", "```")):
+        return "terminal_or_code"
+    if len(stripped) <= 20:
+        return "short_ack"
+    if stripped.endswith("?"):
+        return "question"
+    return "prose"
+
+
 def load_items(vault: Path) -> Iterable[dict[str, Any]]:
     for path in sorted((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json")):
         try:
@@ -38,8 +54,8 @@ def load_items(vault: Path) -> Iterable[dict[str, Any]]:
 
 
 def report(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
-    dimensions = ("reason", "candidate_type", "memory_type", "source_role", "source_client",
-                  "project_id", "content_length")
+    dimensions = ("reason", "candidate_type", "memory_type", "commitment", "shape", "reason_x_shape",
+                  "source_role", "source_client", "project_id", "content_length")
     groups: dict[str, dict[str, Counter]] = {d: defaultdict(Counter) for d in dimensions}
     totals: Counter = Counter()
     for item in items:
@@ -54,7 +70,10 @@ def report(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
             "memory_type": candidate.get("memory_type"), "source_role": source.get("role"),
             "source_client": source.get("client"), "project_id": item.get("project_id"),
             "content_length": _length_bucket(len(text)) if isinstance(text, str) else None,
+            "commitment": candidate.get("commitment"),
+            "shape": _shape(text) if isinstance(text, str) else None,
         }
+        values["reason_x_shape"] = f"{values['reason']}|{values['shape']}"
         totals[status] += 1
         for dimension, value in values.items():
             groups[dimension][str(value)][status] += 1

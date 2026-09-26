@@ -25,3 +25,12 @@ def test_groups_by_reason_and_computes_acceptance_rate(tmp_path):
     assert result["by"]["reason"]["LOW_EVIDENCE_COMMITMENT"]["acceptance_rate"] is None
     assert result["by"]["source_role"]["assistant"]["total"] == 3
     assert "secret" not in json.dumps(result)
+
+
+def test_shape_detects_pasted_terminal_output():
+    from review_noise_report import _shape
+    assert _shape("PS C:\\Users\\x> git status\n>> python x.py") == "terminal_or_code"
+    assert _shape('{\n  "a": 1\n}') == "terminal_or_code"
+    assert _shape("tamam") == "short_ack"
+    assert _shape("Bunu neden böyle yaptık, emin misin?") == "question"
+    assert _shape("SQLite kullanmaya karar verdik çünkü tek dosya yeterli.") == "prose"
