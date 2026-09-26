@@ -53,13 +53,36 @@ async function refresh() {
       const keyLabel=node('label','Konu anahtarı (isteğe bağlı, ör. srt-00.ship-status)');keyLabel.htmlFor=item.id+'-key';
       const key=node('input');key.id=item.id+'-key';key.maxLength=80;key.setAttribute('list',item.id+'-keys');
       const keys=node('datalist');keys.id=item.id+'-keys';
-      for(const k of item.claim_keys || []) {const option=node('option');option.value=k;keys.append(option);}
-      if(item.candidate?.candidate_type==='NEW_MEMORY')card.append(keyLabel,key,keys);
+      for(const k of [...(item.suggested_claim_keys || []), ...(item.claim_keys || [])]) {const option=node('option');option.value=k;keys.append(option);}
+      const keyHint=node('p',null,'hint');
+      if(item.suggested_claim_keys?.length){
+        keyHint.append('Önerilen: ');
+        for(const k of item.suggested_claim_keys){const b=node('button',k,'chip');b.type='button';b.addEventListener('click',()=>{key.value=k;checkKey();});keyHint.append(b);}
+      }
+      const keyWarn=node('p',null,'warn');keyWarn.hidden=true;
+      if(item.candidate?.candidate_type==='NEW_MEMORY')card.append(keyLabel,key,keys,keyHint,keyWarn);
       const noteLabel=node('label','Karar gerekçesi (isteğe bağlı, en fazla 280 karakter)');noteLabel.htmlFor=item.id+'-note';
       const note=node('input');note.id=item.id+'-note';note.maxLength=280;
       card.append(noteLabel,note);
       const actions=node('div',null,'actions');const reject=node('button','Reddet','secondary');const accept=node('button','Kabul et');
       accept.disabled=!canAccept;
+      // Explicit supersede: the button says what will happen to the existing record.
+      const setAcceptLabel=()=>{accept.textContent=target.value?'Yerine geçir':'Kabul et';};
+      target.addEventListener('change',setAcceptLabel);
+      function checkKey(){
+        const k=key.value.trim().toLowerCase();
+        const holder=(item.targets || []).find(t=>t.claim_key && t.claim_key===k);
+        keyWarn.hidden=!holder;
+        if(holder){keyWarn.textContent='“'+k+'” anahtarıyla aktif bir kayıt var: “'+holder.text+'”. Kabul edersen bu yeni bilgi onun yerine geçer.';target.value=holder.id;}
+        setAcceptLabel();
+      }
+      key.addEventListener('input',checkKey);
+      const top=item.similar?.[0];
+      if(top && top.similarity>=0.6){
+        const dup=node('button','Tekrar olarak reddet','secondary');
+        dup.addEventListener('click',()=>{note.value=('Tekrar: '+top.id).slice(0,280);submit('reject');});
+        actions.append(dup);
+      }
       async function submit(action) {
         accept.disabled=reject.disabled=true;
         try {const body={content:input.value,expected_revision:item.expected_revision,target_id:target.value || null};

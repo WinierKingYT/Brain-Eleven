@@ -17,6 +17,9 @@ def apply_candidate(*args, **kwargs):
     return implementation(*args, **kwargs)
 
 
+SUGGEST_KEY_SIMILARITY = 0.25
+
+
 def review_action(vault, review_id, action, payload):
     from .review import DECISION_NOTE_MAX, ReviewStore
 
@@ -254,6 +257,10 @@ def create_app(vault, *, token=None, background=True):
                     targets = [{'id': x['memory_id'], 'text': x['content'], 'claim_key': x.get('claim_key', ''),
                                 'similarity': score} for score, x in ranked]
                     item['similar'] = [t for t in targets if t['similarity'] > 0][:3]
+                    # MEMCLAIM: a key is only ever suggested from a similar record the
+                    # person can see; the person still decides whether to use it.
+                    item['suggested_claim_keys'] = list(dict.fromkeys(
+                        t['claim_key'] for t in targets if t['claim_key'] and t['similarity'] >= SUGGEST_KEY_SIMILARITY))[:3]
                     item['claim_keys'] = sorted({x['claim_key'] for x in active if x.get('claim_key')})
                 else:
                     project = state.get_project(c['project_id']) or {}

@@ -245,3 +245,17 @@ def test_decision_note_is_kept_on_the_terminal_record_and_secrets_are_refused(tm
                        json={"note": "Duplicate of the SRT-00 closure record."})
     assert done.json()["status"] == "REJECTED"
     assert done.json()["decision_note"] == "Duplicate of the SRT-00 closure record."
+
+
+def test_claim_key_of_a_similar_record_is_suggested_not_applied(tmp_path):
+    from fastapi.testclient import TestClient
+
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    old = _review_item(tmp_path, vault, "s-old", "We decided that SRT-00 is not ready to ship.", OLD_TIME)
+    _accept(vault, old, claim_key="srt-00.ship-status")
+    _review_item(tmp_path, vault, "s-new", "We decided that SRT-00 is closed and shipped.", NEW_TIME)
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    (item,) = [x for x in client.get("/api/review/candidates", headers={"Authorization": "Bearer t"}).json()["candidates"]
+               if x["status"] == "PENDING"]
+    assert item["suggested_claim_keys"] == ["srt-00.ship-status"]
+    assert "claim_key" not in item["candidate"] or not item["candidate"]["claim_key"]
