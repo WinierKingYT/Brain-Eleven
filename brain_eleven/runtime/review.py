@@ -37,8 +37,18 @@ def content_shape(text):
 _WORD = re.compile(r"\w{3,}", re.UNICODE)
 
 
+_TR_UPPER = str.maketrans({'I': 'ı', 'İ': 'i'})
+STEM_PREFIX = 5
+
+
 def _words(text):
-    return {w.lower() for w in _WORD.findall(text or '')}
+    """Comparable word stems: Turkish-aware lowercase, then a 5-letter prefix.
+
+    Prefix stemming is a standard, dependency-free choice for Turkish, where
+    suffixes carry case and number ("karar", "kararı", "kararlar" -> "karar");
+    it also folds English inflections ("decide", "decided" -> "decid").
+    """
+    return {w.translate(_TR_UPPER).lower()[:STEM_PREFIX] for w in _WORD.findall(text or '')}
 
 
 def rank_similar(content, memories, *, limit=None):
