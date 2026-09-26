@@ -390,9 +390,9 @@ def _pipeline_health(vault, cfg, home=None):
         if state in {'BOM', 'INVALID_JSON'}:
             suggestions.append(f'{client} hook file {path} is {state}: the client will not run any hook; '
                                'rerun python -m brain_eleven install to rewrite it')
-    config_toml = client_paths(home)['codex'].parent / 'config.toml'
-    toml_events = codex_toml_hook_events(config_toml)
-    if toml_events and client_file_state(client_paths(home)['codex']) == 'OK':
+    codex_hooks = client_paths(home).get('codex')
+    toml_events = codex_toml_hook_events(codex_hooks.parent / 'config.toml') if codex_hooks else []
+    if toml_events and client_file_state(codex_hooks) == 'OK':
         suggestions.append('codex loads hooks from both hooks.json and config.toml ('
                            + ', '.join(toml_events) + '); Codex warns about this and asks for a single representation')
     health['suggestions'] = suggestions
