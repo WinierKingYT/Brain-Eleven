@@ -29,6 +29,7 @@ fail open).
 | Know where we are and what's next, in plain language | `NEXT.md` |
 | Know what's actually done vs. in progress, with evidence | `PROJECT-STATUS.md` |
 | Know which other `.md` file to trust | `DOCUMENTATION-AUTHORITY.md` |
+| Use it day to day (`doctor`, review screen, `measure`) | `docs/OPERATOR-RUNBOOK.md` |
 
 Older `IG*`, `PHASE*`, `PRE*` files are package-level contracts and closure
 reports, not entry points — `PROJECT-STATUS.md` tells you which one is

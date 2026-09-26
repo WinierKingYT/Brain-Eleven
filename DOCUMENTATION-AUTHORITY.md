@@ -28,6 +28,7 @@ authorize opening Phase 20 or promoting V2.
 | `README.md`, `VERSION-VOCABULARY.md` | CURRENT navigation and terminology; they do not override package contracts or evidence. |
 | `ARCHITECTURE.md`, `CONTRIBUTING.md` | CURRENT project orientation and contribution guidance; neither is release or package authority. |
 | `docs/audits/ENGINEERING-WEAK-POINTS-AUDIT.md` | CURRENT evidence-backed weakness baseline; cited revisions and package contracts remain the authority for implementation decisions. |
+| `docs/OPERATOR-RUNBOOK.md` | CURRENT operator guide for the runtime commands (`doctor`, `review`, `measure`, `worker --retry-dead-letter`); it describes use only and changes no gate, corpus, holdout, Phase 20 or V2 state. |
 | `DOCUMENTATION-AUTHORITY.md`, `RUNTIME-DATAFLOW.md` | CURRENT authority registry and runtime map. |
 | `docs/programs/INTELLIGENCE-GRADUATION.md`, `docs/contracts/IG00-FREEZE-BASELINE.md` | CONTRACT; IG-00 evidence rows have their stated verification status. |
 | `docs/history/reviews/IG-REVIEW-IMPLEMENTATION.md` | REVIEW record for the bounded IG-00 changes on this branch; it does not authorize the next package. |
