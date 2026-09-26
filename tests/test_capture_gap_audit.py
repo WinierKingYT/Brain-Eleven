@@ -144,3 +144,12 @@ def test_codex_sessions_are_audited_and_gate_requires_both_clients(tmp_path):
     only_claude = audit(vault, home, codex_home=codex, clients=("claude",))
     assert verdict(only_claude, min_projects=2, min_sessions=2, require_clients=("claude", "codex"),
                    min_client_sessions=1) == "INSUFFICIENT_EVIDENCE"
+
+
+def test_requeued_dead_letter_is_pending_not_lost(tmp_path):
+    sessions = {"p_a": ["a1"], "p_b": ["b1"]}
+    ledger = [("a1", "p_a", "ENQUEUED", None), ("a1", "p_a", "DEAD_LETTER", "EVIDENCE_INVALID"),
+              ("a1", "p_a", "REQUEUED_FROM_DEAD_LETTER", "EVIDENCE_INVALID")] + _ok("b1", "p_b")
+    vault, home = _setup(tmp_path, sessions, ledger)
+    report = audit(vault, home, codex_home=tmp_path / "nocodex")
+    assert report["totals"]["dead_letter"] == 0 and report["totals"]["pending"] == 1

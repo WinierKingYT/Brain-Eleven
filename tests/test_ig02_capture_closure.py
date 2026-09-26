@@ -675,3 +675,26 @@ def test_fallback_review_skips_uncertain_quoted_and_pasted_output(runtime, tmp_p
     assert not fallback_worth_review("tamam devam", "COMMITTED")
     assert not fallback_worth_review("PS C:\\x> git status\n>> python a.py", "OBSERVED")
     assert not fallback_worth_review("The deploy script failed twice this morning.", "UNCERTAIN")
+
+
+def test_dead_lettered_capture_can_be_requeued_after_the_fix(runtime, tmp_path, monkeypatch):
+    from brain_eleven.__main__ import main
+    vault, _ = runtime
+    path = _transcript(tmp_path, "We decided the dashboard stays read-only.", session_id="dl-retry")
+    enqueue(vault, "claude", {"session_id": "dl-retry", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    original = worker.process
+    monkeypatch.setattr(worker, "process", lambda _job, **_kw: (_ for _ in ()).throw(ValueError("UNSUPPORTED_CODEX_TRANSCRIPT")))
+    for _ in range(CaptureQueue(vault).config.max_attempts + 1):
+        if worker.once() is None:
+            break
+    queue = CaptureQueue(vault)
+    (dead,) = list(queue._directory("DEAD_LETTER").glob("cap_*.json"))
+    assert read_json(dead)["last_error_code"] == "UNSUPPORTED_CODEX_TRANSCRIPT"
+
+    assert queue.requeue_dead_letters(["TRANSCRIPT_OWNERSHIP_UNVERIFIED"]) == []
+    assert main(["--vault", str(vault), "worker", "--retry-dead-letter"]) == 0
+    monkeypatch.setattr(worker, "process", original)
+    assert Worker(vault).once()["status"] == "PROCESSED"
+    ledger = (vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl").read_text(encoding="utf-8")
+    assert '"REQUEUED_FROM_DEAD_LETTER"' in ledger
