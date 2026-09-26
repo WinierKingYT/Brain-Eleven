@@ -69,6 +69,11 @@ def rank_similar(content, memories, *, limit=None):
 
 
 DECISION_NOTE_MAX = 280
+# Candidate text lives 7 days by default. A person may keep a candidate longer,
+# 7 days per click, never past 30 days from creation: the privacy promise on
+# the review screen stays true and nothing is ever extended automatically.
+EXTEND_DAYS = 7
+MAX_RETENTION_DAYS = 30
 
 
 class ReviewStore:
@@ -242,6 +247,25 @@ class ReviewStore:
                     # Expiry remains a per-candidate B1 lifecycle operation.
                     # A surviving duplicate may become the next visible item.
                     self.finish(item, 'EXPIRED', grouped=False)
+
+    def extend(self, review_id, *, days=EXTEND_DAYS):
+        """Keep a pending candidate ``days`` longer, capped at MAX_RETENTION_DAYS from creation."""
+        path = self.path(review_id)
+        with file_lock(self.root / 'index'):
+            with file_lock(path):
+                item = read_json(path)
+                if not isinstance(item, dict) or item.get('status') != 'PENDING':
+                    raise ValueError('Only a pending candidate can be kept longer')
+                created = datetime.fromisoformat(item['created_at'])
+                cap = created + timedelta(days=MAX_RETENTION_DAYS)
+                current = datetime.fromisoformat(item['expires_at'])
+                target = min(max(current, datetime.now(timezone.utc)) + timedelta(days=days), cap)
+                if target <= current:
+                    raise ValueError(f'Candidates are kept at most {MAX_RETENTION_DAYS} days')
+                item['expires_at'] = target.isoformat()
+                item['kept_by_person'] = True
+                write_json(path, item)
+                return {'status': 'EXTENDED', 'id': review_id, 'expires_at': item['expires_at']}
 
     def primary(self, item):
         """Return the deterministic visible item for an item's B2 group."""

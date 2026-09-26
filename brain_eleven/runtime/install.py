@@ -1,6 +1,6 @@
 """Additive, reversible native client configuration; never changes hook trust."""
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import importlib.util
 import json
 import os
@@ -366,14 +366,22 @@ def _pipeline_health(vault, cfg, home=None):
                                    + (f" ({record.get('error')})" if record.get('error') else ''))
     health['last_capture'] = last_capture
 
-    pending = 0
+    pending = expiring = 0
+    soon = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat()
     for path in (cfg.root / 'review').glob('rev_*.json'):
         try:
-            if (read_json(path, {}) or {}).get('status') == 'PENDING':
+            item = read_json(path, {}) or {}
+            if item.get('status') == 'PENDING':
                 pending += 1
+                # Committed decisions are the candidates most worth keeping before they expire.
+                if (item.get('candidate') or {}).get('commitment') == 'COMMITTED' and str(item.get('expires_at', '')) < soon:
+                    expiring += 1
         except (OSError, ValueError, TypeError, AttributeError):
             continue
     health['review_pending'] = pending
+    health['review_expiring_committed'] = expiring
+    if expiring:
+        suggestions.append(f'{expiring} committed review candidate(s) expire within 48h; review or keep them (7 gün daha sakla)')
     if pending > 200:
         suggestions.append(f'{pending} review candidates pending; use Toplu temizlik on the review screen')
 

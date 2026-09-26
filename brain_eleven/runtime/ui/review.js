@@ -38,6 +38,16 @@ async function refresh() {
       if(c.memory_type) tags.append(node('span',types[c.memory_type] || c.memory_type,'tag'));
       if(c.commitment) tags.append(node('span',commitments[c.commitment] || c.commitment,'tag'));
       card.append(tags);
+      // Retention: warn on the last 48h; a person may keep a valuable candidate 7 more days (max 30 total).
+      const left=(new Date(item.expires_at)-Date.now())/36e5;
+      if(left<48) card.querySelector('.meta').classList.add('expiring');
+      if(left<72 || item.recall_questions?.length) {
+        const keep=node('button','7 gün daha sakla','secondary');keep.type='button';
+        keep.addEventListener('click',async()=>{keep.disabled=true;
+          try{const r=await api('/api/review/candidates/'+item.id+'/extend',{});keep.textContent='Saklandı: '+when(r.expires_at);}
+          catch(e){keep.textContent=String(e.message||e).includes('30')?'En fazla 30 gün':'Uzatılamadı';}});
+        card.append(keep);
+      }
       if(item.similar?.length) {
         const box=node('div',null,'similar');
         const top=item.similar[0].similarity;

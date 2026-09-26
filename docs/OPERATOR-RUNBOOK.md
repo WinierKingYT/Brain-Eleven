@@ -23,6 +23,7 @@ bir sonraki adımı söyler:
 | `... hook file ... is BOM` / `INVALID_JSON` | İstemci hiçbir hook'u çalıştırmıyor: `python -m brain_eleven install` dosyayı temiz yeniden yazar |
 | `codex loads hooks from both hooks.json and config.toml` | Codex tek bir kaynak ister; `config.toml`'daki hook'u taşımayı değerlendir |
 | `... review candidates pending` | İnceleme ekranında **Toplu temizlik** |
+| `... committed review candidate(s) expire within 48h` | İnceleme ekranında karar ver ya da **7 gün daha sakla** |
 | `no measurement yet` | `python -m brain_eleven measure` |
 
 Diğer alanlar: `capture_queue` (bekleyen / işlenen / dead-letter, hata koduna
@@ -47,6 +48,9 @@ python -m brain_eleven review
 - **Konu anahtarı:** Benzer bir kaydın anahtarı önerilir; bir anahtar aktif bir
   kayıtta varsa kabul etmeden önce uyarı çıkar, o kayıt hedef seçilir ve düğme
   **Yerine geçir** olur.
+- **Saklama:** Öneri metni 7 gün tutulur; son 48 saatte son gün kırmızı görünür.
+  Son 3 günde ya da hatırlama cevabı taşıyan kartta **7 gün daha sakla** çıkar;
+  toplam en fazla 30 gün. Otomatik uzatma yoktur.
 - **Karar gerekçesi:** İsteğe bağlı, en fazla 280 karakter; sonuç kaydında kalır.
 - **Eskimiş olabilir:** Söz ettiği dosya kayıttan sonra değişen ya da silinen
   kayıtlar. **Hâlâ geçerli** (dosya tekrar değişene kadar susar) ya da
