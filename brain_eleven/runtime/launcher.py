@@ -99,14 +99,41 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
     return False
 
 
+def _capture_outcome(cfg, client, event, payload, outcome, error=None):
+    """Per-client record of what the last Stop/SessionEnd actually did.
+
+    A skipped capture (mode OFF, unregistered cwd) used to look identical to
+    an enqueued one in last-hook.json ("OK"). Only presence flags, fixed
+    codes and the ledger join hash are stored: no paths, prompts or content.
+    """
+    from brain_eleven.runtime.worker import capture_session_hash
+    session = payload.get('session_id')
+    record = {'at': now(), 'client': client, 'event': event, 'outcome': outcome, 'error': error,
+              'cwd_present': bool(payload.get('cwd')), 'transcript_path_present': bool(payload.get('transcript_path')),
+              'capture_session_hash': capture_session_hash(client, session) if isinstance(session, str) and session else None}
+    try:
+        write_json(cfg.root / f'last-capture-{client}.json', record)
+    except OSError:
+        pass
+
+
 def hook(vault, client, event, payload):
     from brain_eleven.runtime.worker import allowed, capture_session_hash, enqueue
     cfg = RuntimeConfig(vault)
-    if cfg.load()['mode'] == 'OFF' or not allowed(vault, payload.get('cwd')):
+    capture = event in {'Stop', 'SessionEnd'}
+    if cfg.load()['mode'] == 'OFF':
+        if capture:
+            _capture_outcome(cfg, client, event, payload, 'MODE_OFF')
         return {}
-    if event in {'Stop', 'SessionEnd'}:
+    if not allowed(vault, payload.get('cwd')):
+        if capture:
+            _capture_outcome(cfg, client, event, payload,
+                             'CWD_NOT_REGISTERED' if payload.get('cwd') else 'CWD_MISSING')
+        return {}
+    if capture:
         # This path never reads a transcript or waits for service startup.
         result = enqueue(vault, client, payload)
+        _capture_outcome(cfg, client, event, payload, str(result.get('status')), result.get('error'))
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     deadline = time.monotonic() + 2.5

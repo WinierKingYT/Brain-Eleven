@@ -181,3 +181,15 @@ def test_install_suspends_only_exact_legacy_and_uninstall_restores(runtime, tmp_
     assert unrelated in current['hooks']['SessionStart'] and legacy not in current['hooks']['SessionStart']
     uninstall(vault)
     assert read_json(path) == original
+
+
+@pytest.mark.parametrize('client', ['claude', 'codex'])
+def test_skipped_capture_is_recorded_not_silent(runtime, tmp_path, client):
+    from brain_eleven.runtime import launcher
+    vault, _ = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    assert launcher.hook(vault, client, 'Stop', {'cwd': str(tmp_path / 'elsewhere'), 'session_id': 'x'}) == {}
+    record = read_json(RuntimeConfig(vault).root / f'last-capture-{client}.json')
+    assert record['outcome'] == 'CWD_NOT_REGISTERED' and record['event'] == 'Stop'
+    assert record['capture_session_hash'] == capture_session_hash(client, 'x')
+    assert str(tmp_path) not in json.dumps(record)
