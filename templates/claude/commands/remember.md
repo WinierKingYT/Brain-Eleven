@@ -9,7 +9,7 @@ opaque project identity; never persist the absolute path or a transcript.
 Run:
 
 ```text
-python "{{VAULT_PATH}}/scripts/remember.py" --vault "{{VAULT_PATH}}" --project-root "$PWD" --type <decision|lesson|observation|open_loop> --content "$ARGUMENTS"
+{{PYTHON}} "{{VAULT_PATH}}/scripts/remember.py" --vault "{{VAULT_PATH}}" --project-root "$PWD" --type <decision|lesson|observation|open_loop> --content "$ARGUMENTS"
 ```
 
 Capture only an explicit decision, lesson, observation, or open loop. Do not

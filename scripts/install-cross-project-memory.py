@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import shlex
+import sys
 import shutil
 import tempfile
 from datetime import datetime
@@ -34,9 +35,21 @@ def _shell_path(path: Path) -> str:
     return shlex.quote(str(path).replace("\\", "/"))
 
 
+def _python_for(vault: Path) -> Path:
+    """The vault's own virtualenv interpreter, else the one running the installer.
+
+    A bare ``python`` in the /remember command resolved to the system (or the
+    Windows Store stub) interpreter without Brain-Eleven's dependencies.
+    """
+    for candidate in (vault / ".venv" / "Scripts" / "python.exe", vault / ".venv" / "bin" / "python"):
+        if candidate.is_file():
+            return candidate
+    return Path(sys.executable)
+
+
 def _render(template: Path, vault: Path) -> str:
     text = template.read_text(encoding="utf-8")
-    return text.replace("{{VAULT_PATH}}", _shell_path(vault))
+    return text.replace("{{PYTHON}}", _shell_path(_python_for(vault))).replace("{{VAULT_PATH}}", _shell_path(vault))
 
 
 def _atomic_json_write(path: Path, data: Dict) -> None:
