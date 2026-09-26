@@ -238,7 +238,7 @@ def create_app(vault, *, token=None, background=True):
         from .review import ReviewStore
         from context_compiler_v2.safety import contains_secret
         from brain_eleven.projects.registry import ProjectRegistry
-        from .review import rank_similar
+        from .review import content_shape, rank_similar
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
         project_names = {p['project_id']: Path(str(p.get('root', ''))).name or p['project_id']
@@ -249,6 +249,8 @@ def create_app(vault, *, token=None, background=True):
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
                 item['project_name'] = project_names.get(c['project_id'], c['project_id'])
+                text = c.get('text') if c['candidate_type'] == 'STATE_MUTATION' else c.get('content')
+                item['shape'] = content_shape(text) if isinstance(text, str) else None
                 if c['candidate_type'] == 'NEW_MEMORY':
                     active = [x for x in memory['validated_memory']
                               if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
@@ -296,6 +298,26 @@ def create_app(vault, *, token=None, background=True):
             raise ValueError('Unknown staleness action')
         except ValueError as exc:
             raise HTTPException(409, str(exc)) from exc
+
+    @app.post('/api/review/bulk-reject')
+    async def bulk_reject(request: Request):
+        from .review import ReviewStore, content_shape
+        payload = await body(request)
+        allowed_keys = {'reason', 'commitment', 'shape'}
+        wanted = {k: v for k, v in payload.items() if k in allowed_keys and isinstance(v, str) and v}
+        if not wanted:
+            raise HTTPException(409, 'Choose at least one filter: reason, commitment or shape')
+
+        def matches(item):
+            c = item.get('candidate') if isinstance(item.get('candidate'), dict) else {}
+            text = c.get('text') if c.get('candidate_type') == 'STATE_MUTATION' else c.get('content')
+            values = {'reason': item.get('reason'), 'commitment': c.get('commitment'),
+                      'shape': content_shape(text) if isinstance(text, str) else None}
+            return all(values[k] == v for k, v in wanted.items())
+
+        note = ('Toplu ret: ' + ', '.join(f'{k}={v}' for k, v in sorted(wanted.items())))[:280]
+        dry_run = payload.get('confirm') is not True
+        return await asyncio.to_thread(ReviewStore(vault).reject_matching, matches, note, dry_run=dry_run)
 
     @app.post('/api/review/candidates/{review_id}/{action}')
     async def act(review_id: str, action: str, request: Request):
