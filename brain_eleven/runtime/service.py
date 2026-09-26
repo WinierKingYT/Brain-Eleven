@@ -325,6 +325,15 @@ def create_app(vault, *, token=None, background=True):
         dry_run = payload.get('confirm') is not True
         return await asyncio.to_thread(ReviewStore(vault).reject_matching, matches, note, dry_run=dry_run)
 
+    @app.post('/api/review/candidates/{review_id}/extend')
+    async def extend(review_id: str, request: Request):
+        from .review import ReviewStore
+        await body(request)
+        try:
+            return await asyncio.to_thread(ReviewStore(vault).extend, review_id)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+
     @app.post('/api/review/candidates/{review_id}/{action}')
     async def act(review_id: str, action: str, request: Request):
         payload = await body(request)
