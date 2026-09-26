@@ -583,8 +583,8 @@ def test_live_gate_computation_uses_observed_ids_and_human_labels(runtime):
 
 
 @pytest.mark.parametrize('client,document,error', [
-    ('codex', {'type':'unknown'}, 'UNSUPPORTED_CODEX_TRANSCRIPT'),
-    ('codex', {'type':'response_item','payload':{'type':'unknown'}}, 'UNSUPPORTED_CODEX_ITEM'),
+    ('codex', {'type':42}, 'UNSUPPORTED_CODEX_TRANSCRIPT'),
+    ('codex', {'type':'response_item','payload':{}}, 'UNSUPPORTED_CODEX_ITEM'),
     ('claude', {'type':'user','message':{'role':'unknown','content':'abc'}}, 'UNSUPPORTED_MESSAGE_ROLE'),
     ('claude', {'type':'user','message':{'role':'user','content':42}}, 'UNSUPPORTED_MESSAGE_CONTENT'),
 ])
@@ -903,3 +903,21 @@ def test_windows_codex_hook_command_is_shell_neutral_without_spaces():
     assert command == ' '.join(args)
     spaced = windows_codex_command([r'C:\Program Files\py\pythonw.exe', 'x'])
     assert spaced.startswith('& ')
+
+
+def test_unknown_codex_record_types_are_counted_not_fatal(runtime, tmp_path):
+    """Real Codex sessions dead-lettered (EVIDENCE_INVALID) on types this reader
+    did not know; like Claude, unknown types are skipped and never evidence."""
+    from brain_eleven.runtime.evidence import read_increment
+    vault, project = runtime
+    path = tmp_path / 'codex.jsonl'
+    rows = [{'type': 'session_meta', 'payload': {'session_id': 's'}},
+            {'type': 'future_record', 'payload': {'content': 'not evidence'}},
+            {'type': 'response_item', 'payload': {'type': 'future_item', 'content': 'not evidence'}},
+            {'type': 'response_item', 'payload': {'type': 'message', 'role': 'user',
+                                                  'content': [{'type': 'input_text', 'text': 'We use SQLite.'}]}}]
+    path.write_text(''.join(json.dumps(row) + '\n' for row in rows), encoding='utf-8')
+    stats = {}
+    batch, _ = read_increment(vault, path, 'codex', 's', project, '2026-09-26T00:00:00Z', stats=stats)
+    assert [record.role for record in batch.records] == ['user']
+    assert stats['ignored_record_types'] == {'future_record': 1, 'response_item-future_item': 1}
