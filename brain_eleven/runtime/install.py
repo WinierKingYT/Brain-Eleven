@@ -296,6 +296,62 @@ def _last_transcript_signal(cfg):
             'ignored_record_types': ignored, 'no_conversation_records': seen > 0 and conversation == 0}
 
 
+def _pipeline_health(vault, cfg):
+    """Cheap day-to-day pipeline view: file counts and last records only, no scans.
+
+    Advisory: it never changes READY/ATTENTION, it lists what to do next.
+    """
+    from .worker import RETRYABLE_DEAD_LETTER_CODES
+    health, suggestions = {}, []
+    capture_root = Path(vault) / '.brain-eleven' / 'capture'
+    queue = {name: len(list((capture_root / name).glob('cap_*.json')))
+             for name in ('queued', 'processing', 'dead-letter')}
+    dead_codes = {}
+    for path in (capture_root / 'dead-letter').glob('cap_*.json'):
+        try:
+            code = str((read_json(path, {}) or {}).get('last_error_code'))
+        except (OSError, ValueError, TypeError):
+            code = 'UNREADABLE'
+        dead_codes[code] = dead_codes.get(code, 0) + 1
+    queue['dead_letter_by_code'] = dead_codes
+    health['capture_queue'] = queue
+    retryable = sum(n for code, n in dead_codes.items() if code in RETRYABLE_DEAD_LETTER_CODES)
+    if retryable:
+        suggestions.append(f'{retryable} dead-lettered capture(s) are retryable: python -m brain_eleven worker --retry-dead-letter')
+
+    last_capture = {}
+    for client in ('claude', 'codex'):
+        record = read_json(cfg.root / f'last-capture-{client}.json', {}) or {}
+        if isinstance(record, dict) and record.get('at'):
+            last_capture[client] = {k: record.get(k) for k in ('at', 'event', 'outcome', 'error')}
+            if record.get('outcome') in {'CWD_NOT_REGISTERED', 'CWD_MISSING', 'DEGRADED'}:
+                suggestions.append(f"last {client} capture was {record.get('outcome')}"
+                                   + (f" ({record.get('error')})" if record.get('error') else ''))
+    health['last_capture'] = last_capture
+
+    pending = 0
+    for path in (cfg.root / 'review').glob('rev_*.json'):
+        try:
+            if (read_json(path, {}) or {}).get('status') == 'PENDING':
+                pending += 1
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue
+    health['review_pending'] = pending
+    if pending > 200:
+        suggestions.append(f'{pending} review candidates pending; use Toplu temizlik on the review screen')
+
+    measurements = sorted((cfg.root / 'measurements').glob('*.json'))
+    if measurements:
+        latest = read_json(measurements[-1], {}) or {}
+        health['last_measurement'] = {'at': latest.get('measured_at'),
+                                      'capture_verdict': (latest.get('capture') or {}).get('verdict')}
+    else:
+        health['last_measurement'] = None
+        suggestions.append('no measurement yet: python -m brain_eleven measure')
+    health['suggestions'] = suggestions
+    return health
+
+
 def doctor(vault, *, home=None):
     cfg = RuntimeConfig(vault)
     checks = {'python': {'version': sys.version.split()[0], 'executable': sys.executable}}
@@ -325,6 +381,7 @@ def doctor(vault, *, home=None):
     checks['stale_memories'] = (f"{len(stale.get('stale_candidates', []))} stale_candidate at {stale.get('scanned_at')}"
                                 if stale.get('scanned_at') else 'not scanned yet (open the review screen)')
     checks['last_transcript'] = _last_transcript_signal(cfg)
+    checks.update(_pipeline_health(vault, cfg))
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (
         all(checks['dependencies'].values())
