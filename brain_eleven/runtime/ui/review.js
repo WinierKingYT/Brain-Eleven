@@ -81,4 +81,21 @@ async function refresh() {
     }
   } catch(e) {el('message').textContent=e.message;} finally {el('refresh').disabled=false;}
 }
-el('refresh').addEventListener('click',refresh);refresh();
+async function refreshStale() {
+  try {
+    const result=await api('/api/staleness');el('stale').replaceChildren();
+    if(!result.stale_candidates.length){el('stale').append(node('p','Kaynağı değişmiş kayıt yok ('+result.references_checked+' dosya referansı kontrol edildi).','empty'));return;}
+    for(const s of result.stale_candidates){
+      const card=node('article',null,'candidate stale');
+      card.append(node('div',[s.path, s.reason==='SOURCE_MISSING'?'dosya artık yok':'dosya değişti: '+when(s.source_changed_at), 'kayıt: '+when(s.memory_written_at)].join(' · '),'meta'));
+      card.append(node('p',s.content));
+      const actions=node('div',null,'actions');const keep=node('button','Hâlâ geçerli','secondary');const retire=node('button','Emekliye ayır');
+      async function act(action){keep.disabled=retire.disabled=true;
+        try{await api('/api/staleness/'+s.memory_id+'/'+action,action==='ack'?{path:s.path}:{note:s.path+' değişti; kayıt eskidi.'});
+          el('message').textContent=action==='ack'?'Kayıt geçerli olarak işaretlendi; dosya tekrar değişirse yeniden sorulur.':'Kayıt emekliye ayrıldı; artık bağlama girmez.';await refreshStale();}
+        catch(e){el('message').textContent=e.message;keep.disabled=retire.disabled=false;}}
+      keep.addEventListener('click',()=>act('ack'));retire.addEventListener('click',()=>act('retire'));actions.append(keep,retire);card.append(actions);el('stale').append(card);
+    }
+  } catch(e){el('stale').replaceChildren(node('p','Eskime kontrolü yapılamadı: '+e.message,'empty'));}
+}
+el('refresh').addEventListener('click',()=>{refresh();refreshStale();});refresh();refreshStale();

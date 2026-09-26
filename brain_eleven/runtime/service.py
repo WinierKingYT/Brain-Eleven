@@ -265,6 +265,31 @@ def create_app(vault, *, token=None, background=True):
                     item['similar'] = [x for x in item['similar'] if x['id'] in safe_ids]
         return {'candidates': items}
 
+    @app.get('/api/staleness')
+    def stale_memories():
+        from .capture_safety import evaluate_capture
+        from .staleness import scan
+        from context_compiler_v2.safety import contains_secret
+        result = scan(vault)
+        result['stale_candidates'] = [x for x in result['stale_candidates']
+                                      if evaluate_capture(x['content']).accepted and not contains_secret(x['content'])]
+        return result
+
+    @app.post('/api/staleness/{memory_id}/{action}')
+    async def stale_action(memory_id: str, action: str, request: Request):
+        from .staleness import acknowledge, retire
+        payload = await body(request)
+        try:
+            if action == 'ack':
+                return await asyncio.to_thread(acknowledge, vault, memory_id, str(payload.get('path', '')))
+            if action == 'retire':
+                if not canonical_accept_allowed(RuntimeConfig(vault).load(), approved=True):
+                    raise ValueError('Enable canary, or shadow accept, before changing canonical memory')
+                return await asyncio.to_thread(retire, vault, memory_id, str(payload.get('note', '')))
+            raise ValueError('Unknown staleness action')
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
+
     @app.post('/api/review/candidates/{review_id}/{action}')
     async def act(review_id: str, action: str, request: Request):
         payload = await body(request)

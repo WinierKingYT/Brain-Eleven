@@ -321,6 +321,9 @@ def doctor(vault, *, home=None):
     checks['last_hook'] = last_hook if isinstance(last_hook, dict) else {}
     checks['last_session_start'], session_failed = _session_start_health(vault)
     checks['last_native_session_start'] = _native_session_start_receipt(cfg)
+    stale = read_json(cfg.root / 'staleness.json', {}) or {}
+    checks['stale_memories'] = (f"{len(stale.get('stale_candidates', []))} stale_candidate at {stale.get('scanned_at')}"
+                                if stale.get('scanned_at') else 'not scanned yet (open the review screen)')
     checks['last_transcript'] = _last_transcript_signal(cfg)
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (
