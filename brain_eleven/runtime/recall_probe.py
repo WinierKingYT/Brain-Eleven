@@ -34,8 +34,10 @@ def _fold(text):
 
 
 def covers(text, groups):
-    folded = _fold(text)
-    return all(any(_fold(term) in folded for term in group) for group in groups)
+    # Turkish folding maps "I" to "ı", which breaks English words such as
+    # "Intelligence"; a term counts when either folding matches.
+    folded, plain = _fold(text), (text or '').lower()
+    return all(any(_fold(term) in folded or term.lower() in plain for term in group) for group in groups)
 
 
 def load_questions(path=None):

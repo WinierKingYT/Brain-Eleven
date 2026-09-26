@@ -119,6 +119,9 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
 
 BOOTSTRAP_POOL = 15
+# SessionStart memory slots (owner decision C2, 2026-09-26): 5 left recall
+# answers out with SLOT_LIMIT in a real session; the 3000-token budget still bounds it.
+BOOTSTRAP_SLOTS = 8
 
 
 def _memory_identity(item):
@@ -197,7 +200,7 @@ def explain_bootstrap(vault, project_root, *, budget=3000):
             reasons[mid] = 'BELOW_POOL'
         else:
             pool.append(item)
-    chosen = select_distinct(pool, stale_ids=stale, limit=5, reasons=reasons)
+    chosen = select_distinct(pool, stale_ids=stale, limit=BOOTSTRAP_SLOTS, reasons=reasons)
     estimator = ConservativeTokenEstimator()
     context = compiler._generate_context_block(chosen, {}, '', '', state)
     while chosen and estimator.estimate(context).count > budget:
@@ -237,7 +240,7 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     pool = [item for item in compiler._rank_memories(limit=BOOTSTRAP_POOL)
             if (not b1_enabled or item.get('is_approved', True) is True)
             and safe(item['content'])]
-    memories = select_distinct(pool, stale_ids=_stale_memory_ids(vault), limit=5)
+    memories = select_distinct(pool, stale_ids=_stale_memory_ids(vault), limit=BOOTSTRAP_SLOTS)
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.

@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from brain_eleven._legacy import load_legacy_module  # noqa: E402
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
-from brain_eleven.runtime.context import BOOTSTRAP_POOL, NEAR_DUPLICATE, _stale_memory_ids, select_distinct  # noqa: E402
+from brain_eleven.runtime.context import BOOTSTRAP_POOL, BOOTSTRAP_SLOTS, NEAR_DUPLICATE, _stale_memory_ids, select_distinct  # noqa: E402
 from brain_eleven.runtime.review import _words  # noqa: E402
 
 
@@ -41,7 +41,7 @@ def compare(vault) -> dict:
         compiler.memories = compiler.memory_store.load()["validated_memory"]
         compiler._resolve_current_state()
         pool = compiler._rank_memories(limit=BOOTSTRAP_POOL)
-        old, new = pool[:5], select_distinct(pool, stale_ids=stale, limit=5)
+        old, new = pool[:5], select_distinct(pool, stale_ids=stale, limit=BOOTSTRAP_SLOTS)
         old_ids, new_ids = [m["memory_id"] for m in old], [m["memory_id"] for m in new]
         report[Path(str(project.get("root", ""))).name or project["project_id"]] = {
             "pool": len(pool),
