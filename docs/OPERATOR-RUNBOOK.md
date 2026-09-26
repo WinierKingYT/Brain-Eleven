@@ -24,12 +24,13 @@ bir sonraki adımı söyler:
 | `codex loads hooks from both hooks.json and config.toml` | Codex tek bir kaynak ister; `config.toml`'daki hook'u taşımayı değerlendir |
 | `... review candidates pending` | İnceleme ekranında **Toplu temizlik** |
 | `... committed review candidate(s) expire within 48h` | İnceleme ekranında karar ver ya da **7 gün daha sakla** |
+| `recall score dropped ...` / `capture misses grew ...` | Son 7 günde gerileme var: `recall-probe` hangi sorunun düştüğünü gösterir |
 | `no measurement yet` | `python -m brain_eleven measure` |
 
 Diğer alanlar: `capture_queue` (bekleyen / işlenen / dead-letter, hata koduna
 göre), `last_capture` (istemci başına son Stop sonucu), `clients.<ad>.file`
 (hook dosyası istemcinin okuyabileceği durumda mı), `stale_memories`,
-`last_measurement`.
+`last_measurement`, `measurement_trend` (son 7 günün ölçümleri: skor, capture sonucu, kayıp).
 
 ## İnceleme ekranı
 

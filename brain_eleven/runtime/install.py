@@ -333,6 +333,30 @@ def codex_toml_hook_events(path):
     return sorted(str(key) for key in hooks if key != 'state')
 
 
+TREND_DAYS = 7
+
+
+def measurement_trend(paths, *, days=TREND_DAYS):
+    """Counts from saved measurements of the last ``days`` days, oldest first (no memory text)."""
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    trend = []
+    for path in paths:
+        try:
+            item = read_json(path, {}) or {}
+        except (OSError, ValueError):
+            continue
+        at = item.get('measured_at')
+        if not isinstance(at, str) or at < since:
+            continue
+        capture = item.get('capture') or {}
+        totals = capture.get('totals') or {}
+        recall = item.get('recall_probe') or {}
+        trend.append({'at': at, 'recall_score': recall.get('score'), 'capture_verdict': capture.get('verdict'),
+                      'sessions': totals.get('sessions'), 'missing': totals.get('missing'),
+                      'dead_letter': totals.get('dead_letter')})
+    return sorted(trend, key=lambda t: t['at'])
+
+
 def _pipeline_health(vault, cfg, home=None):
     """Cheap day-to-day pipeline view: file counts and last records only, no scans.
 
@@ -393,6 +417,14 @@ def _pipeline_health(vault, cfg, home=None):
     else:
         health['last_measurement'] = None
         suggestions.append('no measurement yet: python -m brain_eleven measure')
+    trend = measurement_trend(measurements)
+    health['measurement_trend'] = trend
+    scores = [t['recall_score'] for t in trend if isinstance(t['recall_score'], int)]
+    if len(scores) >= 2 and scores[-1] < max(scores):
+        suggestions.append(f'recall score dropped to {scores[-1]} (7-day best {max(scores)}): '
+                           'python -m brain_eleven recall-probe shows which question')
+    if len(trend) >= 2 and (trend[-1]['missing'] or 0) > (trend[0]['missing'] or 0):
+        suggestions.append('capture misses grew over the last 7 days: python -m brain_eleven measure')
     for client, path in client_paths(home).items():
         state = client_file_state(path)
         if state in {'BOM', 'INVALID_JSON'}:
