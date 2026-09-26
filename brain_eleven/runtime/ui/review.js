@@ -80,7 +80,7 @@ async function refresh() {
       key.addEventListener('input',checkKey);
       const top=item.similar?.[0];
       if(top && top.similarity>=0.6){
-        const dup=node('button','Tekrar olarak reddet','secondary');
+        const dup=node('button','Tekrar olarak reddet','secondary');dup.dataset.act='dup';
         dup.addEventListener('click',()=>{note.value=('Tekrar: '+top.id).slice(0,280);submit('reject');});
         actions.append(dup);
       }
@@ -101,8 +101,10 @@ async function refresh() {
           el('message').textContent=result.status==='ACCEPTED'?'Bilgi ortak hafızaya kaydedildi.':result.status==='REJECTED'?'Öneri reddedildi.':('İşlem tamamlanmadı: '+result.status+'. Kaydı yeniden gözden geçir.');await refresh();
         } catch(e) {el('message').textContent=e.message;} finally {accept.disabled=reject.disabled=false;}
       }
+      reject.dataset.act='reject';accept.dataset.act='accept';card.classList.add('pending');
       reject.addEventListener('click',()=>submit('reject'));accept.addEventListener('click',()=>submit('accept'));actions.append(reject,accept);card.append(actions);el('candidates').append(card);
     }
+    applyFocus();
   } catch(e) {el('message').textContent=e.message;} finally {el('refresh').disabled=false;}
 }
 async function refreshStale() {
@@ -148,5 +150,30 @@ el('bulk-apply').addEventListener('click',async()=>{
   el('bulk-apply').disabled=true;
   try{const r=await api('/api/review/bulk-reject',{...bulkFilter(),confirm:true});el('message').textContent=r.matched+' öneri reddedildi.';el('bulk-result').replaceChildren();await refresh();}
   catch(e){el('message').textContent=e.message;}
+});
+// Quick review: one pending card at a time, keyboard driven. Keys press the
+// card's own buttons, so conflict warnings and decision notes behave as usual.
+let focusMode=false, focusIndex=0;
+function pendingCards(){return [...document.querySelectorAll('#candidates article.candidate.pending')];}
+function applyFocus(){
+  const cards=pendingCards();
+  if(focusIndex>=cards.length)focusIndex=Math.max(0,cards.length-1);
+  cards.forEach((c,i)=>{c.hidden=focusMode&&i!==focusIndex;});
+  el('focus-toggle').textContent=focusMode?'Hızlı incelemeden çık (Esc)':'Hızlı inceleme';
+  el('focus-status').textContent=focusMode?(cards.length?(focusIndex+1)+' / '+cards.length+' · A kabul · R reddet · D tekrar · J/→ sonraki · K/← önceki':'İnceleme bekleyen öneri kalmadı.'):'';
+  if(focusMode&&cards[focusIndex])cards[focusIndex].scrollIntoView({block:'start'});
+}
+el('focus-toggle').addEventListener('click',()=>{focusMode=!focusMode;applyFocus();});
+document.addEventListener('keydown',e=>{
+  if(!focusMode||e.ctrlKey||e.metaKey||e.altKey)return;
+  const typing=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+  if(e.key==='Escape'){if(typing){document.activeElement.blur();return;}focusMode=false;applyFocus();return;}
+  if(typing)return;
+  const cards=pendingCards(),card=cards[focusIndex];if(!card)return;
+  const press=act=>{const b=card.querySelector('button[data-act="'+act+'"]');if(b&&!b.disabled){e.preventDefault();b.click();}};
+  const k=e.key.toLowerCase();
+  if(k==='a')press('accept');else if(k==='r')press('reject');else if(k==='d')press('dup');
+  else if(k==='j'||e.key==='ArrowRight'){e.preventDefault();focusIndex=Math.min(focusIndex+1,cards.length-1);applyFocus();}
+  else if(k==='k'||e.key==='ArrowLeft'){e.preventDefault();focusIndex=Math.max(focusIndex-1,0);applyFocus();}
 });
 el('refresh').addEventListener('click',()=>{refresh();refreshStale();});refresh();refreshStale();

@@ -49,6 +49,17 @@ def _review_since(vault, since):
     return {'created_since': dict(by_reason), 'status': dict(by_status), 'total': sum(by_reason.values())}
 
 
+def _recall(vault):
+    from .recall_probe import probe
+    try:
+        result = probe(vault)
+    except Exception as exc:  # advisory: a probe failure never blocks a measurement
+        return {'status': 'DEGRADED', 'error': type(exc).__name__}
+    return {'score': result['score'], 'of': result['of'],
+            'in_memory_not_delivered': result['in_memory_not_delivered'],
+            'by_question': {r['id']: r['status'] for r in result['results']}}
+
+
 def measure(vault, *, since=None, claude_home=None, codex_home=None, save=True):
     _scripts()
     from capture_gap_audit import _parse_since, audit, verdict
@@ -70,6 +81,7 @@ def measure(vault, *, since=None, claude_home=None, codex_home=None, save=True):
         'staleness': {'references_checked': stale['references_checked'],
                       'stale_candidates': len(stale['stale_candidates'])},
         'bootstrap': compare(vault),
+        'recall_probe': _recall(vault),
     }
     if save:
         stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
