@@ -2,7 +2,7 @@
 from dataclasses import replace
 import re
 from time import perf_counter
-from brain_eleven.runtime.storage import RuntimeConfig, identity, now, write_json
+from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
 from .capture_safety import evaluate_capture
 from .task_state_context import TaskStateComposer
@@ -118,6 +118,42 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     }
 
 
+BOOTSTRAP_POOL = 15
+NEAR_DUPLICATE = 0.6
+
+
+def _stale_memory_ids(vault):
+    """Memory ids flagged by the last staleness scan (step 6); empty if never scanned."""
+    try:
+        document = read_json(RuntimeConfig(vault).root / 'staleness.json', {}) or {}
+    except (OSError, ValueError, TypeError):
+        return set()
+    return {x.get('memory_id') for x in document.get('stale_candidates', []) if isinstance(x, dict)}
+
+
+def select_distinct(ranked, *, stale_ids=frozenset(), limit=5):
+    """Roadmap step 9: spend the few bootstrap slots on distinct, current facts.
+
+    Keeps V1's ranking order, but skips a memory that is a near-duplicate
+    (word Jaccard >= NEAR_DUPLICATE) of one already chosen, and moves
+    stale_candidate memories behind every non-stale one. Nothing is removed
+    from memory; only this bounded selection changes.
+    """
+    from .review import _words
+    ordered = [m for m in ranked if m.get('memory_id') not in stale_ids] + \
+              [m for m in ranked if m.get('memory_id') in stale_ids]
+    chosen, chosen_words = [], []
+    for memory in ordered:
+        words = _words(memory.get('content', ''))
+        if any(words and other and len(words & other) / len(words | other) >= NEAR_DUPLICATE for other in chosen_words):
+            continue
+        chosen.append(memory)
+        chosen_words.append(words)
+        if len(chosen) == limit:
+            break
+    return chosen
+
+
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
     from brain_eleven._legacy import load_legacy_module
@@ -136,9 +172,10 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     def safe(text):
         return not contains_secret(text) and evaluate_capture(text).accepted
     b1_enabled = runtime.load().get('b1_human_approval', False)
-    memories = [item for item in compiler._rank_memories(limit=5)
-                if (not b1_enabled or item.get('is_approved', True) is True)
-                and safe(item['content'])]
+    pool = [item for item in compiler._rank_memories(limit=BOOTSTRAP_POOL)
+            if (not b1_enabled or item.get('is_approved', True) is True)
+            and safe(item['content'])]
+    memories = select_distinct(pool, stale_ids=_stale_memory_ids(vault), limit=5)
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.

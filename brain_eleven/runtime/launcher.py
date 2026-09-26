@@ -99,26 +99,63 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
     return False
 
 
+def _capture_outcome(cfg, client, event, payload, outcome, error=None):
+    """Per-client record of what the last Stop/SessionEnd actually did.
+
+    A skipped capture (mode OFF, unregistered cwd) used to look identical to
+    an enqueued one in last-hook.json ("OK"). Only presence flags, fixed
+    codes and the ledger join hash are stored: no paths, prompts or content.
+    """
+    from brain_eleven.runtime.worker import capture_session_hash
+    session = payload.get('session_id')
+    record = {'at': now(), 'client': client, 'event': event, 'outcome': outcome, 'error': error,
+              'cwd_present': bool(payload.get('cwd')), 'transcript_path_present': bool(payload.get('transcript_path')),
+              'capture_session_hash': capture_session_hash(client, session) if isinstance(session, str) and session else None}
+    try:
+        write_json(cfg.root / f'last-capture-{client}.json', record)
+    except OSError:
+        pass
+
+
 def hook(vault, client, event, payload):
-    from brain_eleven.runtime.worker import allowed, enqueue
+    from brain_eleven.runtime.worker import allowed, capture_session_hash, enqueue
     cfg = RuntimeConfig(vault)
-    if cfg.load()['mode'] == 'OFF' or not allowed(vault, payload.get('cwd')):
+    capture = event in {'Stop', 'SessionEnd'}
+    if cfg.load()['mode'] == 'OFF':
+        if capture:
+            _capture_outcome(cfg, client, event, payload, 'MODE_OFF')
         return {}
-    if event in {'Stop', 'SessionEnd'}:
+    if not allowed(vault, payload.get('cwd')):
+        if capture:
+            _capture_outcome(cfg, client, event, payload,
+                             'CWD_NOT_REGISTERED' if payload.get('cwd') else 'CWD_MISSING')
+        return {}
+    if capture:
         # This path never reads a transcript or waits for service startup.
         result = enqueue(vault, client, payload)
+        _capture_outcome(cfg, client, event, payload, str(result.get('status')), result.get('error'))
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     deadline = time.monotonic() + 2.5
     ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
-    if not ready:
-        return {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
     prompt = payload.get('prompt', '')
     session = payload.get('session_id', '')
     if not isinstance(prompt, str) or not isinstance(session, str) or not session:
         raise ValueError('Invalid prompt event')
+    if not ready:
+        output = {'systemMessage': 'Brain-Eleven başlatılıyor; bu istemde kayıtlı bağlam kullanılamadı.'}
+        if event != 'SessionStart':
+            return output
+        # A bootstrap that never compiled still leaves a receipt; its status
+        # is not EMITTED, so a later SessionStart for the session may retry.
+        key = identity('delivery_', client, session, 'bootstrap')
+        return output, cfg.root / 'deliveries' / (key + '.json'), {
+            'status': 'NOT_COMPILED', 'stage': 'NOT_COMPILED', 'reason': 'SERVICE_NOT_READY',
+            'at': now(), 'client': client, 'event': event,
+            'session_hash': identity('session_', session), 'turn_hash': identity('turn_', 'bootstrap'),
+            'capture_session_hash': capture_session_hash(client, session), 'context_delivered': False}
     # Native turn identity when provided; otherwise transcript position plus
     # prompt hash distinguishes repeated identical prompts in later turns.
     locator = payload.get('transcript_path')
@@ -144,10 +181,22 @@ def hook(vault, client, event, payload):
             output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': result['context']}
         if result.get('missing_critical_needs') or result.get('status') not in {'SUCCESS', 'EMPTY', 'OFF', 'SCOPE_DISABLED'}:
             output['systemMessage'] = 'Brain-Eleven: bağlam eksik veya kullanılamıyor; çalışma devam ediyor. İnceleme ekranını kontrol edin.'
+        delivered = bool(output.get('hookSpecificOutput'))
+        if delivered:
+            stage, reason = 'DELIVERED', None
+        elif not result.get('context'):
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'EMPTY_CONTEXT'
+        elif not provider_allowed:
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'PROVIDER_NOT_ALLOWED'
+        else:
+            stage, reason = 'COMPILED_NOT_DELIVERED', 'NOT_APPROVED'
         # Only the caller can acknowledge that stdout was successfully flushed.
-        return output, path, {'status': 'EMITTED', 'at': now(), 'client': client,
+        return output, path, {'status': 'EMITTED', 'at': now(), 'client': client, 'event': event,
+                              'stage': stage, 'reason': reason, 'compile_status': result.get('status'),
+                              'provider': provider, 'delivery_approved': approved,
+                              'capture_session_hash': capture_session_hash(client, session),
                               'session_hash': identity('session_', session), 'turn_hash': identity('turn_', turn),
-                              'context_delivered': bool(output.get('hookSpecificOutput')),
+                              'context_delivered': delivered,
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
                               'v1_ids': result.get('v1_ids', []), 'project_id':result.get('project_id'),
                               'implementation_fingerprint':result.get('implementation_fingerprint'),

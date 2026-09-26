@@ -278,7 +278,7 @@ def test_state_mutation_worker_golden_path_records_verified_effect(runtime, tmp_
 
 def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="missing-review")
+    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="missing-review")
     enqueue(vault, "claude", {"session_id": "missing-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -297,7 +297,7 @@ def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
 
 def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review")
+    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review")
     enqueue(vault, "claude", {"session_id": "tampered-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -317,7 +317,7 @@ def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, mo
 
 def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review-source")
+    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review-source")
     enqueue(vault, "claude", {"session_id": "tampered-review-source", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -338,7 +338,7 @@ def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
 @pytest.mark.parametrize("tampered_field", ["session_hash", "evidence_id"])
 def test_replay_rejects_unbounded_review_source_ids(runtime, tmp_path, monkeypatch, tampered_field):
     vault, _ = runtime
-    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="tampered-review-ids-" + tampered_field)
+    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review-ids-" + tampered_field)
     enqueue(vault, "claude", {"session_id": "tampered-review-ids-" + tampered_field, "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -492,7 +492,7 @@ def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypat
     ("text", "receipt_field"),
     [
         ("We decided to use SQLite for persistent storage.", "canonical_operation_ids"),
-        ("Maybe we should use SQLite for storage.", "review_effect_ids"),
+        ("The nightly build is currently broken on Windows.", "review_effect_ids"),
     ],
 )
 def test_replay_rejects_receipt_count_list_tampering(runtime, tmp_path, monkeypatch, text, receipt_field):
@@ -658,3 +658,20 @@ def test_replay_rejects_tampered_memory_effect_ids(runtime, tmp_path, monkeypatc
     assert result["status"] == "QUEUED"
     assert result["error"] == "CANONICAL_RECEIPT_MISMATCH"
 
+
+
+def test_fallback_review_skips_uncertain_quoted_and_pasted_output(runtime, tmp_path):
+    """Roadmap step 4: 2885/3115 real review items came from this fallback, 1
+    accepted. Only committed/observed user statements are queued from it;
+    hypotheticals, pasted terminal output and short acks are not."""
+    from brain_eleven.runtime.worker import fallback_worth_review
+    vault, _ = runtime
+    path = _transcript(tmp_path, "Maybe we should use SQLite for storage.", session_id="fallback-noise")
+    enqueue(vault, "claude", {"session_id": "fallback-noise", "cwd": str(vault), "transcript_path": str(path)})
+    Worker(vault).once()
+    reasons = [read_json(p)["reason"] for p in (vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json")]
+    assert "LOW_EVIDENCE_COMMITMENT" not in reasons
+    assert fallback_worth_review("We decided the dashboard stays read-only.", "COMMITTED")
+    assert not fallback_worth_review("tamam devam", "COMMITTED")
+    assert not fallback_worth_review("PS C:\\x> git status\n>> python a.py", "OBSERVED")
+    assert not fallback_worth_review("The deploy script failed twice this morning.", "UNCERTAIN")

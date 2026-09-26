@@ -32,6 +32,9 @@ _CLAUDE_CONVERSATION_TYPES = frozenset({'user', 'assistant'})
 _CLAUDE_METADATA_TYPES = frozenset({'system', 'progress', 'summary', 'file-history-snapshot', 'queue-operation',
                                     'last-prompt', 'custom-title', 'agent-name', 'agent-color'})
 MAX_IGNORED_TYPE_NAMES = 32
+_CODEX_METADATA_TYPES = frozenset({'session_meta', 'event_msg', 'turn_context', 'compacted'})
+_CODEX_NON_MESSAGE_ITEMS = frozenset({'function_call', 'function_call_output', 'reasoning', 'custom_tool_call',
+                                      'custom_tool_call_output', 'web_search_call', 'local_shell_call'})
 _TYPE_NAME = re.compile(r'[A-Za-z0-9_-]{1,40}')
 
 
@@ -115,15 +118,26 @@ def read_increment(vault, path, client, session, project, captured_at, cursor=No
         records_seen += 1
         role = content = None
         if client == 'codex':
-            if doc.get('type') == 'response_item':
-                payload = doc.get('payload', {})
-                if payload.get('type') == 'message':
+            kind = doc.get('type')
+            if not isinstance(kind, str):
+                raise ValueError('UNSUPPORTED_CODEX_TRANSCRIPT')
+            if kind == 'response_item':
+                payload = doc.get('payload')
+                item = payload.get('type') if isinstance(payload, dict) else None
+                if not isinstance(item, str):
+                    raise ValueError('UNSUPPORTED_CODEX_ITEM')
+                if item == 'message':
                     conversation_records += 1
                     role, content = payload.get('role'), payload.get('content')
-                elif payload.get('type') not in {'function_call', 'function_call_output', 'reasoning', 'custom_tool_call', 'custom_tool_call_output', 'web_search_call', 'local_shell_call'}:
-                    raise ValueError('UNSUPPORTED_CODEX_ITEM')
-            elif doc.get('type') not in {'session_meta', 'event_msg', 'turn_context', 'compacted'}:
-                raise ValueError('UNSUPPORTED_CODEX_TRANSCRIPT')
+                elif item not in _CODEX_NON_MESSAGE_ITEMS:
+                    # Newer Codex releases add item types; as with Claude, an
+                    # unknown one is counted by name and never becomes evidence
+                    # instead of dead-lettering the whole session.
+                    _count_ignored_type(ignored_types, 'response_item-' + item)
+                    continue
+            elif kind not in _CODEX_METADATA_TYPES:
+                _count_ignored_type(ignored_types, kind)
+                continue
         elif client == 'claude':
             kind = doc.get('type')
             if not isinstance(kind, str):

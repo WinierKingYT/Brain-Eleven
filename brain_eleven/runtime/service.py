@@ -17,8 +17,11 @@ def apply_candidate(*args, **kwargs):
     return implementation(*args, **kwargs)
 
 
+SUGGEST_KEY_SIMILARITY = 0.25
+
+
 def review_action(vault, review_id, action, payload):
-    from .review import ReviewStore
+    from .review import DECISION_NOTE_MAX, ReviewStore
 
     cfg = RuntimeConfig(vault)
     if action == 'accept' and not canonical_accept_allowed(cfg.load(), approved=True):
@@ -43,6 +46,15 @@ def review_action(vault, review_id, action, payload):
                 raise ValueError('Review candidate not found')
             if item['status'] != 'PENDING':
                 return item
+            note = payload.get('note')
+            if note is not None:
+                from .capture_safety import evaluate_capture
+                from context_compiler_v2.safety import contains_secret
+                if (not isinstance(note, str) or len(note) > DECISION_NOTE_MAX
+                        or (note.strip() and (contains_secret(note) or not evaluate_capture(note).accepted))):
+                    raise ValueError('Decision note must be at most 280 safe characters')
+                if note.strip():
+                    item['decision_note'] = note.strip()
             if action == 'reject':
                 return store.finish(item, 'REJECTED')
             if action != 'accept':
@@ -52,6 +64,14 @@ def review_action(vault, review_id, action, payload):
                 if not isinstance(payload['content'], str) or not 3 <= len(payload['content']) <= 8000:
                     raise ValueError('Candidate text must be 3..8000 characters')
                 candidate['text' if candidate['candidate_type'] == 'STATE_MUTATION' else 'content'] = payload['content']
+            if 'claim_key' in payload:
+                # MEMCLAIM-01: the reviewing person names the topic; a model never does.
+                from brain_eleven.memory.truth import normalize_claim_key
+
+                claim_key = normalize_claim_key(payload['claim_key'])
+                if claim_key is None:
+                    raise ValueError('claim_key must look like topic.attribute (lowercase, at most 80 characters)')
+                candidate['claim_key'] = claim_key
             candidate['commitment'] = 'COMMITTED'
             expected = payload.get('expected_revision')
             if isinstance(expected, bool) or not isinstance(expected, int):
@@ -73,7 +93,27 @@ def review_action(vault, review_id, action, payload):
             if result['status'] in {'STALE_INPUT', 'REVIEW_REQUIRED', 'SCOPE_ERROR', 'REJECTED', 'DEGRADED'}:
                 item.pop('accept_intent', None)
                 write_json(primary_path, item)
-            return result
+            conflict = _claim_conflict(vault, result)
+            return {**result, 'conflict': conflict} if conflict else result
+
+
+def _claim_conflict(vault, result):
+    """Describe the active memory a same-claim_key acceptance collided with."""
+    from brain_eleven.memory import MemoryStore
+    from .capture_safety import evaluate_capture
+    from context_compiler_v2.safety import contains_secret
+
+    target = next((x.get('target_memory_id') for x in result.get('decisions', [])
+                   if x.get('action') == 'CONFLICT' and x.get('reason_code') == 'ACTIVE_CLAIM_KEY_CONFLICT'), None)
+    if not target:
+        return None
+    memory = next((x for x in MemoryStore(vault).load()['validated_memory'] if x.get('memory_id') == target), None)
+    if memory is None:
+        return None
+    content = memory.get('content', '')
+    safe = isinstance(content, str) and evaluate_capture(content).accepted and not contains_secret(content)
+    return {'memory_id': target, 'claim_key': memory.get('claim_key', ''), 'content': content if safe else '',
+            'occurred_at': memory.get('occurred_at', ''), 'timestamp': memory.get('timestamp', '')}
 
 
 def runtime_status(vault):
@@ -197,22 +237,65 @@ def create_app(vault, *, token=None, background=True):
         from .capture_safety import evaluate_capture
         from .review import ReviewStore
         from context_compiler_v2.safety import contains_secret
+        from brain_eleven.projects.registry import ProjectRegistry
+        from .review import rank_similar
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
+        project_names = {p['project_id']: Path(str(p.get('root', ''))).name or p['project_id']
+                         for p in ProjectRegistry(vault).list_projects()}
         state = StateStore(vault)
         for item in items:
             if item['status'] == 'PENDING':
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
+                item['project_name'] = project_names.get(c['project_id'], c['project_id'])
                 if c['candidate_type'] == 'NEW_MEMORY':
-                    targets = [{'id': x['memory_id'], 'text': x['content']} for x in memory['validated_memory']
-                               if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
+                    active = [x for x in memory['validated_memory']
+                              if x.get('project_id') == c['project_id'] and x.get('status') == 'active']
+                    # Most similar first, so a likely duplicate or supersede target is on top.
+                    ranked = rank_similar(c.get('content', ''), active)
+                    targets = [{'id': x['memory_id'], 'text': x['content'], 'claim_key': x.get('claim_key', ''),
+                                'similarity': score} for score, x in ranked]
+                    item['similar'] = [t for t in targets if t['similarity'] > 0][:3]
+                    # MEMCLAIM: a key is only ever suggested from a similar record the
+                    # person can see; the person still decides whether to use it.
+                    item['suggested_claim_keys'] = list(dict.fromkeys(
+                        t['claim_key'] for t in targets if t['claim_key'] and t['similarity'] >= SUGGEST_KEY_SIMILARITY))[:3]
+                    item['claim_keys'] = sorted({x['claim_key'] for x in active if x.get('claim_key')})
                 else:
                     project = state.get_project(c['project_id']) or {}
                     bucket = {'RESOLVE_BLOCKER': 'blockers', 'RESOLVE_REQUIREMENT': 'requirements'}.get(c.get('operation'))
                     targets = [{'id': x['id'], 'text': x['text']} for x in project.get(bucket, []) if x.get('status') in {'ACTIVE', 'OPEN', 'PLANNED', 'IN_PROGRESS'}] if bucket else []
                 item['targets'] = [x for x in targets if evaluate_capture(x['text']).accepted and not contains_secret(x['text'])]
+                if 'similar' in item:
+                    safe_ids = {x['id'] for x in item['targets']}
+                    item['similar'] = [x for x in item['similar'] if x['id'] in safe_ids]
         return {'candidates': items}
+
+    @app.get('/api/staleness')
+    def stale_memories():
+        from .capture_safety import evaluate_capture
+        from .staleness import scan
+        from context_compiler_v2.safety import contains_secret
+        result = scan(vault)
+        result['stale_candidates'] = [x for x in result['stale_candidates']
+                                      if evaluate_capture(x['content']).accepted and not contains_secret(x['content'])]
+        return result
+
+    @app.post('/api/staleness/{memory_id}/{action}')
+    async def stale_action(memory_id: str, action: str, request: Request):
+        from .staleness import acknowledge, retire
+        payload = await body(request)
+        try:
+            if action == 'ack':
+                return await asyncio.to_thread(acknowledge, vault, memory_id, str(payload.get('path', '')))
+            if action == 'retire':
+                if not canonical_accept_allowed(RuntimeConfig(vault).load(), approved=True):
+                    raise ValueError('Enable canary, or shadow accept, before changing canonical memory')
+                return await asyncio.to_thread(retire, vault, memory_id, str(payload.get('note', '')))
+            raise ValueError('Unknown staleness action')
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from exc
 
     @app.post('/api/review/candidates/{review_id}/{action}')
     async def act(review_id: str, action: str, request: Request):

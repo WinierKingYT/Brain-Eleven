@@ -1,11 +1,13 @@
 """Additive, reversible native client configuration; never changes hook trust."""
 from copy import deepcopy
+from datetime import datetime
 import importlib.util
 import os
 from pathlib import Path
+import re
 import shlex
 import sys
-from .storage import RuntimeConfig, read_json, write_json, now, runtime_file_lock as file_lock
+from .storage import RuntimeConfig, identity, read_json, write_json, now, runtime_file_lock as file_lock
 
 EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')
 
@@ -23,9 +25,28 @@ def hook_command(vault, client, event):
     launcher = Path(__file__).with_name('launcher.py').resolve()
     args = [hook_python(), str(launcher), '--vault', str(Path(vault).resolve()), '--client', client, '--event', event]
     if os.name == 'nt':
-        # Codex uses PowerShell on Windows; Claude's default hook shell is bash.
-        return ('& ' if client == 'codex' else '') + ' '.join("'" + part.replace("'", "'\"'\"'" if client == 'claude' else "''") + "'" for part in args)
+        if client == 'codex':
+            return windows_codex_command(args)
+        # Claude's default hook shell on Windows is bash.
+        return ' '.join("'" + part.replace("'", "'\"'\"'") + "'" for part in args)
     return shlex.join(args)
+
+
+_SHELL_NEUTRAL = re.compile(r'^[A-Za-z0-9_:\\/.\-]+$')
+
+
+def windows_codex_command(args):
+    """A Codex hook command that runs under cmd.exe and PowerShell alike.
+
+    The earlier ``& '...'`` form assumed PowerShell; measured on a real
+    Windows machine it never reached the launcher (zero Codex deliveries,
+    ``cmd /c`` fails with "& was unexpected"). Bare arguments are valid in
+    both shells, so they are used whenever no argument needs quoting.
+    """
+    if all(_SHELL_NEUTRAL.match(part) for part in args):
+        return ' '.join(args)
+    # A space or metacharacter cannot be quoted for both shells at once.
+    return '& ' + ' '.join("'" + part.replace("'", "''") + "'" for part in args)
 
 
 def merge_hooks(document, additions, previous=None):
@@ -190,6 +211,7 @@ def uninstall(vault):
 
 
 def _session_start_health(vault):
+    observations = []
     path = Path(vault) / '.claude' / 'session-run-result.json'
     try:
         result = read_json(path, {})
@@ -197,15 +219,60 @@ def _session_start_health(vault):
         result = {}
     timestamp = result.get('timestamp') if isinstance(result, dict) else None
     exit_status = result.get('exit_status') if isinstance(result, dict) else None
+    state = 'unknown'
     if type(exit_status) is int:
         state = 'ok' if exit_status == 0 else 'failed'
-    else:
-        state = 'unknown'
     if isinstance(timestamp, str) and timestamp:
-        message = f'last SessionStart: {state} at {timestamp}'
-    else:
-        message = 'last SessionStart: unknown'
-    return message, state == 'failed'
+        observations.append((timestamp, f'last SessionStart: {state} at {timestamp}', state == 'failed'))
+
+    cfg = RuntimeConfig(vault)
+    bootstrap_hash = identity('turn_', 'bootstrap')
+    for receipt_path in (cfg.root / 'deliveries').glob('*.json'):
+        try:
+            receipt = read_json(receipt_path, {})
+        except (OSError, ValueError, TypeError):
+            continue
+        if not isinstance(receipt, dict) or receipt.get('status') != 'EMITTED':
+            continue
+        event = receipt.get('event')
+        if event != 'SessionStart' and not (event is None and receipt.get('turn_hash') == bootstrap_hash):
+            continue
+        observed_at = receipt.get('at')
+        delivered = receipt.get('context_delivered')
+        if not isinstance(observed_at, str) or not observed_at or not isinstance(delivered, bool):
+            continue
+        detail = 'context delivered' if delivered else 'context empty'
+        observations.append((observed_at, f'last SessionStart: ok at {observed_at} (native; {detail})', False))
+
+    if not observations:
+        return 'last SessionStart: unknown', False
+
+    def ordering(item):
+        try:
+            parsed = datetime.fromisoformat(item[0].replace('Z', '+00:00'))
+            return parsed.timestamp()
+        except (OverflowError, ValueError):
+            return float('-inf')
+
+    _timestamp, message, failed = max(observations, key=ordering)
+    return message, failed
+
+
+def _native_session_start_receipt(cfg):
+    """Latest native SessionStart receipt: its stage and why it was not delivered."""
+    latest = None
+    for path in (cfg.root / 'deliveries').glob('*.json'):
+        try:
+            record = read_json(path, {})
+        except (OSError, ValueError, TypeError):
+            continue
+        if isinstance(record, dict) and record.get('event') == 'SessionStart' and isinstance(record.get('at'), str):
+            if latest is None or record['at'] > latest['at']:
+                latest = record
+    if latest is None:
+        return 'last native SessionStart: no receipt'
+    reason = f" ({latest['reason']})" if latest.get('reason') else ''
+    return f"last native SessionStart: {latest.get('stage', 'UNKNOWN')}{reason} at {latest['at']} via {latest.get('client')}"
 
 
 def _last_transcript_signal(cfg):
@@ -253,6 +320,10 @@ def doctor(vault, *, home=None):
         last_hook = {}
     checks['last_hook'] = last_hook if isinstance(last_hook, dict) else {}
     checks['last_session_start'], session_failed = _session_start_health(vault)
+    checks['last_native_session_start'] = _native_session_start_receipt(cfg)
+    stale = read_json(cfg.root / 'staleness.json', {}) or {}
+    checks['stale_memories'] = (f"{len(stale.get('stale_candidates', []))} stale_candidate at {stale.get('scanned_at')}"
+                                if stale.get('scanned_at') else 'not scanned yet (open the review screen)')
     checks['last_transcript'] = _last_transcript_signal(cfg)
     native_hook_failed = checks['last_hook'].get('status') == 'DEGRADED'
     checks['status'] = 'READY' if (

@@ -19,6 +19,48 @@ _REVIEW_CANDIDATE_TYPE_ORDER = {
 }
 
 
+_SHELL_LINE = re.compile(r"^\s*(PS [A-Za-z]:\\|>>|\$ |[A-Za-z]:\\[^\n]*>|Traceback|\{\s*$|\}\s*$|\"[\w-]+\":)", re.M)
+
+
+def content_shape(text):
+    """Coarse shape of a candidate: terminal_or_code, short_ack, question or prose."""
+    stripped = text.strip()
+    if len(_SHELL_LINE.findall(stripped)) >= 2 or stripped.startswith(('{', '[', '```')):
+        return 'terminal_or_code'
+    if len(stripped) <= 20:
+        return 'short_ack'
+    if stripped.endswith('?'):
+        return 'question'
+    return 'prose'
+
+
+_WORD = re.compile(r"\w{3,}", re.UNICODE)
+
+
+def _words(text):
+    return {w.lower() for w in _WORD.findall(text or '')}
+
+
+def rank_similar(content, memories, *, limit=None):
+    """Active memories ordered by word overlap with ``content`` (Jaccard, 0..1).
+
+    Deterministic and local: it only helps a reviewer spot a likely duplicate
+    or the record a correction should supersede; it never decides anything.
+    """
+    words = _words(content)
+    scored = []
+    for memory in memories:
+        other = _words(memory.get('content', ''))
+        union = words | other
+        score = len(words & other) / len(union) if union else 0.0
+        scored.append((round(score, 2), memory))
+    scored.sort(key=lambda pair: (-pair[0], str(pair[1].get('memory_id', ''))))
+    return scored[:limit] if limit else scored
+
+
+DECISION_NOTE_MAX = 280
+
+
 class ReviewStore:
     def __init__(self, vault):
         self.root = RuntimeConfig(vault).root / 'review'
@@ -212,6 +254,7 @@ class ReviewStore:
             'finished_at': now(),
             'result': result,
             'reason': item.get('reason'),
+            'decision_note': item.get('decision_note'),
             'source': {key: source[key] for key in ('client', 'session_hash', 'evidence_id', 'role') if key in source},
             'candidate_fingerprint': item.get('candidate_fingerprint') or self.fingerprint(candidate),
             'event_fingerprint': item.get('event_fingerprint') or self.event_fingerprint(candidate),
@@ -246,6 +289,9 @@ class ReviewStore:
         primary_id = primary.get('id')
         primary_value = None
         for candidate in group or [item]:
+            if candidate.get('id') == item.get('id') and item.get('decision_note'):
+                # The reviewer's note lives on the in-memory item, not yet on disk.
+                candidate = {**candidate, 'decision_note': item['decision_note']}
             duplicate_of = None if candidate.get('id') == primary_id else primary_id
             candidate_result = result if duplicate_of is None else {'status': status, 'duplicate_of': primary_id}
             value = self._terminal_value(candidate, status, candidate_result, duplicate_of=duplicate_of)
