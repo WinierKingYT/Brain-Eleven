@@ -100,7 +100,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     return {
         'status': status,
         'context': context,
-        'selected_ids': [item['id'] for item in memories] if context else [],
+        'selected_ids': [_memory_identity(item) for item in memories] if context else [],
         'project_id': project_id,
         'provider': 'V1',
         'delivery_approved': False,
@@ -119,6 +119,11 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
 
 BOOTSTRAP_POOL = 15
+
+
+def _memory_identity(item):
+    """The canonical memory_id; the legacy numeric ``id`` is -1 for every new record."""
+    return item.get('memory_id') or item.get('id')
 NEAR_DUPLICATE = 0.6
 
 
@@ -131,7 +136,7 @@ def _stale_memory_ids(vault):
     return {x.get('memory_id') for x in document.get('stale_candidates', []) if isinstance(x, dict)}
 
 
-def select_distinct(ranked, *, stale_ids=frozenset(), limit=5):
+def select_distinct(ranked, *, stale_ids=frozenset(), limit=5, reasons=None):
     """Roadmap step 9: spend the few bootstrap slots on distinct, current facts.
 
     Keeps V1's ranking order, but skips a memory that is a near-duplicate
@@ -144,14 +149,71 @@ def select_distinct(ranked, *, stale_ids=frozenset(), limit=5):
               [m for m in ranked if m.get('memory_id') in stale_ids]
     chosen, chosen_words = [], []
     for memory in ordered:
+        mid = memory.get('memory_id')
+        if len(chosen) == limit:
+            if reasons is not None:
+                reasons[mid] = 'SLOT_LIMIT'
+            continue
         words = _words(memory.get('content', ''))
-        if any(words and other and len(words & other) / len(words | other) >= NEAR_DUPLICATE for other in chosen_words):
+        twin = next((chosen[i].get('memory_id') for i, other in enumerate(chosen_words)
+                     if words and other and len(words & other) / len(words | other) >= NEAR_DUPLICATE), None)
+        if twin is not None:
+            if reasons is not None:
+                reasons[mid] = 'NEAR_DUPLICATE_OF:' + str(twin)
             continue
         chosen.append(memory)
         chosen_words.append(words)
-        if len(chosen) == limit:
-            break
     return chosen
+
+
+def explain_bootstrap(vault, project_root, *, budget=3000):
+    """Why each active memory of the project is, or is not, in the bootstrap context.
+
+    Runs the same steps as compile_bootstrap (V1 ranking, approval and safety
+    filters, distinct selection, token budget) but records where every memory
+    stopped. Read-only; returns ids and reason codes, never memory text.
+    """
+    from brain_eleven._legacy import load_legacy_module
+    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
+    runtime = RuntimeConfig(vault)
+    project = allowed(vault, project_root)
+    if runtime.load()['mode'] == 'OFF' or not project:
+        return {'status': 'OFF' if runtime.load()['mode'] == 'OFF' else 'SCOPE_DISABLED', 'memories': {}}
+    compiler = compiler_type(str(vault), project_id=project['project_id'])
+    document = compiler.memory_store.load()
+    compiler.memories = document['validated_memory']
+    state = compiler._resolve_current_state()
+    b1_enabled = runtime.load().get('b1_human_approval', False)
+    stale = _stale_memory_ids(vault)
+    ranked = compiler._rank_memories(limit=len(compiler.memories) + 1)
+    reasons, pool = {}, []
+    for position, item in enumerate(ranked):
+        mid = item.get('memory_id')
+        if b1_enabled and item.get('is_approved', True) is not True:
+            reasons[mid] = 'NOT_APPROVED'
+        elif contains_secret(item['content']) or not evaluate_capture(item['content']).accepted:
+            reasons[mid] = 'SAFETY_FILTERED'
+        elif position >= BOOTSTRAP_POOL:
+            reasons[mid] = 'BELOW_POOL'
+        else:
+            pool.append(item)
+    chosen = select_distinct(pool, stale_ids=stale, limit=5, reasons=reasons)
+    estimator = ConservativeTokenEstimator()
+    context = compiler._generate_context_block(chosen, {}, '', '', state)
+    while chosen and estimator.estimate(context).count > budget:
+        reasons[chosen.pop().get('memory_id')] = 'TOKEN_BUDGET'
+        context = compiler._generate_context_block(chosen, {}, '', '', state)
+    for item in chosen:
+        reasons[item.get('memory_id')] = 'DELIVERED'
+    memories = {mid: {'reason': reason, 'rank': next((i for i, m in enumerate(ranked) if m.get('memory_id') == mid), None),
+                      'stale_candidate': mid in stale}
+                for mid, reason in reasons.items()}
+    counts = {}
+    for entry in memories.values():
+        key = entry['reason'].split(':')[0]
+        counts[key] = counts.get(key, 0) + 1
+    return {'status': 'SUCCESS', 'project_id': project['project_id'], 'active_ranked': len(ranked),
+            'counts': counts, 'memories': memories}
 
 
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
@@ -214,7 +276,7 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
         except Exception:
             delivered = False
         context = reminder_context if delivered else context
-    return {'status': status, 'context': context, 'selected_ids': [item['id'] for item in memories] if context else [],
+    return {'status': status, 'context': context, 'selected_ids': [_memory_identity(item) for item in memories] if context else [],
             'project_id': project['project_id'], 'delivered': bool(context),
             'delivery_approved': bool(context), 'provider': 'V1',
             'estimated_tokens': estimator.estimate(context).count}

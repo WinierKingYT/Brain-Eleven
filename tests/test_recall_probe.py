@@ -33,3 +33,24 @@ def test_questions_file_matches_the_owner_test_log():
     questions = recall_probe.load_questions()
     assert [q["id"] for q in questions] == [1, 2, 3, 4, 5]
     assert all(q["groups"] and all(q["groups"]) for q in questions)
+
+
+def test_explain_matches_the_real_bootstrap_selection_and_names_reasons(tmp_path):
+    from brain_eleven.runtime.context import compile_bootstrap, explain_bootstrap
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    texts = ["We decided that SRT-00 is closed and shipped.", "We decided SRT-00 is closed and shipped now.",
+             "We decided the holdout corpus-v2 gate stays red.", "We decided Phase 20 remains frozen.",
+             "We decided the dashboard stays read-only.", "We decided to keep SQLite for storage.",
+             "We decided the review queue expires after seven days."]
+    from brain_eleven.memory import MemoryStore
+    for i, text in enumerate(texts):
+        _accept(vault, _review_item(tmp_path, vault, f"m{i}", text, NEW_TIME))
+    ids = {m["content"]: m["memory_id"] for m in MemoryStore(vault).load()["validated_memory"]}
+    delivered = set(compile_bootstrap(vault, vault)["selected_ids"])
+    explained = explain_bootstrap(vault, vault)
+    # Same steps as the real bootstrap: the explained DELIVERED set is exactly what it selects.
+    assert {m for m, e in explained["memories"].items() if e["reason"] == "DELIVERED"} == delivered
+    assert len(delivered) == 5 and -1 not in delivered
+    # Scores tie here, so which twin ranks first varies; they are never delivered together.
+    assert not {ids[texts[0]], ids[texts[1]]} <= delivered
+    assert sum(explained["counts"].values()) == len(texts)

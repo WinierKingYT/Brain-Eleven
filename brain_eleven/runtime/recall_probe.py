@@ -38,7 +38,7 @@ def load_questions(path=None):
 
 def probe(vault, project_root=None, *, questions_path=None):
     from brain_eleven.memory import MemoryStore
-    from .context import compile_bootstrap
+    from .context import compile_bootstrap, explain_bootstrap
 
     project_root = project_root or vault
     bootstrap = compile_bootstrap(vault, project_root)
@@ -47,6 +47,10 @@ def probe(vault, project_root=None, *, questions_path=None):
     memories = [m for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active'
                 and (not project_id or m.get('project_id') in (project_id, '', None))]
+    try:
+        why = explain_bootstrap(vault, project_root).get('memories', {})
+    except Exception:
+        why = {}
     results = []
     for question in load_questions(questions_path):
         groups = question['groups']
@@ -60,8 +64,10 @@ def probe(vault, project_root=None, *, questions_path=None):
                     holders = sorted({m.get('memory_id') for g in groups for m in memories
                                       if covers(m.get('content', ''), [g])})
             status = 'IN_MEMORY_NOT_DELIVERED' if holders else 'NOT_IN_MEMORY'
-        results.append({'id': question['id'], 'question': question['question'], 'status': status,
-                        'memory_ids': holders})
+        entry = {'id': question['id'], 'question': question['question'], 'status': status, 'memory_ids': holders}
+        if status == 'IN_MEMORY_NOT_DELIVERED':
+            entry['why_not_delivered'] = {mid: (why.get(mid) or {}).get('reason', 'NOT_RANKED') for mid in holders}
+        results.append(entry)
     return {'bootstrap_status': bootstrap.get('status'), 'delivered_memories': len(bootstrap.get('selected_ids', [])),
             'score': sum(r['status'] == 'IN_CONTEXT' for r in results), 'of': len(results),
             'in_memory_not_delivered': sum(r['status'] == 'IN_MEMORY_NOT_DELIVERED' for r in results),
