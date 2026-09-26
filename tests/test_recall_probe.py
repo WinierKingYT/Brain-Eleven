@@ -54,3 +54,22 @@ def test_explain_matches_the_real_bootstrap_selection_and_names_reasons(tmp_path
     # Scores tie here, so which twin ranks first varies; they are never delivered together.
     assert not {ids[texts[0]], ids[texts[1]]} <= delivered
     assert sum(explained["counts"].values()) == len(texts)
+
+
+def test_answer_waiting_in_the_review_queue_is_pointed_at_and_surfaced(tmp_path):
+    from fastapi.testclient import TestClient
+    from brain_eleven.runtime.service import create_app
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    pending = _review_item(tmp_path, vault, "q3",
+                           "We decided not to push master because it publishes the ghcr latest image.", NEW_TIME)
+
+    by_id = {r["id"]: r for r in probe(vault)["results"]}
+    assert by_id[3]["status"] == "IN_REVIEW_QUEUE" and by_id[3]["review_ids"] == [pending["id"]]
+    assert by_id[5]["status"] == "NOT_IN_MEMORY"
+
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    listed = {x["id"]: x for x in client.get("/api/review/candidates", headers={"Authorization": "Bearer t"}).json()["candidates"]}
+    assert listed[pending["id"]]["recall_questions"] == [3]
+
+    _accept(vault, pending)
+    assert {r["id"]: r for r in probe(vault)["results"]}[3]["status"] == "IN_CONTEXT"

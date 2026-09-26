@@ -57,6 +57,7 @@ def _recall(vault):
         return {'status': 'DEGRADED', 'error': type(exc).__name__}
     return {'score': result['score'], 'of': result['of'],
             'in_memory_not_delivered': result['in_memory_not_delivered'],
+            'in_review_queue': result.get('in_review_queue', 0),
             'by_question': {r['id']: r['status'] for r in result['results']}}
 
 

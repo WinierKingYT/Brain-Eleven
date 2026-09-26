@@ -239,6 +239,11 @@ def create_app(vault, *, token=None, background=True):
         from context_compiler_v2.safety import contains_secret
         from brain_eleven.projects.registry import ProjectRegistry
         from .review import content_shape, rank_similar
+        from .recall_probe import load_questions, recall_questions_for
+        try:
+            questions = load_questions()
+        except (OSError, ValueError):
+            questions = []
         items = ReviewStore(vault).list()
         memory = MemoryStore(vault).load()
         project_names = {p['project_id']: Path(str(p.get('root', ''))).name or p['project_id']
@@ -249,6 +254,7 @@ def create_app(vault, *, token=None, background=True):
                 c = item['candidate']
                 item['expected_revision'] = state.project_revision(c['project_id']) if c['candidate_type'] == 'STATE_MUTATION' else memory['revision']
                 item['project_name'] = project_names.get(c['project_id'], c['project_id'])
+                item['recall_questions'] = recall_questions_for(c.get('text') or c.get('content') or '', questions)
                 text = c.get('text') if c['candidate_type'] == 'STATE_MUTATION' else c.get('content')
                 item['shape'] = content_shape(text) if isinstance(text, str) else None
                 if c['candidate_type'] == 'NEW_MEMORY':
