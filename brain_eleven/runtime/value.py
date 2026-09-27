@@ -71,13 +71,24 @@ def digest(vault, *, limit=DAILY_LIMIT):
 _SUGGESTIONS = {'ACCEPT', 'REJECT', 'REVIEW'}
 _REASON = __import__('re').compile(r'[A-Z_]{1,40}')
 _REVIEW_ID = __import__('re').compile(r'rev_[a-f0-9]{64}')
+_MEMORY_ID = __import__('re').compile(r'mem_[A-Za-z0-9_-]{1,80}')
+
+
+def _active_memory_ids(vault):
+    from brain_eleven.memory import MemoryStore
+    try:
+        memories = MemoryStore(vault).load().get('validated_memory', [])
+    except Exception:
+        return set()
+    return {m.get('memory_id') for m in memories
+            if isinstance(m, dict) and str(m.get('status') or 'active').lower() not in ('superseded', 'retired')}
 
 
 def load_suggestions(vault):
     """Advisory model suggestions from runtime/review-suggestions.json (local, never committed).
 
     Only a known verdict, a short reason code and, for DUPLICATE_OF, a review id
-    are kept; anything else in the file is ignored. Suggestions never act on
+    or a canonical memory id (``mem_...``) are kept; anything else in the file is ignored. Suggestions never act on
     their own: the person still accepts or rejects.
     """
     from .storage import RuntimeConfig, read_json
@@ -86,7 +97,7 @@ def load_suggestions(vault):
     except (OSError, ValueError):
         return {}
     raw = document.get('suggestions') if isinstance(document, dict) else None
-    clean = {}
+    clean, active = {}, None
     for review_id, entry in (raw or {}).items() if isinstance(raw, dict) else ():
         if not isinstance(review_id, str) or not _REVIEW_ID.fullmatch(review_id) or not isinstance(entry, dict):
             continue
@@ -94,9 +105,16 @@ def load_suggestions(vault):
         duplicate_of = None
         if verdict.startswith('DUPLICATE_OF:'):
             duplicate_of = verdict.split(':', 1)[1]
-            if not _REVIEW_ID.fullmatch(duplicate_of):
+            if not (_REVIEW_ID.fullmatch(duplicate_of) or _MEMORY_ID.fullmatch(duplicate_of)):
                 continue
             verdict = 'DUPLICATE'
+            if duplicate_of.startswith('mem_'):
+                # Hide only behind a memory that is still active; otherwise the
+                # candidate may be the only copy left, so a person looks at it.
+                if active is None:
+                    active = _active_memory_ids(vault)
+                if duplicate_of not in active:
+                    verdict, duplicate_of = 'REVIEW', None
         elif verdict not in _SUGGESTIONS:
             continue
         reason = str(entry.get('reason') or '')

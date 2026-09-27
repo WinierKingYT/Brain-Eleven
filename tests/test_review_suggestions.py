@@ -50,3 +50,23 @@ def test_apply_accepts_with_note_and_only_hides_rejects(tmp_path):
     client = TestClient(create_app(vault, token='t', background=False), base_url='http://127.0.0.1')
     listed = {x['id']: x for x in client.get('/api/review/candidates', headers={'Authorization': 'Bearer t'}).json()['candidates']}
     assert listed[drop['id']]['suggestion']['suggestion'] == 'REJECT'
+
+
+def test_duplicate_of_memory_hides_only_behind_active_memory(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    kept = _review_item(tmp_path, vault, "kept", "We decided the dashboard stays read-only.", NEW_TIME)
+    _write(vault, {kept['id']: {'suggestion': 'ACCEPT', 'reason': 'DURABLE_DECISION'}})
+    apply_suggestions(vault, apply=True)
+    memory_id = MemoryStore(vault).load()['validated_memory'][0]['memory_id']
+
+    again = _review_item(tmp_path, vault, "again", "We decided to keep SQLite for storage.", NEW_TIME)
+    orphan = _review_item(tmp_path, vault, "orphan", "We decided the API stays versioned.", NEW_TIME)
+    _write(vault, {again['id']: {'suggestion': 'DUPLICATE_OF:' + memory_id, 'reason': 'DUPLICATE'},
+                   orphan['id']: {'suggestion': 'DUPLICATE_OF:mem_missing', 'reason': 'DUPLICATE'}})
+    loaded = load_suggestions(vault)
+    assert loaded[again['id']]['suggestion'] == 'DUPLICATE' and loaded[again['id']]['duplicate_of'] == memory_id
+    assert loaded[orphan['id']]['suggestion'] == 'REVIEW'  # no active memory behind it: a person looks
+
+    done = apply_suggestions(vault, apply=True)
+    assert (done['hidden'], done['left_for_person']) == (1, 1)
+    assert {x['id']: x['status'] for x in ReviewStore(vault)._items()}[again['id']] == 'PENDING'

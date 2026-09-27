@@ -60,7 +60,9 @@ python -m brain_eleven apply-suggestions --apply   # ACCEPT'leri hafızaya yazar
 `ACCEPT` kararları "Model onayı (<model>): <neden>" notuyla yazılır; yanlışsa
 "Eskimiş olabilir" / emekliye ayır ile geri alınır. `REJECT` ve `DUPLICATE`
 yazılmaz: ekranda gizlenir, 7 gün içinde kendiliğinden düşer (yanılgı geri
-alınabilir kalsın diye). `REVIEW` sana bırakılır.
+alınabilir kalsın diye). `REVIEW` sana bırakılır. `DUPLICATE_OF:` hedefi başka bir
+inceleme (`rev_...`) ya da hafızadaki bir kayıt (`mem_...`) olabilir; hafıza kaydı
+artık aktif değilse aday gizlenmez, `REVIEW` olarak sana kalır.
 
 ## İnceleme ekranı
 
