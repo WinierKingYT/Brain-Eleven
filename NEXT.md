@@ -6,7 +6,7 @@ the end of a work session; keep entries to a few lines.
 
 ## Where we are
 
-**2026-09-27** — `recall-probe` 5/5 `IN_CONTEXT`; beş ayrı Claude oturumunun gerçek skoru 0 doğru, 1 kısmen, 4 hiç. Puanlama ve `/remember` / kabul edilmiş aday provenance ayrımı `docs/history/evidence/TEST-LOG.md`'de. Bu oturumda kod, eşik, holdout, corpus veya aday kararları değiştirilmedi. Sıradaki adım: Ahmet'in vereceği hedefe göre devam etmek.
+**2026-09-27** — `recall-probe` 5/5 `IN_CONTEXT`. İlk Claude koşusu geçersiz (cevap vermeme/araç denemeleri); ek araçsız talimatlı ikinci koşu 1 doğru, 3 kısmen, 0 yanlış, 1 hiç. Q2–Q5 SessionStart teslimi `DELIVERED`; Q1 için yeni/eşleşen makbuz yok. Puanlar ve teslim ayrıntıları `docs/history/evidence/TEST-LOG.md`'de. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet'in vereceği hedefe göre devam etmek.
 
 **2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is
 green on Ubuntu and Windows and Build & Push #820 published. It remains a
