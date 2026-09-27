@@ -149,7 +149,15 @@ $deliveryDirectory = Join-Path $repositoryRoot '.brain-eleven/runtime/deliveries
 $measurementDirectory = Join-Path $repositoryRoot '.brain-eleven/runtime/measurements'
 $date = Get-Date -Format 'yyyy-MM-dd'
 
-$pythonCommand = Get-Command -Name 'python' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+# Prefer the vault's own virtualenv: a bare 'python' can be the system or
+# Store interpreter without Brain-Eleven's dependencies (the /remember bug).
+$venvPython = @(
+    (Join-Path $repositoryRoot '.venv/Scripts/python.exe'),
+    (Join-Path $repositoryRoot '.venv/bin/python')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+$pythonCommand = if ($venvPython) { [pscustomobject]@{ Source = $venvPython } } else {
+    Get-Command -Name 'python' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+}
 $claudeCommand = Get-Command -Name 'claude' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 $pythonPath = if ($pythonCommand) { $pythonCommand.Source } else { $null }
 $claudePath = if ($claudeCommand) { $claudeCommand.Source } else { $null }
