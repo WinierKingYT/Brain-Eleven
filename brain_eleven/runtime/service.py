@@ -270,7 +270,7 @@ def create_app(vault, *, token=None, background=True):
         from brain_eleven.projects.registry import ProjectRegistry
         from .review import content_shape, rank_similar
         from .recall_probe import load_questions, pending_candidate_texts, review_tags
-        from .value import DAILY_LIMIT, value_score
+        from .value import DAILY_LIMIT, load_suggestions, value_score
         try:
             questions = load_questions()
         except (OSError, ValueError):
@@ -282,6 +282,7 @@ def create_app(vault, *, token=None, background=True):
         state = StateStore(vault)
         # Recall tags per project: a candidate is tagged when it holds a recall
         # answer alone or as part of the smallest split that holds it.
+        suggestions = load_suggestions(vault)
         tags = {}
         for project_id in {item.get('project_id') for item in items if item['status'] == 'PENDING'}:
             tags.update(review_tags(pending_candidate_texts(vault, project_id), questions))
@@ -315,6 +316,8 @@ def create_app(vault, *, token=None, background=True):
                     safe_ids = {x['id'] for x in item['targets']}
                     item['similar'] = [x for x in item['similar'] if x['id'] in safe_ids]
                 item['value_score'] = value_score(item)
+                if item['id'] in suggestions:
+                    item['suggestion'] = suggestions[item['id']]
         return {'candidates': items, 'daily_limit': DAILY_LIMIT}
 
     @app.get('/api/staleness')

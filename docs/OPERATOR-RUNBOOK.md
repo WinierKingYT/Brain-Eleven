@@ -46,6 +46,22 @@ python -m brain_eleven triage --apply   # "Otomatik süzgeç: <kural>" notuyla r
 
 Kapatmak için runtime yapılandırmasında `"auto_triage": false`.
 
+## Model ön değerlendirmesi
+
+Bir model (ör. Codex / GPT Luna) bekleyen kararları okuyup
+`.brain-eleven/runtime/review-suggestions.json` yazar (metin içermez; yalnız
+`ACCEPT` / `REJECT` / `REVIEW` / `DUPLICATE_OF:<id>` ve neden kodu). Sonra:
+
+```
+python -m brain_eleven apply-suggestions           # yalnız sayar
+python -m brain_eleven apply-suggestions --apply   # ACCEPT'leri hafızaya yazar
+```
+
+`ACCEPT` kararları "Model onayı (<model>): <neden>" notuyla yazılır; yanlışsa
+"Eskimiş olabilir" / emekliye ayır ile geri alınır. `REJECT` ve `DUPLICATE`
+yazılmaz: ekranda gizlenir, 7 gün içinde kendiliğinden düşer (yanılgı geri
+alınabilir kalsın diye). `REVIEW` sana bırakılır.
+
 ## İnceleme ekranı
 
 Öneriler değer sırasıyla gelir: kesin kararlar, hafızada benzeri olmayanlar ve

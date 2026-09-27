@@ -20,9 +20,15 @@ async function refresh() {
     const [status, list] = await Promise.all([api('/api/runtime/status'),api('/api/review/candidates')]);
     // Most valuable first (recall-test answers score highest); by default only
     // the day's top N are shown, the rest stay pending behind "show all".
-    const allPending=list.candidates.filter(x=>x.status==='PENDING').sort((a,b)=>(b.value_score||0)-(a.value_score||0));
+    // Candidates the model rejected or marked duplicate are hidden and expire on their own.
+    const dismissed=x=>['REJECT','DUPLICATE'].includes(x.suggestion?.suggestion);
+    const pendingAll=list.candidates.filter(x=>x.status==='PENDING');
+    const hiddenCount=pendingAll.filter(dismissed).length;
+    const allPending=pendingAll.filter(x=>!dismissed(x)).sort((a,b)=>(b.value_score||0)-(a.value_score||0));
     const limit=list.daily_limit||10;
-    const pending=showAll?allPending:allPending.slice(0,limit);
+    const suggested=allPending.filter(x=>x.suggestion?.suggestion==='ACCEPT');
+    const pool=onlySuggested?suggested:allPending;
+    const pending=showAll?pool:pool.slice(0,limit);
     fillBulk(allPending);
     el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=allPending.length;
     el('queue').textContent=status.queue.queued;el('context').textContent=status.context?(names[status.context.status] || status.context.status):'Henüz yok';
@@ -43,9 +49,18 @@ async function refresh() {
       });
       bar.append(all);el('candidates').append(bar);
     }
-    if(allPending.length>limit){
+    if(hiddenCount) el('candidates').append(node('p',`Model ${hiddenCount} öneriyi eledi; bunlar gösterilmez ve 7 gün içinde kendiliğinden düşer.`,'hint'));
+    if(suggested.length){
+      // Advisory model pre-review: only narrows the list, the person still decides.
+      const f=node('p',null,'hint');
+      f.append(`Model ön değerlendirmesi: ${suggested.length} öneri kabul için işaretli. `);
+      const t=node('button',onlySuggested?'Tüm önerileri göster':'Yalnız kabul önerilenleri göster','chip');t.type='button';
+      t.addEventListener('click',()=>{onlySuggested=!onlySuggested;refresh();});
+      f.append(t);el('candidates').append(f);
+    }
+    if(pool.length>limit){
       const more=node('p',null,'hint');
-      more.append(showAll?`Tüm ${allPending.length} öneri gösteriliyor. `:`Bugünün en değerli ${limit} önerisi gösteriliyor (toplam ${allPending.length}). `);
+      more.append(showAll?`Tüm ${pool.length} öneri gösteriliyor. `:`En değerli ${limit} öneri gösteriliyor (toplam ${pool.length}). `);
       const toggle=node('button',showAll?'Yalnız en değerlileri göster':'Tümünü göster','chip');toggle.type='button';
       toggle.addEventListener('click',()=>{showAll=!showAll;refresh();});
       more.append(toggle);el('candidates').append(more);
@@ -58,6 +73,10 @@ async function refresh() {
       const tags=node('div',null,'tags');
       tags.append(node('span',reasons[item.reason] || item.reason,'reason'));
       for(const q of item.recall_questions || []) tags.append(node('span','Hatırlama testi #'+q,'tag recall'));
+      if(item.suggestion){
+        const labels={ACCEPT:'Model: kabul',REJECT:'Model: reddet',REVIEW:'Model: bak',DUPLICATE:'Model: tekrar'};
+        tags.append(node('span',(labels[item.suggestion.suggestion]||item.suggestion.suggestion)+(item.suggestion.reason?' · '+item.suggestion.reason:''),'tag'));
+      }
       if(c.memory_type) tags.append(node('span',types[c.memory_type] || c.memory_type,'tag'));
       if(c.commitment) tags.append(node('span',commitments[c.commitment] || c.commitment,'tag'));
       card.append(tags);
@@ -188,7 +207,7 @@ el('bulk-apply').addEventListener('click',async()=>{
 });
 // Quick review: one pending card at a time, keyboard driven. Keys press the
 // card's own buttons, so conflict warnings and decision notes behave as usual.
-let focusMode=false, focusIndex=0, showAll=false;
+let focusMode=false, focusIndex=0, showAll=false, onlySuggested=false;
 function pendingCards(){return [...document.querySelectorAll('#candidates article.candidate.pending')];}
 function applyFocus(){
   const cards=pendingCards();
