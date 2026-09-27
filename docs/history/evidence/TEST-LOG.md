@@ -49,6 +49,44 @@ daha temel bir bulgu: precision'ın düşük olması bir şey geldiği anlamına
 5 sorudan 4'ünde **hiçbir şey gelmedi**. Yani sıradaki iş retrieval'ı iyileştirmek değil,
 `SessionStart` hook'unun bağlamı gerçekten enjekte edip etmediğini doğrulamak.
 
+### 2026-09-27 Sonuçlar
+
+**Tarih:** 2026-09-27. `recall-probe` 2026-09-26'da çalıştırıldı; taze Claude oturumları gece yarısını geçti.
+
+**Probe skoru:** **5/5** — `delivered_memories=8`; beş sorunun durumu `IN_CONTEXT`.
+
+**İlk koşu durumu: GEÇERSİZ ÖLÇÜM — model cevaplamadı, araç denedi.** Aşağıdaki ilk koşu kaydı tarihçe için korunuyor; ölçüm sonucu olarak kullanılmamalı.
+
+**İlk koşuda kaydedilen puan (geçersiz ölçüm):** **0 doğru, 1 kısmen, 0 yanlış, 4 hiç** (tam doğru: **0/5**).
+
+Yöntem: her soru için ayrı `claude -p "<soru>" --tools '' --strict-mcp-config` süreci. Q1 beş dakikadan uzun süre cevap vermedi ve sonlandırıldı. Q2, Q3 ve Q5 cevap yerine yalnızca araç çağrısı taslağı üretti; araçlar kapalı olduğu için hiçbir çağrı çalıştırılmadı. Q4, Phase 20'nin FROZEN ve Intelligence Graduation'ın aktif olduğunu söyledi, ancak anahtardaki Knowledge Engine'in başlatılmadığı bilgisini vermedi.
+
+| # | Puan | Hafıza kaynağı / not |
+|---|---|---|
+| 1 | hiç | Cevap yok. İlgili canonical kayıtlar `/remember` ve kabul edilmiş aday kaynaklarını içeriyor; ayrıca StateStore `source=user` bağlamı var. |
+| 2 | hiç | Yalnızca araç çağrısı taslağı. İlgili canonical hafıza kayıtları elle `/remember` kaynaklı. |
+| 3 | hiç | Yalnızca araç çağrısı taslağı. StateStore `source=user` bağlamı ve `source=worker` bir kayıt var; eldeki ReviewStore kayıtlarında bu worker kaydına bağlı bir kabul kararı doğrulanamadı. Bu nedenle kabul edilmiş aday olarak sayılmadı. |
+| 4 | kısmen | Phase 20 / IG bilgisi doğru, Knowledge Engine durumu eksik. İlgili canonical kayıtlar hem `/remember` hem kabul edilmiş aday kaynaklı. |
+| 5 | hiç | Yalnızca araç çağrısı taslağı. İlgili canonical hafıza kayıtları elle `/remember` kaynaklı. |
+
+Provenance özeti: Q1 ve Q4 için hem elle `/remember` hem de kabul edilmiş aday kaynaklı kayıtlar bulundu; Q2 ve Q5 için `/remember` kayıtları bulundu. Q3'te kabul kararı eldeki kayıtlarla doğrulanamadı. StateStore kullanıcı kaynaklı girdileri canonical hafıza kökeninden ayrı tutuldu. Adaylarda kabul/ret işlemi yapılmadı.
+
+#### İkinci koşu
+
+Yöntem farkı: her soru yine ayrı ve taze `claude -p` sürecinde, aynı boş araç ve katı MCP ayarlarıyla soruldu; prompt'a ayrıca “Araç kullanma, komut çalıştırma; yalnızca oturum başında sana verilen bağlamla kısaca cevap ver. Bilmiyorsan 'bilmiyorum' de.” talimatı eklendi. Her süreç için zaman aşımı 120 saniyeydi; beşi de bu süre içinde tamamlandı.
+
+**Gerçek oturum skoru:** **1 doğru, 3 kısmen, 0 yanlış, 1 hiç** (tam doğru: **1/5**).
+
+Her oturumdan sonra teslim dosyaları kontrol edildi. Q2–Q5 için o oturumda yeni bir `SessionStart` makbuzu bulundu ve `stage=DELIVERED`, `context_delivered=true` idi. Q1 için yeni/eşleşen `SessionStart` makbuzu bulunmadı; görülen son `SessionStart` başka, daha eski bir kayda aitti ve `DELIVERED` durumundaydı. Her koşudan sonra klasördeki en yeni genel kayıt `UserPromptSubmit` / `COMPILED_NOT_DELIVERED` (`context_delivered=false`) idi; bu kayıt `SessionStart` teslim makbuzundan ayrı değerlendirildi.
+
+| # | Puan | SessionStart teslim makbuzu / not |
+|---|---|---|
+| 1 | kısmen | Yeni/eşleşen makbuz yok. Yanıt eşik düşürme ve testi atlamama kararını verdi; PRE-13 promosyonunun ertelendiğini belirtmedi. |
+| 2 | kısmen | `DELIVERED` (`context_delivered=true`). 205/205 işin bilinmeyen kayıt tipinde reddedildiğini söyledi; boyut hipotezinin çürütülmesi ve düzeltmenin atlayıp sayması eksikti. |
+| 3 | hiç | `DELIVERED` (`context_delivered=true`). “Bilmiyorum” dedi. |
+| 4 | kısmen | `DELIVERED` (`context_delivered=true`). Phase 20'nin dondurulduğunu ve IG'nin aktif olduğunu söyledi; Knowledge Engine'in başlatılmadığı maddesi eksikti. |
+| 5 | doğru | `DELIVERED` (`context_delivered=true`). Sözleşmenin kapsam dışında olduğunu, holdout kararını etkileyebileceğini ve yürürlükte olmadığını belirtti. |
+
 ## SessionStart teşhisi (2026-09-20)
 
 **Hook kırık değil.** Her test oturumunda gerçekten çalıştı ve `additionalContext`
