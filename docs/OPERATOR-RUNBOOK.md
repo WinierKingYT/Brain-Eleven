@@ -98,6 +98,28 @@ Son kurulumdan bu yana (ya da `--since <ISO zaman>`):
 Sonuç `.brain-eleven/runtime/measurements/<zaman>.json` dosyasına da yazılır
 (yalnız sayı ve kimlik, hafıza metni yok), ölçümler zamanla karşılaştırılabilir.
 
+### Otomatik haftalık hatırlama kontrolü
+
+PowerShell 7 ile depo kökünden çalıştır:
+
+```
+pwsh -NoProfile -File .\scripts\weekly_recall_check.ps1
+```
+
+Betik önce `measure` ve `recall-probe` komutlarını çalıştırır; ardından beş
+soruyu beş ayrı, araçsız Claude oturumunda sorar. Her oturumun zaman aşımı
+120 saniyedir. `.brain-eleven/runtime/measurements/weekly-<tarih>.json`
+sadece sayısal probe bilgisi ve her soru için numara, cevap uzunluğu,
+zaman aşımı ve `SessionStart` makbuz durumunu tutar; cevap metni yazılmaz.
+Son satırdaki özet zamanlanmış görev günlüklerinde de kullanılabilir.
+
+Windows Görev Zamanlayıcı'ya pazartesi 09.00 için görev eklemek üzere depo
+kökünde tek komut örneği (kurulumu kendin çalıştır):
+
+```
+Register-ScheduledTask -TaskName 'Brain-Eleven Weekly Recall Check' -Trigger (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At '9:00 AM') -Action (New-ScheduledTaskAction -Execute 'pwsh.exe' -Argument ('-WindowStyle Hidden -NoProfile -File "' + (Resolve-Path '.\scripts\weekly_recall_check.ps1').Path + '"'))
+```
+
 ## Hatırlama: neden hatırlamadı?
 
 ```
