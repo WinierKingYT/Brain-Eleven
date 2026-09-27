@@ -123,3 +123,17 @@ def test_in_context_needs_the_whole_answer_in_one_record(tmp_path, monkeypatch):
     assert rp.in_context(context, groups) == "SPLIT"
     assert rp.in_context(context.replace("for now", "because it publishes the ghcr image"), groups) == "WHOLE"
     assert rp.in_context("## TOP MEMORIES\n\n1. [DECISION]\n   nothing here\n", groups) is None
+
+
+def test_cli_reads_a_local_questions_file(tmp_path, capsys):
+    import json
+    from brain_eleven.__main__ import main
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    _accept(vault, _review_item(tmp_path, vault, "bandit",
+                                "We decided to use the repo nosec rule and the gate stays unchanged.", NEW_TIME))
+    local = tmp_path / "questions-local.json"
+    local.write_text(json.dumps({"questions": [
+        {"id": 1, "question": "Bandit?", "groups": [["nosec"], ["gate"]]}]}), encoding="utf-8")
+    main(["--vault", str(vault), "recall-probe", "--questions", str(local)])
+    result = json.loads(capsys.readouterr().out)
+    assert (result["score"], result["of"]) == (1, 1)

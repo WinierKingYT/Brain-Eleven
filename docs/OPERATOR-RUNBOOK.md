@@ -64,6 +64,10 @@ alınabilir kalsın diye). `REVIEW` sana bırakılır. `DUPLICATE_OF:` hedefi ba
 inceleme (`rev_...`) ya da hafızadaki bir kayıt (`mem_...`) olabilir; hafıza kaydı
 artık aktif değilse aday gizlenmez, `REVIEW` olarak sana kalır.
 
+Ek hatırlama soruları (ör. son haftanın kararları) repo'ya eklenmez; yerel bir
+dosyada aynı biçimle tutulur ve `python -m brain_eleven recall-probe --questions <dosya>`
+ile çalıştırılır. Resmi test yine sahibin beş sorusudur.
+
 ## İnceleme ekranı
 
 Öneriler değer sırasıyla gelir: kesin kararlar, hafızada benzeri olmayanlar ve
