@@ -149,9 +149,19 @@ $deliveryDirectory = Join-Path $repositoryRoot '.brain-eleven/runtime/deliveries
 $measurementDirectory = Join-Path $repositoryRoot '.brain-eleven/runtime/measurements'
 $date = Get-Date -Format 'yyyy-MM-dd'
 
-$pythonCommand = Get-Command -Name 'python' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$windowsPythonPath = Join-Path $repositoryRoot '.venv\Scripts\python.exe'
+$posixPythonPath = Join-Path $repositoryRoot '.venv/bin/python'
+if (Test-Path -LiteralPath $windowsPythonPath -PathType Leaf) {
+    $pythonPath = $windowsPythonPath
+}
+elseif (Test-Path -LiteralPath $posixPythonPath -PathType Leaf) {
+    $pythonPath = $posixPythonPath
+}
+else {
+    $pythonCommand = Get-Command -Name 'python' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    $pythonPath = if ($pythonCommand) { $pythonCommand.Source } else { $null }
+}
 $claudeCommand = Get-Command -Name 'claude' -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-$pythonPath = if ($pythonCommand) { $pythonCommand.Source } else { $null }
 $claudePath = if ($claudeCommand) { $claudeCommand.Source } else { $null }
 
 $failedProcess = [pscustomobject]@{ exit_code = -1; started = $false; timed_out = $false; stdout = ''; stderr = '' }
