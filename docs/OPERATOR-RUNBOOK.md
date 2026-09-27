@@ -48,6 +48,11 @@ Kapatmak için runtime yapılandırmasında `"auto_triage": false`.
 
 ## İnceleme ekranı
 
+Öneriler değer sırasıyla gelir: kesin kararlar, hafızada benzeri olmayanlar ve
+cümle uzunluğundakiler önce; hatırlama testi cevabı taşıyanlar en üstte. Ekran
+varsayılan olarak günün en değerli 10 önerisini gösterir; **Tümünü göster**
+hepsini açar. Kalanlar silinmez, 7 gün sonra kendiliğinden düşer.
+
 ```
 python -m brain_eleven review
 ```

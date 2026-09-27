@@ -240,6 +240,7 @@ def create_app(vault, *, token=None, background=True):
         from brain_eleven.projects.registry import ProjectRegistry
         from .review import content_shape, rank_similar
         from .recall_probe import load_questions, pending_candidate_texts, review_tags
+        from .value import DAILY_LIMIT, value_score
         try:
             questions = load_questions()
         except (OSError, ValueError):
@@ -283,7 +284,8 @@ def create_app(vault, *, token=None, background=True):
                 if 'similar' in item:
                     safe_ids = {x['id'] for x in item['targets']}
                     item['similar'] = [x for x in item['similar'] if x['id'] in safe_ids]
-        return {'candidates': items}
+                item['value_score'] = value_score(item)
+        return {'candidates': items, 'daily_limit': DAILY_LIMIT}
 
     @app.get('/api/staleness')
     def stale_memories():
