@@ -6,7 +6,7 @@ the end of a work session; keep entries to a few lines.
 
 ## Where we are
 
-**2026-09-27** — `recall-probe` 5/5 `IN_CONTEXT`. İlk Claude koşusu geçersiz (cevap vermeme/araç denemeleri); ek araçsız talimatlı ikinci koşu 1 doğru, 3 kısmen, 0 yanlış, 1 hiç. Q2–Q5 SessionStart teslimi `DELIVERED`; Q1 için yeni/eşleşen makbuz yok. Puanlar ve teslim ayrıntıları `docs/history/evidence/TEST-LOG.md`'de. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet'in vereceği hedefe göre devam etmek.
+**2026-09-27** — `recall-probe`: 5/5 `IN_CONTEXT`. İlk Claude koşusu **geçersiz ölçüm: model cevaplamadı, araç denedi** (Q1 zaman aşımı; Q2/Q3/Q5 taslak; Q4 kısmen yanıt; toplam puan sayılmadı). Taslak adları: Q2 `Grep`/`grep`; Q3 `git fetch`, `git log`, `git status`; Q5 `Bash`. Yalnız Q3’teki `git fetch`, `CLAUDE.md` devir kontrolüyle örtüşüyor. Ek talimatlı ikinci koşu: 1 doğru, 3 kısmen, 0 yanlış, 1 hiç; Q1–Q5 SessionStart makbuzları `DELIVERED`, `context_delivered=true`, zaman aşımı yok. Ayrıntılar `docs/history/evidence/TEST-LOG.md` içinde. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet’in vereceği hedefe göre devam etmek.
 
 **2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is
 green on Ubuntu and Windows and Build & Push #820 published. It remains a
