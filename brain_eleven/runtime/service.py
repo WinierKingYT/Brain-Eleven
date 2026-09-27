@@ -150,7 +150,7 @@ def runtime_status(vault):
     cfg = RuntimeConfig(vault)
     capture = Path(vault) / '.brain-eleven' / 'capture'
     config = cfg.load()
-    return {'mode': config['mode'], 'shadow_accept': config['shadow_accept'], 'queue': {name: len(list((capture / name).glob('*.json'))) for name in ('queued', 'processing', 'completed', 'dead-letter')},
+    return {'mode': config['mode'], 'shadow_accept': config['shadow_accept'], 'shadow_recall': config['shadow_recall'], 'queue': {name: len(list((capture / name).glob('*.json'))) for name in ('queued', 'processing', 'completed', 'dead-letter')},
             'worker': read_json(cfg.root / 'last-worker.json'), 'context': read_json(cfg.root / 'last-context.json'),
             'model': read_json(cfg.root / 'model-status.json'), 'graduation': read_json(cfg.root / 'graduation.json', {'status': 'PENDING_REAL_USE'})}
 
