@@ -403,6 +403,8 @@ def _pipeline_health(vault, cfg, home=None):
         except (OSError, ValueError, TypeError, AttributeError):
             continue
     health['review_pending'] = pending
+    from .triage import summary as triage_summary
+    health['auto_triage'] = {k: v for k, v in triage_summary(vault).items() if k in ('since', 'total', 'by_rule')}
     health['review_expiring_committed'] = expiring
     if expiring:
         suggestions.append(f'{expiring} committed review candidate(s) expire within 48h; review or keep them (7 gün daha sakla)')
