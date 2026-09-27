@@ -224,7 +224,8 @@ class RuntimeConfig:
         if os.path.lexists(self.path):
             guard_runtime_path(self.root, self.path, create=False)
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
-                                      'b1_human_approval': False, 'shadow_accept': False})
+                                      'b1_human_approval': False, 'shadow_accept': False,
+                                      'shadow_recall': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -233,6 +234,10 @@ class RuntimeConfig:
         # Additive and off by default: only a person may accept a reviewed
         # candidate while the runtime stays in SHADOW, and only when enabled.
         value.setdefault('shadow_accept', False)
+        # Owner decision 2026-09-27, additive and off by default: while the
+        # runtime stays in SHADOW, deliver the existing V1 per-prompt context.
+        # V2 stays content-free and the holdout gate for CANARY is untouched.
+        value.setdefault('shadow_recall', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -243,6 +248,8 @@ class RuntimeConfig:
             raise ValueError('Invalid B1 human approval configuration')
         if not isinstance(value['shadow_accept'], bool):
             raise ValueError('Invalid shadow accept configuration')
+        if not isinstance(value['shadow_recall'], bool):
+            raise ValueError('Invalid shadow recall configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -299,6 +306,18 @@ class RuntimeConfig:
 
         def mutate(current):
             current['shadow_accept'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_shadow_recall(self, enabled):
+        """Deliver V1 per-prompt context while the runtime stays in SHADOW (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Shadow recall flag must be boolean')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['shadow_recall'] = enabled
 
         return self._commit(snapshot, mutate)
 

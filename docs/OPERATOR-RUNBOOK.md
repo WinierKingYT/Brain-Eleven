@@ -203,3 +203,18 @@ yeni kodla yeniden başlatır.
   düzeltmek yerine `install` kullan.
 - Codex hook komutu kabuktan bağımsız yazılır (yolda boşluk yoksa); bir hook'un
   gerçekten çalıştığını `doctor` içindeki `last_capture` gösterir.
+
+
+## İstem anında hafıza (shadow-recall)
+
+SHADOW modunda her mesajda hesaplanan V1 hafıza bağlamı normalde Claude'a
+gönderilmez; yalnız oturum başındaki 8 kayıt gider. Sahip kararıyla (2026-09-27)
+şu anahtar bu V1 bağlamını teslim eder:
+
+```
+python -m brain_eleven shadow-recall ON    # aç
+python -m brain_eleven shadow-recall OFF   # geri al
+```
+
+Mod SHADOW kalır; V2 hiçbir zaman teslim edilmez; holdout/CANARY kapısı
+değişmez. Açıkken `status` çıktısında `shadow_recall: true` görünür.
