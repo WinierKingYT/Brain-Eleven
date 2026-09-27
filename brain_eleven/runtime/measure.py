@@ -49,6 +49,40 @@ def _review_since(vault, since):
     return {'created_since': dict(by_reason), 'status': dict(by_status), 'total': sum(by_reason.values())}
 
 
+def provenance(vault, since=None):
+    """Where active memories came from: captured and accepted, backfill, /remember, other.
+
+    The 29-September test needs this split: a recalled decision only counts
+    for automatic capture when it came from a conversation, not from a hand
+    written /remember. Counts only, no memory text.
+    """
+    from brain_eleven.memory import MemoryStore
+    from .review import ReviewStore
+
+    reasons = {}
+    for item in ReviewStore(vault)._items():
+        if isinstance(item, dict) and item.get('status') == 'ACCEPTED':
+            candidate_id = item.get('candidate_id') or (item.get('candidate') or {}).get('candidate_id')
+            if candidate_id:
+                reasons[candidate_id] = item.get('reason')
+    active, recent = Counter(), Counter()
+    for memory in MemoryStore(vault).load()['validated_memory']:
+        if str(memory.get('status') or 'active') != 'active':
+            continue
+        source = str(memory.get('source') or '')
+        if source == 'remember':
+            kind = 'remember'
+        elif source == 'worker':
+            reason = reasons.get(str(memory.get('source_id') or '').removeprefix('truth:'))
+            kind = 'backfill_accepted' if reason == 'BACKFILL' else 'captured_accepted' if reason else 'captured_direct'
+        else:
+            kind = 'other'
+        active[kind] += 1
+        if since and str(memory.get('timestamp') or '') >= since:
+            recent[kind] += 1
+    return {'active': dict(active), 'since': dict(recent)}
+
+
 def _recall(vault):
     from .recall_probe import probe
     try:
@@ -83,6 +117,7 @@ def measure(vault, *, since=None, claude_home=None, codex_home=None, save=True):
                       'stale_candidates': len(stale['stale_candidates'])},
         'bootstrap': compare(vault),
         'recall_probe': _recall(vault),
+        'memory_provenance': provenance(vault, since),
     }
     if save:
         stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')

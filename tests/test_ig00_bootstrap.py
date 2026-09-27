@@ -193,3 +193,30 @@ def test_skipped_capture_is_recorded_not_silent(runtime, tmp_path, client):
     assert record['outcome'] == 'CWD_NOT_REGISTERED' and record['event'] == 'Stop'
     assert record['capture_session_hash'] == capture_session_hash(client, 'x')
     assert str(tmp_path) not in json.dumps(record)
+
+
+def test_service_wait_probes_once_even_when_the_deadline_passed_during_launch(runtime, monkeypatch):
+    """A slow launch (lock + launch.json write) must not skip the readiness probe."""
+    import time
+    from brain_eleven.runtime import launcher
+
+    vault, _ = runtime
+    RuntimeConfig(vault).set_mode('SHADOW')
+    monkeypatch.setattr(launcher, '_process_alive', lambda pid: False)
+    calls = {'count': 0}
+
+    def request(*args, **kwargs):
+        calls['count'] += 1
+        if calls['count'] == 1:
+            raise OSError('not ready')
+        return {'status': 'ok'}
+
+    class Process:
+        pid = 424243
+
+    clock = iter([0.0] + [100.0] * 10)  # deadline set at t=0, everything after is "late"
+    monkeypatch.setattr(launcher.time, 'monotonic', lambda: next(clock))
+    monkeypatch.setattr(launcher, 'request_service', request)
+    monkeypatch.setattr(launcher.subprocess, 'Popen', lambda *args, **kwargs: Process())
+    assert launcher.ensure_service(vault, wait=True, wait_timeout=.2)
+    assert calls['count'] == 2

@@ -58,6 +58,10 @@ _BOOTSTRAP_STATE_STATUSES = frozenset({
 })
 
 
+
+# SessionStart memory text shown per record (was a fixed 150 with an unconditional "...").
+MEMORY_CONTENT_CHARS = 400
+
 class ContextBootstrapError(RuntimeError):
     """Base class for derived context-bootstrap failures."""
 
@@ -757,7 +761,11 @@ class ContextCompiler:
             lines.append(f"(Most relevant from {len(memories)} validated memories)\n")
             for i, mem in enumerate(memories, 1):
                 lines.append(f"{i}. [{mem['type'].upper()}]")
-                lines.append(f"   {mem['content'][:150]}...")
+                # 150 characters cut the second half of real decisions (the
+                # "why" and the fix); the token budget still bounds the block.
+                content = mem['content']
+                shown = content if len(content) <= MEMORY_CONTENT_CHARS else content[:MEMORY_CONTENT_CHARS].rstrip() + "..."
+                lines.append(f"   {shown}")
                 lines.append(f"   Score: {mem['ranking_score']:.2f}")
                 lines.append("")
 
