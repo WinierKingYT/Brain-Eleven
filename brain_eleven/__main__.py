@@ -39,6 +39,9 @@ def main(argv=None):
     backfill.add_argument('--apply', action='store_true', help='add to the review queue (default: count only)')
     backfill.add_argument('--reoffer-expired', action='store_true',
                           help='offer candidates whose 7 days ran out without a decision again')
+    triage = sub.add_parser('triage', help='apply the automatic noise filter to pending review candidates')
+    triage.add_argument('--apply', action='store_true', help='reject matches with a note (default: count only)')
+    sub.add_parser('digest', help="the day's most valuable review candidates")
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -86,6 +89,12 @@ def main(argv=None):
             from .runtime.backfill import backfill as run_backfill
             result = run_backfill(args.vault, days=args.days, apply=args.apply,
                                   reoffer_expired=args.reoffer_expired)
+        elif args.command == 'triage':
+            from .runtime.triage import triage_existing
+            result = triage_existing(args.vault, apply=args.apply)
+        elif args.command == 'digest':
+            from .runtime.value import digest
+            result = digest(args.vault)
         elif args.command == 'graduation':
             from .runtime.graduation import record
             result = record(args.vault, args.labels, args.quality_report)

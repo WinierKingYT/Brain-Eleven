@@ -136,7 +136,7 @@ def backfill(vault, *, days=14, apply=False, reoffer_expired=False, claude_home=
                 fingerprint = store.event_fingerprint(item['candidate'])
             known[(store._project_id(item), fingerprint)] = (item['id'], item.get('status'))
     summary = {'dry_run': not apply, 'days': days, 'transcripts': 0, 'unreadable': 0, 'candidates': 0,
-               'added': 0, 'already_pending': 0, 'decided_before': 0, 'reoffered': 0, 'by_commitment': {}}
+               'auto_filtered': 0, 'added': 0, 'already_pending': 0, 'decided_before': 0, 'reoffered': 0, 'by_commitment': {}}
     for client, project, session, path in _transcripts(vault, claude_home or home / '.claude',
                                                        codex_home or home / '.codex', since):
         try:
@@ -149,6 +149,15 @@ def backfill(vault, *, days=14, apply=False, reoffer_expired=False, claude_home=
             summary['candidates'] += 1
             commitment = str(candidate.get('commitment'))
             summary['by_commitment'][commitment] = summary['by_commitment'].get(commitment, 0) + 1
+            # Same layer-1 noise rules as the worker; the worker files
+            # fallback (confidence 0) candidates as LOW_EVIDENCE_COMMITMENT.
+            from .triage import enabled, noise_rule, record
+            rule = noise_rule(candidate, 'LOW_EVIDENCE_COMMITMENT' if not candidate.get('confidence') else REASON)
+            if rule and enabled(vault):
+                summary['auto_filtered'] = summary.get('auto_filtered', 0) + 1
+                if apply:
+                    record(vault, rule)
+                continue
             if not apply:
                 continue
             seen = known.get((candidate.get('project_id'), store.event_fingerprint(candidate)))

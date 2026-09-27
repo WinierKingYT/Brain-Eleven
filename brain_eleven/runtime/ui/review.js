@@ -18,15 +18,38 @@ async function refresh() {
   el('refresh').disabled=true;
   try {
     const [status, list] = await Promise.all([api('/api/runtime/status'),api('/api/review/candidates')]);
-    // Candidates carrying a recall-test answer first: accepting them moves the score.
-    const pending=list.candidates.filter(x=>x.status==='PENDING').sort((a,b)=>(b.recall_questions?.length?1:0)-(a.recall_questions?.length?1:0));
-    fillBulk(pending);
-    el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=pending.length;
+    // Most valuable first (recall-test answers score highest); by default only
+    // the day's top N are shown, the rest stay pending behind "show all".
+    const allPending=list.candidates.filter(x=>x.status==='PENDING').sort((a,b)=>(b.value_score||0)-(a.value_score||0));
+    const limit=list.daily_limit||10;
+    const pending=showAll?allPending:allPending.slice(0,limit);
+    fillBulk(allPending);
+    el('mode').textContent=names[status.mode] || status.mode;el('count').textContent=allPending.length;
     el('queue').textContent=status.queue.queued;el('context').textContent=status.context?(names[status.context.status] || status.context.status):'Henüz yok';
     el('details').textContent=JSON.stringify(status,null,2);el('candidates').replaceChildren();
     const canAccept=['CANARY','ACTIVE'].includes(status.mode) || (status.mode==='SHADOW' && status.shadow_accept===true);
     if(status.mode==='SHADOW') el('candidates').append(node('p',status.shadow_accept===true?'Gözlem modu açık. Öneriler burada birikir; sen onayladığında ortak hafızaya yazılır.':'Gözlem modu açık. Öneriler burada birikir; ortak hafızaya yazma sınırlı kullanım açıldıktan sonra başlar.','empty'));
     if(!pending.length) el('candidates').append(node('p','Henüz inceleme bekleyen öneri yok. Yeni öneriler burada görünecek.','empty'));
+    if(canAccept && !showAll && pending.length){
+      // One click for the day's list; each item still goes through the normal accept path.
+      const bar=node('p',null,'hint');
+      const all=node('button',`Görünen ${pending.length} öneriyi kabul et`,'secondary');all.type='button';
+      all.addEventListener('click',async()=>{
+        if(!confirm(`${pending.length} öneri olduğu gibi ortak hafızaya kaydedilecek. Emin misin?`))return;
+        all.disabled=true;
+        try{const r=await api('/api/review/accept-many',{ids:pending.map(x=>x.id)});
+          el('message').textContent=r.accepted+' öneri kaydedildi.';await refresh();}
+        catch(e){el('message').textContent=String(e.message||e);all.disabled=false;}
+      });
+      bar.append(all);el('candidates').append(bar);
+    }
+    if(allPending.length>limit){
+      const more=node('p',null,'hint');
+      more.append(showAll?`Tüm ${allPending.length} öneri gösteriliyor. `:`Bugünün en değerli ${limit} önerisi gösteriliyor (toplam ${allPending.length}). `);
+      const toggle=node('button',showAll?'Yalnız en değerlileri göster':'Tümünü göster','chip');toggle.type='button';
+      toggle.addEventListener('click',()=>{showAll=!showAll;refresh();});
+      more.append(toggle);el('candidates').append(more);
+    }
     for(const item of pending) {
       const card=node('article',null,'candidate');
       const c=item.candidate;
@@ -165,7 +188,7 @@ el('bulk-apply').addEventListener('click',async()=>{
 });
 // Quick review: one pending card at a time, keyboard driven. Keys press the
 // card's own buttons, so conflict warnings and decision notes behave as usual.
-let focusMode=false, focusIndex=0;
+let focusMode=false, focusIndex=0, showAll=false;
 function pendingCards(){return [...document.querySelectorAll('#candidates article.candidate.pending')];}
 function applyFocus(){
   const cards=pendingCards();

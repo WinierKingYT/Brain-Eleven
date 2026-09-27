@@ -310,6 +310,11 @@ class Worker:
         audit record is returned by ``ReviewStore`` but must not be counted as
         a new effect in this job.
         """
+        from .triage import filter_candidate
+        if filter_candidate(self.vault, candidate, reason):
+            # Layer-1 noise (quoted, short ack, low-evidence prose/code) is
+            # counted, never queued; a committed decision is never filtered.
+            return None
         review_id = self.review.add(candidate, reason, source)
         if not review_id:
             raise WorkerProcessingError('REVIEW_PERSIST_FAILED')

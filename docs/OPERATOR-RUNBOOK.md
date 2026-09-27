@@ -32,7 +32,29 @@ göre), `last_capture` (istemci başına son Stop sonucu), `clients.<ad>.file`
 (hook dosyası istemcinin okuyabileceği durumda mı), `stale_memories`,
 `last_measurement`, `measurement_trend` (son 7 günün ölçümleri: skor, capture sonucu, kayıp).
 
+## Otomatik süzgeç
+
+Alıntılar, kısa onaylar ("tamam", "evet"), zayıf kanıtlı düz metin ve terminal
+çıktısı kuyruğa hiç girmez; yalnız sayıları `doctor` → `auto_triage`'da görünür
+(metin tutulmaz). Kesin kararlar (`COMMITTED` + karar) hiçbir kurala takılmaz.
+Kuyrukta bekleyenlere aynı kuralları uygulamak için:
+
+```
+python -m brain_eleven triage           # yalnız sayar
+python -m brain_eleven triage --apply   # "Otomatik süzgeç: <kural>" notuyla reddeder
+```
+
+Kapatmak için runtime yapılandırmasında `"auto_triage": false`.
+
 ## İnceleme ekranı
+
+Öneriler değer sırasıyla gelir: kesin kararlar, hafızada benzeri olmayanlar ve
+cümle uzunluğundakiler önce; hatırlama testi cevabı taşıyanlar en üstte. Ekran
+varsayılan olarak günün en değerli 10 önerisini gösterir; **Tümünü göster**
+hepsini açar. Kalanlar silinmez, 7 gün sonra kendiliğinden düşer.
+**Görünen N öneriyi kabul et** listeyi tek tıkla (onay sorusuyla) kaydeder; her
+öneri tek tek kabulle aynı yoldan geçer. Tarayıcısız hızlı bakış:
+`python -m brain_eleven digest`.
 
 ```
 python -m brain_eleven review
