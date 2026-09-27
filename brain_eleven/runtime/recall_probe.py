@@ -121,26 +121,47 @@ def review_tags(pending, questions=None):
     return tags
 
 
-def probe(vault, project_root=None, *, questions_path=None):
+def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
     from brain_eleven.memory import MemoryStore
-    from .context import compile_bootstrap, explain_bootstrap
+    if mode not in {'bootstrap', 'prompt'}:
+        raise ValueError("Recall probe mode must be 'bootstrap' or 'prompt'")
 
     project_root = project_root or vault
-    bootstrap = compile_bootstrap(vault, project_root)
-    context = bootstrap.get('context', '') or ''
-    project_id = bootstrap.get('project_id')
+    bootstrap = None
+    context = ''
+    why = {}
+    if mode == 'bootstrap':
+        from .context import compile_bootstrap, explain_bootstrap
+        bootstrap = compile_bootstrap(vault, project_root)
+        context = bootstrap.get('context', '') or ''
+        project_id = bootstrap.get('project_id')
+        try:
+            why = explain_bootstrap(vault, project_root).get('memories', {})
+        except Exception:
+            why = {}
+    else:
+        from brain_eleven.projects.registry import ProjectRegistry
+        project = ProjectRegistry(vault).resolve(project_root)
+        project_id = project.get('project_id') if project else None
     memories = [m for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active'
                 and (not project_id or m.get('project_id') in (project_id, '', None))]
-    try:
-        why = explain_bootstrap(vault, project_root).get('memories', {})
-    except Exception:
-        why = {}
     pending = pending_candidate_texts(vault, project_id)
     results = []
+    prompt_context_statuses = {}
     for question in load_questions(questions_path):
         groups = question['groups']
-        placement = in_context(context, groups)
+        prompt_context = None
+        question_context = context
+        if mode == 'prompt':
+            from .context import compile_context
+            prompt_context = compile_context(
+                vault, project_root, question['question'], client='claude',
+                session='recall-probe', turn=f"recall-probe:{question['id']}",
+                event='UserPromptSubmit')
+            question_context = prompt_context.get('context', '') or ''
+            prompt_context_statuses[str(question['id'])] = prompt_context.get('status', 'UNKNOWN')
+        placement = in_context(question_context, groups)
         if placement == 'WHOLE':
             status, holders = 'IN_CONTEXT', []
         elif placement == 'SPLIT':
@@ -164,11 +185,22 @@ def probe(vault, project_root=None, *, questions_path=None):
             entry['review_ids'] = review_ids
             entry['split'] = split
         if status == 'IN_MEMORY_NOT_DELIVERED':
-            entry['why_not_delivered'] = {mid: (why.get(mid) or {}).get('reason', 'NOT_RANKED') for mid in holders}
+            if prompt_context is None:
+                entry['why_not_delivered'] = {mid: (why.get(mid) or {}).get('reason', 'NOT_RANKED') for mid in holders}
+            else:
+                reason = 'PROMPT_NOT_DELIVERED' if not prompt_context.get('delivered') else 'NOT_SELECTED'
+                entry['why_not_delivered'] = {mid: reason for mid in holders}
+        if prompt_context is not None:
+            entry['context_status'] = prompt_context.get('status', 'UNKNOWN')
         results.append(entry)
-    return {'bootstrap_status': bootstrap.get('status'), 'delivered_memories': len(bootstrap.get('selected_ids', [])),
-            'score': sum(r['status'] == 'IN_CONTEXT' for r in results), 'of': len(results),
-            'in_memory_not_delivered': sum(r['status'] == 'IN_MEMORY_NOT_DELIVERED' for r in results),
-            'in_review_queue': sum(r['status'] == 'IN_REVIEW_QUEUE' for r in results),
-            'in_context_split': sum(r['status'] == 'IN_CONTEXT_SPLIT' for r in results),
-            'results': results}
+    result = {'bootstrap_status': bootstrap.get('status') if bootstrap else None,
+              'delivered_memories': len(bootstrap.get('selected_ids', [])) if bootstrap else 0,
+              'score': sum(r['status'] == 'IN_CONTEXT' for r in results), 'of': len(results),
+              'in_memory_not_delivered': sum(r['status'] == 'IN_MEMORY_NOT_DELIVERED' for r in results),
+              'in_review_queue': sum(r['status'] == 'IN_REVIEW_QUEUE' for r in results),
+              'in_context_split': sum(r['status'] == 'IN_CONTEXT_SPLIT' for r in results),
+              'results': results}
+    if mode == 'prompt':
+        result['mode'] = mode
+        result['prompt_context_statuses'] = prompt_context_statuses
+    return result

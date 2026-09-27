@@ -1,9 +1,13 @@
 """One measured context chain for evaluation, hooks, and manual inspection."""
 from dataclasses import replace
+import math
+import os
+from pathlib import Path
 import re
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
+from brain_eleven.memory.scope import infer_memory_scope
 from .capture_safety import evaluate_capture
 from .task_state_context import TaskStateComposer
 from context_router import ContextRouter, RoutingOptions
@@ -51,7 +55,88 @@ def _legacy_context_compiler():
     return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
 
 
-def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False):
+def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_key,
+                           embedding_provider, reranker):
+    """Semantically rerank only candidates that meet the existing V1 score floor.
+
+    Candidate counts and scope tiers come from the current top-five V1 result.
+    The lowest score in each represented tier is the floor for that tier, so
+    semantic retrieval can replace an item only with an equal-or-higher-scored
+    candidate from the same tier.
+    """
+    if not isinstance(query, str) or not query.strip() or len(baseline) < 2:
+        return list(baseline)
+
+    def tier(item):
+        return 0 if project_id and infer_memory_scope(item)[2] == project_id else 1
+
+    counts, floors = {}, {}
+    for item in baseline:
+        item_tier = tier(item)
+        counts[item_tier] = counts.get(item_tier, 0) + 1
+        score = float(item.get("ranking_score", 0.0))
+        floors[item_tier] = min(score, floors.get(item_tier, score))
+
+    eligible = {item_tier: [] for item_tier in counts}
+    for item in ranked_pool:
+        item_tier = tier(item)
+        if item_tier not in floors:
+            continue
+        score = float(item.get("ranking_score", 0.0))
+        if score >= floors[item_tier]:
+            eligible[item_tier].append(item)
+
+    candidates = [item for item_tier in sorted(eligible) for item in eligible[item_tier]]
+    if len(candidates) < len(baseline):
+        return list(baseline)
+
+    try:
+        embedded = embedding_provider.embed(
+            [query, *(str(item.get("content", "")) for item in candidates)]
+        )
+        if embedded.status != "EMBEDDING_AVAILABLE" or len(embedded.vectors) != len(candidates) + 1:
+            return list(baseline)
+        query_vector = embedded.vectors[0]
+
+        def cosine(left, right):
+            if len(left) != len(right) or not left:
+                raise ValueError("embedding dimensions differ")
+            numerator = sum(float(a) * float(b) for a, b in zip(left, right))
+            left_norm = math.sqrt(sum(float(value) ** 2 for value in left))
+            right_norm = math.sqrt(sum(float(value) ** 2 for value in right))
+            if left_norm == 0 or right_norm == 0:
+                return 0.0
+            return numerator / (left_norm * right_norm)
+
+        semantic_scores = [cosine(query_vector, vector) for vector in embedded.vectors[1:]]
+        reranked = reranker.rerank(
+            query, [str(item.get("content", "")) for item in candidates]
+        )
+        if reranked.status != "EMBEDDING_AVAILABLE" or len(reranked.scores) != len(candidates):
+            return list(baseline)
+        scores = [float(value) for value in reranked.scores]
+        if any(not math.isfinite(value) for value in scores):
+            return list(baseline)
+
+        ranked = {}
+        for item, semantic, cross_encoder in zip(candidates, semantic_scores, scores):
+            ranked.setdefault(tier(item), []).append((item, cross_encoder, semantic))
+        result = []
+        for item_tier in sorted(counts):
+            ordered = sorted(
+                ranked.get(item_tier, []),
+                key=lambda entry: (-entry[1], -entry[2], stable_key(entry[0])),
+            )
+            result.extend(item for item, _, _ in ordered[:counts[item_tier]])
+        return result if len(result) == len(baseline) else list(baseline)
+    except Exception:
+        # Retrieval is optional; preserve the exact V1 ordering if a provider
+        # is unavailable, malformed, or fails during a prompt.
+        return list(baseline)
+
+
+def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False,
+                                prompt=None, provider_config_path=None):
     """Render the project-scoped legacy V1 projection for one task.
 
     The legacy public ``compile`` method reads Companion files and writes a
@@ -73,11 +158,46 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     def safe(text):
         return isinstance(text, str) and not contains_secret(text) and evaluate_capture(text).accepted
 
-    memories = []
-    for item in compiler._rank_memories(limit=5):
+    def eligible(item):
         content = item.get('content')
-        if (not human_approval or item.get('is_approved', True) is True) and safe(content):
-            memories.append(item)
+        return ((not human_approval or item.get('is_approved', True) is True)
+                and safe(content))
+
+    ranked = compiler._rank_memories(limit=5)
+    memories = [item for item in ranked if eligible(item)]
+    if isinstance(prompt, str) and prompt.strip() and memories:
+        ranked_pool = compiler._rank_memories(limit=BOOTSTRAP_POOL)
+        safe_pool = [item for item in ranked_pool if eligible(item)]
+        try:
+            from brain_eleven.retrieval.embedding_provider import (
+                create_embedding_provider,
+                create_reranker,
+            )
+
+            provider_environment = dict(os.environ)
+            # Prompt retrieval must fail closed when a model is not already
+            # available; a normal user prompt must never trigger a download.
+            provider_environment['IG_LOCAL_MODELS_LOCAL_FILES_ONLY'] = 'true'
+            config_path = provider_config_path or Path('.claude/ig-provider-config.json')
+            embedding_provider = create_embedding_provider(
+                config_path=config_path, environ=provider_environment,
+            )
+            reranker = create_reranker(
+                config_path=config_path, environ=provider_environment,
+            )
+            memories = _rank_prompt_candidates(
+                prompt,
+                memories,
+                safe_pool,
+                project_id=project_id,
+                stable_key=compiler._stable_memory_key,
+                embedding_provider=embedding_provider,
+                reranker=reranker,
+            )
+        except Exception:
+            # Keep the normal prompt path available when optional retrieval
+            # providers cannot be constructed.
+            pass
 
     estimator = ConservativeTokenEstimator()
     context = _normalize_v1_state_identity(
@@ -308,15 +428,31 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
             # injectable for existing callers/tests without routing the
             # production fallback through the V2 compatibility function.
             fallback = compile_task_v1 if compile_task is _V2_COMPAT_COMPILE_TASK else compile_task
-            legacy = fallback(vault, task, budget=budget,
-                              human_approval=config.get('b1_human_approval', False))
+            fallback_options = {
+                'budget': budget,
+                'human_approval': config.get('b1_human_approval', False),
+            }
+            if fallback is compile_task_v1:
+                fallback_options.update(
+                    prompt=request,
+                    provider_config_path=(
+                        os.environ.get('IG_PROVIDER_CONFIG')
+                        or Path(project_root) / '.claude' / 'ig-provider-config.json'
+                    ),
+                )
+            legacy = fallback(vault, task, **fallback_options)
             legacy['provider'] = 'V1'
             legacy['task_need_status'] = task_need.get('status')
             legacy['task_need_error_code'] = task_need.get('error_code')
             result = legacy
     else:
         result = compile_task_v1(vault, task, budget=budget,
-                                 human_approval=config.get('b1_human_approval', False))
+                                 human_approval=config.get('b1_human_approval', False),
+                                 prompt=request if event == 'UserPromptSubmit' else None,
+                                 provider_config_path=(
+                                     os.environ.get('IG_PROVIDER_CONFIG')
+                                     or Path(project_root) / '.claude' / 'ig-provider-config.json'
+                                 ))
         result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
@@ -386,7 +522,8 @@ def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     return {key: value for key, value in result.items() if key != 'selected'}
 
 
-def compile_task_v1(vault, task, *, budget=3000, human_approval=False):
+def compile_task_v1(vault, task, *, budget=3000, human_approval=False,
+                    prompt=None, provider_config_path=None):
     """Named normal-turn V1 adapter; never invokes a V2 compiler."""
     project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
     if not project_id:
@@ -396,6 +533,7 @@ def compile_task_v1(vault, task, *, budget=3000, human_approval=False):
         }
     return _compile_project_scoped_v1(
         vault, project_id, budget=budget, human_approval=human_approval,
+        prompt=prompt, provider_config_path=provider_config_path,
     )
 
 
