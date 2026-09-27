@@ -30,6 +30,8 @@ def main(argv=None):
     migration.add_argument('action', choices=['upgrade', 'rollback'])
     recall = sub.add_parser('recall-probe', help="automated owner recall test: is each answer in today's SessionStart context?")
     recall.add_argument('--project-root', default=None)
+    recall.add_argument('--questions', default=None,
+                        help='local questions file (same format); default: the owner five in evals/recall_probe')
     explain = sub.add_parser('bootstrap-explain', help='why each active memory is or is not in the SessionStart context')
     explain.add_argument('--project-root', default=None)
     measure = sub.add_parser('measure', help='real-use measurement snapshot (capture, review noise, staleness, bootstrap)')
@@ -80,7 +82,7 @@ def main(argv=None):
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)
         elif args.command == 'recall-probe':
             from .runtime.recall_probe import probe
-            result = probe(args.vault, args.project_root)
+            result = probe(args.vault, args.project_root, questions_path=args.questions)
         elif args.command == 'bootstrap-explain':
             from .runtime.context import explain_bootstrap
             result = explain_bootstrap(args.vault, args.project_root or args.vault)
