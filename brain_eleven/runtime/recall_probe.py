@@ -61,7 +61,7 @@ def in_context(context, groups):
 
 
 def load_questions(path=None):
-    return json.loads(Path(path or _QUESTIONS).read_text(encoding='utf-8'))['questions']
+    return json.loads(Path(path or _QUESTIONS).read_text(encoding='utf-8-sig'))['questions']
 
 
 def pending_candidate_texts(vault, project_id=None):

@@ -132,8 +132,9 @@ def test_cli_reads_a_local_questions_file(tmp_path, capsys):
     _accept(vault, _review_item(tmp_path, vault, "bandit",
                                 "We decided to use the repo nosec rule and the gate stays unchanged.", NEW_TIME))
     local = tmp_path / "questions-local.json"
+    # Windows PowerShell 5 Set-Content -Encoding utf8 writes a BOM.
     local.write_text(json.dumps({"questions": [
-        {"id": 1, "question": "Bandit?", "groups": [["nosec"], ["gate"]]}]}), encoding="utf-8")
+        {"id": 1, "question": "Bandit?", "groups": [["nosec"], ["gate"]]}]}), encoding="utf-8-sig")
     main(["--vault", str(vault), "recall-probe", "--questions", str(local)])
     result = json.loads(capsys.readouterr().out)
     assert (result["score"], result["of"]) == (1, 1)
