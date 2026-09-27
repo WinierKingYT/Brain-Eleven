@@ -4,7 +4,11 @@ For each question it answers one thing without asking a model: is the
 information the key answer needs in the context SessionStart would deliver
 to a fresh session right now, and if not, is it in canonical memory at all?
 
-- IN_CONTEXT: every term group of the key answer is in the bootstrap context.
+- IN_CONTEXT: one record of the bootstrap context holds every term group of
+  the key answer.
+- IN_CONTEXT_SPLIT: the groups are only spread over several records; this can
+  be a false positive (2026-09-27: probe said Q3 was delivered, a fresh
+  session said "bilmiyorum"), so it is reported and not scored.
 - IN_MEMORY_NOT_DELIVERED: an active memory holds it, the bootstrap did not
   select it (a selection problem; the memory ids are listed).
 - IN_REVIEW_QUEUE: no active memory holds it, but pending review candidates
@@ -23,6 +27,7 @@ evals/recall_probe/questions.json; nothing here is a new evaluation set.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 _QUESTIONS = Path(__file__).resolve().parents[2] / 'evals' / 'recall_probe' / 'questions.json'
@@ -38,6 +43,21 @@ def covers(text, groups):
     # "Intelligence"; a term counts when either folding matches.
     folded, plain = _fold(text), (text or '').lower()
     return all(any(_fold(term) in folded or term.lower() in plain for term in group) for group in groups)
+
+
+def in_context(context, groups):
+    """'WHOLE' when one context record holds every group, 'SPLIT' when only their union does.
+
+    Context records are the blank-line separated blocks of the bootstrap text
+    (one per memory). A SPLIT match can be a false positive (the words of an
+    answer spread over unrelated records), so only WHOLE counts toward the score.
+    """
+    blocks = [b for b in re.split(r'\n\s*\n', context or '') if b.strip()]
+    if any(covers(block, groups) for block in blocks):
+        return 'WHOLE'
+    if covers(context, groups):
+        return 'SPLIT'
+    return None
 
 
 def load_questions(path=None):
@@ -120,8 +140,12 @@ def probe(vault, project_root=None, *, questions_path=None):
     results = []
     for question in load_questions(questions_path):
         groups = question['groups']
-        if covers(context, groups):
+        placement = in_context(context, groups)
+        if placement == 'WHOLE':
             status, holders = 'IN_CONTEXT', []
+        elif placement == 'SPLIT':
+            # Words present but spread over records: reported, not scored.
+            status, holders = 'IN_CONTEXT_SPLIT', []
         else:
             holders = [m.get('memory_id') for m in memories if covers(m.get('content', ''), groups)]
             if not holders:
@@ -146,4 +170,5 @@ def probe(vault, project_root=None, *, questions_path=None):
             'score': sum(r['status'] == 'IN_CONTEXT' for r in results), 'of': len(results),
             'in_memory_not_delivered': sum(r['status'] == 'IN_MEMORY_NOT_DELIVERED' for r in results),
             'in_review_queue': sum(r['status'] == 'IN_REVIEW_QUEUE' for r in results),
+            'in_context_split': sum(r['status'] == 'IN_CONTEXT_SPLIT' for r in results),
             'results': results}

@@ -102,3 +102,24 @@ def test_split_cover_needs_every_group():
     groups = [["master"], ["ghcr"], ["latest"]]
     assert split_cover([("a", "master"), ("b", "ghcr latest")], groups) == ["b", "a"]
     assert split_cover([("a", "master"), ("b", "ghcr")], groups) == []
+
+
+def test_bootstrap_shows_a_long_decision_whole_up_to_the_limit(tmp_path):
+    from brain_eleven.runtime.context import compile_bootstrap
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    text = ("We decided that real sessions were dropped because the reader rejected unknown record types, "
+            "and the fix skips and counts unknown types so the rest of the session is still captured.")
+    assert 150 < len(text) < 400
+    _accept(vault, _review_item(tmp_path, vault, "long", text, NEW_TIME))
+    context = compile_bootstrap(vault, vault)["context"]
+    assert text in context and text + "..." not in context
+
+
+def test_in_context_needs_the_whole_answer_in_one_record(tmp_path, monkeypatch):
+    from brain_eleven.runtime import recall_probe as rp
+    context = ("## TOP MEMORIES\n\n1. [DECISION]\n   We decided not to push master for now.\n   Score: 0.9\n\n"
+               "2. [DECISION]\n   CI publishes the ghcr latest image on every build.\n   Score: 0.9\n")
+    groups = [["push"], ["ghcr", "image"]]
+    assert rp.in_context(context, groups) == "SPLIT"
+    assert rp.in_context(context.replace("for now", "because it publishes the ghcr image"), groups) == "WHOLE"
+    assert rp.in_context("## TOP MEMORIES\n\n1. [DECISION]\n   nothing here\n", groups) is None

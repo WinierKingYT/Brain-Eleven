@@ -90,11 +90,15 @@ def ensure_service(vault, *, wait=False, wait_timeout=8):
             process = subprocess.Popen([_service_interpreter(), str(Path(__file__).resolve()), '--vault', str(Path(vault).resolve()), '--serve'], **options)
             write_json(cfg.root / 'launch.json', {'started': time.time(), 'pid': process.pid})
     if wait:
-        while time.monotonic() < deadline:
+        # Always probe at least once: on a slow machine the lock and the
+        # launch.json write can use up a short wait_timeout before the loop.
+        while True:
             try:
                 request_service(vault, '/api/runtime/status', timeout=.2)
                 return True
             except (OSError, ValueError, KeyError, http.client.HTTPException):
+                if time.monotonic() >= deadline:
+                    break
                 time.sleep(.1)
     return False
 
