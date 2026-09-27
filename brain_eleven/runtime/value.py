@@ -46,3 +46,23 @@ def value_score(item):
     if item.get('recall_questions'):
         score += 1.0
     return round(score, 4)
+
+
+def digest(vault, *, limit=DAILY_LIMIT):
+    """The day's most valuable pending candidates, for a quick look without the browser."""
+    from brain_eleven.memory import MemoryStore
+    from .review import ReviewStore, rank_similar
+    from .triage import summary
+    memories = [m for m in MemoryStore(vault).load()['validated_memory'] if str(m.get('status') or 'active') == 'active']
+    pending = [x for x in ReviewStore(vault).list() if x.get('status') == 'PENDING']
+    for item in pending:
+        candidate = item.get('candidate') or {}
+        same_project = [m for m in memories if m.get('project_id') == candidate.get('project_id')]
+        item['similar'] = [{'similarity': score} for score, _ in rank_similar(candidate.get('content', ''), same_project)[:1]]
+    ranked = sorted(pending, key=value_score, reverse=True)[:limit]
+    return {'pending': len(pending), 'auto_filtered_total': summary(vault).get('total', 0),
+            'top': [{'id': x['id'], 'score': value_score(x),
+                     'commitment': (x.get('candidate') or {}).get('commitment'),
+                     'type': (x.get('candidate') or {}).get('memory_type'),
+                     'text': ((x.get('candidate') or {}).get('content') or (x.get('candidate') or {}).get('text') or '')[:160]}
+                    for x in ranked]}

@@ -20,6 +20,36 @@ def apply_candidate(*args, **kwargs):
 SUGGEST_KEY_SIMILARITY = 0.25
 
 
+ACCEPT_MANY_MAX = 10
+
+
+def accept_many_reviews(vault, ids):
+    """Accept several candidates as shown, one by one with a fresh revision each.
+
+    The person clicked one button for the day's top list; every item still goes
+    through the same ``review_action`` path (safety, CAS, audit) as a single
+    accept. A failure on one item is reported and the rest continue.
+    """
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.state import StateStore
+    from .review import ReviewStore
+    results = {}
+    for review_id in ids:
+        try:
+            item = read_json(ReviewStore(vault).path(review_id)) or {}
+            candidate = item.get('candidate') or {}
+            if candidate.get('candidate_type') == 'STATE_MUTATION':
+                revision = StateStore(vault).project_revision(candidate.get('project_id'))
+            else:
+                revision = MemoryStore(vault).load()['revision']
+            result = review_action(vault, review_id, 'accept', {'expected_revision': revision})
+            results[review_id] = result.get('status') if isinstance(result, dict) else 'UNKNOWN'
+        except ValueError as exc:
+            results[review_id] = 'FAILED: ' + str(exc)[:120]
+    accepted = sum(1 for status in results.values() if status == 'ACCEPTED')
+    return {'accepted': accepted, 'results': results}
+
+
 def review_action(vault, review_id, action, payload):
     from .review import DECISION_NOTE_MAX, ReviewStore
 
@@ -331,6 +361,14 @@ def create_app(vault, *, token=None, background=True):
         note = ('Toplu ret: ' + ', '.join(f'{k}={v}' for k, v in sorted(wanted.items())))[:280]
         dry_run = payload.get('confirm') is not True
         return await asyncio.to_thread(ReviewStore(vault).reject_matching, matches, note, dry_run=dry_run)
+
+    @app.post('/api/review/accept-many')
+    async def accept_many(request: Request):
+        payload = await body(request)
+        ids = payload.get('ids')
+        if not isinstance(ids, list) or not ids or len(ids) > ACCEPT_MANY_MAX or not all(isinstance(x, str) for x in ids):
+            raise HTTPException(409, f'Send 1-{ACCEPT_MANY_MAX} review ids')
+        return await asyncio.to_thread(accept_many_reviews, vault, ids)
 
     @app.post('/api/review/candidates/{review_id}/extend')
     async def extend(review_id: str, request: Request):

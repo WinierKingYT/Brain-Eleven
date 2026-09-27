@@ -52,6 +52,9 @@ Kapatmak için runtime yapılandırmasında `"auto_triage": false`.
 cümle uzunluğundakiler önce; hatırlama testi cevabı taşıyanlar en üstte. Ekran
 varsayılan olarak günün en değerli 10 önerisini gösterir; **Tümünü göster**
 hepsini açar. Kalanlar silinmez, 7 gün sonra kendiliğinden düşer.
+**Görünen N öneriyi kabul et** listeyi tek tıkla (onay sorusuyla) kaydeder; her
+öneri tek tek kabulle aynı yoldan geçer. Tarayıcısız hızlı bakış:
+`python -m brain_eleven digest`.
 
 ```
 python -m brain_eleven review

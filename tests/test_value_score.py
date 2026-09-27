@@ -32,3 +32,27 @@ def test_candidates_api_returns_score_and_daily_limit(tmp_path):
     body = client.get("/api/review/candidates", headers={"Authorization": "Bearer t"}).json()
     assert body["daily_limit"] == DAILY_LIMIT
     assert all(isinstance(x["value_score"], float) for x in body["candidates"] if x["status"] == "PENDING")
+
+
+def test_accept_many_accepts_each_through_the_normal_path(tmp_path):
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.review import ReviewStore
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    a = _review_item(tmp_path, vault, "a", "We decided the dashboard stays read-only.", NEW_TIME)
+    b = _review_item(tmp_path, vault, "b", "We decided to keep SQLite for storage.", NEW_TIME)
+    client = TestClient(create_app(vault, token="t", background=False), base_url="http://127.0.0.1")
+    headers = {"Authorization": "Bearer t"}
+    assert client.post("/api/review/accept-many", headers=headers, json={"ids": []}).status_code == 409
+    result = client.post("/api/review/accept-many", headers=headers, json={"ids": [a["id"], b["id"], "bad"]}).json()
+    assert result["accepted"] == 2 and result["results"]["bad"].startswith("FAILED")
+    contents = {m["content"] for m in MemoryStore(vault).load()["validated_memory"]}
+    assert {"We decided the dashboard stays read-only.", "We decided to keep SQLite for storage."} <= contents
+    assert {x["id"]: x["status"] for x in ReviewStore(vault)._items()}[a["id"]] == "ACCEPTED"
+
+
+def test_digest_lists_the_top_candidates(tmp_path):
+    from brain_eleven.runtime.value import digest
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    _review_item(tmp_path, vault, "a", "We decided the dashboard stays read-only.", NEW_TIME)
+    result = digest(vault)
+    assert result["pending"] == 1 and result["top"][0]["text"].startswith("We decided")

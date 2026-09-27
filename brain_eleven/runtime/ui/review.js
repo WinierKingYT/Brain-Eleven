@@ -30,6 +30,19 @@ async function refresh() {
     const canAccept=['CANARY','ACTIVE'].includes(status.mode) || (status.mode==='SHADOW' && status.shadow_accept===true);
     if(status.mode==='SHADOW') el('candidates').append(node('p',status.shadow_accept===true?'Gözlem modu açık. Öneriler burada birikir; sen onayladığında ortak hafızaya yazılır.':'Gözlem modu açık. Öneriler burada birikir; ortak hafızaya yazma sınırlı kullanım açıldıktan sonra başlar.','empty'));
     if(!pending.length) el('candidates').append(node('p','Henüz inceleme bekleyen öneri yok. Yeni öneriler burada görünecek.','empty'));
+    if(canAccept && !showAll && pending.length){
+      // One click for the day's list; each item still goes through the normal accept path.
+      const bar=node('p',null,'hint');
+      const all=node('button',`Görünen ${pending.length} öneriyi kabul et`,'secondary');all.type='button';
+      all.addEventListener('click',async()=>{
+        if(!confirm(`${pending.length} öneri olduğu gibi ortak hafızaya kaydedilecek. Emin misin?`))return;
+        all.disabled=true;
+        try{const r=await api('/api/review/accept-many',{ids:pending.map(x=>x.id)});
+          el('message').textContent=r.accepted+' öneri kaydedildi.';await refresh();}
+        catch(e){el('message').textContent=String(e.message||e);all.disabled=false;}
+      });
+      bar.append(all);el('candidates').append(bar);
+    }
     if(allPending.length>limit){
       const more=node('p',null,'hint');
       more.append(showAll?`Tüm ${allPending.length} öneri gösteriliyor. `:`Bugünün en değerli ${limit} önerisi gösteriliyor (toplam ${allPending.length}). `);
