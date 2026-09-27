@@ -42,6 +42,8 @@ def main(argv=None):
     triage = sub.add_parser('triage', help='apply the automatic noise filter to pending review candidates')
     triage.add_argument('--apply', action='store_true', help='reject matches with a note (default: count only)')
     sub.add_parser('digest', help="the day's most valuable review candidates")
+    applier = sub.add_parser('apply-suggestions', help="apply the model's review verdicts (ACCEPT writes, REJECT hides)")
+    applier.add_argument('--apply', action='store_true', help='write accepts (default: count only)')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -92,6 +94,9 @@ def main(argv=None):
         elif args.command == 'triage':
             from .runtime.triage import triage_existing
             result = triage_existing(args.vault, apply=args.apply)
+        elif args.command == 'apply-suggestions':
+            from .runtime.value import apply_suggestions
+            result = apply_suggestions(args.vault, apply=args.apply)
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)
