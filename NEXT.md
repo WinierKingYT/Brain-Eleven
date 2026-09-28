@@ -28,6 +28,16 @@ guard is in `3e37357`. W-07B remains `FIX-FIRST / NOT ACCEPTED`.
 Next: review isolated Codex hooks, sign in to the isolated Claude profile,
 complete both-client latency/dogfood evidence, and get the independent review.
 
+**2026-09-28 update** — PR #30 head `89c183b` now passes Windows and Ubuntu
+unit/runtime jobs; frozen PRE-13 `quality` remains the sole failure. Its
+Windows hook-readiness regression passed locally 5/5. The W-07B dogfood
+harness now exercises one controlled failure and retry on a verified
+SessionEnd intent, checks canonical hashes/revisions, and has 1 focused test
+passing. Isolated Codex sign-in is present but `/hooks` trust review is still
+pending; isolated Claude authentication is absent. Native latency and dogfood
+must be rerun after those client prerequisites, then receive an independent
+review. W-07B remains `FIX-FIRST / NOT ACCEPTED`.
+
 **2026-09-27** — `recall-probe`: 5/5 `IN_CONTEXT`. İlk Claude koşusu **geçersiz ölçüm: model cevaplamadı, araç denedi** (Q1 zaman aşımı; Q2/Q3/Q5 taslak; Q4 kısmen yanıt; toplam puan sayılmadı). Taslak adları: Q2 `Grep`/`grep`; Q3 `git fetch`, `git log`, `git status`; Q5 `Bash`. Yalnız Q3’teki `git fetch`, `CLAUDE.md` devir kontrolüyle örtüşüyor. Ek talimatlı ikinci koşu: 1 doğru, 3 kısmen, 0 yanlış, 1 hiç; Q1–Q5 SessionStart makbuzları `DELIVERED`, `context_delivered=true`, zaman aşımı yok. Ayrıntılar `docs/history/evidence/TEST-LOG.md` içinde. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet’in vereceği hedefe göre devam etmek.
 
 **2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is

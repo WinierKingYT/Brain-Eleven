@@ -300,3 +300,22 @@ passes **7 tests** and the affected modules compile. A dedicated temporary
 Claude profile is ready for user sign-in. Neither client's full native
 dogfood acceptance evidence is complete. W-07B remains **FIX-FIRST / NOT
 ACCEPTED**.
+
+## 2026-09-28 dogfood maintenance retry gate preparation
+
+The Claude dogfood harness now requires one controlled failure and retry for
+a maintenance intent reconciled from a committed, effect-verified native
+SessionEnd capture. It stops the isolated service, injects one bounded
+maintenance failure, verifies the intent returns to `QUEUED` at attempt 1,
+and compares content hashes and revisions for the memory, state and project
+registry stores. It then restores the real maintenance runner and requires the
+same intent to reach `COMPLETED` at attempt 2 with one report. The JSON result
+contains only statuses, revision values and an opaque intent hash.
+
+The focused harness test passed (**1 passed**); the dogfood module and test
+compile, and `git diff --check` passes. This unit evidence validates the
+controlled phase; it is not a native dogfood run. The isolated Codex profile
+is authenticated, but its `/hooks` trust review remains pending. The isolated
+Claude authentication check still exits unsuccessfully. No native dogfood or
+latency results are claimed from this change. W-07B remains **FIX-FIRST / NOT
+ACCEPTED**.
