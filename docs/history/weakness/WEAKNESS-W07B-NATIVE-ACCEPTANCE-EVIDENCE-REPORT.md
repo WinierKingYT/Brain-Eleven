@@ -217,3 +217,30 @@ W-07B remains **FIX-FIRST / NOT ACCEPTED**. Native Claude CLI success,
 complete Stop latency, isolated Codex authentication/evidence, and independent
 review remain open. No production runtime, canonical data, Phase 20 state, or
 V2 mode was changed.
+
+## 2026-09-28 exact-current-baseline recovery and regression rerun
+
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+**Evidence head:** `23e97ea97b386ae148271ba3506c413605658939`.
+
+The earlier process-recovery evidence was tied to `78c5671`. The current
+baseline contains later changes in the runtime, worker, service, capture,
+memory and state dependency graph, so that earlier result was not treated as
+current. At the exact baseline/head above, the deterministic process-recovery
+matrix passed **18/18** (`tests/test_w07b_process_recovery.py`, 22.32 seconds),
+covering the named worker/service crash boundaries and repeated recovery.
+The full local regression at the same evidence head passed **1715 tests**;
+pytest reported **4 skipped**. No test, skip marker or quarantine was added
+or changed for this work.
+
+Matching remote evidence on head `23e97ea97b386ae148271ba3506c413605658939`:
+Validation run `36390515458` completed successfully, including unit,
+coverage, security, integration and phase checks. PRE-13 runtime-gates run
+`36390515424` completed with failure only at the frozen `quality` holdout
+measurement; Ubuntu and Windows runtime jobs passed. The holdout and its
+threshold were not changed.
+
+This closes the current-base process-recovery and local-regression evidence
+gaps only. It does not satisfy the native Claude/Codex trust, complete
+two-client latency, successful dogfood, or separate-review acceptance gates.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**.

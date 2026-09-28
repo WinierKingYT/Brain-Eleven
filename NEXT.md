@@ -13,11 +13,12 @@ committed 20 isolated items with memory revision `0`, but all 20 CLI turns
 returned errors; a separate sanitized diagnostic observed a provider `429`
 rate-limit/quota response, without per-turn attribution. Current Claude hook
 latency is partial: SessionStart, UserPromptSubmit and SessionEnd have
-samples; Stop has none. The latency cleanup guard is in `3e37357`. W-07B
-remains `FIX-FIRST / NOT ACCEPTED`.
+samples; Stop has none. On current baseline `5c7d913`, process recovery passed
+18/18 and local regression passed 1715 tests (4 skipped); the latency cleanup
+guard is in `3e37357`. W-07B remains `FIX-FIRST / NOT ACCEPTED`.
 Next: repeat Claude evidence after the provider limit clears, obtain isolated
-Codex authentication, and complete the missing Stop measurement and
-independent review.
+Codex authentication, complete both-client latency/dogfood evidence, and get
+the independent review.
 
 **2026-09-27** — `recall-probe`: 5/5 `IN_CONTEXT`. İlk Claude koşusu **geçersiz ölçüm: model cevaplamadı, araç denedi** (Q1 zaman aşımı; Q2/Q3/Q5 taslak; Q4 kısmen yanıt; toplam puan sayılmadı). Taslak adları: Q2 `Grep`/`grep`; Q3 `git fetch`, `git log`, `git status`; Q5 `Bash`. Yalnız Q3’teki `git fetch`, `CLAUDE.md` devir kontrolüyle örtüşüyor. Ek talimatlı ikinci koşu: 1 doğru, 3 kısmen, 0 yanlış, 1 hiç; Q1–Q5 SessionStart makbuzları `DELIVERED`, `context_delivered=true`, zaman aşımı yok. Ayrıntılar `docs/history/evidence/TEST-LOG.md` içinde. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet’in vereceği hedefe göre devam etmek.
 
