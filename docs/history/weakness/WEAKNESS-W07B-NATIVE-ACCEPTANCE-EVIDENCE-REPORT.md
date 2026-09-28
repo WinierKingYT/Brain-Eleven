@@ -259,10 +259,11 @@ modified.
 The evidence harness now sets `CLAUDE_CONFIG_DIR` to the throwaway client home
 for every Claude subprocess through `evals/w07b/client_process.py`; native
 smoke, latency and dogfood all use that helper. Its focused isolation test
-passed (**1 passed**), and the updated harness modules compile. This fixes the
-evidence path only; no native call was made with the corrected isolation, so
-the Claude trust, latency and dogfood gates remain open. The current provider
-rate limit and isolated Codex sign-in are still prerequisites for those runs.
+passed (**1 passed**), and the updated harness modules compile. A later
+one-repetition synthetic smoke under the corrected isolation produced a
+session ID but exited before capture with an authentication error; no memory
+revision changed. This does not count as native evidence. Claude trust, latency
+and dogfood gates remain open; see the isolated-authentication follow-up below.
 
 ## 2026-09-28 isolated Codex smoke harness preparation
 
@@ -276,6 +277,26 @@ IDs; it no longer assumes the terminal job contains a result payload.
 
 Focused evidence-harness tests passed (**5 passed**), the updated harness
 modules compiled, and `git diff --check` passed. No authenticated Codex smoke
-has run yet. The temporary profile still requires sign-in and explicit review
-of its installed hook definitions before native evidence can be counted.
+has run yet. The isolated profile has since completed sign-in; explicit review
+of its installed hook definitions is still required before native evidence can
+be counted.
 W-07B remains **FIX-FIRST / NOT ACCEPTED**.
+
+## 2026-09-28 isolated Claude authentication prerequisite
+
+A single synthetic Claude smoke under the corrected per-run configuration
+directory produced a session ID but exited with an error before capture:
+there were no terminal capture rows or review items, and validated-memory
+revision stayed unchanged. A sanitized diagnostic classified the response as
+an authentication error; the response, prompt and transcript were not
+recorded. The live global settings hash remained unchanged. This does not
+establish a provider-rate-limit failure.
+
+The previous harness created a new client profile for every run, preventing
+an isolated login from being reused. The evidence subprocess helper now
+accepts `W07B_CLAUDE_CONFIG_DIR` only when it resolves inside system temporary
+storage; otherwise it keeps the per-run temporary profile. The focused suite
+passes **7 tests** and the affected modules compile. A dedicated temporary
+Claude profile is ready for user sign-in. Neither client's full native
+dogfood acceptance evidence is complete. W-07B remains **FIX-FIRST / NOT
+ACCEPTED**.

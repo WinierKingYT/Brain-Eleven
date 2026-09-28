@@ -8,7 +8,9 @@ handoff and whatever maintenance-intent status real usage produces. Same
 isolation as the sibling harnesses in this package: a throwaway vault and
 throwaway client config; the live vault and live ~/.claude/settings.json are
 never read or written. Stores only sanitized event/status/revision metadata
-and opaque IDs/hashes, never prompt or transcript content.
+and opaque IDs/hashes, never prompt or transcript content. Set
+``W07B_CLAUDE_CONFIG_DIR`` to a disposable directory under system temp when an
+isolated authenticated profile must be reused across sign-in and evidence runs.
 """
 from __future__ import annotations
 

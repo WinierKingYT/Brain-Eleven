@@ -13,7 +13,9 @@ or writes the live vault, the live global ``~/.claude/settings.json`` or this
 repository's own runtime state; every artifact lives under a
 ``tempfile.TemporaryDirectory`` that is removed even on failure.
 
-Usage: ``python -m evals.w07b.native_smoke [--repetitions N]``
+Usage: ``python -m evals.w07b.native_smoke [--repetitions N]``. For a
+reusable isolated login, set ``W07B_CLAUDE_CONFIG_DIR`` to a disposable
+directory under system temp.
 """
 from __future__ import annotations
 
