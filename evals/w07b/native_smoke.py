@@ -94,6 +94,7 @@ def _ledger_terminal_counts(vault: Path) -> dict:
 
 def run(repetitions: int) -> Report:
     from brain_eleven.runtime.install import install
+    from .latency_matrix import _stop_service
 
     live_settings = Path.home() / ".claude" / "settings.json"
     before_hash = _sha256(live_settings)
@@ -108,34 +109,37 @@ def run(repetitions: int) -> Report:
         isolated_path = home / "isolated_hooks.json"
         isolated_path.write_text(json.dumps(isolated), encoding="utf-8")
 
-        for n in range(1, repetitions + 1):
-            prompt = PROMPTS[(n - 1) % len(PROMPTS)].format(n=n)
-            cmd = ["claude", "-p", prompt, "--settings", str(isolated_path), "--setting-sources", "",
-                   "--strict-mcp-config", "--tools", "", "--output-format", "json"]
-            before_revision = _memory_revision(vault)
-            started = time.monotonic()
-            proc = subprocess.run(cmd, cwd=str(vault), capture_output=True, text=True, encoding="utf-8", timeout=120)
-            elapsed = time.monotonic() - started
-            session_id = None
-            try:
-                session_id = json.loads(proc.stdout).get("session_id")
-            except (ValueError, TypeError):
-                pass
-            # Let the background service finish draining before inspecting terminal state.
-            deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                queued = list((vault / ".brain-eleven" / "capture" / "queued").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "queued").exists() else []
-                processing = list((vault / ".brain-eleven" / "capture" / "processing").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "processing").exists() else []
-                if not queued and not processing:
-                    break
-                time.sleep(0.5)
-            review_dir = vault / ".brain-eleven" / "runtime" / "review"
-            review_ids = sorted(p.stem for p in review_dir.glob("*.json")) if review_dir.exists() else []
-            report.runs.append(RunResult(
-                repetition=n, exit_code=proc.returncode, elapsed_s=round(elapsed, 3), session_id=session_id,
-                ledger_terminal=_ledger_terminal_counts(vault), review_ids=review_ids,
-                memory_revision_before=before_revision, memory_revision_after=_memory_revision(vault),
-            ))
+        try:
+            for n in range(1, repetitions + 1):
+                prompt = PROMPTS[(n - 1) % len(PROMPTS)].format(n=n)
+                cmd = ["claude", "-p", prompt, "--settings", str(isolated_path), "--setting-sources", "",
+                       "--strict-mcp-config", "--tools", "", "--output-format", "json"]
+                before_revision = _memory_revision(vault)
+                started = time.monotonic()
+                proc = subprocess.run(cmd, cwd=str(vault), capture_output=True, text=True, encoding="utf-8", timeout=120)
+                elapsed = time.monotonic() - started
+                session_id = None
+                try:
+                    session_id = json.loads(proc.stdout).get("session_id")
+                except (ValueError, TypeError):
+                    pass
+                # Let the background service finish draining before inspecting terminal state.
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    queued = list((vault / ".brain-eleven" / "capture" / "queued").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "queued").exists() else []
+                    processing = list((vault / ".brain-eleven" / "capture" / "processing").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "processing").exists() else []
+                    if not queued and not processing:
+                        break
+                    time.sleep(0.5)
+                review_dir = vault / ".brain-eleven" / "runtime" / "review"
+                review_ids = sorted(p.stem for p in review_dir.glob("*.json")) if review_dir.exists() else []
+                report.runs.append(RunResult(
+                    repetition=n, exit_code=proc.returncode, elapsed_s=round(elapsed, 3), session_id=session_id,
+                    ledger_terminal=_ledger_terminal_counts(vault), review_ids=review_ids,
+                    memory_revision_before=before_revision, memory_revision_after=_memory_revision(vault),
+                ))
+        finally:
+            _stop_service(vault)
         report.live_settings_hash_after = _sha256(live_settings)
     return report
 
