@@ -327,3 +327,16 @@ process-recovery matrix passed **18/18** locally. This rebinds the named
 restart/kill boundary evidence to the current harness and implementation
 revision. Authenticated native trust, two-client latency, multi-session
 dogfood and the independent reviewer verdict remain open.
+
+## 2026-09-28 current-head regression recheck
+
+At implementation and harness head `5e38c1a3461b8e578af4f7e75c44d020ba4bef1e`,
+the W-07B process-recovery tests passed **18/18**. The full local regression
+passed **1730 tests**; four platform-conditional tests were skipped. A focused
+skip-reason audit identified all four as directory-fsync cases unsupported on
+Windows. No skip filters, quarantines or test edits were used. The full run
+completed in 342.75 seconds.
+
+This current-head recheck closes the local process-recovery and full-regression
+evidence items only. Authenticated native trust, the two-client latency matrix,
+multi-session dogfood and the independent reviewer verdict remain open.
