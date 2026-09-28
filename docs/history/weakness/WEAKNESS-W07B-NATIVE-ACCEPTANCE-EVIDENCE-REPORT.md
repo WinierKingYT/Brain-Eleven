@@ -185,6 +185,13 @@ and handoff path for these turns, but is not authenticated client success or a
 passing dogfood sample. No prompt, transcript, exception text, credential or
 absolute path is recorded.
 
+A separate sanitized one-turn diagnostic returned `api_error_status=429`,
+`exit_code=1`, and `is_error=true`, identifying a provider rate-limit/quota
+response for that diagnostic. The dogfood harness did not record API status
+per turn, so this single status is not attributed to all twenty failures.
+Native Claude trust remains unverified until a successful client call can be
+captured after the rate limit clears.
+
 | Claude hook event | Samples | p50 (ms) | p95 (ms) | Status |
 | --- | ---: | ---: | ---: | --- |
 | SessionStart, cold | 5 | 1971 | 1984 | measured |
