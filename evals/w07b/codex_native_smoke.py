@@ -49,6 +49,13 @@ def _codex_environment(home: Path) -> dict[str, str]:
     return env
 
 
+def _validate_codex_binding(vault: Path, home: Path) -> None:
+    """Require the already reviewed temporary hooks file to target this vault."""
+    from .latency_matrix import _validate_codex_binding as validate
+
+    validate(vault, home)
+
+
 def _parse_stream(output: str) -> dict:
     """Extract only the native thread ID and terminal turn state from JSONL."""
     thread_id = None
@@ -84,7 +91,7 @@ def _memory_revision(vault: Path) -> int:
     return _read_json(path).get("revision", -1)
 
 
-def _session_receipts(vault: Path, session_id: str) -> dict:
+def _session_receipts(vault: Path, session_id: str, client: str = "codex") -> dict:
     from brain_eleven.runtime.storage import identity
 
     key = identity("session_", session_id)
@@ -92,7 +99,7 @@ def _session_receipts(vault: Path, session_id: str) -> dict:
     directory = vault / ".brain-eleven" / "runtime" / "deliveries"
     for path in directory.glob("*.json") if directory.exists() else ():
         doc = _read_json(path)
-        if doc.get("client") == "codex" and doc.get("session_hash") == key:
+        if doc.get("client") == client and doc.get("session_hash") == key:
             event = doc.get("event")
             if event in {"SessionStart", "UserPromptSubmit"}:
                 found[event] = {"status": doc.get("status"), "stage": doc.get("stage"),
@@ -100,12 +107,12 @@ def _session_receipts(vault: Path, session_id: str) -> dict:
     return found
 
 
-def _last_capture(vault: Path, session_id: str) -> dict:
+def _last_capture(vault: Path, session_id: str, client: str = "codex") -> dict:
     from brain_eleven.runtime.worker import capture_session_hash
 
-    path = vault / ".brain-eleven" / "runtime" / "last-capture-codex.json"
+    path = vault / ".brain-eleven" / "runtime" / f"last-capture-{client}.json"
     doc = _read_json(path)
-    if doc.get("capture_session_hash") != capture_session_hash("codex", session_id):
+    if doc.get("capture_session_hash") != capture_session_hash(client, session_id):
         return {}
     outcome = doc.get("outcome")
     error = doc.get("error")
@@ -113,10 +120,10 @@ def _last_capture(vault: Path, session_id: str) -> dict:
     return {"outcome": outcome if isinstance(outcome, str) else None, "error_code": safe_error}
 
 
-def _completed_job(vault: Path, session_id: str) -> dict:
+def _completed_job(vault: Path, session_id: str, client: str = "codex") -> dict:
     from brain_eleven.runtime.worker import capture_session_key
 
-    session_key = capture_session_key("codex", session_id)
+    session_key = capture_session_key(client, session_id)
     directory = vault / ".brain-eleven" / "capture" / "completed"
     for path in directory.glob("*.json") if directory.exists() else ():
         doc = _read_json(path)
@@ -145,12 +152,13 @@ def _capture_receipt(vault: Path, job: dict) -> dict:
     return {"status": "EFFECT_VERIFIED", "review_effect_ids": review_effect_ids}
 
 
-def _verified_review_id(vault: Path, session_id: str, marker: str, effect_ids: list[str]) -> str | None:
+def _verified_review_id(vault: Path, session_id: str, marker: str, effect_ids: list[str],
+                        client: str = "codex") -> str | None:
     from brain_eleven.runtime.review import ReviewStore
     from brain_eleven.runtime.storage import identity
     from brain_eleven.runtime.worker import capture_session_key
 
-    expected_session = identity("session_", capture_session_key("codex", session_id))
+    expected_session = identity("session_", capture_session_key(client, session_id))
     store = ReviewStore(vault)
     for review_id in effect_ids:
         try:
@@ -160,17 +168,18 @@ def _verified_review_id(vault: Path, session_id: str, marker: str, effect_ids: l
         source = item.get("source") if isinstance(item.get("source"), dict) else {}
         candidate = item.get("candidate") if isinstance(item.get("candidate"), dict) else {}
         content = candidate.get("content") or candidate.get("text") or ""
-        if (item.get("status") == "PENDING" and source.get("client") == "codex"
+        if (item.get("status") == "PENDING" and source.get("client") == client
                 and source.get("session_hash") == expected_session
                 and isinstance(content, str) and marker.casefold() in content.casefold()):
             return review_id
     return None
 
 
-def _wait_for_capture(vault: Path, session_id: str, timeout: float = 25.0) -> dict:
+def _wait_for_capture(vault: Path, session_id: str, client: str = "codex",
+                      timeout: float = 25.0) -> dict:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        job = _completed_job(vault, session_id)
+        job = _completed_job(vault, session_id, client)
         if job:
             return job
         time.sleep(0.1)
@@ -197,7 +206,6 @@ def _stop_service(vault: Path) -> None:
 
 
 def run(vault: Path, repetitions: int = 2) -> dict:
-    from brain_eleven.runtime.install import install
     from brain_eleven.runtime.worker import capture_session_hash
 
     if repetitions < 1:
@@ -206,8 +214,8 @@ def run(vault: Path, repetitions: int = 2) -> dict:
     vault = Path(vault).resolve()
     if os.path.commonpath((str(vault), str(home.parent))) != str(home.parent):
         raise RuntimeError("VAULT_NOT_ISOLATED")
+    _validate_codex_binding(vault, home)
     env = _codex_environment(home)
-    install(str(vault), home=str(home.parent), clients=("codex",))
     version = _client_version(env)
     runs = []
     try:
@@ -229,12 +237,12 @@ def run(vault: Path, repetitions: int = 2) -> dict:
                 exit_code = 124
             elapsed_ms = round((time.monotonic() - started) * 1000)
             session_id = parsed.get("thread_id")
-            job = _wait_for_capture(vault, session_id) if session_id else {}
-            receipts = _session_receipts(vault, session_id) if session_id else {}
-            capture = _last_capture(vault, session_id) if session_id else {}
+            job = _wait_for_capture(vault, session_id, "codex") if session_id else {}
+            receipts = _session_receipts(vault, session_id, "codex") if session_id else {}
+            capture = _last_capture(vault, session_id, "codex") if session_id else {}
             effect_receipt = _capture_receipt(vault, job) if job else {}
             effect_ids = effect_receipt.get("review_effect_ids", [])
-            review_id = _verified_review_id(vault, session_id, marker, effect_ids) if session_id else None
+            review_id = _verified_review_id(vault, session_id, marker, effect_ids, "codex") if session_id else None
             revision_after = _memory_revision(vault)
             checks = {
                 "session_start_delivered": receipts.get("SessionStart", {}).get("stage") == "DELIVERED",
@@ -293,7 +301,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     try:
         report = run(args.vault, args.repetitions)
-    except (OSError, RuntimeError, ValueError) as exc:
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
         code = str(exc) if _SAFE_CODE.fullmatch(str(exc)) else "HARNESS_ERROR"
         print(json.dumps({"client": "codex", "trust_verdict": "BOUNDED_UNVERIFIED_CODEX",
                           "failure_code": code, "runs": []}, indent=2))
