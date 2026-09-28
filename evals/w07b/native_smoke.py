@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from .client_process import run_claude
+
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
@@ -112,11 +114,9 @@ def run(repetitions: int) -> Report:
         try:
             for n in range(1, repetitions + 1):
                 prompt = PROMPTS[(n - 1) % len(PROMPTS)].format(n=n)
-                cmd = ["claude", "-p", prompt, "--settings", str(isolated_path), "--setting-sources", "",
-                       "--strict-mcp-config", "--tools", "", "--output-format", "json"]
                 before_revision = _memory_revision(vault)
                 started = time.monotonic()
-                proc = subprocess.run(cmd, cwd=str(vault), capture_output=True, text=True, encoding="utf-8", timeout=120)
+                proc = run_claude(vault, isolated_path, prompt)
                 elapsed = time.monotonic() - started
                 session_id = None
                 try:

@@ -13,7 +13,13 @@ committed 20 isolated items with memory revision `0`, but all 20 CLI turns
 returned errors; a separate sanitized diagnostic observed a provider `429`
 rate-limit/quota response, without per-turn attribution. Current Claude hook
 latency is partial: SessionStart, UserPromptSubmit and SessionEnd have
-samples; Stop has none. On current baseline `5c7d913`, process recovery passed
+samples; Stop has none. A post-run privacy audit found the earlier Claude
+helpers omitted `CLAUDE_CONFIG_DIR`, so those CLI sessions are not counted as
+privacy-verified. All three helpers now use a throwaway client home; its
+isolation test passed. The isolated Codex smoke harness now reads the
+job/event-bound effect receipt; its focused suite passes 5 tests. Authenticated
+Codex evidence still needs isolated sign-in and hook trust. On current
+baseline `5c7d913`, process recovery passed
 18/18 and local regression passed 1715 tests (4 skipped); the latency cleanup
 guard is in `3e37357`. W-07B remains `FIX-FIRST / NOT ACCEPTED`.
 Next: repeat Claude evidence after the provider limit clears, obtain isolated

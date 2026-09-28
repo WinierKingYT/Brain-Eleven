@@ -244,3 +244,38 @@ This closes the current-base process-recovery and local-regression evidence
 gaps only. It does not satisfy the native Claude/Codex trust, complete
 two-client latency, successful dogfood, or separate-review acceptance gates.
 W-07B remains **FIX-FIRST / NOT ACCEPTED**.
+
+## 2026-09-28 Claude history isolation audit
+
+A review of the Claude evidence subprocesses found that earlier runs passed a
+temporary `--settings` file but did not set `CLAUDE_CONFIG_DIR`. Claude Code
+stores session history under that config directory, so those runs do not prove
+that client-side session records stayed out of the host profile. The dogfood
+prompts were synthetic; no prompt or transcript content was copied into this
+report. Those earlier Claude smoke, latency and dogfood results are not counted
+as privacy-verified evidence, and the host profile was not inspected or
+modified.
+
+The evidence harness now sets `CLAUDE_CONFIG_DIR` to the throwaway client home
+for every Claude subprocess through `evals/w07b/client_process.py`; native
+smoke, latency and dogfood all use that helper. Its focused isolation test
+passed (**1 passed**), and the updated harness modules compile. This fixes the
+evidence path only; no native call was made with the corrected isolation, so
+the Claude trust, latency and dogfood gates remain open. The current provider
+rate limit and isolated Codex sign-in are still prerequisites for those runs.
+
+## 2026-09-28 isolated Codex smoke harness preparation
+
+The Codex evidence harness now runs only with a `CODEX_HOME` under the
+system temporary directory and reads its transcript from that isolated
+profile. Code-graph inspection confirmed that the completed queue job stores
+terminal status and event identity, while effect details are written to a
+separate `EFFECT_VERIFIED` capture receipt. The harness now validates that
+receipt against the job and event IDs before reading its bounded review-effect
+IDs; it no longer assumes the terminal job contains a result payload.
+
+Focused evidence-harness tests passed (**5 passed**), the updated harness
+modules compiled, and `git diff --check` passed. No authenticated Codex smoke
+has run yet. The temporary profile still requires sign-in and explicit review
+of its installed hook definitions before native evidence can be counted.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**.

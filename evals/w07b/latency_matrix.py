@@ -23,12 +23,13 @@ from __future__ import annotations
 
 import json
 import statistics
-import subprocess
 import sys
 import threading
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from .client_process import run_claude
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
@@ -107,11 +108,9 @@ def _stop_service(vault: Path) -> None:
 
 def _invoke(vault: Path, settings_path: Path, n: int) -> dict:
     prompt = PROMPT_TEMPLATE.format(n=n)
-    cmd = ["claude", "-p", prompt, "--settings", str(settings_path), "--setting-sources", "",
-           "--strict-mcp-config", "--tools", "", "--output-format", "json"]
     last_hook = vault / ".brain-eleven" / "runtime" / "last-hook.json"
     with _HookPoller(last_hook) as poller:
-        proc = subprocess.run(cmd, cwd=str(vault), capture_output=True, text=True, encoding="utf-8", timeout=120)
+        proc = run_claude(vault, settings_path, prompt)
     session_id = None
     try:
         session_id = json.loads(proc.stdout).get("session_id")

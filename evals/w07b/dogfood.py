@@ -13,11 +13,12 @@ and opaque IDs/hashes, never prompt or transcript content.
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from .client_process import run_claude
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
@@ -33,11 +34,7 @@ SESSIONS = [
 
 
 def _run_claude(cwd: Path, settings_path: Path, prompt: str, session_id: str | None) -> dict:
-    cmd = ["claude", "-p", prompt, "--settings", str(settings_path), "--setting-sources", "",
-           "--strict-mcp-config", "--tools", "", "--output-format", "json"]
-    if session_id:
-        cmd += ["--resume", session_id]
-    proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", timeout=120)
+    proc = run_claude(cwd, settings_path, prompt, session_id=session_id)
     try:
         doc = json.loads(proc.stdout)
     except (ValueError, TypeError):
