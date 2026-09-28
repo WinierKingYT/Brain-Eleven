@@ -132,3 +132,37 @@ until native trust, latency and dogfood gates pass.
 
 **FIX-FIRST / NOT ACCEPTED** — process recovery is evidenced; authenticated
 native client, latency and dogfood evidence remain required.
+
+## 2026-09-28 exact-head follow-up
+
+**Harness revision:** `c85d67b14358aea34c7d0c546f81cf7c8c1d4ff9`.
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+
+One isolated Claude smoke repetition ran on the exact harness revision above.
+The real CLI returned exit code `1`, while a fresh session ID was present and
+the isolated capture ledger reached `ENQUEUED → CLAIMED → PROCESSING →
+COMMITTED` once. One review item was present, the canonical memory revision
+was unchanged, and the live global settings hash was unchanged. Because the
+client exited non-zero, this is recorded as
+`BOUNDED_UNVERIFIED_CLAUDE_CLI_EXIT_1`, not as verified native trust. No prompt,
+transcript, exception text, credential or absolute path was retained.
+
+The first attempt on this baseline exposed an evidence-harness cleanup defect:
+the background service remained alive when Windows removed the temporary
+vault. `native_smoke.py` now stops the service in a `finally` block by reusing
+the W-07B latency harness's existing bounded stop helper. The exact-head
+follow-up produced a structured report and no cleanup error; a process check
+found no remaining process tied to a W-07B temporary vault. This changes only
+the evidence helper, not production runtime behavior or canonical data.
+
+Codex CLI `0.158.0-alpha.2.1` is present and the host login status is
+authenticated, but an isolated `CODEX_HOME` does not have authentication. No
+Codex smoke was attempted; status is
+`BOUNDED_UNVERIFIED_CODEX_ISOLATED_AUTH_UNAVAILABLE`. Host-level login status
+does not substitute for isolated native evidence.
+
+The earlier Claude latency and dogfood reports remain bound to their stated
+older revisions. No current-baseline latency or dogfood matrix was run here.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**; the Claude non-zero exit, isolated
+Codex authentication, current-baseline latency/dogfood evidence and
+independent review remain open.
