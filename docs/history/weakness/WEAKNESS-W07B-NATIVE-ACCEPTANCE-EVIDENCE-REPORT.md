@@ -167,3 +167,46 @@ older revisions. No current-baseline latency or dogfood matrix was run here.
 W-07B remains **FIX-FIRST / NOT ACCEPTED**; the Claude non-zero exit, isolated
 Codex authentication, current-baseline latency/dogfood evidence and
 independent review remain open.
+
+## 2026-09-28 Claude dogfood and latency follow-up
+
+**Dogfood harness source:** `d5565ddb8b9d90a678051ae537b76ece3e0aeec6`.
+**Latency cleanup fix:** `3e37357be39b34a3cdc0e586928420e2f5ad8e3c`.
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+
+The isolated Claude dogfood harness completed five sessions and twenty
+synthetic turns across two projects, observed the project switch, and recorded
+session IDs for all five sessions. Every turn returned CLI exit code `1` and
+`is_error=true` (`all_turns_ok=false`). The capture ledger's cumulative
+`COMMITTED` count advanced by four after each session, ending at twenty; each
+session added four review items. The worker reported `QUEUED`, and the
+canonical memory revision stayed at `0`. This confirms the isolated capture
+and handoff path for these turns, but is not authenticated client success or a
+passing dogfood sample. No prompt, transcript, exception text, credential or
+absolute path is recorded.
+
+| Claude hook event | Samples | p50 (ms) | p95 (ms) | Status |
+| --- | ---: | ---: | ---: | --- |
+| SessionStart, cold | 5 | 1971 | 1984 | measured |
+| SessionStart, warm | 5 | 669 | 675 | measured |
+| UserPromptSubmit, warm | 10 | 685 | 728 | measured |
+| Stop, warm | 0 | — | — | missing |
+| SessionEnd, warm | 10 | 567.5 | 599 | measured |
+
+The corrected latency command exited `0`, but its current exit condition checks
+only the SessionStart sample counts. Stop latency remains unmeasured, and the
+dogfood CLI failures keep native Claude trust unverified. As documented in the
+plan, cold UserPromptSubmit/Stop/SessionEnd samples are unavailable through
+the public CLI because SessionStart starts the service for the invocation.
+
+The first latency attempt failed during Windows temporary-vault cleanup before
+it emitted metrics. `latency_matrix.py` now calls its bounded service-stop
+helper in `finally`; the corrected run emitted the values above. The service
+from the failed attempt was stopped, though its temporary directory remains
+after automatic review rejected recursive removal. No process for that run
+remains active.
+
+W-07B remains **FIX-FIRST / NOT ACCEPTED**. Native Claude CLI success,
+complete Stop latency, isolated Codex authentication/evidence, and independent
+review remain open. No production runtime, canonical data, Phase 20 state, or
+V2 mode was changed.
