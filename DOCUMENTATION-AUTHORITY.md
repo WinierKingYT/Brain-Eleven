@@ -1,6 +1,6 @@
 # Documentation authority
 
-Authority: **CURRENT**. Updated: 2026-09-20. This registry classifies documentation;
+Authority: **CURRENT**. Updated: 2026-09-28. This registry classifies documentation;
 it does not make personal notes canonical MemoryStore or StateStore records.
 
 ## Reading and precedence
@@ -50,7 +50,7 @@ authorize opening Phase 20 or promoting V2.
 | `docs/history/evidence/IG03-SEMANTIC-EXTRACTION-AUDIT.md` | REVIEW / read-only IG-03 reality audit bound to the IG-01 closure head; it records the deterministic extraction baseline and provider gap, and does not authorize implementation. |
 | `docs/contracts/IG03-SEMANTIC-EXTRACTION-CONTRACT.md` | CURRENT **CONTRACT** for the bounded IG-03 semantic extraction package; it freezes the proposal-only provider, prefilter, schema and validation boundary and forbids capture, retrieval, V2 and Phase 20 changes. |
 | `docs/history/reports/IG03-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for exact implementation head `092bec9741d2d123adfb18c2ebb2b225e7fb17b8` and documentation closure `00947a2e6b2664d8b2e6f1af3f394ca6460f6793`; Validation run `34373232663` is successful, independent review is `SHIP`, and PRE-13 historical quality failure remains visible. IG-03 is accepted. |
-| `docs/contracts/IG04-B1-CONTRACT.md` | CURRENT CONTRACT / APPROVED human-approved retrieval boundary; Ahmet's 2026-09-10 checkpoint names `/review`, the lifecycle statuses, rollback switch and Codex owner. It does not authorize V2 promotion or Phase 20. |
+| `docs/contracts/IG04-B1-CONTRACT.md` | CURRENT CONTRACT / APPROVED human-approved retrieval boundary; Ahmet's 2026-09-10 checkpoint names `/review`, the lifecycle statuses, rollback switch and Codex owner. Its 2026-09-27 owner amendment allows explicit operator-invoked batch application of model `ACCEPT` items under the same safety/CAS/receipt boundary; independent review is pending. It does not authorize V2 promotion or Phase 20. |
 | `docs/history/reports/IG04-B1-PACKAGE-REPORT.md` | REVIEW / GENERATED EVIDENCE for the bounded B1 implementation; local tests independently reconfirmed, while exact-head remote CI and native trust remain open. It does not authorize V2 promotion or Phase 20. |
 | `docs/history/reviews/IG04-B1-INDEPENDENT-REVIEW.md` | REVIEW authoritative independent acceptance artefact for IG-04 B1; bound to reviewed HEAD `2b8373ee53c5fce3c11681b4f86fbac4ab9a9624`, implementation revision `4edd4dfdf399f1670479091d261fe1390d338e0e`. Verdict `SHIP`, bounded — remote CI and native client trust remain separately open. |
 | `docs/contracts/IG04-B2-CONTRACT.md` | CURRENT **CONTRACT** for review-queue dedup/ordering; Ahmet's 2026-09-10 checkpoint approved it before implementation. It does not authorize V2 promotion or Phase 20. |

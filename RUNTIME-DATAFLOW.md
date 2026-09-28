@@ -1,7 +1,8 @@
 # Runtime dataflow and authority
 
-Authority: **CURRENT**. Audit date: 2026-09-09. This map distinguishes repository
-implementation, installed configuration and verified client execution. ACTIVE
+Authority: **CURRENT**. Audit date: 2026-09-09; model-accept policy addendum:
+2026-09-27. This map distinguishes repository implementation, installed
+configuration and verified client execution. ACTIVE
 means a configured/code path, not native trust or successful real-use graduation.
 See IG00-FREEZE-BASELINE for exact revision and review limitations. The latest
 revision-bound workflows are Validation run 34387725841 and PRE-13 runtime run
@@ -64,7 +65,7 @@ queue completion, effect receipt and canonical verification.
 | Evidence reader/store | ACTIVE | Claude/Codex transcript increments validated; store retains metadata, not transcript copies. Missing/corrupt evidence fails visibly through retry/dead-letter. |
 | Deterministic extraction | ACTIVE | Structured candidates from bounded evidence; remains the current primary extractor. Semantic IG-03 replacement is not implemented by this map. |
 | Optional loopback model | SHADOW / disabled by default | Proposes bounded review candidates only, never canonical truth. |
-| Review | ACTIVE proposal path | SHADOW candidates require review; acceptance is blocked outside CANARY/ACTIVE unless the operator enables `shadow_accept` (`python -m brain_eleven shadow-accept ON`, off by default), which lets a person accept a reviewed candidate while the runtime stays in SHADOW. The automatic worker path never uses it and it never applies in OFF. Rejection/expiry removes retained proposal text. |
+| Review | ACTIVE proposal path | Model suggestions are dry-run by default. Only the operator's explicit `apply-suggestions --apply` applies model `ACCEPT` items, without a per-item click, through the standard review/safety/CAS/audit path. In SHADOW, canonical acceptance additionally requires `shadow_accept` (`python -m brain_eleven shadow-accept ON`, off by default); the automatic worker never applies suggestions, and OFF never allows acceptance. `REJECT`/`DUPLICATE` are hidden and expire rather than being written as rejection records. This owner-approved path still awaits independent review before it counts as shipped. |
 | Truth / lifecycle | ACTIVE canonical boundary | MemoryTruth validates candidates and lifecycle operations; runtime automatic writes only in CANARY/ACTIVE, not current SHADOW. Unknown correction targets abstain/review. |
 | Typed state boundary | ACTIVE canonical boundary | Requirements/blockers routed through StateStore validation, CAS and durable operation receipts. Runtime write gate matches truth gate. |
 | MemoryStore / StateStore / ProjectRegistry | ACTIVE canonical authorities | Only authoritative memory, typed state and project identity/scope. Graph, bootstrap, model and telemetry are derived/non-authoritative. |

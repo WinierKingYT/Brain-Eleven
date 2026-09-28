@@ -54,8 +54,21 @@ Bir model (ör. Codex / GPT Luna) bekleyen kararları okuyup
 
 ```
 python -m brain_eleven apply-suggestions           # yalnız sayar
-python -m brain_eleven apply-suggestions --apply   # ACCEPT'leri hafızaya yazar
+python -m brain_eleven apply-suggestions --apply   # yalnız ACCEPT'leri uygular
 ```
+
+`--apply` operatörün açık çağrısıdır; her `ACCEPT` için ayrıca tıklama istemeden
+standart inceleme/güvenlik/CAS/denetim yolunu çalıştırır. Bu komut inceleme
+dosyasında `ACCEPT` olmayan kararları uygulamaz. SHADOW modunda canonical hafızaya
+yazılabilmesi için `shadow_accept` ayrıca açık olmalıdır (varsayılan kapalı):
+
+```
+python -m brain_eleven shadow-accept ON
+```
+
+Bu ayar yalnızca operatörün açık komutuyla yapılan SHADOW kabullerine izin verir;
+otomatik worker önerileri uygulamaz ve OFF modu hiçbir kabulü açmaz. Bağımsız
+inceleme tamamlanana kadar bu yol shipped sayılmaz.
 
 `ACCEPT` kararları "Model onayı (<model>): <neden>" notuyla yazılır; yanlışsa
 "Eskimiş olabilir" / emekliye ayır ile geri alınır. `REJECT` ve `DUPLICATE`

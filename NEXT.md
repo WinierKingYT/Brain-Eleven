@@ -6,6 +6,8 @@ the end of a work session; keep entries to a few lines.
 
 ## Where we are
 
+**2026-09-28** — Model-review acceptance policy reconciled across the operator guide, runtime map, status, IG plan, B1 contract and documentation authority. Only explicit `apply-suggestions --apply` applies model `ACCEPT` items without per-item clicks; dry-run is default, SHADOW still requires the default-off `shadow_accept`, and the worker does not apply suggestions. Independent review remains pending. No runtime setting, gate, corpus or phase status changed. This docs-only branch is `codex/recall-policy-consistency`; PR to follow validation.
+
 **2026-09-27** — `recall-probe`: 5/5 `IN_CONTEXT`. İlk Claude koşusu **geçersiz ölçüm: model cevaplamadı, araç denedi** (Q1 zaman aşımı; Q2/Q3/Q5 taslak; Q4 kısmen yanıt; toplam puan sayılmadı). Taslak adları: Q2 `Grep`/`grep`; Q3 `git fetch`, `git log`, `git status`; Q5 `Bash`. Yalnız Q3’teki `git fetch`, `CLAUDE.md` devir kontrolüyle örtüşüyor. Ek talimatlı ikinci koşu: 1 doğru, 3 kısmen, 0 yanlış, 1 hiç; Q1–Q5 SessionStart makbuzları `DELIVERED`, `context_delivered=true`, zaman aşımı yok. Ayrıntılar `docs/history/evidence/TEST-LOG.md` içinde. Kod, eşik, holdout, corpus ve aday kararları değişmedi. Sıradaki adım: Ahmet’in vereceği hedefe göre devam etmek.
 
 **2026-09-21** — SRT-00 is closed on `master` at `f5b8c1b`: Validation #821 is

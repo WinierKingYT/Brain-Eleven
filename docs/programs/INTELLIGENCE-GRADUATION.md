@@ -126,6 +126,19 @@ Recorded at the owner's explicit instruction after the IG-05 reachability check
   still governs CANARY and any V2 promotion. It needs an independent review before it counts
   as shipped; enabling it and accepting candidates is the owner's action.
 
+### Owner decision addendum, 2026-09-27 — model ACCEPT application
+
+The owner clarified the approval granularity for model pre-review. Running
+`python -m brain_eleven apply-suggestions` remains a dry run; only an explicit
+`--apply` applies model `ACCEPT` items, without a per-item click, through the
+normal review action (safety, compare-and-swap and audit note). This is an
+operator-authorized batch action, not a background worker write. In SHADOW,
+`shadow_accept` must also be enabled explicitly and remains off by default; OFF
+never allows the write. `REJECT` and `DUPLICATE` are not written as durable
+rejections, while `REVIEW` remains for the person. This changes no quality
+floor, holdout, corpus, V2 mode or Phase 20 status. Independent review remains
+required before this path counts as shipped.
+
 ## Evaluation contract to establish in IG-01
 
 Retrieval covers exact/related relevance, recent distractors, old critical
