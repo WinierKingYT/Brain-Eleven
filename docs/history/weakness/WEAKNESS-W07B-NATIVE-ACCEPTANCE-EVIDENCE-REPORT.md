@@ -319,3 +319,11 @@ is authenticated, but its `/hooks` trust review remains pending. The isolated
 Claude authentication check still exits unsuccessfully. No native dogfood or
 latency results are claimed from this change. W-07B remains **FIX-FIRST / NOT
 ACCEPTED**.
+
+## 2026-09-28 exact-head process-recovery repeat
+
+At evidence commit `2bb8131d7a601311398ae21f7df5e84a9e76673a`, the W-07B
+process-recovery matrix passed **18/18** locally. This rebinds the named
+restart/kill boundary evidence to the current harness and implementation
+revision. Authenticated native trust, two-client latency, multi-session
+dogfood and the independent reviewer verdict remain open.
