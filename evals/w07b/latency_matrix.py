@@ -149,35 +149,38 @@ def run() -> dict:
 
     with TemporaryDirectory(prefix="w07b-lat-home-") as home_str, TemporaryDirectory(prefix="w07b-lat-vault-") as vault_str:
         home, vault = Path(home_str), Path(vault_str)
-        install(str(vault), home=str(home), clients=("claude",))
-        settings_path = home / "isolated_hooks.json"
-        settings_path.write_text(json.dumps({"hooks": json.loads((home / ".claude" / "settings.json").read_text(encoding="utf-8"))["hooks"]}), encoding="utf-8")
+        try:
+            install(str(vault), home=str(home), clients=("claude",))
+            settings_path = home / "isolated_hooks.json"
+            settings_path.write_text(json.dumps({"hooks": json.loads((home / ".claude" / "settings.json").read_text(encoding="utf-8"))["hooks"]}), encoding="utf-8")
 
-        cells = {"session_start_cold": [], "session_start_warm": [], "user_prompt_submit": [], "stop": [], "session_end": []}
-        n = 0
-        for _ in range(COLD_SAMPLES):
-            n += 1
+            cells = {"session_start_cold": [], "session_start_warm": [], "user_prompt_submit": [], "stop": [], "session_end": []}
+            n = 0
+            for _ in range(COLD_SAMPLES):
+                n += 1
+                _stop_service(vault)
+                r = _invoke(vault, settings_path, n)
+                if r.get("session_start"):
+                    cells["session_start_cold"].append(r["session_start"]["hook_elapsed_ms"])
+                if r.get("user_prompt_submit"):
+                    cells["user_prompt_submit"].append(r["user_prompt_submit"]["hook_elapsed_ms"])
+                for event_doc in r["stop_sessionend"]:
+                    key = "stop" if event_doc["event"] == "Stop" else "session_end"
+                    cells[key].append(event_doc["elapsed_ms"])
+            for _ in range(WARM_SAMPLES):
+                n += 1
+                r = _invoke(vault, settings_path, n)  # service left running from the previous sample
+                if r.get("session_start"):
+                    cells["session_start_warm"].append(r["session_start"]["hook_elapsed_ms"])
+                if r.get("user_prompt_submit"):
+                    cells["user_prompt_submit"].append(r["user_prompt_submit"]["hook_elapsed_ms"])
+                for event_doc in r["stop_sessionend"]:
+                    key = "stop" if event_doc["event"] == "Stop" else "session_end"
+                    cells[key].append(event_doc["elapsed_ms"])
+
+            return {name: _percentiles(values) for name, values in cells.items()}
+        finally:
             _stop_service(vault)
-            r = _invoke(vault, settings_path, n)
-            if r.get("session_start"):
-                cells["session_start_cold"].append(r["session_start"]["hook_elapsed_ms"])
-            if r.get("user_prompt_submit"):
-                cells["user_prompt_submit"].append(r["user_prompt_submit"]["hook_elapsed_ms"])
-            for event_doc in r["stop_sessionend"]:
-                key = "stop" if event_doc["event"] == "Stop" else "session_end"
-                cells[key].append(event_doc["elapsed_ms"])
-        for _ in range(WARM_SAMPLES):
-            n += 1
-            r = _invoke(vault, settings_path, n)  # service left running from the previous sample
-            if r.get("session_start"):
-                cells["session_start_warm"].append(r["session_start"]["hook_elapsed_ms"])
-            if r.get("user_prompt_submit"):
-                cells["user_prompt_submit"].append(r["user_prompt_submit"]["hook_elapsed_ms"])
-            for event_doc in r["stop_sessionend"]:
-                key = "stop" if event_doc["event"] == "Stop" else "session_end"
-                cells[key].append(event_doc["elapsed_ms"])
-
-        return {name: _percentiles(values) for name, values in cells.items()}
 
 
 def main(argv=None) -> int:
