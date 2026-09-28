@@ -145,7 +145,8 @@ COMMITTED` once. One review item was present, the canonical memory revision
 was unchanged, and the live global settings hash was unchanged. Because the
 client exited non-zero, this is recorded as
 `BOUNDED_UNVERIFIED_CLAUDE_CLI_EXIT_1`, not as verified native trust. No prompt,
-transcript, exception text, credential or absolute path was retained.
+transcript, exception text, credential or absolute path is included in this
+evidence report.
 
 The first attempt on this baseline exposed an evidence-harness cleanup defect:
 the background service remained alive when Windows removed the temporary
