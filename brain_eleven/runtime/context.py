@@ -471,13 +471,17 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     elif (config.get('retrieval_mode') != 'W06B_TASK_AWARE' and result.get('input_revisions')
           and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ()) )):
         result.update(status='STALE_INPUT', context='', selected_ids=[])
-    # SHADOW computes no model-facing normal-turn context.  CANARY/ACTIVE
-    # still use V1 only while the product-level V2 status remains SHADOW.
-    if current_config['mode'] == 'SHADOW':
-        result.update(context='', selected_ids=[])
+    # SHADOW computes no model-facing normal-turn context, unless the owner
+    # turned on shadow_recall (2026-09-27): then only V1 providers deliver.
+    # CANARY/ACTIVE still use V1 only while the product-level V2 status
+    # remains SHADOW.
     provider = result.get('provider')
+    shadow_recall = (current_config['mode'] == 'SHADOW' and current_config.get('shadow_recall') is True
+                     and provider in MODEL_FACING_V1_PROVIDERS)
+    if current_config['mode'] == 'SHADOW' and not shadow_recall:
+        result.update(context='', selected_ids=[])
     approved = (
-        current_config['mode'] in {'CANARY', 'ACTIVE'}
+        (current_config['mode'] in {'CANARY', 'ACTIVE'} or shadow_recall)
         and provider in MODEL_FACING_V1_PROVIDERS
         and result.get('status') in {'SUCCESS', 'DEGRADED', 'EMPTY'}
         and bool(result.get('context'))

@@ -26,6 +26,8 @@ def main(argv=None):
     approval.add_argument('state', choices=['OFF', 'ON'])
     shadow_accept = sub.add_parser('shadow-accept')
     shadow_accept.add_argument('state', choices=['OFF', 'ON'])
+    shadow_recall = sub.add_parser('shadow-recall', help='deliver V1 per-prompt memory while staying in SHADOW (owner opt-in)')
+    shadow_recall.add_argument('state', choices=['OFF', 'ON'])
     migration = sub.add_parser('migration')
     migration.add_argument('action', choices=['upgrade', 'rollback'])
     recall = sub.add_parser('recall-probe', help="automated owner recall test against bootstrap or prompt-time context")
@@ -79,6 +81,9 @@ def main(argv=None):
         elif args.command == 'shadow-accept':
             from .runtime.storage import RuntimeConfig
             result = RuntimeConfig(args.vault).set_shadow_accept(args.state == 'ON')
+        elif args.command == 'shadow-recall':
+            from .runtime.storage import RuntimeConfig
+            result = RuntimeConfig(args.vault).set_shadow_recall(args.state == 'ON')
         elif args.command == 'migration':
             from .runtime.migration import migrate, rollback
             result = migrate(args.vault) if args.action == 'upgrade' else rollback(args.vault)
