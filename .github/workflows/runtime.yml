@@ -59,6 +59,9 @@ jobs:
           tests/test_shadow_recall.py tests/test_recall_probe.py tests/test_recall_probe_prompt_mode.py -q
           --junitxml=pre13-runtime.xml --cov=brain_eleven/runtime
           --cov-fail-under=80 --cov-report=xml:pre13-coverage.xml
+      - name: Verify content-free weekly recall measurement classification
+        if: matrix.os == 'windows-latest'
+        run: pwsh -NoProfile -File tests/weekly_recall_check_core.tests.ps1
       - name: Reject significant runtime security findings
         run: python -m bandit -r brain_eleven/runtime -q -ll
       - uses: actions/upload-artifact@v7

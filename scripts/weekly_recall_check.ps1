@@ -3,6 +3,7 @@ param()
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'weekly_recall_check_core.ps1')
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     throw 'PowerShell 7 or later is required for ProcessStartInfo.ArgumentList.'
@@ -177,8 +178,8 @@ $probeTotal = $null
 if ($probeResult.started -and -not $probeResult.timed_out) {
     try {
         $probeData = ConvertFrom-Json -InputObject $probeResult.stdout -ErrorAction Stop
-        if ($null -ne $probeData.score) { $probeScore = [int]$probeData.score }
-        if ($null -ne $probeData.of) { $probeTotal = [int]$probeData.of }
+        $probeScore = $probeData.score
+        $probeTotal = $probeData.of
     }
     catch {
         $probeScore = $null
@@ -199,6 +200,7 @@ foreach ($question in $questions) {
     $answerLength = 0
     $timedOut = $false
     $receiptStatus = 'NOT_STARTED'
+    $claudeResult = $failedProcess
 
     if ($claudePath) {
         $existingReceiptNames = @()
@@ -214,13 +216,28 @@ foreach ($question in $questions) {
         $receiptStatus = Get-SessionStartReceiptStatus -DeliveryDirectory $deliveryDirectory -ExistingNames $existingReceiptNames -StartedAt $startedAt
     }
 
+    $assessment = Get-RecallSessionAssessment `
+        -Started ([bool]$claudeResult.started) `
+        -TimedOut $timedOut `
+        -ExitCode ([int]$claudeResult.exit_code) `
+        -AnswerLength $answerLength `
+        -ReceiptStatus $receiptStatus
+
     $questionResults.Add([pscustomobject][ordered]@{
         question = $questionNumber
         answer_length = $answerLength
         timeout = $timedOut
+        claude_exit_code = [int]$claudeResult.exit_code
         delivery_receipt_status = $receiptStatus
+        scorable = [bool]$assessment.scorable
+        invalid_reason = $assessment.invalid_reason
     })
 }
+
+$probeAssessment = Get-RecallProbeAssessment -Score $probeScore -Total $probeTotal
+$probeStatus = $probeAssessment.status
+$probeScore = $probeAssessment.score
+$probeTotal = $probeAssessment.total
 
 [void][System.IO.Directory]::CreateDirectory($measurementDirectory)
 $report = [ordered]@{
@@ -229,6 +246,7 @@ $report = [ordered]@{
     recall_probe_exit_code = [int]$probeResult.exit_code
     recall_probe_score = $probeScore
     recall_probe_total = $probeTotal
+    recall_probe_status = $probeStatus
     sessions = @($questionResults.ToArray())
 }
 $reportJson = ConvertTo-Json -InputObject $report -Depth 6
@@ -239,10 +257,13 @@ $tempPath = Join-Path $measurementDirectory ".weekly-$date-$PID.tmp"
 
 $deliveredCount = @($questionResults | Where-Object { $_.delivery_receipt_status -eq 'DELIVERED' }).Count
 $timeoutCount = @($questionResults | Where-Object { $_.timeout }).Count
+$scorableCount = @($questionResults | Where-Object { $_.scorable }).Count
+$invalidCount = $questionResults.Count - $scorableCount
 $probeDisplay = if ($null -ne $probeScore -and $null -ne $probeTotal) { "$probeScore/$probeTotal" } else { 'unavailable' }
-Write-Output "weekly-recall-check date=$date measure_exit=$($measureResult.exit_code) probe_exit=$($probeResult.exit_code) probe=$probeDisplay sessions=$($questionResults.Count) delivered=$deliveredCount timeouts=$timeoutCount file=weekly-$date.json"
+Write-Output "weekly-recall-check date=$date measure_exit=$($measureResult.exit_code) probe_exit=$($probeResult.exit_code) probe=$probeDisplay sessions=$($questionResults.Count) scorable=$scorableCount invalid=$invalidCount delivered=$deliveredCount timeouts=$timeoutCount file=weekly-$date.json"
 
 $hasReceiptFailure = @($questionResults | Where-Object { $_.delivery_receipt_status -ne 'DELIVERED' }).Count -gt 0
-if ($measureResult.exit_code -ne 0 -or $probeResult.exit_code -ne 0 -or -not $claudePath -or $hasReceiptFailure) {
+$hasInvalidSession = $invalidCount -gt 0
+if ($measureResult.exit_code -ne 0 -or $probeResult.exit_code -ne 0 -or $probeStatus -ne 'VALID' -or -not $claudePath -or $hasReceiptFailure -or $hasInvalidSession) {
     exit 1
 }
