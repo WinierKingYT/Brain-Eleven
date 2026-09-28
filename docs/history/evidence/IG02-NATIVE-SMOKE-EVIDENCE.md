@@ -34,19 +34,23 @@ network-enabled smoke can be run in a separately approved environment.
 The revised harness was run against the isolated temporary client profiles.
 No prompts, responses, credentials, memory content or local paths are retained.
 
-| client | attempts | SessionStart | UserPromptSubmit | queue / canonical effect | isolation | result |
-|---|---:|---|---|---|---|---|
-| Claude | 2 | DELIVERED (2/2) | EMITTED, but not delivered (2/2) | No committed queue job or verified effect | Live settings hash and memory revision unchanged | `BOUNDED_UNVERIFIED_CLAUDE_AUTH` |
-| Codex | 0; preflight stopped | Not reached | Not reached | Not reached | No configuration mutation | `BOUNDED_UNVERIFIED_CODEX_HOOK_BINDING` |
+| client / stage | attempts | auth evidence | SessionStart | UserPromptSubmit | queue / canonical effect | isolation | result |
+|---|---:|---|---|---|---|---|---|
+| Claude, before re-authentication | 2 | Authentication not verified; direct no-tools request returned an auth error | DELIVERED (2/2) | EMITTED, but not delivered (2/2) | No committed queue job or verified effect | Live settings hash and memory revision unchanged | `BOUNDED_UNVERIFIED_CLAUDE_AUTH` |
+| Claude, after re-authentication | 2 | `loggedIn=true`, provider `claude.ai`; direct no-tools request returned HTTP 429 | DELIVERED (2/2) | EMITTED, but not delivered (2/2) | No committed queue job or verified effect | Live settings hash and memory revision unchanged | `BOUNDED_UNVERIFIED_CLAUDE_API_429` |
+| Codex | 0; preflight stopped | Not reached | Not reached | Not reached | Not reached | No configuration mutation | `BOUNDED_UNVERIFIED_CODEX_HOOK_BINDING` |
 
-The isolated Claude executable exited unsuccessfully in both smoke attempts.
-A separate tools-disabled diagnostic produced a structured authentication
-error. The isolated Codex preflight found that the four expected hook entries
-were recorded in the installation manifest but were absent from the active
-temporary hooks configuration, so it did not launch the Codex client or rewrite
-that configuration. The registered configuration target matched the isolated
-profile in both checks.
+The Claude subscription login command completed successfully and the isolated
+auth-status response confirmed a signed-in `claude.ai` profile. A fresh
+tools-disabled request then returned HTTP 429 with an API-error terminal state;
+after a one-minute cooldown, both native smoke attempts still exited
+unsuccessfully. No response text is retained. The isolated Codex preflight
+found that the four expected hook entries were recorded in the installation
+manifest but were absent from the active temporary hooks configuration, so it
+did not launch the Codex client or rewrite that configuration. The registered
+configuration target matched the isolated profile in both checks.
 
-W-07B native acceptance remains incomplete. Claude authentication and Codex
-hook review/activation in the isolated profiles are prerequisites for repeating
-the native smoke; latency and multi-session dogfood runs remain unclaimed.
+W-07B native acceptance remains incomplete. Claude's current blocker is the
+API 429 after successful sign-in. Codex hook review/activation in the isolated
+profile remains pending; latency and multi-session dogfood runs remain
+unclaimed.
