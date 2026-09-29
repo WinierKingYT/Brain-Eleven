@@ -229,7 +229,7 @@ def test_provider_log_records_are_content_free(caplog):
     assert any(record.case_id.startswith("sha256:") for record in caplog.records)
 
 
-def test_embedding_provider_is_real_or_explicitly_unavailable():
+def test_embedding_provider_is_real_or_explicitly_unavailable(tmp_path):
     unavailable = UnavailableEmbeddingProvider().embed_text("semantic text")
     assert unavailable.status == EmbeddingStatus.EMBEDDING_UNAVAILABLE.value
     assert unavailable.vectors == ()
@@ -247,7 +247,9 @@ def test_embedding_provider_is_real_or_explicitly_unavailable():
     assert result.status == EmbeddingStatus.EMBEDDING_AVAILABLE.value
     assert result.vectors == ((0.1, 0.4), (0.2, 0.3))
 
-    configured = create_embedding_provider(environ={})
+    # No config and no environment selection: explicitly unavailable. The
+    # path is isolated so a machine's own .claude config cannot leak in.
+    configured = create_embedding_provider(config_path=tmp_path / "missing.json", environ={})
     assert configured.provider_id == "unavailable"
 
 
