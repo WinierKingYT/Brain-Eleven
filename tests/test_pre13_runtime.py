@@ -431,10 +431,15 @@ def test_native_context_revalidates_after_baseline_comparison(runtime, monkeypat
 def test_hook_delivery_and_warn_continue(runtime, monkeypatch):
     from brain_eleven.runtime import launcher
     vault, _ = runtime
-    monkeypatch.setattr(launcher, 'ensure_service', lambda *args, **kwargs: True)
+    readiness_calls = []
+    def ensure_ready(*args, **kwargs):
+        readiness_calls.append(kwargs)
+        return True
+    monkeypatch.setattr(launcher, 'ensure_service', ensure_ready)
     monkeypatch.setattr(launcher, 'request_service', lambda *args, **kwargs: {'status':'DEGRADED','context':'Safe context','delivered':True,'delivery_approved':True,'provider':'V1','missing_critical_needs':['blocker']})
     payload = {'cwd':str(vault),'session_id':'s','turn_id':'1','prompt':'Continue'}
     output, path, record = launcher.hook(vault, 'codex', 'UserPromptSubmit', payload)
+    assert readiness_calls == [{'wait': True, 'wait_timeout': 2.2}]
     assert output['hookSpecificOutput']['additionalContext'] == 'Safe context'
     assert 'systemMessage' in output and 'decision' not in output
     write_json(path, record)

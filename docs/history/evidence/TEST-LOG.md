@@ -297,3 +297,18 @@ Her gün bir satır: "Bugün hatırladı mı? Evet/hayır, neyi."
 | Tarih | Hatırladı mı? | Neyi |
 |---|---|---|
 | 2026-09-23 | Evet | Soru #1 (holdout/corpus-v2 kararı) — doğru; Soru #4 (Phase 20/IG durumu) — doğru* (kısmen dosyadan). Bkz. "İlk gerçek sonuç" yukarıda. |
+
+## 2026-09-28 ölçüm yorumu (türetilmiş)
+
+2026-09-27 ek talimatlı koşuda Q1, Q2 ve Q4 kısmen; Q3 hiç; Q5 doğru
+puanlandı. Aynı koşu için beş cevap da `IN_CONTEXT` olarak ölçüldü ve beş SessionStart makbuzu da DELIVERED /
+context_delivered=true kaydedildi. İçeriksiz kanıta göre dört eksik cevap,
+yakalama/bağlam teslimi kaybı değil, teslim edilmiş bağlamdan beklenen cevabı
+çıkarma başarısızlığı sınıfındadır. Ham cevap metni incelenmedi; bu yüzden
+daha ince bir kök neden iddia edilmiyor.
+
+Eski haftalık ölçüm çıktısı Claude CLI çıkış kodunu saklamadığından, bu koşunun
+her oturumunu yeni ölçülebilirlik şartlarına göre geriye dönük doğrulamak mümkün
+değil. Gelecek koşularda sıfır dışı CLI çıkışı, boş yanıt, timeout veya
+DELIVERED olmayan makbuz oturumu puan dışı bırakır; yalnızca sayısal durum
+saklanır. Eşik, holdout ve corpus değişmedi.
