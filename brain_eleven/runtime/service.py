@@ -429,6 +429,8 @@ def serve(vault):
                 if app.state.idle:
                     server.should_exit = True
         threading.Thread(target=idle_watch, daemon=True).start()
+        from brain_eleven.runtime.context import warm_prompt_providers
+        threading.Thread(target=warm_prompt_providers, daemon=True).start()
         try:
             server.run(sockets=[sock])
         finally:

@@ -194,3 +194,72 @@ def test_prompt_semantic_retrieval_falls_back_to_legacy_order_when_unavailable(m
     )
 
     assert selected == baseline
+
+
+def _latency_fakes():
+    class Embeddings:
+        provider_id, model = "latency-test", "latency-test"
+
+        def __init__(self):
+            self.calls = []
+
+        def embed(self, texts):
+            self.calls.append(list(texts))
+            return EmbeddingResult(
+                status=EmbeddingStatus.EMBEDDING_AVAILABLE.value, provider_id="t", model="t",
+                vectors=tuple((1.0, 0.0) if text in {"q", "m19"} else (0.0, 1.0) for text in texts),
+            )
+
+    class Reranker:
+        def __init__(self):
+            self.texts = []
+
+        def rerank(self, query, texts):
+            self.texts = list(texts)
+            return RerankerResult(
+                status=EmbeddingStatus.EMBEDDING_AVAILABLE.value, provider_id="t", model="t",
+                scores=tuple(1.0 if text == "m19" else 0.0 for text in texts),
+            )
+
+    return Embeddings(), Reranker()
+
+
+def test_prompt_rerank_shortlists_cross_encoder_and_reuses_memory_vectors(monkeypatch):
+    import brain_eleven.runtime.context as context
+
+    monkeypatch.setattr(context, "infer_memory_scope", lambda item: ("project", "p", "project"))
+    monkeypatch.setattr(context, "_EMBEDDING_CACHE", {})
+    pool = [{"memory_id": f"m{i}", "content": f"m{i}", "ranking_score": 1 - i / 100}
+            for i in range(40)]
+    embeddings, reranker = _latency_fakes()
+
+    def run():
+        return context._rank_prompt_candidates(
+            "q", pool[:5], pool, project_id="project", stable_key=lambda item: item["memory_id"],
+            embedding_provider=embeddings, reranker=reranker)
+
+    first = run()
+    assert first[0]["memory_id"] == "m19"
+    assert len(first) == 5
+    assert len(reranker.texts) == context.RERANK_SHORTLIST
+    assert "m19" in reranker.texts
+    run()
+    # Second prompt embeds nothing new: every text is already cached.
+    assert len(embeddings.calls) == 1
+
+
+def test_prompt_providers_are_built_once_per_config(tmp_path, monkeypatch):
+    import brain_eleven.runtime.context as context
+    import brain_eleven.retrieval.embedding_provider as providers
+
+    built = []
+    monkeypatch.setattr(context, "_PROVIDER_CACHE", {})
+    monkeypatch.setattr(providers, "create_embedding_provider", lambda **kw: built.append(kw) or "E")
+    monkeypatch.setattr(providers, "create_reranker", lambda **kw: "R")
+    config = tmp_path / "ig-provider-config.json"
+    config.write_text("{}", encoding="utf-8")
+
+    assert context._prompt_providers(config) == ("E", "R")
+    assert context._prompt_providers(config) == ("E", "R")
+    assert len(built) == 1
+    assert built[0]["environ"]["IG_LOCAL_MODELS_LOCAL_FILES_ONLY"] == "true"

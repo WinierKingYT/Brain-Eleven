@@ -4,6 +4,7 @@ import math
 import os
 from pathlib import Path
 import re
+import threading
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
@@ -87,12 +88,10 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
         return list(baseline)
 
     try:
-        embedded = embedding_provider.embed(
-            [query, *(str(item.get("content", "")) for item in candidates)]
-        )
-        if embedded.status != "EMBEDDING_AVAILABLE" or len(embedded.vectors) != len(candidates) + 1:
+        vectors = _embed_cached(embedding_provider, [query, *(str(item.get("content", "")) for item in candidates)])
+        if vectors is None:
             return list(baseline)
-        query_vector = embedded.vectors[0]
+        query_vector = vectors[0]
 
         def cosine(left, right):
             if len(left) != len(right) or not left:
@@ -104,7 +103,16 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
                 return 0.0
             return numerator / (left_norm * right_norm)
 
-        semantic_scores = [cosine(query_vector, vector) for vector in embedded.vectors[1:]]
+        semantic = [cosine(query_vector, vector) for vector in vectors[1:]]
+        # The cross-encoder is the expensive step (~30 ms per pair on CPU), so
+        # only the best embedding matches of each tier reach it.
+        shortlist = []
+        for item_tier in sorted(counts):
+            members = [index for index, item in enumerate(candidates) if tier(item) == item_tier]
+            members.sort(key=lambda index: (-semantic[index], stable_key(candidates[index])))
+            shortlist.extend(members[:max(RERANK_SHORTLIST, counts[item_tier])])
+        candidates = [candidates[index] for index in shortlist]
+        semantic_scores = [semantic[index] for index in shortlist]
         reranked = reranker.rerank(
             query, [str(item.get("content", "")) for item in candidates]
         )
@@ -129,6 +137,66 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
         # Retrieval is optional; preserve the exact V1 ordering if a provider
         # is unavailable, malformed, or fails during a prompt.
         return list(baseline)
+
+
+
+# Prompt-time providers live for the service process: constructing them loads
+# the local models (3-17 s), which does not fit the 2 s hook budget per prompt.
+RERANK_SHORTLIST = 20
+_EMBEDDING_CACHE_LIMIT = 5000
+_PROVIDER_LOCK = threading.Lock()
+_PROVIDER_CACHE = {}
+_EMBEDDING_CACHE = {}
+
+
+def _embed_cached(provider, texts):
+    """Return one vector per text, embedding only texts not seen before."""
+    prefix = (getattr(provider, 'provider_id', ''), getattr(provider, 'model', ''))
+    missing = list(dict.fromkeys(text for text in texts if (prefix, text) not in _EMBEDDING_CACHE))
+    if missing:
+        embedded = provider.embed(missing)
+        if embedded.status != 'EMBEDDING_AVAILABLE' or len(embedded.vectors) != len(missing):
+            return None
+        if len(_EMBEDDING_CACHE) + len(missing) > _EMBEDDING_CACHE_LIMIT:
+            _EMBEDDING_CACHE.clear()
+        for text, vector in zip(missing, embedded.vectors):
+            _EMBEDDING_CACHE[(prefix, text)] = tuple(vector)
+    return [_EMBEDDING_CACHE[(prefix, text)] for text in texts]
+
+
+def _prompt_providers(config_path):
+    """Build the configured embedding provider and reranker once per config."""
+    from brain_eleven.retrieval.embedding_provider import create_embedding_provider, create_reranker
+
+    environment = dict(os.environ)
+    # Prompt retrieval must fail closed when a model is not already
+    # available; a normal user prompt must never trigger a download.
+    environment['IG_LOCAL_MODELS_LOCAL_FILES_ONLY'] = 'true'
+    path = Path(config_path)
+    try:
+        stamp = path.stat().st_mtime_ns
+    except OSError:
+        stamp = None
+    key = (str(path.resolve()), stamp, *(environment.get(name, '') for name in (
+        'IG_EMBEDDING_PROVIDER', 'IG_RERANKER_PROVIDER', 'IG_LOCAL_EMBEDDING_MODEL', 'IG_LOCAL_RERANKER_MODEL')))
+    with _PROVIDER_LOCK:
+        if key not in _PROVIDER_CACHE:
+            _PROVIDER_CACHE.clear()
+            _PROVIDER_CACHE[key] = (
+                create_embedding_provider(config_path=path, environ=environment),
+                create_reranker(config_path=path, environ=environment),
+            )
+        return _PROVIDER_CACHE[key]
+
+
+def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json')):
+    """Load prompt providers ahead of the first prompt; never raises."""
+    try:
+        embedding_provider, reranker = _prompt_providers(config_path)
+        if _embed_cached(embedding_provider, ['warm-up']) is not None:
+            reranker.rerank('warm-up', ['warm-up'])
+    except Exception:
+        pass
 
 
 def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False,
@@ -165,22 +233,8 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
         ranked_pool = compiler._rank_memories(limit=PROMPT_POOL)
         safe_pool = [item for item in ranked_pool if eligible(item)]
         try:
-            from brain_eleven.retrieval.embedding_provider import (
-                create_embedding_provider,
-                create_reranker,
-            )
-
-            provider_environment = dict(os.environ)
-            # Prompt retrieval must fail closed when a model is not already
-            # available; a normal user prompt must never trigger a download.
-            provider_environment['IG_LOCAL_MODELS_LOCAL_FILES_ONLY'] = 'true'
-            config_path = provider_config_path or Path('.claude/ig-provider-config.json')
-            embedding_provider = create_embedding_provider(
-                config_path=config_path, environ=provider_environment,
-            )
-            reranker = create_reranker(
-                config_path=config_path, environ=provider_environment,
-            )
+            embedding_provider, reranker = _prompt_providers(
+                provider_config_path or Path('.claude/ig-provider-config.json'))
             memories = _rank_prompt_candidates(
                 prompt,
                 memories,
