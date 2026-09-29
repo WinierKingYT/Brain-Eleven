@@ -29,6 +29,7 @@ PASTED = [
     "diff --git a/worker.py b/worker.py\n-    old = 1\n+    new = 2  # we decided to use two",
     "if it persists, please report the file(s) (#1666).\r\n[graphify extract] scanning C:\\Users\\faruk",
     "PS C:\\Users\\faruk\\Documents\\Brain-Eleven> git status\nerror: build is still failing",
+    " 515:  _atomic_write_json(source, job)\n 516:  queue.commit(job)\n 517:  return result",
     "IG01-A-EVALUATION-CONTRACT.md:252:| Latency | p50 and p95 must be reported over 5 samples",
 ]
 
@@ -55,6 +56,8 @@ def test_plain_user_prose_is_still_captured(tmp_path):
 @pytest.mark.parametrize("content", [
     "Plan:\n1: kararı yaz\nSQLite kullanacağız çünkü uygulama lokal.",
     "2026: yeni plan olmalı ve SQLite kullanacağız.",
+    "Plan:\n1- kararı yaz\n2- testi ekle olmalı\n3- SQLite kullanacağız.",
+    "1: kararı yaz\n2: SQLite kullanacağız çünkü lokal.",
     "=== Özet ===\nSQLite kullanacağız çünkü uygulama tamamen lokal.",
 ])
 def test_user_typed_lists_and_headings_are_not_pasted_output(tmp_path, content):
