@@ -87,6 +87,7 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
     if len(candidates) < len(baseline):
         return list(baseline)
 
+    started = perf_counter()
     try:
         vectors = _embed_cached(embedding_provider, [query, *(str(item.get("content", "")) for item in candidates)],
                                 inline_limit=PROMPT_INLINE_EMBED)
@@ -106,17 +107,26 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
 
         semantic = [cosine(query_vector, vector) for vector in vectors[1:]]
         # The cross-encoder is the expensive step (~30 ms per pair on CPU), so
-        # only the best embedding matches of each tier reach it.
+        # only the best embedding matches of each tier reach it, and only as
+        # many as the measured pair cost fits into the remaining budget.
+        remaining = PROMPT_RERANK_BUDGET - (perf_counter() - started)
+        per_tier = int(remaining / max(_RERANK_PAIR_SECONDS[0], 1e-4) / len(counts))
+        limit = min(RERANK_SHORTLIST, per_tier)
+        if limit < max(counts.values()):
+            return list(baseline)
         shortlist = []
         for item_tier in sorted(counts):
             members = [index for index, item in enumerate(candidates) if tier(item) == item_tier]
             members.sort(key=lambda index: (-semantic[index], stable_key(candidates[index])))
-            shortlist.extend(members[:max(RERANK_SHORTLIST, counts[item_tier])])
+            shortlist.extend(members[:max(limit, counts[item_tier])])
         candidates = [candidates[index] for index in shortlist]
         semantic_scores = [semantic[index] for index in shortlist]
+        rerank_started = perf_counter()
         reranked = reranker.rerank(
             query, [str(item.get("content", "")) for item in candidates]
         )
+        pair_seconds = (perf_counter() - rerank_started) / max(len(candidates), 1)
+        _RERANK_PAIR_SECONDS[0] = 0.7 * _RERANK_PAIR_SECONDS[0] + 0.3 * pair_seconds
         if reranked.status != "EMBEDDING_AVAILABLE" or len(reranked.scores) != len(candidates):
             return list(baseline)
         scores = [float(value) for value in reranked.scores]
@@ -144,6 +154,11 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
 # Prompt-time providers live for the service process: constructing them loads
 # the local models (3-17 s), which does not fit the 2 s hook budget per prompt.
 RERANK_SHORTLIST = 20
+# Seconds a prompt may spend on embedding plus cross-encoder, inside the 2 s
+# hook budget that also pays for V1 compile, the HTTP hop and the launcher.
+PROMPT_RERANK_BUDGET = 0.9
+# Moving average of measured cross-encoder seconds per pair (CPU estimate).
+_RERANK_PAIR_SECONDS = [0.03]
 _EMBEDDING_CACHE_LIMIT = 5000
 _PROVIDER_LOCK = threading.Lock()
 _PROVIDER_CACHE = {}

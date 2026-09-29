@@ -304,3 +304,28 @@ def test_prompt_does_not_embed_a_large_backlog_inline(monkeypatch):
         __import__("time").sleep(.01)
     # The backlog was embedded in the background; the next prompt is served.
     assert len(context._embed_cached(embeddings, texts, inline_limit=8)) == 20
+
+
+def test_prompt_rerank_respects_its_time_budget(monkeypatch):
+    import brain_eleven.runtime.context as context
+
+    monkeypatch.setattr(context, "infer_memory_scope", lambda item: ("project", "p", "project"))
+    monkeypatch.setattr(context, "_EMBEDDING_CACHE", {})
+    pool = [{"memory_id": f"m{i}", "content": f"m{i}", "ranking_score": 1 - i / 100} for i in range(40)]
+    embeddings, reranker = _latency_fakes()
+    context._embed_cached(embeddings, ["q", *(item["content"] for item in pool)])
+
+    def run():
+        return context._rank_prompt_candidates(
+            "q", pool[:5], pool, project_id="project", stable_key=lambda item: item["memory_id"],
+            embedding_provider=embeddings, reranker=reranker)
+
+    # A slow cross-encoder (measured 0.1 s per pair) fits 9 pairs in 0.9 s.
+    monkeypatch.setattr(context, "_RERANK_PAIR_SECONDS", [0.1])
+    assert run()[0]["memory_id"] == "m19"
+    assert 5 <= len(reranker.texts) <= 9
+    # Too slow to rerank even the five slots: keep the V1 order untouched.
+    reranker.texts = []
+    monkeypatch.setattr(context, "_RERANK_PAIR_SECONDS", [1.0])
+    assert [item["memory_id"] for item in run()] == ["m0", "m1", "m2", "m3", "m4"]
+    assert reranker.texts == []

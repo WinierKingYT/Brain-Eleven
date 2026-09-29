@@ -143,6 +143,18 @@ _RESOLVED = re.compile(r"\b(?:resolved|fixed|closed|unblocked|çözüldü|kapat�
 _PHASE = re.compile(r"\b(?:phase|faz|aşama)\s*[- ]?(\d+(?:[A-Za-z])?)\b", re.IGNORECASE)
 _REQUIREMENT = re.compile(r"\b(?:requirement|requirements|required|must|gereksinim|zorunlu|olmalı|gerekir)\b", re.IGNORECASE)
 
+# Tool, terminal and diff output pasted into a user turn: evidence the user is
+# showing, never a commitment (2026-09-29: such segments had become canonical
+# requirements, blockers, the milestone and "decision" memories).
+_PASTED_OUTPUT = re.compile(
+    r"\btool exec result\b|\bWall time \d|\[graphify\b|\\r\\n|>>> [A-Z]{3,}"
+    r"|^\s*\d{1,5}:\s|^diff --git |^@@ |^(?:\+\+\+|---) [ab]/|^PS [A-Za-z]:\\|^[A-Za-z]:\\[^\n]*> "
+    r"|^={3,}\s.*\s={3,}$|[\w./\\-]+\.(?:md|py|ps1|json|jsonl|ya?ml|toml|txt|log):\d+[:-]"
+    r"|^(?:Mode\s+Length|On branch |Your branch |Fast-forward$|Updating [0-9a-f]{7,}\.\.)"
+    r"|\"(?:chunk_id|exit_code|wall_time_seconds|original_token_count)\"",
+    re.MULTILINE,
+)
+
 
 def _candidate_id(message: EvidenceMessage, index: int, kind: str) -> str:
     raw = "|".join((message.record.evidence_id, str(index), kind))
@@ -292,6 +304,15 @@ class DeterministicExtractor:
                 base = _base(message, index, CandidateKind.NEW_MEMORY.value, commitment, confidence, components)
                 if confirmed:
                     base["evidence_refs"] = (message.record.evidence_id, approver)
+                if _PASTED_OUTPUT.search(content):
+                    quarantined.append(
+                        QuarantineCandidate(
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
+                            reason="PASTED_OUTPUT",
+                            content_hash=_content_hash(content),
+                        )
+                    )
+                    continue
                 safety = evaluate_capture(content)
                 if not safety.accepted:
                     quarantined.append(
