@@ -1,19 +1,19 @@
 {
   "client": "codex",
   "client_version": "codex-cli 0.155.0-alpha.16.4",
-  "repo_head": "19c8c891b35a202412422978a36a3893d2b1c6c1",
+  "repo_head": "e145cdad78bd380cc6f7a07f8776a64256f4e6ce",
   "live_files_untouched": true,
   "exit_codes": [
     0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
   ],
   "samples": [
     {
@@ -27,83 +27,83 @@
     },
     {
       "phase": "cold",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "cold",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "cold",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "cold",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "warm",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "warm",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "warm",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "warm",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     },
     {
       "phase": "warm",
-      "exit_code": 0,
+      "exit_code": 1,
       "session_id_present": true,
       "session_start_seen": true,
       "user_prompt_submit_seen": true,
-      "stop_seen": true,
+      "stop_seen": false,
       "session_end_seen": true
     }
   ],
@@ -118,7 +118,7 @@
       "EMITTED": 10
     },
     "stop": {
-      "OK": 10
+      "OK": 1
     },
     "session_end": {
       "OK": 10
@@ -127,39 +127,39 @@
   "cells": {
     "session_start_cold": {
       "n": 5,
-      "p50": 1750,
-      "p95": 1761,
-      "min": 1735,
-      "max": 1761
+      "p50": 1765,
+      "p95": 1830,
+      "min": 1727,
+      "max": 1830
     },
     "session_start_warm": {
       "n": 5,
-      "p50": 578,
-      "p95": 635,
-      "min": 542,
-      "max": 635
+      "p50": 570,
+      "p95": 587,
+      "min": 551,
+      "max": 587
     },
     "user_prompt_submit": {
       "n": 10,
-      "p50": 606.5,
-      "p95": 666,
-      "min": 574,
-      "max": 666
+      "p50": 612.0,
+      "p95": 640,
+      "min": 584,
+      "max": 640
     },
     "stop": {
-      "n": 10,
-      "p50": 504.5,
-      "p95": 559,
-      "min": 475,
-      "max": 559
+      "n": 1,
+      "p50": 518,
+      "p95": 518,
+      "min": 518,
+      "max": 518
     },
     "session_end": {
       "n": 10,
-      "p50": 489.5,
-      "p95": 567,
-      "min": 466,
-      "max": 567
+      "p50": 498.0,
+      "p95": 519,
+      "min": 473,
+      "max": 519
     }
   },
-  "gate_passed": true
+  "gate_passed": false
 }

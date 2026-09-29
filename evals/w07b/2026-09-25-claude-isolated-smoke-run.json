@@ -1,13 +1,13 @@
 {
   "client": "claude",
   "client_version": "2.1.278 (Claude Code)",
-  "repo_head": "19c8c891b35a202412422978a36a3893d2b1c6c1",
+  "repo_head": "e145cdad78bd380cc6f7a07f8776a64256f4e6ce",
   "live_global_settings_untouched": true,
   "runs": [
     {
       "repetition": 1,
       "exit_code": 0,
-      "elapsed_s": 20.39,
+      "elapsed_s": 10.096,
       "session_id_present": true,
       "ledger_terminal_counts": {
         "ENQUEUED": 2,
@@ -23,7 +23,7 @@
     {
       "repetition": 2,
       "exit_code": 0,
-      "elapsed_s": 6.062,
+      "elapsed_s": 6.624,
       "session_id_present": true,
       "ledger_terminal_counts": {
         "ENQUEUED": 4,
@@ -39,7 +39,7 @@
     {
       "repetition": 3,
       "exit_code": 0,
-      "elapsed_s": 6.712,
+      "elapsed_s": 10.361,
       "session_id_present": true,
       "ledger_terminal_counts": {
         "ENQUEUED": 6,

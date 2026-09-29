@@ -1,7 +1,7 @@
 {
   "client": "claude",
   "client_version": "2.1.278 (Claude Code)",
-  "repo_head": "19c8c891b35a202412422978a36a3893d2b1c6c1",
+  "repo_head": "e145cdad78bd380cc6f7a07f8776a64256f4e6ce",
   "live_files_untouched": true,
   "exit_codes": [
     0,
@@ -127,38 +127,38 @@
   "cells": {
     "session_start_cold": {
       "n": 5,
-      "p50": 1777,
-      "p95": 1784,
-      "min": 1683,
-      "max": 1784
+      "p50": 1752,
+      "p95": 1778,
+      "min": 1728,
+      "max": 1778
     },
     "session_start_warm": {
       "n": 5,
-      "p50": 594,
-      "p95": 621,
-      "min": 565,
-      "max": 621
+      "p50": 608,
+      "p95": 619,
+      "min": 603,
+      "max": 619
     },
     "user_prompt_submit": {
       "n": 10,
-      "p50": 623.5,
-      "p95": 676,
-      "min": 578,
-      "max": 676
+      "p50": 620.0,
+      "p95": 668,
+      "min": 570,
+      "max": 668
     },
     "stop": {
       "n": 10,
-      "p50": 494.5,
-      "p95": 556,
-      "min": 483,
-      "max": 556
+      "p50": 492.0,
+      "p95": 510,
+      "min": 457,
+      "max": 510
     },
     "session_end": {
       "n": 10,
-      "p50": 490.5,
-      "p95": 517,
-      "min": 445,
-      "max": 517
+      "p50": 492.0,
+      "p95": 510,
+      "min": 444,
+      "max": 510
     }
   },
   "gate_passed": true
