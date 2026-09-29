@@ -24,3 +24,33 @@ launcher golden tests and the Claude/Codex transcript-shape runtime tests.
 The bounded exception remains explicit: live client trust and real-client
 autonomous capture are not claimed as verified until an authenticated,
 network-enabled smoke can be run in a separately approved environment.
+
+## 2026-09-28 PR32 isolated native recheck
+
+**Harness revision:** `97201b0e53e5a4487e8357ab741f55431c4aedef`
+
+**Evidence class:** GENERATED EVIDENCE / content-free
+
+The revised harness was run against the isolated temporary client profiles.
+No prompts, responses, credentials, memory content or local paths are retained.
+
+| client / stage | attempts | auth evidence | SessionStart | UserPromptSubmit | queue / canonical effect | isolation | result |
+|---|---:|---|---|---|---|---|---|
+| Claude, before re-authentication | 2 | Authentication not verified; direct no-tools request returned an auth error | DELIVERED (2/2) | EMITTED, but not delivered (2/2) | No committed queue job or verified effect | Live settings hash and memory revision unchanged | `BOUNDED_UNVERIFIED_CLAUDE_AUTH` |
+| Claude, after re-authentication | 2 | `loggedIn=true`, provider `claude.ai`; direct no-tools request returned HTTP 429 | DELIVERED (2/2) | EMITTED, but not delivered (2/2) | No committed queue job or verified effect | Live settings hash and memory revision unchanged | `BOUNDED_UNVERIFIED_CLAUDE_API_429` |
+| Codex | 0; preflight stopped | Not reached | Not reached | Not reached | Not reached | No configuration mutation | `BOUNDED_UNVERIFIED_CODEX_HOOK_BINDING` |
+
+The Claude subscription login command completed successfully and the isolated
+auth-status response confirmed a signed-in `claude.ai` profile. A fresh
+tools-disabled request then returned HTTP 429 with an API-error terminal state;
+after a one-minute cooldown, both native smoke attempts still exited
+unsuccessfully. No response text is retained. The isolated Codex preflight
+found that the four expected hook entries were recorded in the installation
+manifest but were absent from the active temporary hooks configuration, so it
+did not launch the Codex client or rewrite that configuration. The registered
+configuration target matched the isolated profile in both checks.
+
+W-07B native acceptance remains incomplete. Claude's current blocker is the
+API 429 after successful sign-in. Codex hook review/activation in the isolated
+profile remains pending; latency and multi-session dogfood runs remain
+unclaimed.

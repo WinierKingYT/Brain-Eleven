@@ -132,3 +132,211 @@ until native trust, latency and dogfood gates pass.
 
 **FIX-FIRST / NOT ACCEPTED** — process recovery is evidenced; authenticated
 native client, latency and dogfood evidence remain required.
+
+## 2026-09-28 exact-head follow-up
+
+**Harness revision:** `c85d67b14358aea34c7d0c546f81cf7c8c1d4ff9`.
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+
+One isolated Claude smoke repetition ran on the exact harness revision above.
+The real CLI returned exit code `1`, while a fresh session ID was present and
+the isolated capture ledger reached `ENQUEUED → CLAIMED → PROCESSING →
+COMMITTED` once. One review item was present, the canonical memory revision
+was unchanged, and the live global settings hash was unchanged. Because the
+client exited non-zero, this is recorded as
+`BOUNDED_UNVERIFIED_CLAUDE_CLI_EXIT_1`, not as verified native trust. No prompt,
+transcript, exception text, credential or absolute path is included in this
+evidence report.
+
+The first attempt on this baseline exposed an evidence-harness cleanup defect:
+the background service remained alive when Windows removed the temporary
+vault. `native_smoke.py` now stops the service in a `finally` block by reusing
+the W-07B latency harness's existing bounded stop helper. The exact-head
+follow-up produced a structured report and no cleanup error; a process check
+found no remaining process tied to a W-07B temporary vault. This changes only
+the evidence helper, not production runtime behavior or canonical data.
+
+Codex CLI `0.158.0-alpha.2.1` is present and the host login status is
+authenticated, but an isolated `CODEX_HOME` does not have authentication. No
+Codex smoke was attempted; status is
+`BOUNDED_UNVERIFIED_CODEX_ISOLATED_AUTH_UNAVAILABLE`. Host-level login status
+does not substitute for isolated native evidence.
+
+The earlier Claude latency and dogfood reports remain bound to their stated
+older revisions. No current-baseline latency or dogfood matrix was run here.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**; the Claude non-zero exit, isolated
+Codex authentication, current-baseline latency/dogfood evidence and
+independent review remain open.
+
+## 2026-09-28 Claude dogfood and latency follow-up
+
+**Dogfood harness source:** `d5565ddb8b9d90a678051ae537b76ece3e0aeec6`.
+**Latency cleanup fix:** `3e37357be39b34a3cdc0e586928420e2f5ad8e3c`.
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+
+The isolated Claude dogfood harness completed five sessions and twenty
+synthetic turns across two projects, observed the project switch, and recorded
+session IDs for all five sessions. Every turn returned CLI exit code `1` and
+`is_error=true` (`all_turns_ok=false`). The capture ledger's cumulative
+`COMMITTED` count advanced by four after each session, ending at twenty; each
+session added four review items. The worker reported `QUEUED`, and the
+canonical memory revision stayed at `0`. This confirms the isolated capture
+and handoff path for these turns, but is not authenticated client success or a
+passing dogfood sample. No prompt, transcript, exception text, credential or
+absolute path is recorded.
+
+A separate sanitized one-turn diagnostic returned `api_error_status=429`,
+`exit_code=1`, and `is_error=true`, identifying a provider rate-limit/quota
+response for that diagnostic. The dogfood harness did not record API status
+per turn, so this single status is not attributed to all twenty failures.
+Native Claude trust remains unverified until a successful client call can be
+captured after the rate limit clears.
+
+| Claude hook event | Samples | p50 (ms) | p95 (ms) | Status |
+| --- | ---: | ---: | ---: | --- |
+| SessionStart, cold | 5 | 1971 | 1984 | measured |
+| SessionStart, warm | 5 | 669 | 675 | measured |
+| UserPromptSubmit, warm | 10 | 685 | 728 | measured |
+| Stop, warm | 0 | — | — | missing |
+| SessionEnd, warm | 10 | 567.5 | 599 | measured |
+
+The corrected latency command exited `0`, but its current exit condition checks
+only the SessionStart sample counts. Stop latency remains unmeasured, and the
+dogfood CLI failures keep native Claude trust unverified. As documented in the
+plan, cold UserPromptSubmit/Stop/SessionEnd samples are unavailable through
+the public CLI because SessionStart starts the service for the invocation.
+
+The first latency attempt failed during Windows temporary-vault cleanup before
+it emitted metrics. `latency_matrix.py` now calls its bounded service-stop
+helper in `finally`; the corrected run emitted the values above. The service
+from the failed attempt was stopped, though its temporary directory remains
+after automatic review rejected recursive removal. No process for that run
+remains active.
+
+W-07B remains **FIX-FIRST / NOT ACCEPTED**. Native Claude CLI success,
+complete Stop latency, isolated Codex authentication/evidence, and independent
+review remain open. No production runtime, canonical data, Phase 20 state, or
+V2 mode was changed.
+
+## 2026-09-28 exact-current-baseline recovery and regression rerun
+
+**Implementation baseline:** `5c7d91346297e02ee0fffa884033692bbd795740`.
+**Evidence head:** `23e97ea97b386ae148271ba3506c413605658939`.
+
+The earlier process-recovery evidence was tied to `78c5671`. The current
+baseline contains later changes in the runtime, worker, service, capture,
+memory and state dependency graph, so that earlier result was not treated as
+current. At the exact baseline/head above, the deterministic process-recovery
+matrix passed **18/18** (`tests/test_w07b_process_recovery.py`, 22.32 seconds),
+covering the named worker/service crash boundaries and repeated recovery.
+The full local regression at the same evidence head passed **1715 tests**;
+pytest reported **4 skipped**. No test, skip marker or quarantine was added
+or changed for this work.
+
+Matching remote evidence on head `23e97ea97b386ae148271ba3506c413605658939`:
+Validation run `36390515458` completed successfully, including unit,
+coverage, security, integration and phase checks. PRE-13 runtime-gates run
+`36390515424` completed with failure only at the frozen `quality` holdout
+measurement; Ubuntu and Windows runtime jobs passed. The holdout and its
+threshold were not changed.
+
+This closes the current-base process-recovery and local-regression evidence
+gaps only. It does not satisfy the native Claude/Codex trust, complete
+two-client latency, successful dogfood, or separate-review acceptance gates.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**.
+
+## 2026-09-28 Claude history isolation audit
+
+A review of the Claude evidence subprocesses found that earlier runs passed a
+temporary `--settings` file but did not set `CLAUDE_CONFIG_DIR`. Claude Code
+stores session history under that config directory, so those runs do not prove
+that client-side session records stayed out of the host profile. The dogfood
+prompts were synthetic; no prompt or transcript content was copied into this
+report. Those earlier Claude smoke, latency and dogfood results are not counted
+as privacy-verified evidence, and the host profile was not inspected or
+modified.
+
+The evidence harness now sets `CLAUDE_CONFIG_DIR` to the throwaway client home
+for every Claude subprocess through `evals/w07b/client_process.py`; native
+smoke, latency and dogfood all use that helper. Its focused isolation test
+passed (**1 passed**), and the updated harness modules compile. A later
+one-repetition synthetic smoke under the corrected isolation produced a
+session ID but exited before capture with an authentication error; no memory
+revision changed. This does not count as native evidence. Claude trust, latency
+and dogfood gates remain open; see the isolated-authentication follow-up below.
+
+## 2026-09-28 isolated Codex smoke harness preparation
+
+The Codex evidence harness now runs only with a `CODEX_HOME` under the
+system temporary directory and reads its transcript from that isolated
+profile. Code-graph inspection confirmed that the completed queue job stores
+terminal status and event identity, while effect details are written to a
+separate `EFFECT_VERIFIED` capture receipt. The harness now validates that
+receipt against the job and event IDs before reading its bounded review-effect
+IDs; it no longer assumes the terminal job contains a result payload.
+
+Focused evidence-harness tests passed (**5 passed**), the updated harness
+modules compiled, and `git diff --check` passed. No authenticated Codex smoke
+has run yet. The isolated profile has since completed sign-in; explicit review
+of its installed hook definitions is still required before native evidence can
+be counted.
+W-07B remains **FIX-FIRST / NOT ACCEPTED**.
+
+## 2026-09-28 isolated Claude authentication prerequisite
+
+A single synthetic Claude smoke under the corrected per-run configuration
+directory produced a session ID but exited with an error before capture:
+there were no terminal capture rows or review items, and validated-memory
+revision stayed unchanged. A sanitized diagnostic classified the response as
+an authentication error; the response, prompt and transcript were not
+recorded. The live global settings hash remained unchanged. This does not
+establish a provider-rate-limit failure.
+
+The previous harness created a new client profile for every run, preventing
+an isolated login from being reused. The evidence subprocess helper now
+accepts `W07B_CLAUDE_CONFIG_DIR` only when it resolves inside system temporary
+storage; otherwise it keeps the per-run temporary profile. The focused suite
+passes **7 tests** and the affected modules compile. A dedicated temporary
+Claude profile is ready for user sign-in. Neither client's full native
+dogfood acceptance evidence is complete. W-07B remains **FIX-FIRST / NOT
+ACCEPTED**.
+
+## 2026-09-28 dogfood maintenance retry gate preparation
+
+The Claude dogfood harness now requires one controlled failure and retry for
+a maintenance intent reconciled from a committed, effect-verified native
+SessionEnd capture. It stops the isolated service, injects one bounded
+maintenance failure, verifies the intent returns to `QUEUED` at attempt 1,
+and compares content hashes and revisions for the memory, state and project
+registry stores. It then restores the real maintenance runner and requires the
+same intent to reach `COMPLETED` at attempt 2 with one report. The JSON result
+contains only statuses, revision values and an opaque intent hash.
+
+The focused harness test passed (**1 passed**); the dogfood module and test
+compile, and `git diff --check` passes. This unit evidence validates the
+controlled phase; it is not a native dogfood run. The isolated Codex profile
+is authenticated, but its `/hooks` trust review remains pending. The isolated
+Claude authentication check still exits unsuccessfully. No native dogfood or
+latency results are claimed from this change. W-07B remains **FIX-FIRST / NOT
+ACCEPTED**.
+
+## 2026-09-28 exact-head process-recovery repeat
+
+At evidence commit `2bb8131d7a601311398ae21f7df5e84a9e76673a`, the W-07B
+process-recovery matrix passed **18/18** locally. This rebinds the named
+restart/kill boundary evidence to the current harness and implementation
+revision. Authenticated native trust, two-client latency, multi-session
+dogfood and the independent reviewer verdict remain open.
+
+## 2026-09-28 current-head regression recheck
+
+At implementation and harness head `5e38c1a3461b8e578af4f7e75c44d020ba4bef1e`,
+the W-07B process-recovery tests passed **18/18**. The full local regression
+passed **1730 tests**; four platform-conditional tests were skipped. A focused
+skip-reason audit identified all four as directory-fsync cases unsupported on
+Windows. No skip filters, quarantines or test edits were used. The full run
+completed in 342.75 seconds.
+
+This current-head recheck closes the local process-recovery and full-regression
+evidence items only. Authenticated native trust, the two-client latency matrix,
+multi-session dogfood and the independent reviewer verdict remain open.

@@ -13,19 +13,24 @@ or writes the live vault, the live global ``~/.claude/settings.json`` or this
 repository's own runtime state; every artifact lives under a
 ``tempfile.TemporaryDirectory`` that is removed even on failure.
 
-Usage: ``python -m evals.w07b.native_smoke [--repetitions N]``
+Usage: ``python -m evals.w07b.native_smoke [--repetitions N]``. For a
+reusable isolated login, set ``W07B_CLAUDE_CONFIG_DIR`` to a disposable
+directory under system temp.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from .client_process import run_claude
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
@@ -34,9 +39,9 @@ sys.path.insert(0, str(REPO))
 # (a stated decision), one distinct fact per repetition so dedup cannot mask
 # a missed run.
 PROMPTS = [
-    "W07B isolated smoke rep {n}: we decided to use SQLite for isolated capture test {n}.",
-    "W07B isolated smoke rep {n}: we decided to prefer atomic rename for isolated capture test {n}.",
-    "W07B isolated smoke rep {n}: we decided to keep the vault manifest for isolated capture test {n}.",
+    "W07B isolated smoke rep {n}: we decided to use SQLite for claude-smoke-key-{n}.",
+    "W07B isolated smoke rep {n}: we decided to prefer atomic rename for claude-smoke-key-{n}.",
+    "W07B isolated smoke rep {n}: we decided to keep the vault manifest for claude-smoke-key-{n}.",
 ]
 
 
@@ -45,11 +50,15 @@ class RunResult:
     repetition: int
     exit_code: int
     elapsed_s: float
-    session_id: str | None
+    session_hash: str | None
     ledger_terminal: dict
-    review_ids: list
+    hook_receipts: dict
+    queue_terminal_state: str | None
+    capture_receipt_status: str | None
+    review_effect_id: str | None
     memory_revision_before: int
     memory_revision_after: int
+    failure_code: str | None
 
 
 @dataclass
@@ -63,12 +72,14 @@ class Report:
 
 def _client_version() -> str:
     proc = subprocess.run(["claude", "--version"], capture_output=True, text=True, timeout=15)
-    return proc.stdout.strip() or proc.stderr.strip()
+    value = (proc.stdout or proc.stderr or "").strip()
+    return value[:64] if re.fullmatch(r"[A-Za-z0-9 ._+\-]{1,64}", value) else "unknown"
 
 
 def _repo_head() -> str:
     proc = subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, capture_output=True, text=True, timeout=15)
-    return proc.stdout.strip()
+    value = proc.stdout.strip()
+    return value if re.fullmatch(r"[0-9a-f]{40,64}", value) else "unknown"
 
 
 def _sha256(path: Path) -> str | None:
@@ -94,6 +105,15 @@ def _ledger_terminal_counts(vault: Path) -> dict:
 
 def run(repetitions: int) -> Report:
     from brain_eleven.runtime.install import install
+    from brain_eleven.runtime.worker import capture_session_hash
+    from .codex_native_smoke import (
+        _capture_receipt,
+        _last_capture,
+        _session_receipts,
+        _verified_review_id,
+        _wait_for_capture,
+    )
+    from .latency_matrix import _stop_service
 
     live_settings = Path.home() / ".claude" / "settings.json"
     before_hash = _sha256(live_settings)
@@ -108,34 +128,74 @@ def run(repetitions: int) -> Report:
         isolated_path = home / "isolated_hooks.json"
         isolated_path.write_text(json.dumps(isolated), encoding="utf-8")
 
-        for n in range(1, repetitions + 1):
-            prompt = PROMPTS[(n - 1) % len(PROMPTS)].format(n=n)
-            cmd = ["claude", "-p", prompt, "--settings", str(isolated_path), "--setting-sources", "",
-                   "--strict-mcp-config", "--tools", "", "--output-format", "json"]
-            before_revision = _memory_revision(vault)
-            started = time.monotonic()
-            proc = subprocess.run(cmd, cwd=str(vault), capture_output=True, text=True, encoding="utf-8", timeout=120)
-            elapsed = time.monotonic() - started
-            session_id = None
-            try:
-                session_id = json.loads(proc.stdout).get("session_id")
-            except (ValueError, TypeError):
-                pass
-            # Let the background service finish draining before inspecting terminal state.
-            deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                queued = list((vault / ".brain-eleven" / "capture" / "queued").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "queued").exists() else []
-                processing = list((vault / ".brain-eleven" / "capture" / "processing").glob("*.json")) if (vault / ".brain-eleven" / "capture" / "processing").exists() else []
-                if not queued and not processing:
-                    break
-                time.sleep(0.5)
-            review_dir = vault / ".brain-eleven" / "runtime" / "review"
-            review_ids = sorted(p.stem for p in review_dir.glob("*.json")) if review_dir.exists() else []
-            report.runs.append(RunResult(
-                repetition=n, exit_code=proc.returncode, elapsed_s=round(elapsed, 3), session_id=session_id,
-                ledger_terminal=_ledger_terminal_counts(vault), review_ids=review_ids,
-                memory_revision_before=before_revision, memory_revision_after=_memory_revision(vault),
-            ))
+        try:
+            for n in range(1, repetitions + 1):
+                prompt = PROMPTS[(n - 1) % len(PROMPTS)].format(n=n)
+                marker = f"claude-smoke-key-{n}"
+                before_revision = _memory_revision(vault)
+                started = time.monotonic()
+                try:
+                    proc = run_claude(vault, isolated_path, prompt, timeout=120)
+                    exit_code = proc.returncode
+                    client_status = "OK" if exit_code == 0 else "CLIENT_EXIT"
+                except subprocess.TimeoutExpired:
+                    proc = None
+                    exit_code = 124
+                    client_status = "TIMEOUT"
+                elapsed = time.monotonic() - started
+                session_id = None
+                if proc is not None:
+                    try:
+                        session_id = json.loads(proc.stdout).get("session_id")
+                    except (ValueError, TypeError):
+                        pass
+                job = _wait_for_capture(vault, session_id, "claude") if session_id else {}
+                receipts = _session_receipts(vault, session_id, "claude") if session_id else {}
+                capture = _last_capture(vault, session_id, "claude") if session_id else {}
+                effect_receipt = _capture_receipt(vault, job) if job else {}
+                review_id = _verified_review_id(
+                    vault, session_id, marker, effect_receipt.get("review_effect_ids", []), "claude"
+                ) if session_id else None
+                revision_after = _memory_revision(vault)
+                checks = {
+                    "session_start_receipt_observed": "SessionStart" in receipts,
+                    "user_prompt_submit_receipt_observed": "UserPromptSubmit" in receipts,
+                    "queue_committed": job.get("status") == "COMMITTED",
+                    "capture_receipt_verified": effect_receipt.get("status") == "EFFECT_VERIFIED",
+                    "review_effect_verified": review_id is not None,
+                    "memory_revision_unchanged": before_revision == revision_after,
+                }
+                failure_code = None
+                if client_status != "OK":
+                    failure_code = client_status
+                else:
+                    for check, passed in checks.items():
+                        if not passed:
+                            failure_code = {
+                                "session_start_receipt_observed": "SESSIONSTART_RECEIPT_MISSING",
+                                "user_prompt_submit_receipt_observed": "USERPROMPT_RECEIPT_MISSING",
+                                "queue_committed": capture.get("error_code") or "CAPTURE_NOT_TERMINAL",
+                                "capture_receipt_verified": "CAPTURE_RECEIPT_NOT_VERIFIED",
+                                "review_effect_verified": "EXPECTED_REVIEW_EFFECT_MISSING",
+                                "memory_revision_unchanged": "CANONICAL_REVISION_CHANGED",
+                            }[check]
+                            break
+                report.runs.append(RunResult(
+                    repetition=n,
+                    exit_code=exit_code,
+                    elapsed_s=round(elapsed, 3),
+                    session_hash=capture_session_hash("claude", session_id) if session_id else None,
+                    ledger_terminal=_ledger_terminal_counts(vault),
+                    hook_receipts=receipts,
+                    queue_terminal_state=job.get("status"),
+                    capture_receipt_status=effect_receipt.get("status"),
+                    review_effect_id=review_id,
+                    memory_revision_before=before_revision,
+                    memory_revision_after=revision_after,
+                    failure_code=failure_code,
+                ))
+        finally:
+            _stop_service(vault)
         report.live_settings_hash_after = _sha256(live_settings)
     return report
 
@@ -146,17 +206,30 @@ def main(argv=None) -> int:
     parser.add_argument("--report", type=Path, default=None, help="optional path to write the JSON report")
     args = parser.parse_args(argv)
 
-    report = run(args.repetitions)
+    try:
+        report = run(args.repetitions)
+    except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+        code = str(exc) if re.fullmatch(r"[A-Z0-9_]{1,64}", str(exc)) else "HARNESS_ERROR"
+        print(json.dumps({"trust_verdict": "BOUNDED_UNVERIFIED_CLAUDE", "failure_code": code}, indent=2))
+        return 1
     live_untouched = report.live_settings_hash_before == report.live_settings_hash_after
+    verified = bool(report.runs) and all(
+        r.exit_code == 0 and r.failure_code is None for r in report.runs
+    )
     payload = {
         "client_version": report.client_version,
         "repo_head": report.repo_head,
+        "trust_verdict": "VERIFIED" if verified else "BOUNDED_UNVERIFIED_CLAUDE",
         "live_global_settings_untouched": live_untouched,
         "runs": [
             {"repetition": r.repetition, "exit_code": r.exit_code, "elapsed_s": r.elapsed_s,
-             "session_id_present": r.session_id is not None, "ledger_terminal_counts": r.ledger_terminal,
-             "review_item_count": len(r.review_ids),
-             "memory_revision_unchanged": r.memory_revision_before == r.memory_revision_after}
+             "session_hash": r.session_hash, "hook_receipts": r.hook_receipts,
+             "ledger_terminal_counts": r.ledger_terminal,
+             "queue_terminal_state": r.queue_terminal_state,
+             "capture_receipt_status": r.capture_receipt_status,
+             "review_effect_id": r.review_effect_id,
+             "memory_revision_unchanged": r.memory_revision_before == r.memory_revision_after,
+             "failure_code": r.failure_code}
             for r in report.runs
         ],
     }
@@ -166,7 +239,7 @@ def main(argv=None) -> int:
     if not live_untouched:
         print("FATAL: live global settings.json hash changed", file=sys.stderr)
         return 2
-    ok = all(r.exit_code == 0 and r.memory_revision_before == r.memory_revision_after and r.review_ids for r in report.runs)
+    ok = verified
     return 0 if ok else 1
 
 

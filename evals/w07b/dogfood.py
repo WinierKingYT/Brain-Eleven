@@ -4,20 +4,25 @@ Implements the "Dogfood" section of
 docs/history/plans/WEAKNESS-W07B-NATIVE-ACCEPTANCE-EVIDENCE-PLAN.md for the
 Claude side only: >=5 sessions and >=20 turns across two registered
 projects, including a project switch, a SessionEnd -> next SessionStart
-handoff and whatever maintenance-intent status real usage produces. Same
+handoff and one controlled failed/retried maintenance intent derived from a
+real native SessionEnd capture. Same
 isolation as the sibling harnesses in this package: a throwaway vault and
 throwaway client config; the live vault and live ~/.claude/settings.json are
 never read or written. Stores only sanitized event/status/revision metadata
-and opaque IDs/hashes, never prompt or transcript content.
+and opaque IDs/hashes, never prompt or transcript content. Set
+``W07B_CLAUDE_CONFIG_DIR`` to a disposable directory under system temp when an
+isolated authenticated profile must be reused across sign-in and evidence runs.
 """
 from __future__ import annotations
 
+import hashlib
 import json
-import subprocess
 import sys
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from .client_process import run_claude
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
@@ -33,11 +38,7 @@ SESSIONS = [
 
 
 def _run_claude(cwd: Path, settings_path: Path, prompt: str, session_id: str | None) -> dict:
-    cmd = ["claude", "-p", prompt, "--settings", str(settings_path), "--setting-sources", "",
-           "--strict-mcp-config", "--tools", "", "--output-format", "json"]
-    if session_id:
-        cmd += ["--resume", session_id]
-    proc = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", timeout=120)
+    proc = run_claude(cwd, settings_path, prompt, session_id=session_id)
     try:
         doc = json.loads(proc.stdout)
     except (ValueError, TypeError):
@@ -70,6 +71,116 @@ def _last_worker(vault: Path) -> dict:
 def _memory_revision(vault: Path) -> int:
     path = vault / ".claude" / "validated-memory.json"
     return json.loads(path.read_text(encoding="utf-8"))["revision"] if path.exists() else -1
+
+
+def _canonical_snapshot(vault: Path, project_id: str) -> dict:
+    """Return revisions and content hashes without exposing canonical bytes."""
+    from brain_eleven.memory.store import MemoryStore
+    from brain_eleven.projects.registry import ProjectRegistry
+    from brain_eleven.state.store import StateStore
+
+    memory = MemoryStore(vault)
+    state = StateStore(vault)
+    projects = ProjectRegistry(vault)
+    files = {"memory": memory.path, "state": state.path, "projects": projects.path}
+    hashes = {
+        name: hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        for name, path in files.items()
+    }
+    return {
+        "memory_revision": memory.revision(),
+        "state_revision": state.project_revision(project_id),
+        "project_registry_revision": projects.load()["revision"],
+        "canonical_hashes": hashes,
+    }
+
+
+def _exercise_failed_retry(vault: Path) -> dict:
+    """Fail once, then retry a maintenance intent from a committed native capture."""
+    from brain_eleven.runtime import maintenance, maintenance_delivery as delivery
+
+    try:
+        # Reconciliation only creates intents from committed SessionEnd jobs
+        # with verified worker receipts; it cannot invent a dogfood event.
+        delivery.reconcile_completed(vault, limit=64)
+        directories = delivery._dirs(vault)
+        if list(directories[delivery.PROCESSING].glob("*.json")):
+            return {"verified": False, "reason": "MAINTENANCE_INTENT_IN_FLIGHT"}
+        queued = sorted(directories[delivery.QUEUED].glob("*.json"))
+        if not queued:
+            return {"verified": False, "reason": "NO_NATIVE_SESSION_END_INTENT"}
+
+        selected_path = queued[0]
+        selected = json.loads(selected_path.read_text(encoding="utf-8"))
+        intent_id = selected.get("intent_id")
+        project_id = selected.get("project_id")
+        if not isinstance(intent_id, str) or not isinstance(project_id, str):
+            return {"verified": False, "reason": "INVALID_MAINTENANCE_INTENT"}
+        intent_hash = hashlib.sha256(intent_id.encode("utf-8")).hexdigest()[:16]
+        before = _canonical_snapshot(vault, project_id)
+        original_run_maintenance = maintenance.run_maintenance
+        failure_calls = 0
+
+        def fail_once(*args, **kwargs):
+            nonlocal failure_calls
+            failure_calls += 1
+            raise RuntimeError("W07B controlled maintenance failure")
+
+        maintenance.run_maintenance = fail_once
+        try:
+            first_processed = delivery.process_pending(vault, limit=1)
+        finally:
+            maintenance.run_maintenance = original_run_maintenance
+
+        after_failure = _canonical_snapshot(vault, project_id)
+        failed = delivery._find(directories, intent_id)
+        failure_record = json.loads(failed[1].read_text(encoding="utf-8")) if failed else {}
+        failure_queued = (
+            failure_calls == 1 and first_processed == 0 and failed is not None and
+            failed[0] == delivery.QUEUED and failure_record.get("attempt") == 1
+        )
+        unchanged_after_failure = before == after_failure
+        if not failure_queued or not unchanged_after_failure:
+            return {
+                "verified": False,
+                "reason": "FAILED_ATTEMPT_NOT_SAFE_AND_RETRYABLE",
+                "intent_hash": intent_hash,
+                "status_after_failure": failure_record.get("status"),
+                "attempt_after_failure": failure_record.get("attempt"),
+                "canonical_unchanged_after_failure": unchanged_after_failure,
+            }
+
+        retry_processed = delivery.process_pending(vault, limit=1)
+        completed = delivery._find(directories, intent_id)
+        completed_record = json.loads(completed[1].read_text(encoding="utf-8")) if completed else {}
+        report_path = delivery._root(vault) / "reports" / f"{intent_id}.json"
+        unchanged_after_retry = before == _canonical_snapshot(vault, project_id)
+        verified = (
+            retry_processed == 1 and completed is not None and
+            completed[0] == delivery.COMPLETED and completed_record.get("attempt") == 2 and
+            report_path.is_file() and unchanged_after_retry
+        )
+        return {
+            "verified": verified,
+            "reason": None if verified else "RETRY_COMPLETION_NOT_VERIFIED",
+            "intent_hash": intent_hash,
+            "status_after_failure": failure_record.get("status"),
+            "attempt_after_failure": failure_record.get("attempt"),
+            "status_after_retry": completed_record.get("status"),
+            "attempt_after_retry": completed_record.get("attempt"),
+            "report_present": report_path.is_file(),
+            "canonical_unchanged_after_failure": unchanged_after_failure,
+            "canonical_unchanged_after_retry": unchanged_after_retry,
+            "memory_revision_before": before["memory_revision"],
+            "memory_revision_after_failure": after_failure["memory_revision"],
+            "state_revision_before": before["state_revision"],
+            "state_revision_after_failure": after_failure["state_revision"],
+            "project_registry_revision_before": before["project_registry_revision"],
+            "project_registry_revision_after_failure": after_failure["project_registry_revision"],
+        }
+    except Exception:
+        # Dogfood output must remain content-free even when evidence setup fails.
+        return {"verified": False, "reason": "MAINTENANCE_RETRY_EVIDENCE_ERROR"}
 
 
 def _stop_service(vault: Path) -> None:
@@ -177,12 +288,14 @@ def run() -> dict:
             handoff_checks.append({"after_session": s_index, "ledger_committed_total": committed_for_session})
 
         _stop_service(vault)
+        maintenance_retry = _exercise_failed_retry(vault)
         return {
             "sessions": sessions_log,
             "total_turns": sum(len(s["turns"]) for s in sessions_log),
             "distinct_projects": sorted({s["project_label"] for s in sessions_log}),
             "project_switch_observed": project_switch_observed,
             "handoff_checks": handoff_checks,
+            "maintenance_retry": maintenance_retry,
             "all_turns_ok": all(t["exit_code"] == 0 and t.get("is_error") is False for s in sessions_log for t in s["turns"]),
         }
 
@@ -192,7 +305,7 @@ def main(argv=None) -> int:
     print(json.dumps(report, indent=2))
     ok = (len(report["sessions"]) >= 5 and report["total_turns"] >= 20 and
           len(report["distinct_projects"]) >= 2 and report["project_switch_observed"] and
-          report["all_turns_ok"])
+          report["all_turns_ok"] and report["maintenance_retry"]["verified"])
     return 0 if ok else 1
 
 
