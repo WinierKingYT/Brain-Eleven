@@ -88,7 +88,8 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
         return list(baseline)
 
     try:
-        vectors = _embed_cached(embedding_provider, [query, *(str(item.get("content", "")) for item in candidates)])
+        vectors = _embed_cached(embedding_provider, [query, *(str(item.get("content", "")) for item in candidates)],
+                                inline_limit=PROMPT_INLINE_EMBED)
         if vectors is None:
             return list(baseline)
         query_vector = vectors[0]
@@ -147,21 +148,38 @@ _EMBEDDING_CACHE_LIMIT = 5000
 _PROVIDER_LOCK = threading.Lock()
 _PROVIDER_CACHE = {}
 _EMBEDDING_CACHE = {}
+_PROVIDER_LOCK_EMBED = threading.Lock()
+# New texts a prompt may embed itself (query plus a few changed memories).
+PROMPT_INLINE_EMBED = 8
 
 
-def _embed_cached(provider, texts):
-    """Return one vector per text, embedding only texts not seen before."""
+def _embed_cached(provider, texts, *, inline_limit=None):
+    """Return one vector per text, embedding only texts not seen before.
+
+    With ``inline_limit`` a prompt embeds at most that many new texts itself;
+    a larger backlog (pool changed, cache cleared) is embedded in the
+    background and the prompt gets ``None`` so it keeps the V1 order.
+    """
     prefix = (getattr(provider, 'provider_id', ''), getattr(provider, 'model', ''))
-    missing = list(dict.fromkeys(text for text in texts if (prefix, text) not in _EMBEDDING_CACHE))
+    cache = _EMBEDDING_CACHE
+    missing = list(dict.fromkeys(text for text in texts if (prefix, text) not in cache))
+    fresh = {}
     if missing:
+        if inline_limit is not None and len(missing) > inline_limit:
+            threading.Thread(target=_embed_cached, args=(provider, missing), daemon=True).start()
+            return None
         embedded = provider.embed(missing)
         if embedded.status != 'EMBEDDING_AVAILABLE' or len(embedded.vectors) != len(missing):
             return None
-        if len(_EMBEDDING_CACHE) + len(missing) > _EMBEDDING_CACHE_LIMIT:
-            _EMBEDDING_CACHE.clear()
-        for text, vector in zip(missing, embedded.vectors):
-            _EMBEDDING_CACHE[(prefix, text)] = tuple(vector)
-    return [_EMBEDDING_CACHE[(prefix, text)] for text in texts]
+        fresh = {(prefix, text): tuple(vector) for text, vector in zip(missing, embedded.vectors)}
+        with _PROVIDER_LOCK_EMBED:
+            if len(cache) + len(fresh) > _EMBEDDING_CACHE_LIMIT:
+                cache.clear()
+            cache.update(fresh)
+    # Read through ``fresh`` first so a concurrent clear cannot drop a vector
+    # this call just computed.
+    vectors = [fresh.get((prefix, text)) or cache.get((prefix, text)) for text in texts]
+    return None if any(vector is None for vector in vectors) else vectors
 
 
 def _prompt_providers(config_path, *, block=True, warm_texts=()):

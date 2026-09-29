@@ -238,14 +238,17 @@ def test_prompt_rerank_shortlists_cross_encoder_and_reuses_memory_vectors(monkey
             "q", pool[:5], pool, project_id="project", stable_key=lambda item: item["memory_id"],
             embedding_provider=embeddings, reranker=reranker)
 
+    # The service warm-up embeds the pool; a prompt then embeds only itself.
+    context._embed_cached(embeddings, [item["content"] for item in pool])
     first = run()
     assert first[0]["memory_id"] == "m19"
     assert len(first) == 5
     assert len(reranker.texts) == context.RERANK_SHORTLIST
     assert "m19" in reranker.texts
     run()
-    # Second prompt embeds nothing new: every text is already cached.
-    assert len(embeddings.calls) == 1
+    # Warm-up plus the query once; the second prompt embeds nothing new.
+    assert embeddings.calls[1] == ["q"]
+    assert len(embeddings.calls) == 2
 
 
 def test_prompt_providers_are_built_once_per_config(tmp_path, monkeypatch):
@@ -285,3 +288,19 @@ def test_prompt_never_waits_for_loading_providers(tmp_path, monkeypatch):
             break
         __import__("time").sleep(.01)
     assert started == [config]
+
+
+def test_prompt_does_not_embed_a_large_backlog_inline(monkeypatch):
+    import brain_eleven.runtime.context as context
+
+    monkeypatch.setattr(context, "_EMBEDDING_CACHE", {})
+    embeddings, _ = _latency_fakes()
+    texts = [f"t{i}" for i in range(20)]
+
+    assert context._embed_cached(embeddings, texts, inline_limit=8) is None
+    for _ in range(100):
+        if len(context._EMBEDDING_CACHE) == 20:
+            break
+        __import__("time").sleep(.01)
+    # The backlog was embedded in the background; the next prompt is served.
+    assert len(context._embed_cached(embeddings, texts, inline_limit=8)) == 20
