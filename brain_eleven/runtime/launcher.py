@@ -141,7 +141,7 @@ def hook(vault, client, event, payload):
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     deadline = time.monotonic() + 2.5
-    ready = ensure_service(vault, wait=True, wait_timeout=2.2) if event == 'SessionStart' else ensure_service(vault)
+    ready = ensure_service(vault, wait=True, wait_timeout=2.2)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
         raise ValueError('Unsupported hook event')
     prompt = payload.get('prompt', '')

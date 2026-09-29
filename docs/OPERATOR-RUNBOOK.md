@@ -144,8 +144,12 @@ pwsh -NoProfile -File .\scripts\weekly_recall_check.ps1
 Betik önce `measure` ve `recall-probe` komutlarını çalıştırır; ardından beş
 soruyu beş ayrı, araçsız Claude oturumunda sorar. Her oturumun zaman aşımı
 120 saniyedir. `.brain-eleven/runtime/measurements/weekly-<tarih>.json`
-sadece sayısal probe bilgisi ve her soru için numara, cevap uzunluğu,
-zaman aşımı ve `SessionStart` makbuz durumunu tutar; cevap metni yazılmaz.
+sadece sayısal probe bilgisi ve her soru için numara, cevap uzunluğu, timeout,
+Claude CLI çıkış kodu, ölçülebilirlik durumu ve `SessionStart` makbuz durumunu
+tutar; cevap/stdout/stderr metni yazılmaz. Başlamayan, zaman aşımına uğrayan,
+sıfır dışı kodla biten, boş yanıt veren ya da `DELIVERED` makbuzu olmayan
+oturumlar puanlanabilir sayılmaz ve betik sıfır dışı kodla biter. Probe sonucu
+da yoksa veya beş soru toplamıyla tutarsızsa koşu geçersiz sayılır.
 Son satırdaki özet zamanlanmış görev günlüklerinde de kullanılabilir.
 
 Windows Görev Zamanlayıcı'ya pazartesi 09.00 için görev eklemek üzere depo
