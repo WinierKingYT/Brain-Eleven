@@ -263,3 +263,25 @@ def test_prompt_providers_are_built_once_per_config(tmp_path, monkeypatch):
     assert context._prompt_providers(config) == ("E", "R")
     assert len(built) == 1
     assert built[0]["environ"]["IG_LOCAL_MODELS_LOCAL_FILES_ONLY"] == "true"
+
+
+def test_prompt_never_waits_for_loading_providers(tmp_path, monkeypatch):
+    import brain_eleven.runtime.context as context
+
+    monkeypatch.setattr(context, "_PROVIDER_CACHE", {})
+    started = []
+    monkeypatch.setattr(context, "warm_prompt_providers", lambda path, texts=(): started.append(path))
+    config = tmp_path / "ig-provider-config.json"
+    config.write_text("{}", encoding="utf-8")
+
+    # Another thread holds the load lock: the prompt returns at once.
+    with context._PROVIDER_LOCK:
+        assert context._prompt_providers(config, block=False) is None
+    assert started == []
+    # Nobody is loading: the prompt still returns at once but starts a load.
+    assert context._prompt_providers(config, block=False) is None
+    for _ in range(50):
+        if started:
+            break
+        __import__("time").sleep(.01)
+    assert started == [config]

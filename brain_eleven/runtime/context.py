@@ -164,8 +164,12 @@ def _embed_cached(provider, texts):
     return [_EMBEDDING_CACHE[(prefix, text)] for text in texts]
 
 
-def _prompt_providers(config_path):
-    """Build the configured embedding provider and reranker once per config."""
+def _prompt_providers(config_path, *, block=True, warm_texts=()):
+    """Build the configured embedding provider and reranker once per config.
+
+    With ``block=False`` a prompt never waits for model loading: it gets
+    ``None`` (and keeps the V1 order) while a background thread loads them.
+    """
     from brain_eleven.retrieval.embedding_provider import create_embedding_provider, create_reranker
 
     environment = dict(os.environ)
@@ -179,21 +183,37 @@ def _prompt_providers(config_path):
         stamp = None
     key = (str(path.resolve()), stamp, *(environment.get(name, '') for name in (
         'IG_EMBEDDING_PROVIDER', 'IG_RERANKER_PROVIDER', 'IG_LOCAL_EMBEDDING_MODEL', 'IG_LOCAL_RERANKER_MODEL')))
+    cached = _PROVIDER_CACHE.get(key)
+    if cached is not None or not block:
+        if cached is None and _PROVIDER_LOCK.acquire(blocking=False):
+            # Nobody is loading: start a load for later prompts, do not wait.
+            _PROVIDER_LOCK.release()
+            threading.Thread(target=warm_prompt_providers, args=(config_path, tuple(warm_texts)),
+                             daemon=True).start()
+        return cached
     with _PROVIDER_LOCK:
         if key not in _PROVIDER_CACHE:
-            _PROVIDER_CACHE.clear()
-            _PROVIDER_CACHE[key] = (
+            providers = (
                 create_embedding_provider(config_path=path, environ=environment),
                 create_reranker(config_path=path, environ=environment),
             )
+            _PROVIDER_CACHE.clear()
+            _PROVIDER_CACHE[key] = providers
         return _PROVIDER_CACHE[key]
 
 
-def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json')):
-    """Load prompt providers ahead of the first prompt; never raises."""
+def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), texts=(), vault=None):
+    """Load prompt providers and memory vectors ahead of prompts; never raises.
+
+    Embedding the whole pool takes ~2 s, so it must happen here and not in
+    the first prompt after loading.
+    """
     try:
+        if vault is not None:
+            document = _legacy_context_compiler()(str(vault)).memory_store.load()
+            texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
         embedding_provider, reranker = _prompt_providers(config_path)
-        if _embed_cached(embedding_provider, ['warm-up']) is not None:
+        if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
             reranker.rerank('warm-up', ['warm-up'])
     except Exception:
         pass
@@ -233,8 +253,12 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
         ranked_pool = compiler._rank_memories(limit=PROMPT_POOL)
         safe_pool = [item for item in ranked_pool if eligible(item)]
         try:
-            embedding_provider, reranker = _prompt_providers(
-                provider_config_path or Path('.claude/ig-provider-config.json'))
+            providers = _prompt_providers(
+                provider_config_path or Path('.claude/ig-provider-config.json'), block=False,
+                warm_texts=[str(item.get('content', '')) for item in safe_pool])
+            if providers is None:
+                raise LookupError('prompt providers are still loading')
+            embedding_provider, reranker = providers
             memories = _rank_prompt_candidates(
                 prompt,
                 memories,
