@@ -12,40 +12,39 @@ parallel one.
 └─────────────────────────────────────────────────────────┘
               ▲ read/write via hooks (SessionStart, capture)
 ┌─────────────────────────────────────────────────────────┐
-│  brain_eleven/  (target implementation, "strangler")     │
-│    memory/  projects/  state/  graph/  extraction/       │
-│    retrieval/  search/  lifecycle/  support/  runtime/   │
-│    infrastructure/                                        │
+│  brain_eleven/  (current package and migration target)   │
+│    memory/store.py  projects/registry.py  state/store.py │
+│    graph/ extraction/ retrieval/ search/ runtime/ ...    │
 └─────────────────────────────────────────────────────────┘
-              │ brain_eleven/_legacy.py loads these on demand
+              │ brain_eleven/_legacy.py loads selected modules
 ┌─────────────────────────────────────────────────────────┐
-│  scripts/  (original implementation, ~60 files)          │  ← most real logic still
-│    memory_store.py, project_registry.py, state.py,       │     lives here today
-│    context-compiler.py, hybrid-search.py, ...             │
+│  scripts/  (remaining legacy implementations/adapters)  │
+│    e.g. context-compiler.py, hybrid-search.py, ...       │
 └─────────────────────────────────────────────────────────┘
 ```
 
-`brain_eleven/` is the package everything is *supposed* to move into
-(see `brain_eleven/__init__.py`: "Migration is intentionally incremental").
-`brain_eleven/_legacy.py` is the bridge: it loads a `scripts/*.py` module by
-path and caches it, so callers get one module identity instead of two copies
-of the same logic. When you need to change behavior, find the real
-implementation in `scripts/` first — `brain_eleven/` may just be a thin
-re-export until that file's migration lands (tracked as IG-07 in
-`docs/programs/INTELLIGENCE-GRADUATION.md`).
+The migration is incremental, but `brain_eleven/` is not just a future target:
+the canonical memory, project registry and state stores are implemented there.
+`brain_eleven/_legacy.py` loads selected remaining `scripts/*.py` modules by
+path and caches them so callers share one module identity. When changing
+behavior, start from the package surface and trace its callers; use the bridge
+to identify any behavior still delegated to `scripts/`. Do not assume either
+directory is authoritative for every subsystem. The remaining migration work
+is tracked under IG-07 in `docs/programs/INTELLIGENCE-GRADUATION.md`.
 
 ## Canonical authority (who owns which fact)
 
-- **`MemoryStore`** (`scripts/memory_store.py`) — durable history. Every
+- **`MemoryStore`** (`brain_eleven/memory/store.py`) — durable history. Every
   canonical write goes through here: revisioned, locked, atomic. Nothing else
   writes canonical memory directly.
-- **`ProjectRegistry`** (`scripts/project_registry.py`) — project identity
+- **`ProjectRegistry`** (`brain_eleven/projects/registry.py`) — project identity
   and lifecycle (which project a memory/state belongs to, active/archived).
-- **`StateStore`** (`scripts/state.py`) — mutable *current* project truth
+- **`StateStore`** (`brain_eleven/state/store.py`) — mutable *current* project truth
   (as opposed to `MemoryStore`'s append-only history).
 
-Everything downstream (graph, search, context compiler, router, authority
-resolver) *reads* these three; none of them get a second write path.
+Graph, search, context and routing layers consume these authorities or derived
+views of them. Any canonical mutation must cross the relevant store boundary;
+derived indexes and context are not alternate authorities.
 
 ## V1 vs. V2 (shadow) retrieval
 
