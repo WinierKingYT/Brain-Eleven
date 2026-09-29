@@ -16,8 +16,11 @@ existing local `/review` UI/API. Lifecycle names are `PENDING`, `ACCEPTED`,
 
 B1 makes automatically captured knowledge safe for daily use by separating
 candidate capture from retrieval eligibility. The system may collect a bounded
-candidate automatically, but a candidate must pass an explicit human decision
-before it can become canonical knowledge and appear in future context.
+candidate automatically, but a candidate must pass an explicit operator-authorized
+acceptance action before it can become canonical knowledge and appear in future
+context. The normal path is an item-level human decision in `/review`; the
+owner-approved model-pre-review batch exception is defined in the dated amendment
+below.
 
 The existing canonical authorities remain the only authorities:
 
@@ -75,7 +78,7 @@ CAPTURED → PENDING_REVIEW → ACCEPTED → CANONICAL
 ```
 
 `PENDING_REVIEW` is review data, not retrievable knowledge. `ACCEPTED` means
-the human decision passed deterministic validation; the canonical write and
+the authorized accept action passed deterministic validation; the canonical write and
 its receipt must still be completed before the candidate becomes `CANONICAL`.
 
 An acceptance must use the existing authority boundary and an idempotent
@@ -84,7 +87,8 @@ create a second memory or state record.
 
 ## Human experience
 
-Human approval is an explicit, separate review action. SessionStart and
+In the interactive path, human approval is an explicit, separate, per-item
+review action. SessionStart and
 UserPromptSubmit remain non-interactive and must never wait for a person or
 open a window.
 
@@ -108,12 +112,30 @@ Raw transcripts, secrets, tokens and unrelated project content are not shown
 or stored as review telemetry. The review surface must make project scope
 visible before the user accepts an item.
 
-Accepting an item requires an explicit action. The action is validated against
-the current canonical revision and produces a content-free receipt containing
-the operation identity, resulting canonical effect and project scope.
+Accepting an item in `/review` requires an explicit action. The action is
+validated against the current canonical revision and produces a content-free
+receipt containing the operation identity, resulting canonical effect and
+project scope. The model-pre-review batch exception below uses the same
+validation and receipt boundary after an explicit operator command.
 
-Rejecting an item also requires an explicit action. There is no implicit
-approval caused by timeout, retrieval, restart or a new session.
+Rejecting an item through `/review` also requires an explicit action. There is
+no implicit approval caused by timeout, retrieval, restart or a new session.
+
+## Owner amendment — model pre-review batch application (2026-09-27)
+
+For model pre-review only, the owner authorized the operator to apply all
+pending model `ACCEPT` verdicts with the explicit
+`python -m brain_eleven apply-suggestions --apply` command. The command is a
+dry run without `--apply`; with it, each acceptance still passes through the
+normal review action, safety checks, CAS/revision validation and audit receipt,
+but it does not require a separate click for each candidate. This is an
+operator-authorized batch action, not a model write or background-worker action.
+In SHADOW, `shadow_accept` must also be explicitly enabled and is off by
+default; OFF never allows the write. `REVIEW` remains for the person, while
+`REJECT`/`DUPLICATE` are hidden and expire rather than written as durable
+rejections. The amendment changes approval granularity only; all other B1
+safety, authority, scope and receipt invariants remain in force. Independent
+review is required before this path counts as shipped.
 
 ## Rejection and replay guarantee
 
@@ -133,8 +155,9 @@ must not silently delete the evidence needed to explain the decision.
 * A project-scoped candidate cannot be accepted into another project.
 * An approval cannot bypass secret filtering, schema validation, lifecycle
   checks, CAS/revision checks or canonical receipts.
-* The model may propose a candidate but can never accept it or write directly
-  to a canonical store.
+* A model verdict alone never accepts a candidate; only an item-level human
+  action or the operator-authorized batch action above can cross the boundary.
+  A model never writes directly to a canonical store.
 * Acceptance and rejection are idempotent; duplicate actions return the
   existing terminal result.
 * An ambiguous or malformed candidate is quarantined for review and is never
