@@ -1,9 +1,14 @@
 """One measured context chain for evaluation, hooks, and manual inspection."""
 from dataclasses import replace
+import math
+import os
+from pathlib import Path
 import re
+import threading
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
+from brain_eleven.memory.scope import infer_memory_scope
 from .capture_safety import evaluate_capture
 from .task_state_context import TaskStateComposer
 from context_router import ContextRouter, RoutingOptions
@@ -51,7 +56,189 @@ def _legacy_context_compiler():
     return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
 
 
-def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False):
+def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_key,
+                           embedding_provider, reranker):
+    """Semantically rerank the eligible pool within the V1 scope tiers.
+
+    Candidate counts and scope tiers come from the current top-five V1 result;
+    any eligible pool candidate from a represented tier may win a slot. No V1
+    score floor applies: the memories a prompt asks about are usually ranked
+    below the static top five (W39 probe, 2026-09-29), so a floor made prompt
+    retrieval unable to change what is delivered.
+    """
+    if not isinstance(query, str) or not query.strip() or len(baseline) < 2:
+        return list(baseline)
+
+    def tier(item):
+        return 0 if project_id and infer_memory_scope(item)[2] == project_id else 1
+
+    counts = {}
+    for item in baseline:
+        item_tier = tier(item)
+        counts[item_tier] = counts.get(item_tier, 0) + 1
+
+    eligible = {item_tier: [] for item_tier in counts}
+    for item in ranked_pool:
+        item_tier = tier(item)
+        if item_tier in eligible:
+            eligible[item_tier].append(item)
+
+    candidates = [item for item_tier in sorted(eligible) for item in eligible[item_tier]]
+    if len(candidates) < len(baseline):
+        return list(baseline)
+
+    try:
+        vectors = _embed_cached(embedding_provider, [query, *(str(item.get("content", "")) for item in candidates)],
+                                inline_limit=PROMPT_INLINE_EMBED)
+        if vectors is None:
+            return list(baseline)
+        query_vector = vectors[0]
+
+        def cosine(left, right):
+            if len(left) != len(right) or not left:
+                raise ValueError("embedding dimensions differ")
+            numerator = sum(float(a) * float(b) for a, b in zip(left, right))
+            left_norm = math.sqrt(sum(float(value) ** 2 for value in left))
+            right_norm = math.sqrt(sum(float(value) ** 2 for value in right))
+            if left_norm == 0 or right_norm == 0:
+                return 0.0
+            return numerator / (left_norm * right_norm)
+
+        semantic = [cosine(query_vector, vector) for vector in vectors[1:]]
+        # The cross-encoder is the expensive step (~30 ms per pair on CPU), so
+        # only the best embedding matches of each tier reach it.
+        shortlist = []
+        for item_tier in sorted(counts):
+            members = [index for index, item in enumerate(candidates) if tier(item) == item_tier]
+            members.sort(key=lambda index: (-semantic[index], stable_key(candidates[index])))
+            shortlist.extend(members[:max(RERANK_SHORTLIST, counts[item_tier])])
+        candidates = [candidates[index] for index in shortlist]
+        semantic_scores = [semantic[index] for index in shortlist]
+        reranked = reranker.rerank(
+            query, [str(item.get("content", "")) for item in candidates]
+        )
+        if reranked.status != "EMBEDDING_AVAILABLE" or len(reranked.scores) != len(candidates):
+            return list(baseline)
+        scores = [float(value) for value in reranked.scores]
+        if any(not math.isfinite(value) for value in scores):
+            return list(baseline)
+
+        ranked = {}
+        for item, semantic, cross_encoder in zip(candidates, semantic_scores, scores):
+            ranked.setdefault(tier(item), []).append((item, cross_encoder, semantic))
+        result = []
+        for item_tier in sorted(counts):
+            ordered = sorted(
+                ranked.get(item_tier, []),
+                key=lambda entry: (-entry[1], -entry[2], stable_key(entry[0])),
+            )
+            result.extend(item for item, _, _ in ordered[:counts[item_tier]])
+        return result if len(result) == len(baseline) else list(baseline)
+    except Exception:
+        # Retrieval is optional; preserve the exact V1 ordering if a provider
+        # is unavailable, malformed, or fails during a prompt.
+        return list(baseline)
+
+
+
+# Prompt-time providers live for the service process: constructing them loads
+# the local models (3-17 s), which does not fit the 2 s hook budget per prompt.
+RERANK_SHORTLIST = 20
+_EMBEDDING_CACHE_LIMIT = 5000
+_PROVIDER_LOCK = threading.Lock()
+_PROVIDER_CACHE = {}
+_EMBEDDING_CACHE = {}
+_PROVIDER_LOCK_EMBED = threading.Lock()
+# New texts a prompt may embed itself (query plus a few changed memories).
+PROMPT_INLINE_EMBED = 8
+
+
+def _embed_cached(provider, texts, *, inline_limit=None):
+    """Return one vector per text, embedding only texts not seen before.
+
+    With ``inline_limit`` a prompt embeds at most that many new texts itself;
+    a larger backlog (pool changed, cache cleared) is embedded in the
+    background and the prompt gets ``None`` so it keeps the V1 order.
+    """
+    prefix = (getattr(provider, 'provider_id', ''), getattr(provider, 'model', ''))
+    cache = _EMBEDDING_CACHE
+    missing = list(dict.fromkeys(text for text in texts if (prefix, text) not in cache))
+    fresh = {}
+    if missing:
+        if inline_limit is not None and len(missing) > inline_limit:
+            threading.Thread(target=_embed_cached, args=(provider, missing), daemon=True).start()
+            return None
+        embedded = provider.embed(missing)
+        if embedded.status != 'EMBEDDING_AVAILABLE' or len(embedded.vectors) != len(missing):
+            return None
+        fresh = {(prefix, text): tuple(vector) for text, vector in zip(missing, embedded.vectors)}
+        with _PROVIDER_LOCK_EMBED:
+            if len(cache) + len(fresh) > _EMBEDDING_CACHE_LIMIT:
+                cache.clear()
+            cache.update(fresh)
+    # Read through ``fresh`` first so a concurrent clear cannot drop a vector
+    # this call just computed.
+    vectors = [fresh.get((prefix, text)) or cache.get((prefix, text)) for text in texts]
+    return None if any(vector is None for vector in vectors) else vectors
+
+
+def _prompt_providers(config_path, *, block=True, warm_texts=()):
+    """Build the configured embedding provider and reranker once per config.
+
+    With ``block=False`` a prompt never waits for model loading: it gets
+    ``None`` (and keeps the V1 order) while a background thread loads them.
+    """
+    from brain_eleven.retrieval.embedding_provider import create_embedding_provider, create_reranker
+
+    environment = dict(os.environ)
+    # Prompt retrieval must fail closed when a model is not already
+    # available; a normal user prompt must never trigger a download.
+    environment['IG_LOCAL_MODELS_LOCAL_FILES_ONLY'] = 'true'
+    path = Path(config_path)
+    try:
+        stamp = path.stat().st_mtime_ns
+    except OSError:
+        stamp = None
+    key = (str(path.resolve()), stamp, *(environment.get(name, '') for name in (
+        'IG_EMBEDDING_PROVIDER', 'IG_RERANKER_PROVIDER', 'IG_LOCAL_EMBEDDING_MODEL', 'IG_LOCAL_RERANKER_MODEL')))
+    cached = _PROVIDER_CACHE.get(key)
+    if cached is not None or not block:
+        if cached is None and _PROVIDER_LOCK.acquire(blocking=False):
+            # Nobody is loading: start a load for later prompts, do not wait.
+            _PROVIDER_LOCK.release()
+            threading.Thread(target=warm_prompt_providers, args=(config_path, tuple(warm_texts)),
+                             daemon=True).start()
+        return cached
+    with _PROVIDER_LOCK:
+        if key not in _PROVIDER_CACHE:
+            providers = (
+                create_embedding_provider(config_path=path, environ=environment),
+                create_reranker(config_path=path, environ=environment),
+            )
+            _PROVIDER_CACHE.clear()
+            _PROVIDER_CACHE[key] = providers
+        return _PROVIDER_CACHE[key]
+
+
+def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), texts=(), vault=None):
+    """Load prompt providers and memory vectors ahead of prompts; never raises.
+
+    Embedding the whole pool takes ~2 s, so it must happen here and not in
+    the first prompt after loading.
+    """
+    try:
+        if vault is not None:
+            document = _legacy_context_compiler()(str(vault)).memory_store.load()
+            texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
+        embedding_provider, reranker = _prompt_providers(config_path)
+        if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
+            reranker.rerank('warm-up', ['warm-up'])
+    except Exception:
+        pass
+
+
+def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval=False,
+                                prompt=None, provider_config_path=None):
     """Render the project-scoped legacy V1 projection for one task.
 
     The legacy public ``compile`` method reads Companion files and writes a
@@ -73,11 +260,36 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     def safe(text):
         return isinstance(text, str) and not contains_secret(text) and evaluate_capture(text).accepted
 
-    memories = []
-    for item in compiler._rank_memories(limit=5):
+    def eligible(item):
         content = item.get('content')
-        if (not human_approval or item.get('is_approved', True) is True) and safe(content):
-            memories.append(item)
+        return ((not human_approval or item.get('is_approved', True) is True)
+                and safe(content))
+
+    ranked = compiler._rank_memories(limit=5)
+    memories = [item for item in ranked if eligible(item)]
+    if isinstance(prompt, str) and prompt.strip() and memories:
+        ranked_pool = compiler._rank_memories(limit=PROMPT_POOL)
+        safe_pool = [item for item in ranked_pool if eligible(item)]
+        try:
+            providers = _prompt_providers(
+                provider_config_path or Path('.claude/ig-provider-config.json'), block=False,
+                warm_texts=[str(item.get('content', '')) for item in safe_pool])
+            if providers is None:
+                raise LookupError('prompt providers are still loading')
+            embedding_provider, reranker = providers
+            memories = _rank_prompt_candidates(
+                prompt,
+                memories,
+                safe_pool,
+                project_id=project_id,
+                stable_key=compiler._stable_memory_key,
+                embedding_provider=embedding_provider,
+                reranker=reranker,
+            )
+        except Exception:
+            # Keep the normal prompt path available when optional retrieval
+            # providers cannot be constructed.
+            pass
 
     estimator = ConservativeTokenEstimator()
     context = _normalize_v1_state_identity(
@@ -119,6 +331,9 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
 
 BOOTSTRAP_POOL = 15
+# Prompt-time candidate pool: wide enough to reach memories far below the
+# static top five; bounded so a local cross-encoder stays prompt-fast.
+PROMPT_POOL = 100
 # SessionStart memory slots (owner decision C2, 2026-09-26): 5 left recall
 # answers out with SLOT_LIMIT in a real session; the 3000-token budget still bounds it.
 BOOTSTRAP_SLOTS = 8
@@ -308,15 +523,31 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
             # injectable for existing callers/tests without routing the
             # production fallback through the V2 compatibility function.
             fallback = compile_task_v1 if compile_task is _V2_COMPAT_COMPILE_TASK else compile_task
-            legacy = fallback(vault, task, budget=budget,
-                              human_approval=config.get('b1_human_approval', False))
+            fallback_options = {
+                'budget': budget,
+                'human_approval': config.get('b1_human_approval', False),
+            }
+            if fallback is compile_task_v1:
+                fallback_options.update(
+                    prompt=request,
+                    provider_config_path=(
+                        os.environ.get('IG_PROVIDER_CONFIG')
+                        or Path(project_root) / '.claude' / 'ig-provider-config.json'
+                    ),
+                )
+            legacy = fallback(vault, task, **fallback_options)
             legacy['provider'] = 'V1'
             legacy['task_need_status'] = task_need.get('status')
             legacy['task_need_error_code'] = task_need.get('error_code')
             result = legacy
     else:
         result = compile_task_v1(vault, task, budget=budget,
-                                 human_approval=config.get('b1_human_approval', False))
+                                 human_approval=config.get('b1_human_approval', False),
+                                 prompt=request if event == 'UserPromptSubmit' else None,
+                                 provider_config_path=(
+                                     os.environ.get('IG_PROVIDER_CONFIG')
+                                     or Path(project_root) / '.claude' / 'ig-provider-config.json'
+                                 ))
         result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
@@ -390,7 +621,8 @@ def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     return {key: value for key, value in result.items() if key != 'selected'}
 
 
-def compile_task_v1(vault, task, *, budget=3000, human_approval=False):
+def compile_task_v1(vault, task, *, budget=3000, human_approval=False,
+                    prompt=None, provider_config_path=None):
     """Named normal-turn V1 adapter; never invokes a V2 compiler."""
     project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
     if not project_id:
@@ -400,6 +632,7 @@ def compile_task_v1(vault, task, *, budget=3000, human_approval=False):
         }
     return _compile_project_scoped_v1(
         vault, project_id, budget=budget, human_approval=human_approval,
+        prompt=prompt, provider_config_path=provider_config_path,
     )
 
 
