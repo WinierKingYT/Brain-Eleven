@@ -57,12 +57,13 @@ def _legacy_context_compiler():
 
 def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_key,
                            embedding_provider, reranker):
-    """Semantically rerank only candidates that meet the existing V1 score floor.
+    """Semantically rerank the eligible pool within the V1 scope tiers.
 
-    Candidate counts and scope tiers come from the current top-five V1 result.
-    The lowest score in each represented tier is the floor for that tier, so
-    semantic retrieval can replace an item only with an equal-or-higher-scored
-    candidate from the same tier.
+    Candidate counts and scope tiers come from the current top-five V1 result;
+    any eligible pool candidate from a represented tier may win a slot. No V1
+    score floor applies: the memories a prompt asks about are usually ranked
+    below the static top five (W39 probe, 2026-09-29), so a floor made prompt
+    retrieval unable to change what is delivered.
     """
     if not isinstance(query, str) or not query.strip() or len(baseline) < 2:
         return list(baseline)
@@ -70,20 +71,15 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
     def tier(item):
         return 0 if project_id and infer_memory_scope(item)[2] == project_id else 1
 
-    counts, floors = {}, {}
+    counts = {}
     for item in baseline:
         item_tier = tier(item)
         counts[item_tier] = counts.get(item_tier, 0) + 1
-        score = float(item.get("ranking_score", 0.0))
-        floors[item_tier] = min(score, floors.get(item_tier, score))
 
     eligible = {item_tier: [] for item_tier in counts}
     for item in ranked_pool:
         item_tier = tier(item)
-        if item_tier not in floors:
-            continue
-        score = float(item.get("ranking_score", 0.0))
-        if score >= floors[item_tier]:
+        if item_tier in eligible:
             eligible[item_tier].append(item)
 
     candidates = [item for item_tier in sorted(eligible) for item in eligible[item_tier]]
@@ -166,7 +162,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     ranked = compiler._rank_memories(limit=5)
     memories = [item for item in ranked if eligible(item)]
     if isinstance(prompt, str) and prompt.strip() and memories:
-        ranked_pool = compiler._rank_memories(limit=BOOTSTRAP_POOL)
+        ranked_pool = compiler._rank_memories(limit=PROMPT_POOL)
         safe_pool = [item for item in ranked_pool if eligible(item)]
         try:
             from brain_eleven.retrieval.embedding_provider import (
@@ -239,6 +235,9 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
 
 BOOTSTRAP_POOL = 15
+# Prompt-time candidate pool: wide enough to reach memories far below the
+# static top five; bounded so a local cross-encoder stays prompt-fast.
+PROMPT_POOL = 100
 # SessionStart memory slots (owner decision C2, 2026-09-26): 5 left recall
 # answers out with SLOT_LIMIT in a real session; the 3000-token budget still bounds it.
 BOOTSTRAP_SLOTS = 8

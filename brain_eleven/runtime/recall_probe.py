@@ -156,7 +156,7 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
         if mode == 'prompt':
             from .context import compile_context
             prompt_context = compile_context(
-                vault, project_root, question['question'], client='claude',
+                vault, project_root, question['question'], client='manual',
                 session='recall-probe', turn=f"recall-probe:{question['id']}",
                 event='UserPromptSubmit')
             question_context = prompt_context.get('context', '') or ''

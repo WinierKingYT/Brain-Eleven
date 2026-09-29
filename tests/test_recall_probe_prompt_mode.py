@@ -45,7 +45,7 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
     assert by_id[3]["status"] == "NOT_IN_MEMORY"
     assert by_id[2]["why_not_delivered"]
     assert [request for request, _ in calls] == ["Alpha?", "Beta?", "Gamma?"]
-    assert all(options["client"] == "claude" and options["event"] == "UserPromptSubmit" for _, options in calls)
+    assert all(options["client"] == "manual" and options["event"] == "UserPromptSubmit" for _, options in calls)
     assert [options["turn"] for _, options in calls] == ["recall-probe:1", "recall-probe:2", "recall-probe:3"]
 
 
@@ -78,7 +78,7 @@ def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path
     assert calls == ["UserPromptSubmit"]
 
 
-def test_prompt_semantic_reranker_respects_existing_score_floor(monkeypatch):
+def test_prompt_semantic_reranker_admits_lower_ranked_same_scope_candidates(monkeypatch):
     monkeypatch.setattr(
         "brain_eleven.runtime.context.infer_memory_scope",
         lambda item: ("project", "project", item.get("scope_project")),
@@ -111,6 +111,7 @@ def test_prompt_semantic_reranker_respects_existing_score_floor(monkeypatch):
                 "current-high": (0.3, 0.7),
                 "current-floor": (0.0, 1.0),
                 "semantic-match": (1.0, 0.0),
+                "below-floor": (0.9, 0.1),
             }
             return EmbeddingResult(
                 status=EmbeddingStatus.EMBEDDING_AVAILABLE.value,
@@ -125,7 +126,8 @@ def test_prompt_semantic_reranker_respects_existing_score_floor(monkeypatch):
 
         def rerank(self, query, texts):
             self.texts = list(texts)
-            scores = {"current-high": 0.5, "current-floor": 0.1, "semantic-match": 0.9}
+            scores = {"current-high": 0.5, "current-floor": 0.1, "semantic-match": 0.9,
+                      "below-floor": 0.95}
             return RerankerResult(
                 status=EmbeddingStatus.EMBEDDING_AVAILABLE.value,
                 provider_id="test",
@@ -145,9 +147,13 @@ def test_prompt_semantic_reranker_respects_existing_score_floor(monkeypatch):
         reranker=reranker,
     )
 
-    assert [item["memory_id"] for item in selected] == ["semantic-match", "current-high"]
-    assert "below-floor" not in embeddings.texts
-    assert "below-floor" not in reranker.texts
+    # A memory ranked below the current V1 top-five (and below its lowest
+    # score) is exactly the W39 case: it must be able to win the slot.
+    assert [item["memory_id"] for item in selected] == ["below-floor", "semantic-match"]
+    assert "below-floor" in reranker.texts
+    # Scope tiers stay fixed: a higher-scored memory from a tier that is not
+    # represented in the baseline never enters.
+    assert "other-scope" not in embeddings.texts
     assert "other-scope" not in reranker.texts
 
 
