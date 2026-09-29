@@ -125,10 +125,12 @@ def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_
         reranked = reranker.rerank(
             query, [str(item.get("content", "")) for item in candidates]
         )
-        pair_seconds = (perf_counter() - rerank_started) / max(len(candidates), 1)
-        _RERANK_PAIR_SECONDS[0] = 0.7 * _RERANK_PAIR_SECONDS[0] + 0.3 * pair_seconds
         if reranked.status != "EMBEDDING_AVAILABLE" or len(reranked.scores) != len(candidates):
             return list(baseline)
+        # Only a real rerank measures the pair cost; a fast failure must not
+        # make later shortlists look cheap.
+        pair_seconds = (perf_counter() - rerank_started) / max(len(candidates), 1)
+        _RERANK_PAIR_SECONDS[0] = 0.7 * _RERANK_PAIR_SECONDS[0] + 0.3 * pair_seconds
         scores = [float(value) for value in reranked.scores]
         if any(not math.isfinite(value) for value in scores):
             return list(baseline)

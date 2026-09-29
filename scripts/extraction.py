@@ -148,8 +148,8 @@ _REQUIREMENT = re.compile(r"\b(?:requirement|requirements|required|must|gereksin
 # requirements, blockers, the milestone and "decision" memories).
 _PASTED_OUTPUT = re.compile(
     r"\btool exec result\b|\bWall time \d|\[graphify\b|\\r\\n|>>> [A-Z]{3,}"
-    r"|^\s*\d{1,5}:\s|^diff --git |^@@ |^(?:\+\+\+|---) [ab]/|^PS [A-Za-z]:\\|^[A-Za-z]:\\[^\n]*> "
-    r"|^={3,}\s.*\s={3,}$|[\w./\\-]+\.(?:md|py|ps1|json|jsonl|ya?ml|toml|txt|log):\d+[:-]"
+    r"|^\s*\d{1,5}[:-][ \t][^\n]*\n\s*\d{1,5}[:-][ \t]|^diff --git|^@@ |^(?:\+\+\+|---) [ab]/|^PS [A-Za-z]:\\|^[A-Za-z]:\\[^\n]*> "
+    r"|^={4,}\s.*\s={4,}$|[\w./\\-]+\.(?:md|py|ps1|json|jsonl|ya?ml|toml|txt|log):\d+[:-]"
     r"|^(?:Mode\s+Length|On branch |Your branch |Fast-forward$|Updating [0-9a-f]{7,}\.\.)"
     r"|\"(?:chunk_id|exit_code|wall_time_seconds|original_token_count)\"",
     re.MULTILINE,

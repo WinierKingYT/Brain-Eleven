@@ -50,3 +50,15 @@ def test_plain_user_prose_is_still_captured(tmp_path):
     assert any(isinstance(c, NewMemoryCandidate) for c in result.candidates)
     assert any(isinstance(c, StateMutationProposal) for c in result.candidates)
     assert not any(q.reason == "PASTED_OUTPUT" for q in result.quarantined)
+
+
+@pytest.mark.parametrize("content", [
+    "Plan:\n1: kararı yaz\nSQLite kullanacağız çünkü uygulama lokal.",
+    "2026: yeni plan olmalı ve SQLite kullanacağız.",
+    "=== Özet ===\nSQLite kullanacağız çünkü uygulama tamamen lokal.",
+])
+def test_user_typed_lists_and_headings_are_not_pasted_output(tmp_path, content):
+    result = _extract(tmp_path, content)
+
+    assert not any(q.reason == "PASTED_OUTPUT" for q in result.quarantined)
+    assert result.candidates
