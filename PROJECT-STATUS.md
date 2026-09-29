@@ -1,6 +1,6 @@
 # Brain-Eleven v3 — Current Project Status
 
-**Last updated:** 2026-09-21
+**Last updated:** 2026-09-28
 **PHASE 20: FROZEN** — feature development is stopped; intelligence graduation remains **LOCKED**.
 **ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG)**.
 **LAST CLOSED PACKAGE: SRT-01 Linux runtime lock protocol repair — SHIPPED**
@@ -23,6 +23,14 @@ was tuned and no floor changed. V2 stays SHADOW and is not promoted, IG-06 and I
 opened, Phase 20 stays FROZEN / LOCKED. `routing.scope_sweep` stays off. `shadow_accept`
 (human-approved accept in SHADOW, off by default) awaits independent review; see
 `docs/programs/INTELLIGENCE-GRADUATION.md`, "Owner decisions, 2026-09-21".
+
+**Model-review acceptance policy (owner decision 2026-09-27):** model `ACCEPT`
+items can be applied without per-item clicks only through the operator's explicit
+`apply-suggestions --apply` command; dry-run remains the default. SHADOW also
+requires the separately enabled `shadow_accept` flag, the automatic worker does
+not apply suggestions, and OFF remains closed. This path still awaits independent
+review before it counts as shipped; details are in the 2026-09-27 addendum in
+`docs/programs/INTELLIGENCE-GRADUATION.md`.
 
 **CLOSED STABILIZATION PACKAGE:** SRT-00 (2026-09-21, master `f5b8c1b`). The
 four deterministic unit failures on `5dc0121` and the timing-sensitive w08b test

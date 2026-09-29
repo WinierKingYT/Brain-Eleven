@@ -25,7 +25,7 @@ DOCUMENTATION-AUTHORITY.md oku. IG-00 bağımsız kabul edilmeden IG-01 açılma
 Eski faz planları tarihsel/gelecek tasarımdır; Knowledge Engine başlatılmaz.
 Feature freeze, teknik kapanış veya intelligence graduation demek değildir.
 Canonical authority MemoryStore, StateStore ve ProjectRegistry'de kalır.
-Model yalnız öneri üretir; safety ve intelligence ayrı ölçülür. İstisna (sahip kararı, 2026-09-27): inceleme kuyruğunda model ön değerlendirmesinin ACCEPT kararları `python -m brain_eleven apply-suggestions --apply` ile tıklamasız uygulanır (notlu, sonradan emekliye ayrılabilir); REJECT kararları yazılmaz, gizlenir ve süresi dolar.
+Model yalnız öneri üretir; safety ve intelligence ayrı ölçülür. Sahip kararı (2026-09-27): model ön değerlendirmesinin yalnız ACCEPT kararları, operatör açıkça `python -m brain_eleven apply-suggestions --apply` çalıştırdığında kayıt başına tıklama olmadan standart güvenlik/CAS/denetim yolundan uygulanır. Komut varsayılan olarak kuru çalışır; SHADOW modunda ayrıca `shadow_accept` (varsayılan kapalı) açık olmalıdır. OFF'ta uygulanmaz ve otomatik worker bu yolu kullanmaz. REJECT/DUPLICATE kararları yazılmaz; gizlenir ve süresi dolar. Bu karar bağımsız inceleme tamamlanana kadar shipped sayılmaz.
 
 Aşağıdaki eski vault kurulum/not kullanım rehberi runtime otoritesi değildir.
 Güncel üretim yolları ve kurulu istemci ayrımı RUNTIME-DATAFLOW.md içindedir.
