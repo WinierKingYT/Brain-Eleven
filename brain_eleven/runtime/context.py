@@ -162,7 +162,9 @@ PROMPT_RERANK_BUDGET = 0.9
 # Moving average of measured cross-encoder seconds per pair (CPU estimate).
 _RERANK_PAIR_SECONDS = [0.03]
 _EMBEDDING_CACHE_LIMIT = 5000
-_PROVIDER_LOCK = threading.Lock()
+# Held while providers load *and* while warm-up embeds the pool: a prompt that
+# finds it held keeps the V1 order instead of competing for the CPU.
+_PROVIDER_LOCK = threading.RLock()
 _PROVIDER_CACHE = {}
 _EMBEDDING_CACHE = {}
 _PROVIDER_LOCK_EMBED = threading.Lock()
@@ -218,11 +220,15 @@ def _prompt_providers(config_path, *, block=True, warm_texts=()):
         stamp = None
     key = (str(path.resolve()), stamp, *(environment.get(name, '') for name in (
         'IG_EMBEDDING_PROVIDER', 'IG_RERANKER_PROVIDER', 'IG_LOCAL_EMBEDDING_MODEL', 'IG_LOCAL_RERANKER_MODEL')))
-    cached = _PROVIDER_CACHE.get(key)
-    if cached is not None or not block:
-        if cached is None and _PROVIDER_LOCK.acquire(blocking=False):
-            # Nobody is loading: start a load for later prompts, do not wait.
+    if not block:
+        if not _PROVIDER_LOCK.acquire(blocking=False):
+            return None  # loading or warming: keep V1, do not wait or compete
+        try:
+            cached = _PROVIDER_CACHE.get(key)
+        finally:
             _PROVIDER_LOCK.release()
+        if cached is None:
+            # Nobody is loading: start a load for later prompts, do not wait.
             threading.Thread(target=warm_prompt_providers, args=(config_path, tuple(warm_texts)),
                              daemon=True).start()
         return cached
@@ -247,9 +253,10 @@ def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), t
         if vault is not None:
             document = _legacy_context_compiler()(str(vault)).memory_store.load()
             texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
-        embedding_provider, reranker = _prompt_providers(config_path)
-        if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
-            reranker.rerank('warm-up', ['warm-up'])
+        with _PROVIDER_LOCK:
+            embedding_provider, reranker = _prompt_providers(config_path)
+            if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
+                reranker.rerank('warm-up', ['warm-up'])
     except Exception:
         pass
 

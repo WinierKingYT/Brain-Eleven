@@ -277,9 +277,27 @@ def test_prompt_never_waits_for_loading_providers(tmp_path, monkeypatch):
     config = tmp_path / "ig-provider-config.json"
     config.write_text("{}", encoding="utf-8")
 
-    # Another thread holds the load lock: the prompt returns at once.
-    with context._PROVIDER_LOCK:
+    # Another thread is loading or warming: the prompt returns at once, even
+    # when providers are already cached, and starts nothing.
+    import threading
+    holding, release = threading.Event(), threading.Event()
+
+    def hold():
+        with context._PROVIDER_LOCK:
+            holding.set()
+            release.wait(5)
+
+    holder = threading.Thread(target=hold)
+    holder.start()
+    holding.wait(5)
+    try:
         assert context._prompt_providers(config, block=False) is None
+        context._PROVIDER_CACHE[next(iter(context._PROVIDER_CACHE), None)] = ("E", "R")
+        assert context._prompt_providers(config, block=False) is None
+    finally:
+        release.set()
+        holder.join(5)
+        context._PROVIDER_CACHE.clear()
     assert started == []
     # Nobody is loading: the prompt still returns at once but starts a load.
     assert context._prompt_providers(config, block=False) is None
