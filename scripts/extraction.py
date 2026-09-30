@@ -226,7 +226,7 @@ def _confidence_components(message: EvidenceMessage, content: str, commitment: C
         Commitment.QUOTED: 0.12,
         Commitment.UNCERTAIN: 0.25,
     }[commitment]
-    source_authority = 1.0 if role == "user" else 0.25
+    source_authority = {"user": 1.0, "summary": 0.7}.get(role, 0.25)
     classification = 0.90 if any(pattern.search(content) for pattern in (_DECISION, _LESSON, _PREFERENCE, _CURRENT, _REQUIREMENT)) else 0.55
     scope = 1.0 if message.record.project_id else 0.0
     temporal = 0.80 if message.record.occurred_at is not None else 0.55
@@ -291,6 +291,54 @@ def _memory_type(content: str) -> str:
     return MemoryType.OBSERVATION.value
 
 
+# Compact-summary sections whose bullets are outcomes worth remembering; the
+# rest (request, files, all user messages, pending tasks, next step) are not.
+_SUMMARY_SECTION = re.compile(r"^\s*\d+\.\s*([^:\n]+):\s*$", re.MULTILINE)
+_SUMMARY_KEEP = re.compile(r"errors?\s+and\s+fix|problem\s+solving|hatalar|problem\s+çözme", re.IGNORECASE)
+_SUMMARY_BULLET = re.compile(r"^\s*[-*•]\s+(.*)$")
+MIN_SUMMARY_FACT_CHARS = 30
+
+
+def summary_facts(content: str) -> list[str]:
+    """Bullets of the outcome sections of a compact summary, sub-lines joined."""
+    facts: list[str] = []
+    headings = list(_SUMMARY_SECTION.finditer(content))
+    for number, heading in enumerate(headings):
+        if not _SUMMARY_KEEP.search(heading.group(1)):
+            continue
+        end = headings[number + 1].start() if number + 1 < len(headings) else len(content)
+        current: list[str] = []
+        for line in content[heading.end():end].splitlines():
+            bullet = _SUMMARY_BULLET.match(line)
+            top_level = bullet is not None and len(line) - len(line.lstrip()) <= 3
+            if top_level:
+                if current:
+                    facts.append(" ".join(current))
+                current = [bullet.group(1).strip()]
+            elif current and line.strip():
+                current.append(line.strip().lstrip("-*• ").strip())
+        if current:
+            facts.append(" ".join(current))
+    return [" ".join(fact.split()) for fact in facts if len(fact.strip()) >= MIN_SUMMARY_FACT_CHARS]
+
+
+def _summary_candidates(message: EvidenceMessage) -> list[NewMemoryCandidate]:
+    candidates = []
+    for index, fact in enumerate(summary_facts(message.content)):
+        if _PASTED_OUTPUT.search(fact) or not evaluate_capture(fact).accepted:
+            continue
+        confidence, components = _confidence_components(message, fact, Commitment.OBSERVED)
+        candidates.append(
+            NewMemoryCandidate(
+                **_base(message, index, CandidateKind.NEW_MEMORY.value, Commitment.OBSERVED, confidence, components),
+                memory_type=_memory_type(fact),
+                scope="project" if message.record.project_id else "unresolved",
+                content=fact,
+            )
+        )
+    return candidates
+
+
 class DeterministicExtractor:
     """Extract safe candidate proposals from a role-aware evidence batch."""
 
@@ -299,6 +347,11 @@ class DeterministicExtractor:
         quarantined: list[QuarantineCandidate] = []
         confirmations = _confirmed_proposals(batch.messages)
         for position, message in enumerate(batch.messages):
+            if message.record.role == "summary":
+                # Owner decision 2026-09-30: session summaries are the main
+                # source; only their outcome sections become candidates.
+                accepted.extend(_summary_candidates(message))
+                continue
             approver = confirmations.get(position)
             if position - 1 in confirmations:
                 # The approval turn carries no fact of its own; it is evidence on the approved candidate.
@@ -388,6 +441,18 @@ class DeterministicExtractor:
                             **_base(message, index, CandidateKind.STATE_MUTATION.value, commitment, confidence, components),
                             operation=operation,
                             text=content,
+                        )
+                    )
+                    continue
+                if message.record.role == "user" and commitment is not Commitment.COMMITTED:
+                    # Owner decision 2026-09-30: from the owner's own messages
+                    # only explicit decisions become memory; status remarks
+                    # still reach state (above) but not memory.
+                    quarantined.append(
+                        QuarantineCandidate(
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
+                            reason="USER_NOT_DECISION",
+                            content_hash=_content_hash(content),
                         )
                     )
                     continue

@@ -176,7 +176,9 @@ _EVIDENCE_READ_CODES = frozenset({
 # were UNCERTAIN / 711 QUOTED. Only a user statement of a decision or an
 # observation is queued now; the full message is already in the evidence
 # store, so anything skipped here can be re-proposed if this is loosened.
-_FALLBACK_REVIEW_COMMITMENTS = frozenset({'COMMITTED', 'OBSERVED'})
+# Owner decision 2026-09-30: from the owner's own messages only explicit
+# decisions are memory; status remarks (OBSERVED) no longer reach review.
+_FALLBACK_REVIEW_COMMITMENTS = frozenset({'COMMITTED'})
 
 
 def fallback_worth_review(content, commitment):
