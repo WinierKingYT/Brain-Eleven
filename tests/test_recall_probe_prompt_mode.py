@@ -35,7 +35,7 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
         }
 
     monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
-    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda **kwargs: None)
+    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda *args, **kwargs: None)
     result = probe(vault, questions_path=questions, mode="prompt")
     by_id = {entry["id"]: entry for entry in result["results"]}
 
@@ -67,7 +67,7 @@ def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path
         return {"status": "SUCCESS", "context": "alpha", "selected_ids": [], "delivered": True}
 
     monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
-    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda **kwargs: None)
+    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda *args, **kwargs: None)
     main(["--vault", str(vault), "recall-probe", "--questions", str(questions)])
     default_result = json.loads(capsys.readouterr().out)
     assert "mode" not in default_result
@@ -375,7 +375,7 @@ def test_prompt_probe_warms_providers_before_asking(tmp_path, monkeypatch):
                          encoding="utf-8")
     order = []
     monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers",
-                        lambda **kwargs: order.append(("warm", kwargs.get("vault"))))
+                        lambda path, **kwargs: order.append(("warm", kwargs.get("vault"), path)))
 
     def compile_context(vault_arg, root, request, **kwargs):
         order.append(("ask", request))
@@ -384,4 +384,6 @@ def test_prompt_probe_warms_providers_before_asking(tmp_path, monkeypatch):
     monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
     probe(vault, questions_path=questions, mode="prompt")
 
-    assert order == [("warm", vault), ("ask", "Alpha?")]
+    from brain_eleven.runtime.context import prompt_provider_config
+    # Warm-up uses exactly the config path compile_context will use.
+    assert order == [("warm", vault, prompt_provider_config(vault)), ("ask", "Alpha?")]
