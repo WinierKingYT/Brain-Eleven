@@ -102,7 +102,10 @@ def test_real_native_enqueue_is_seen_by_the_audit(tmp_path):
     directory.mkdir(parents=True)
     for sid in ("real-1", "real-2"):
         path = directory / f"{sid}.jsonl"
-        path.write_text(json.dumps({"type": "user", "sessionId": sid}) + "\n", encoding="utf-8")
+        # A real session: a user turn and an assistant reply (a transcript with
+        # no reply at all is counted as ``no_reply``, not ``missing``).
+        path.write_text(json.dumps({"type": "user", "sessionId": sid}) + "\n"
+                        + json.dumps({"type": "assistant", "sessionId": sid}) + "\n", encoding="utf-8")
         if sid == "real-1":
             enqueue(vault, "claude", {"session_id": sid, "cwd": str(vault), "transcript_path": str(path)})
     report = audit(vault, home)
@@ -153,3 +156,41 @@ def test_requeued_dead_letter_is_pending_not_lost(tmp_path):
     vault, home = _setup(tmp_path, sessions, ledger)
     report = audit(vault, home, codex_home=tmp_path / "nocodex")
     assert report["totals"]["dead_letter"] == 0 and report["totals"]["pending"] == 1
+
+
+def test_session_without_assistant_reply_is_not_a_capture_loss(tmp_path):
+    # 2026-09-30: aborted sessions (a user turn, no assistant reply) were the
+    # only "missing" rows on the real install and failed the capture verdict.
+    sessions = {"p_a": [f"a{i}" for i in range(10)], "p_b": [f"b{i}" for i in range(10)]}
+    ledger = [row for pid, sids in sessions.items() for sid in sids for row in _ok(sid, pid)]
+    vault, home = _setup(tmp_path, sessions, ledger)
+    directory = home / "projects" / _project_slug(str(tmp_path / "proj_a"))
+    (directory / "aborted.jsonl").write_text(json.dumps({"type": "user", "sessionId": "aborted"}) + "\n",
+                                             encoding="utf-8")
+    (directory / "lost.jsonl").write_text(
+        json.dumps({"type": "user"}) + "\n" + json.dumps({"type": "assistant"}) + "\n", encoding="utf-8")
+
+    report = audit(vault, home)
+
+    assert report["totals"]["no_reply"] == 1
+    # A transcript with a real reply and no capture is still a loss.
+    assert report["totals"]["missing"] == 1
+    assert verdict(report, min_projects=2, min_sessions=20) == "FAIL"
+
+
+def test_codex_subagent_rollouts_are_not_capture_losses(tmp_path):
+    sessions = {"p_a": [f"a{i}" for i in range(10)], "p_b": [f"b{i}" for i in range(10)]}
+    ledger = [row for pid, sids in sessions.items() for sid in sids for row in _ok(sid, pid)]
+    vault, home = _setup(tmp_path, sessions, ledger)
+    codex = tmp_path / "codex"
+    day = codex / "sessions" / "2026" / "09" / "30"
+    day.mkdir(parents=True)
+    for sid, source in (("child", {"subagent": {"thread_spawn": {"parent_thread_id": "p"}}}), ("real", "vscode")):
+        (day / f"rollout-{sid}.jsonl").write_text(json.dumps({"type": "session_meta", "payload": {
+            "id": sid, "cwd": str(tmp_path / "proj_a"), "source": source}}) + "\n", encoding="utf-8")
+
+    report = audit(vault, home, codex_home=codex, clients=("claude", "codex"))
+
+    assert report["clients"]["codex"]["subagent"] == 1
+    # The real, uncaptured Codex session is still a loss.
+    assert report["clients"]["codex"]["missing"] == 1
