@@ -247,6 +247,13 @@ def _prompt_providers(config_path, *, block=True, warm_texts=()):
         return _PROVIDER_CACHE[key]
 
 
+def prompt_providers_loaded():
+    """Whether real prompt-time models are loaded in this process."""
+    return any(getattr(embedding, 'provider_id', 'unavailable') != 'unavailable'
+               # list() copies atomically: a warm-up may clear/insert concurrently.
+               for embedding, _ in list(_PROVIDER_CACHE.values()))
+
+
 def prompt_provider_config(project_root):
     """The provider config every prompt-time path uses; one key for the cache."""
     return os.environ.get('IG_PROVIDER_CONFIG') or Path(project_root) / '.claude' / 'ig-provider-config.json'
