@@ -165,8 +165,19 @@ def _content_hash(content: str) -> str:
     return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
+# Standalone dictation fillers (the owner dictates in Turkish): "e," and
+# "ee", "ııı", "hmm", "hıı". A bare "e" counts only before a comma, so "e-posta",
+# "e2e" or a letter "e" in prose are kept.
+_DICTATION_FILLER = re.compile(r"(?<![\w-])(?:e,|(?:ee+|ıı+|hmm+|hıı*)[,.]?)(?![\w-])\s*", re.IGNORECASE)
+
+
+def strip_dictation_fillers(content: str) -> str:
+    return _DICTATION_FILLER.sub("", content).strip()
+
+
 def _segments(content: str) -> list[str]:
-    return [part.strip() for part in _SENTENCE_SPLIT.split(content) if part.strip()]
+    parts = (strip_dictation_fillers(part) for part in _SENTENCE_SPLIT.split(content))
+    return [part for part in parts if part]
 
 
 def _classify_commitment(content: str, role: str) -> Commitment:

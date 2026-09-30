@@ -93,7 +93,7 @@ def load_bootstrap_receipts(vault: Path) -> dict[str, dict[str, Any]]:
     return receipts
 
 
-_COUNTS = ("sessions", "enqueued", "committed", "dead_letter", "dead_letter_recovered", "pending", "missing",
+_COUNTS = ("sessions", "enqueued", "committed", "dead_letter", "dead_letter_recovered", "pending", "missing", "no_reply",
            "wrong_project")
 
 
@@ -104,6 +104,26 @@ def _recent(path: Path, since: Optional[float]) -> bool:
         return False
 
 
+def _unanswered(path: Path) -> bool:
+    """A Claude transcript with a user turn and no assistant record at all."""
+    user = False
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if '"assistant"' not in line and '"user"' not in line:
+                    continue
+                try:
+                    kind = json.loads(line).get("type")
+                except (ValueError, AttributeError):
+                    continue
+                if kind == "assistant":
+                    return False
+                user = user or kind == "user"
+    except OSError:
+        return False  # unreadable: never hide a possible loss
+    return user
+
+
 def claude_sessions(registry, claude_home: Path, since: Optional[float]) -> list[tuple[str, str, tuple[str, ...]]]:
     """Claude names each transcript ``<session_id>.jsonl`` under the project's slug."""
     found = []
@@ -111,7 +131,7 @@ def claude_sessions(registry, claude_home: Path, since: Optional[float]) -> list
         directory = claude_home / "projects" / _project_slug(str(project["root"]))
         for transcript in sorted(directory.glob("*.jsonl")) if directory.is_dir() else []:
             if _recent(transcript, since):
-                found.append(("claude", project["project_id"], (transcript.stem,)))
+                found.append(("claude", project["project_id"], (transcript.stem,), transcript))
     return found
 
 
@@ -197,14 +217,14 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
             rows[(client, project["project_id"])] = {
                 "client": client, "project_id": project["project_id"], "sessions": 0, "enqueued": 0,
                 "committed": 0, "dead_letter": 0, "dead_letter_recovered": 0, "pending": 0,
-                "missing": 0, "wrong_project": 0}
+                "missing": 0, "no_reply": 0, "wrong_project": 0}
     sessions = []
     if "claude" in clients:
         sessions += claude_sessions(registry, claude_home, since)
     if "codex" in clients:
         sessions += codex_sessions(registry, codex_home, since)
 
-    for client, project_id, session_ids in sessions:
+    for client, project_id, session_ids, *location in sessions:
         row = rows[(client, project_id)]
         keys = [capture_session_hash(client, value) for value in session_ids]
         key = next((k for k in keys if k in actions), keys[0])
@@ -216,7 +236,11 @@ def audit(vault: Path, claude_home: Path, *, since: Optional[float] = None,
         bootstrap[f"{client}:{stage}"] += 1
         seen = actions.get(key, set())
         if "ENQUEUED" not in seen and "DUPLICATE" not in seen:
-            row["missing"] += 1
+            if location and _unanswered(location[0]):
+                # Aborted before any reply: nothing to capture, not a loss.
+                row["no_reply"] += 1
+            else:
+                row["missing"] += 1
             continue
         row["enqueued"] += 1
         if ledger_projects.get(key) not in (None, project_id):
