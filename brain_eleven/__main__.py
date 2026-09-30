@@ -56,6 +56,10 @@ def main(argv=None):
     auto.add_argument('--limit', type=int, help='at most this many model calls')
     auto.add_argument('--apply', action='store_true', help='also apply the verdicts (ACCEPT writes, REJECT hides)')
     auto.add_argument('--accept-model', action='store_true', help="let the model's ACCEPT write memory (default: left for a person)")
+    audit = sub.add_parser('memory-audit', help='weekly memory audit: retire guarded exact duplicates, suggest the rest')
+    audit.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the weekly service run on/off (default: run once, dry)')
+    audit.add_argument('--apply', action='store_true', help='retire guarded exact duplicates (default: report only)')
+    audit.add_argument('--no-model', action='store_true', help='skip the local-model duplicate/conflict check')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -123,6 +127,13 @@ def main(argv=None):
                                           accept_model=args.accept_model)}
                 if args.apply:
                     result['applied'] = apply_suggestions(args.vault, apply=True)
+        elif args.command == 'memory-audit':
+            if args.state:
+                from .runtime.storage import RuntimeConfig
+                result = RuntimeConfig(args.vault).set_memory_audit(args.state == 'ON')
+            else:
+                from .runtime.memory_audit import audit
+                result = audit(args.vault, apply=args.apply, use_model=not args.no_model)
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)

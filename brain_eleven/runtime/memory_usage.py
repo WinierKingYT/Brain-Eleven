@@ -51,7 +51,8 @@ def _load(path):
         document = {}
     memories = document.get('memories') if isinstance(document.get('memories'), dict) else {}
     sessions = document.get('sessions') if isinstance(document.get('sessions'), dict) else {}
-    return {'schema_version': 1, 'memories': memories, 'sessions': sessions}
+    started = document.get('started_at') if isinstance(document.get('started_at'), str) else None
+    return {'schema_version': 1, 'started_at': started, 'memories': memories, 'sessions': sessions}
 
 
 def _update(vault, mutate):
@@ -72,6 +73,7 @@ def record_delivery(vault, memory_ids, *, session_key, event, at):
     kind = 'bootstrap' if event == 'SessionStart' else 'prompt'
 
     def mutate(document):
+        document['started_at'] = document.get('started_at') or at
         for memory_id in ids:
             entry = document['memories'].setdefault(memory_id, {})
             entry['delivered'] = int(entry.get('delivered', 0)) + 1
@@ -133,6 +135,14 @@ def delivered_ids(vault, session_key):
         return list(_load(_path(vault))['sessions'].get(session_hash(session_key), {}).get('ids') or [])
     except Exception:
         return []
+
+
+def started_at(vault):
+    """When usage recording began (first delivery), or None."""
+    try:
+        return _load(_path(vault)).get('started_at')
+    except Exception:
+        return None
 
 
 def usage(vault):
