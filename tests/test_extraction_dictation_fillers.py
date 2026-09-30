@@ -25,6 +25,13 @@ def test_standalone_fillers_are_removed(raw, clean):
 
 
 @pytest.mark.parametrize("text", [
+    "II ve III farklı.",
+    "III. bölüm önemli.",
+    "keep HMM model",
+    "Harfler a, b, c, d, e, f olsun.",
+    "fn(a, e, b) kullan",
+    "`ee` değişkeni",
+    "hı hı, tamam onu kullan.",
     "e-posta adresini değiştirdik.",
     "Emre ve Ece karar verdi.",
     "Plan e ile başlıyor: e2e testleri.",
@@ -44,3 +51,19 @@ def test_captured_memory_content_has_no_fillers(tmp_path):
 
     memories = [c for c in result.candidates if isinstance(c, NewMemoryCandidate)]
     assert memories and all(not c.content.lower().startswith("ee") for c in memories)
+
+
+def test_filler_only_segment_keeps_later_candidate_ids(tmp_path):
+    from extraction import _candidate_id
+
+    transcript = tmp_path / "s.jsonl"
+    transcript.write_text(json.dumps({"role": "user", "content": "Ee. Postgres kullanacağız. Redis de kullanacağız."})
+                          + "\n", encoding="utf-8")
+    batch = TranscriptReader().read(transcript, session_id="s", project_id="brain-eleven",
+                                    captured_at="2026-09-30T10:00:00Z")
+    candidates = DeterministicExtractor().extract(batch).candidates
+    message = batch.messages[0]
+
+    # The dropped filler segment keeps index 0, so later ids do not shift.
+    assert [c.candidate_id for c in candidates] == [
+        _candidate_id(message, index, c.candidate_type) for index, c in zip((1, 2), candidates)]

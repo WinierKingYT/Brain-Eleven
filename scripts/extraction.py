@@ -165,19 +165,21 @@ def _content_hash(content: str) -> str:
     return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-# Standalone dictation fillers (the owner dictates in Turkish): "e," and
-# "ee", "ııı", "hmm", "hıı". A bare "e" counts only before a comma, so "e-posta",
-# "e2e" or a letter "e" in prose are kept.
-_DICTATION_FILLER = re.compile(r"(?<![\w-])(?:e,|(?:ee+|ıı+|hmm+|hıı*)[,.]?)(?![\w-])\s*", re.IGNORECASE)
+# Dictation fillers (the owner dictates in Turkish). Deliberately narrow and
+# case-sensitive so "II", "III", "HMM" and approvals like "hı hı" survive:
+# - at the start of a segment: "E,", "Ee,", "ııı", "Hmm," ...
+# - inside a segment: lowercase "ee+", "ıı+", "hmm+" between spaces, and "e,"
+#   only right after a word (a letter "e" in "d, e, f" or "fn(a, e)" stays).
+_LEADING_FILLER = re.compile(r"^(?:(?:[Ee]e*|ıı+|[Hh]mm+)[,.]?\s+)+")
+_INNER_FILLER = re.compile(r"(?<=\w) e,(?= )| (?:ee+|ıı+|hmm+)[,.]?(?= )")
 
 
 def strip_dictation_fillers(content: str) -> str:
-    return _DICTATION_FILLER.sub("", content).strip()
+    return _INNER_FILLER.sub("", _LEADING_FILLER.sub("", content)).strip()
 
 
 def _segments(content: str) -> list[str]:
-    parts = (strip_dictation_fillers(part) for part in _SENTENCE_SPLIT.split(content))
-    return [part for part in parts if part]
+    return [part.strip() for part in _SENTENCE_SPLIT.split(content) if part.strip()]
 
 
 def _classify_commitment(content: str, role: str) -> Commitment:
@@ -302,6 +304,9 @@ class DeterministicExtractor:
                 # The approval turn carries no fact of its own; it is evidence on the approved candidate.
                 continue
             for index, content in enumerate(_segments(message.content)):
+                # Fillers are dropped from the text only; the segment index
+                # (and so the candidate id) is unchanged.
+                content = strip_dictation_fillers(content)
                 if len(content.strip()) < 3:
                     continue
                 commitment = _classify_commitment(content, message.record.role)

@@ -176,3 +176,21 @@ def test_session_without_assistant_reply_is_not_a_capture_loss(tmp_path):
     # A transcript with a real reply and no capture is still a loss.
     assert report["totals"]["missing"] == 1
     assert verdict(report, min_projects=2, min_sessions=20) == "FAIL"
+
+
+def test_codex_subagent_rollouts_are_not_capture_losses(tmp_path):
+    sessions = {"p_a": [f"a{i}" for i in range(10)], "p_b": [f"b{i}" for i in range(10)]}
+    ledger = [row for pid, sids in sessions.items() for sid in sids for row in _ok(sid, pid)]
+    vault, home = _setup(tmp_path, sessions, ledger)
+    codex = tmp_path / "codex"
+    day = codex / "sessions" / "2026" / "09" / "30"
+    day.mkdir(parents=True)
+    for sid, source in (("child", {"subagent": {"thread_spawn": {"parent_thread_id": "p"}}}), ("real", "vscode")):
+        (day / f"rollout-{sid}.jsonl").write_text(json.dumps({"type": "session_meta", "payload": {
+            "id": sid, "cwd": str(tmp_path / "proj_a"), "source": source}}) + "\n", encoding="utf-8")
+
+    report = audit(vault, home, codex_home=codex, clients=("claude", "codex"))
+
+    assert report["clients"]["codex"]["subagent"] == 1
+    # The real, uncaptured Codex session is still a loss.
+    assert report["clients"]["codex"]["missing"] == 1
