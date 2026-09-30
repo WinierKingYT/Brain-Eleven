@@ -517,6 +517,17 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
         context = compiler._generate_context_block(memories, {}, '', '', state)
+    try:
+        # Owner notice (2026-09-30): one line when candidates or memory-audit
+        # suggestions wait for the owner; never blocks bootstrap.
+        from .value import owner_notice
+        notice = owner_notice(vault, project['project_id'])
+        if notice:
+            candidate_context = context + ('\n\n## Owner action\n' if context else '## Owner action\n') + notice
+            if estimator.estimate(candidate_context).count <= budget and safe(candidate_context):
+                context = candidate_context
+    except Exception:
+        pass
     reminder_context = None
     reminder_record = None
     try:

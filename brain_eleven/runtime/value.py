@@ -48,24 +48,76 @@ def value_score(item):
     return round(score, 4)
 
 
+def _audit_suggestions(vault, project_id=None):
+    from brain_eleven.memory import MemoryStore
+    from .storage import RuntimeConfig, read_json
+    report = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
+    active = {m.get('memory_id'): m for m in MemoryStore(vault).load()['validated_memory']
+              if str(m.get('status') or 'active') == 'active'}
+    return [s for s in report.get('suggestions') or []
+            if isinstance(s, dict) and s.get('memory_id') in active
+            and (project_id is None or active[s['memory_id']].get('project_id') == project_id)]
+
+
+def owner_notice(vault, project_id=None):
+    """One line for SessionStart when something waits for the owner, else ''."""
+    from .review import ReviewStore
+    suggestions = load_suggestions(vault)
+    waiting = model_accept = 0
+    for item in ReviewStore(vault).list():
+        if item.get('status') != 'PENDING':
+            continue
+        if project_id and (item.get('candidate') or {}).get('project_id') != project_id:
+            continue
+        entry = suggestions.get(item.get('id')) or {}
+        if entry.get('suggestion') in ('REJECT', 'DUPLICATE'):
+            continue
+        if entry.get('suggestion') == 'REVIEW':
+            waiting += 1
+            model_accept += entry.get('reason') == 'MODEL_ACCEPT'
+    audit = len(_audit_suggestions(vault, project_id))
+    if not waiting and not audit:
+        return ''
+    parts = []
+    if waiting:
+        parts.append(f'{waiting} review candidates wait for the owner ({model_accept} suggested by the local model)')
+    if audit:
+        parts.append(f'memory audit has {audit} suggestion(s)')
+    return '- ' + '; '.join(parts) + '. Details: `python -m brain_eleven digest`.'
+
+
 def digest(vault, *, limit=DAILY_LIMIT):
-    """The day's most valuable pending candidates, for a quick look without the browser."""
+    """The day's most valuable pending candidates, for a quick look without the browser.
+
+    Items the queue triage hid (REJECT/DUPLICATE) are skipped; the local
+    model's accept suggestions come first, and memory-audit suggestions are
+    listed separately.
+    """
     from brain_eleven.memory import MemoryStore
     from .review import ReviewStore, rank_similar
     from .triage import summary
     memories = [m for m in MemoryStore(vault).load()['validated_memory'] if str(m.get('status') or 'active') == 'active']
-    pending = [x for x in ReviewStore(vault).list() if x.get('status') == 'PENDING']
+    suggestions = load_suggestions(vault)
+    pending = [x for x in ReviewStore(vault).list() if x.get('status') == 'PENDING'
+               and (suggestions.get(x.get('id')) or {}).get('suggestion') not in ('REJECT', 'DUPLICATE')]
     for item in pending:
         candidate = item.get('candidate') or {}
         same_project = [m for m in memories if m.get('project_id') == candidate.get('project_id')]
         item['similar'] = [{'similarity': score} for score, _ in rank_similar(candidate.get('content', ''), same_project)[:1]]
-    ranked = sorted(pending, key=value_score, reverse=True)[:limit]
+    def order(item):
+        model_accept = (suggestions.get(item.get('id')) or {}).get('reason') == 'MODEL_ACCEPT'
+        return (model_accept, value_score(item))
+    ranked = sorted(pending, key=order, reverse=True)[:limit]
     return {'pending': len(pending), 'auto_filtered_total': summary(vault).get('total', 0),
             'top': [{'id': x['id'], 'score': value_score(x),
                      'commitment': (x.get('candidate') or {}).get('commitment'),
                      'type': (x.get('candidate') or {}).get('memory_type'),
+                     'model_accept': (suggestions.get(x['id']) or {}).get('reason') == 'MODEL_ACCEPT',
                      'text': ((x.get('candidate') or {}).get('content') or (x.get('candidate') or {}).get('text') or '')[:160]}
-                    for x in ranked]}
+                    for x in ranked],
+            'memory_audit': [{**s, 'text': str(next((m.get('content') for m in memories
+                                                     if m.get('memory_id') == s['memory_id']), ''))[:160]}
+                             for s in _audit_suggestions(vault)]}
 
 
 _SUGGESTIONS = {'ACCEPT', 'REJECT', 'REVIEW'}
