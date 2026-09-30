@@ -331,3 +331,22 @@ yeni yakalamalarda dolgular temizlenir, eski kayıt değişmedi. Hook süresi (y
 yeniden başlatmada 63 istemden 1 kayıp. Not: `recall-probe --mode prompt` PR #39'a kadar yeni süreçte
 modelleri ısıtmadan ölçüyordu (V1 sırası); bu tarihten önceki istem-modu CLI sonuçları buna göre okunmalı.
 
+## Gerçek kullanım puanları (2026-09-30'dan itibaren)
+
+Yöntem: Brain-Eleven klasöründe yeni oturum, ilk mesaj doğrudan soru + "Dosyalara ve git'e bakma,
+yalnız sana verilen bağlamdan cevapla; bilmiyorsan bilmiyorum de." Her soru ayrı oturum. Puanı
+sahip verir (doğru / kısmen / yanlış / hiç). Bu, probe'dan farklı olarak cevabın kendisini ölçer.
+
+| Tarih | Soru | Puan | Not |
+|---|---|---|---|
+| 2026-09-30 | Bandit subprocess bulgusu nasıl giderildi? (W39 Q4) | doğru | `nosec` kuralı, kapı değişmedi; bağlamda olmayan ayrıntıları (dosya, kural kodu) "bilmiyorum" diye ayırdı. İstem-zamanı bağlamı cevabın üç parçasını getirdi. |
+| 2026-09-30 | Dokümanlar işlenmeden önce bağlama ne zaman alınıyordu? (W39 Q1) | doğru | "Uzun süre biriktiriliyor, işlemeden önce bağlama alınıyor." Bileşeni bilmediğini söyledi. Not: cevap kaydı aynı gün dikte dolgusundan temizlenerek kaynağa sadık biçimde yeniden yazılmıştı. |
+| 2026-09-30 | W-06C0R1 kapsam sözleşmesinde çalışma ağacı ne zaman başarısız? (W39 Q2) | doğru | İzin listesi dışında commit edilmemiş değişiklik olduğunda. |
+| 2026-09-30 | test_w06c0r1_contract.py beş hatası önceden var mıydı, nasıl doğrulandı? (W39 Q3) | doğru | Evet; `git stash` ile, iki ilgisiz kirli dosya. Hangi düzeltmeye ait olduğunu bilmediğini söyledi. |
+| 2026-09-30 | SRT-00'ın CI yeşil kapanışı nasıl sınıflandırıldı? (W39 Q5) | doğru | Stabilizasyon kapanışı, bağımsız SHIP değil; holdout kapısı bilerek kırmızı. |
+
+**Özet (2026-09-30): gerçek kullanımda W39 5/5 doğru, 0 uydurma.** Önceki hafta (2026-09-29) aynı
+sorular SessionStart'ta 0/5 bağlamdaydı; fark istem-zamanı hafızadan (PR #30, #36–#43). Hedef ("sen bir
+şey yapmadan Claude'un geçen haftayı hatırlaması") bu beş soruda karşılandı; sonraki haftalarda yeni
+sorularla tekrar ölçülmeli.
+
