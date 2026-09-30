@@ -225,7 +225,7 @@ class RuntimeConfig:
             guard_runtime_path(self.root, self.path, create=False)
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
                                       'b1_human_approval': False, 'shadow_accept': False,
-                                      'shadow_recall': False, 'queue_triage': False})
+                                      'shadow_recall': False, 'queue_triage': False, 'memory_audit': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -242,6 +242,9 @@ class RuntimeConfig:
         # review queue (rules reject noise, a local model judges the rest). It
         # only writes suggestions; model accepts stay for a person.
         value.setdefault('queue_triage', False)
+        # Owner decision 2026-09-30, off by default: a weekly memory audit
+        # retires guarded exact duplicates and suggests everything else.
+        value.setdefault('memory_audit', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -256,6 +259,8 @@ class RuntimeConfig:
             raise ValueError('Invalid shadow recall configuration')
         if not isinstance(value['queue_triage'], bool):
             raise ValueError('Invalid queue triage configuration')
+        if not isinstance(value['memory_audit'], bool):
+            raise ValueError('Invalid memory audit configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -336,6 +341,18 @@ class RuntimeConfig:
 
         def mutate(current):
             current['queue_triage'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_memory_audit(self, enabled):
+        """Let the service run the weekly memory audit (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Memory audit flag must be boolean')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['memory_audit'] = enabled
 
         return self._commit(snapshot, mutate)
 

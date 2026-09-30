@@ -181,6 +181,7 @@ def create_app(vault, *, token=None, background=True):
             except Exception:
                 write_json(cfg.root / 'last-worker.json', {'at': now(), 'status': 'FAILED', 'error': 'WORKER_UNAVAILABLE'})
             await maybe_queue_triage(app)
+            await maybe_memory_audit(app)
             if time.monotonic() - app.state.last_activity > idle_limit_seconds():
                 app.state.idle = True
             await asyncio.sleep(delay)
@@ -199,6 +200,7 @@ def create_app(vault, *, token=None, background=True):
     app.state.idle = False
     app.state.vault = vault
     app.state.queue_triage_running = False
+    app.state.memory_audit_running = False
     app.state.queue_triage_at = float('-inf')
     app.state.token = token
 
@@ -448,6 +450,45 @@ async def maybe_queue_triage(app):
             await asyncio.to_thread(run)
         finally:
             app.state.queue_triage_running = False
+    app.state.memory_audit_running = False
+
+    asyncio.create_task(background())
+
+
+MEMORY_AUDIT_INTERVAL_SECONDS = 7 * 24 * 3600
+
+
+async def maybe_memory_audit(app):
+    """Owner decision 2026-09-30: weekly memory audit in the background.
+
+    Runs when ``memory_audit`` is on and the last report is a week old; it
+    retires only guarded exact duplicates and writes suggestions for the rest.
+    """
+    from datetime import datetime, timezone
+    vault = app.state.vault
+    try:
+        if not RuntimeConfig(vault).load().get('memory_audit') or app.state.memory_audit_running:
+            return
+        last = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
+        when = datetime.fromisoformat(str(last.get('at'))) if last.get('at') else None
+        if when and (datetime.now(timezone.utc) - when).total_seconds() < MEMORY_AUDIT_INTERVAL_SECONDS:
+            return
+    except Exception:
+        return
+    app.state.memory_audit_running = True
+
+    def run():
+        from .memory_audit import audit
+        try:
+            audit(vault, apply=True)
+        except Exception:
+            write_json(RuntimeConfig(vault).root / 'memory-audit.json', {'at': now(), 'status': 'FAILED'})
+
+    async def background():
+        try:
+            await asyncio.to_thread(run)
+        finally:
+            app.state.memory_audit_running = False
 
     asyncio.create_task(background())
 
