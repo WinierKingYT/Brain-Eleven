@@ -635,6 +635,15 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     telemetry.update(at=now(), client=client, session_hash=identity('session_', session), turn_hash=identity('turn_', turn),
                      elapsed_ms=round((perf_counter() - start) * 1000), project_id=project['project_id'])
     write_json(runtime.root / 'last-context.json', telemetry)
+    if approved and client in {'claude', 'codex'} and session:
+        # Usage signal (2026-09-30): which memories reached the model. Only
+        # native hook deliveries count; probes and manual calls do not.
+        from .memory_usage import record_delivery
+        from .worker import capture_session_key
+        memory_ids = [i for i in result.get('selected_ids') or []
+                      if isinstance(i, str) and not i.startswith(('req_', 'blk_', 'wrk_', 'mil_', 'con_', 'rsk_'))]
+        record_delivery(vault, memory_ids, session_key=capture_session_key(client, session),
+                        event=event, at=telemetry['at'])
     result['elapsed_ms'] = telemetry['elapsed_ms']
     return result
 

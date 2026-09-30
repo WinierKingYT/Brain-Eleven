@@ -302,6 +302,23 @@ class Worker:
         except Exception:
             return 'DEGRADED'
 
+    def _record_memory_use(self, session, batch):
+        """Usage signal (2026-09-30): which delivered memories the replies drew on.
+
+        Advisory only: any failure is swallowed so capture never depends on it.
+        """
+        try:
+            replies = [m.content for m in batch.messages if m.record.role == 'assistant']
+            if not replies:
+                return
+            from brain_eleven.memory import MemoryStore
+            from .memory_usage import record_use
+            contents = {m.get('memory_id'): str(m.get('content') or '')
+                        for m in MemoryStore(self.vault).load()['validated_memory'] if m.get('memory_id')}
+            record_use(self.vault, session, replies, at=now(), contents=contents)
+        except Exception:
+            return
+
     def _add_review(self, candidate, reason, source):
         """Persist a review item and suppress terminal fingerprint replays.
 
@@ -863,6 +880,7 @@ class Worker:
         except OSError as exc:
             raise WorkerProcessingError('EVIDENCE_IO_FAILED') from exc
         cursor = _validate_cursor(cursor)
+        self._record_memory_use(session, batch)
         if read_stats:
             # Drift signal (read by `doctor`): how many records were conversation
             # and which unrecognised record types (bounded ASCII names, never
