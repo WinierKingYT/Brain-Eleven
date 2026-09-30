@@ -56,6 +56,7 @@ def main(argv=None):
     auto.add_argument('--limit', type=int, help='at most this many model calls')
     auto.add_argument('--apply', action='store_true', help='also apply the verdicts (ACCEPT writes, REJECT hides)')
     auto.add_argument('--accept-model', action='store_true', help="let the model's ACCEPT write memory (default: left for a person)")
+    auto.add_argument('--accept-verified', choices=['OFF', 'ON'], help='turn automatic writing of VERIFIED candidates on/off')
     audit = sub.add_parser('memory-audit', help='weekly memory audit: retire guarded exact duplicates, suggest the rest')
     audit.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the weekly service run on/off (default: run once, dry)')
     audit.add_argument('--apply', action='store_true', help='retire guarded exact duplicates (default: report only)')
@@ -117,7 +118,10 @@ def main(argv=None):
             from .runtime.value import apply_suggestions
             result = apply_suggestions(args.vault, apply=args.apply)
         elif args.command == 'queue-triage':
-            if args.state:
+            if args.accept_verified:
+                from .runtime.storage import RuntimeConfig
+                result = RuntimeConfig(args.vault).set_auto_accept_verified(args.accept_verified == 'ON')
+            elif args.state:
                 from .runtime.storage import RuntimeConfig
                 result = RuntimeConfig(args.vault).set_queue_triage(args.state == 'ON')
             else:

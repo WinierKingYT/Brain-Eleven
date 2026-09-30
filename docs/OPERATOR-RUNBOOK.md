@@ -64,6 +64,22 @@ python -m brain_eleven queue-triage ON              # servis 30 dakikada bir ça
 python -m brain_eleven queue-triage OFF             # geri al
 ```
 
+Doğrulayıcı (sahip kararı 2026-09-30): kuralların açık bıraktığı her aday yerel
+modelle "tek başına anlaşılan, kalıcı bir karar/ders/sistem bilgisi mi?" diye
+kontrol edilir; ardından parça cümle ve proje kontrolü (whale-tracker bilgisi
+brain-eleven'a yazılmasın) yapılır. Geçen aday `REVIEW` + `MODEL_VERIFIED` olarak
+sahibin listesinde en üste çıkar; geçemeyen `REJECT` ile gizlenir. Doğrulanan
+adayların otomatik yazılması ayrı ve varsayılan kapalı bir anahtardır:
+
+```
+python -m brain_eleven queue-triage --accept-verified ON    # doğrulananları tıklamasız yaz
+python -m brain_eleven queue-triage --accept-verified OFF
+```
+
+Geçici ölçüm (Claude'un etiketleri, 2026-09-30): oturum özeti maddelerinde
+~%96 kesinlik / ~%82 duyarlılık; eski kuyrukta %67 / %33. Sahip etiketleriyle
+yeniden ölçülmeden açılması önerilmez.
+
 Meta kayıtlar (skill gövdeleri, alt ajan raporları, harness notları; Claude
 dökümünde `isMeta: true`) artık kullanıcı sözü sayılmaz, `system` kanıtı olarak
 okunur; kuyruk gürültüsünün ana kaynağı buydu.

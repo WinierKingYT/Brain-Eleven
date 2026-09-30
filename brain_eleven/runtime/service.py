@@ -440,7 +440,11 @@ async def maybe_queue_triage(app):
     def run():
         from .queue_triage import triage
         try:
-            result = {'at': now(), **triage(vault)}
+            accept = bool(RuntimeConfig(vault).load().get('auto_accept_verified'))
+            result = {'at': now(), **triage(vault, accept_verified=accept)}
+            if accept:
+                from .value import apply_suggestions
+                result['applied'] = apply_suggestions(vault, apply=True)
         except Exception:
             result = {'at': now(), 'status': 'FAILED'}
         write_json(RuntimeConfig(vault).root / 'last-queue-triage.json', result)
