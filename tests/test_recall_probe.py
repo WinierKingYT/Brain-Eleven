@@ -66,7 +66,7 @@ def test_answer_waiting_in_the_review_queue_is_pointed_at_and_surfaced(tmp_path)
     from brain_eleven.runtime.service import create_app
     vault, _ = _runtime(tmp_path, shadow_accept=True)
     pending = _review_item(tmp_path, vault, "q3",
-                           "We decided not to push master because it publishes the ghcr latest image.", NEW_TIME)
+                           "We decided SRT-00 closed and master was pushed as a closure without an independent SHIP.", NEW_TIME)
 
     by_id = {r["id"]: r for r in probe(vault)["results"]}
     assert by_id[3]["status"] == "IN_REVIEW_QUEUE" and by_id[3]["review_ids"] == [pending["id"]]
@@ -84,8 +84,8 @@ def test_answer_split_across_two_pending_candidates_is_pointed_at_as_split(tmp_p
     from fastapi.testclient import TestClient
     from brain_eleven.runtime.service import create_app
     vault, _ = _runtime(tmp_path, shadow_accept=True)
-    first = _review_item(tmp_path, vault, "a", "We decided not to push master for now.", NEW_TIME)
-    second = _review_item(tmp_path, vault, "b", "We decided that CI publishes the ghcr latest image.", NEW_TIME)
+    first = _review_item(tmp_path, vault, "a", "We decided master was pushed after the closure.", NEW_TIME)
+    second = _review_item(tmp_path, vault, "b", "We decided SRT-00 stays without an independent SHIP.", NEW_TIME)
     _review_item(tmp_path, vault, "c", "We decided that the dashboard stays read-only.", NEW_TIME)
 
     entry = {r["id"]: r for r in probe(vault)["results"]}[3]
