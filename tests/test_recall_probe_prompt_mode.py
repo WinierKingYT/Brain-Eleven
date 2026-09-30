@@ -387,3 +387,21 @@ def test_prompt_probe_warms_providers_before_asking(tmp_path, monkeypatch):
     from brain_eleven.runtime.context import prompt_provider_config
     # Warm-up uses exactly the config path compile_context will use.
     assert order == [("warm", vault, prompt_provider_config(vault)), ("ask", "Alpha?")]
+
+
+def test_service_stays_up_longer_while_prompt_models_are_loaded(monkeypatch):
+    import brain_eleven.runtime.context as context
+    from brain_eleven.runtime import service
+
+    class Loaded:
+        provider_id = "sentence-transformers"
+
+    class Unavailable:
+        provider_id = "unavailable"
+
+    monkeypatch.setattr(context, "_PROVIDER_CACHE", {})
+    assert service.idle_limit_seconds() == service.IDLE_LIMIT_SECONDS
+    context._PROVIDER_CACHE["k"] = (Unavailable(), None)
+    assert service.idle_limit_seconds() == service.IDLE_LIMIT_SECONDS
+    context._PROVIDER_CACHE["k"] = (Loaded(), None)
+    assert service.idle_limit_seconds() == service.PROMPT_MODELS_IDLE_LIMIT_SECONDS

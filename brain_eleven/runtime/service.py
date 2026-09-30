@@ -180,7 +180,7 @@ def create_app(vault, *, token=None, background=True):
                     delay = .05
             except Exception:
                 write_json(cfg.root / 'last-worker.json', {'at': now(), 'status': 'FAILED', 'error': 'WORKER_UNAVAILABLE'})
-            if time.monotonic() - app.state.last_activity > 900:
+            if time.monotonic() - app.state.last_activity > idle_limit_seconds():
                 app.state.idle = True
             await asyncio.sleep(delay)
     @asynccontextmanager
@@ -408,6 +408,17 @@ def create_app(vault, *, token=None, background=True):
         except Exception:
             return {'status': 'FAILED', 'context': '', 'warnings': ['CONTEXT_UNAVAILABLE']}
     return app
+
+
+IDLE_LIMIT_SECONDS = 900
+# With local prompt models loaded a restart costs a ~25 s warm-up during which
+# prompts keep V1 order (and one may be lost), so the service stays up longer.
+PROMPT_MODELS_IDLE_LIMIT_SECONDS = 4 * 3600
+
+
+def idle_limit_seconds():
+    from .context import prompt_providers_loaded
+    return PROMPT_MODELS_IDLE_LIMIT_SECONDS if prompt_providers_loaded() else IDLE_LIMIT_SECONDS
 
 
 def serve(vault):
