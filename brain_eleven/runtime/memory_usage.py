@@ -119,12 +119,20 @@ def record_use(vault, session_key, assistant_texts, *, at, contents):
             entry['used'] = int(entry.get('used', 0)) + 1
             entry['last_used'] = at
             used_here.add(memory_id)
-        session['used'] = sorted(used_here)
+        session['used'] = sorted(used_here & set(session.get('ids') or []))
 
     try:
         _update(vault, mutate)
     except Exception:
         pass
+
+
+def delivered_ids(vault, session_key):
+    """Ids delivered in this session so far (read-only, empty on any error)."""
+    try:
+        return list(_load(_path(vault))['sessions'].get(session_hash(session_key), {}).get('ids') or [])
+    except Exception:
+        return []
 
 
 def usage(vault):

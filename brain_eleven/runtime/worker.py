@@ -312,9 +312,12 @@ class Worker:
             if not replies:
                 return
             from brain_eleven.memory import MemoryStore
-            from .memory_usage import record_use
+            from .memory_usage import delivered_ids, record_use
+            wanted = set(delivered_ids(self.vault, session))
+            if not wanted:
+                return  # nothing delivered in this session: skip the memory load
             contents = {m.get('memory_id'): str(m.get('content') or '')
-                        for m in MemoryStore(self.vault).load()['validated_memory'] if m.get('memory_id')}
+                        for m in MemoryStore(self.vault).load()['validated_memory'] if m.get('memory_id') in wanted}
             record_use(self.vault, session, replies, at=now(), contents=contents)
         except Exception:
             return

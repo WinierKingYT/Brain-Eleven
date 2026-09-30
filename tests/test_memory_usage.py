@@ -69,3 +69,20 @@ def test_recording_never_raises(tmp_path, monkeypatch):
     monkeypatch.setattr(memory_usage, '_update', broken)
     record_delivery(vault, ['mem_bandit'], session_key='k', event='UserPromptSubmit', at=AT1)
     record_use(vault, 'k', ['text words here'], at=AT2, contents=CONTENTS)
+
+
+def test_compile_context_records_bootstrap_and_prompt_but_not_probes(tmp_path):
+    from brain_eleven.runtime.context import compile_context
+    from tests.test_memclaim01_claim_key import NEW_TIME, _accept, _review_item
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    RuntimeConfig(vault).set_shadow_recall(True)
+    _accept(vault, _review_item(tmp_path, vault, 'alpha', 'We decided alpha is delivered at session start.', NEW_TIME))
+
+    boot = compile_context(vault, vault, '', client='claude', session='s1', turn='bootstrap', event='SessionStart')
+    assert boot['delivered'] is True and boot['selected_ids']
+    counted = usage(vault)
+    assert all(counted[i]['bootstrap_delivered'] == 1 for i in boot['selected_ids'])
+
+    compile_context(vault, vault, 'alpha?', client='codex', session='recall-probe', turn='recall-probe:1')
+    compile_context(vault, vault, 'alpha?', client='manual', session='s1', turn='t1')
+    assert usage(vault) == counted

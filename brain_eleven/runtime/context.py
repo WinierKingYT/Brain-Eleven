@@ -554,10 +554,30 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
             'estimated_tokens': estimator.estimate(context).count}
 
 
+_MEMORY_ID = re.compile(r'mem_[A-Za-z0-9_-]{1,80}|[0-9A-HJKMNP-TV-Z]{26}')
+
+
+def _record_usage_delivery(vault, result, *, client, session, turn, event):
+    """Usage signal (2026-09-30): count the memories a native hook delivered.
+
+    Probes (session ``recall-probe``) and manual calls are not deliveries;
+    only canonical memory ids (``mem_...`` or ULIDs) are counted.
+    """
+    if result.get('delivered') is not True or client not in {'claude', 'codex'} or not session:
+        return
+    if session == 'recall-probe' or str(turn).startswith('recall-probe'):
+        return
+    from .memory_usage import record_delivery
+    from .worker import capture_session_key
+    memory_ids = [i for i in result.get('selected_ids') or [] if isinstance(i, str) and _MEMORY_ID.fullmatch(i)]
+    record_delivery(vault, memory_ids, session_key=capture_session_key(client, session), event=event, at=now())
+
+
 def compile_context(vault, project_root, request, *, client='manual', session='', turn='', budget=3000, event='UserPromptSubmit'):
     start = perf_counter()
     if event == 'SessionStart':
         result = compile_bootstrap(vault, project_root, budget=budget, session=session)
+        _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
         result['elapsed_ms'] = round((perf_counter() - start) * 1000)
         return result
     runtime = RuntimeConfig(vault)
@@ -635,15 +655,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     telemetry.update(at=now(), client=client, session_hash=identity('session_', session), turn_hash=identity('turn_', turn),
                      elapsed_ms=round((perf_counter() - start) * 1000), project_id=project['project_id'])
     write_json(runtime.root / 'last-context.json', telemetry)
-    if approved and client in {'claude', 'codex'} and session:
-        # Usage signal (2026-09-30): which memories reached the model. Only
-        # native hook deliveries count; probes and manual calls do not.
-        from .memory_usage import record_delivery
-        from .worker import capture_session_key
-        memory_ids = [i for i in result.get('selected_ids') or []
-                      if isinstance(i, str) and not i.startswith(('req_', 'blk_', 'wrk_', 'mil_', 'con_', 'rsk_'))]
-        record_delivery(vault, memory_ids, session_key=capture_session_key(client, session),
-                        event=event, at=telemetry['at'])
+    _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
     result['elapsed_ms'] = telemetry['elapsed_ms']
     return result
 
