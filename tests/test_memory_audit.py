@@ -112,3 +112,22 @@ def test_memory_audit_flag_is_off_by_default(tmp_path):
     assert config.load()['memory_audit'] is False
     config.set_memory_audit(True)
     assert config.load()['memory_audit'] is True
+
+
+def test_guard_keeps_the_last_carrier_when_retiring_one_by_one(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    first = _memory(tmp_path, vault, 'a', 'We decided the alpha gate stays red on purpose.')
+    second = _memory(tmp_path, vault, 'b', 'We decided the alpha gate remains red on purpose.')
+    hub = _memory(tmp_path, vault, 'c', 'We decided the alpha gate stays shut on purpose.')
+    (RuntimeConfig(vault).root / 'questions-test.json').write_text(json.dumps(
+        {'questions': [{'id': 1, 'question': 'alpha gate?', 'groups': [['alpha'], ['red']]}]}), encoding='utf-8')
+    record_delivery(vault, [hub, hub], session_key='k', event='UserPromptSubmit', at=NEW_TIME)
+
+    def similarity(a, b):
+        return 0.99 if hub in {a['memory_id'], b['memory_id']} else 0.0
+
+    report = audit(vault, apply=True, use_model=False, now=LATER, similarity_fn=('stub', None, similarity))
+
+    # One carrier and the hub go; the last carrier of the answer always stays.
+    assert len({first, second} & _active(vault)) == 1
+    assert {r['memory_id'] for r in report['retired']} == ({first, second} - _active(vault)) | {hub}

@@ -156,7 +156,8 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
     memories = [dict(m) for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active' and m.get('memory_id')]
     counts = usage(vault)
-    guard = protected_ids(memories, _recall_questions(vault))
+    questions = _recall_questions(vault)
+    guard = protected_ids(memories, questions)
     method, vectors, similarity = similarity_fn or _similarity_fn(vault)
     if vectors is not None:
         embedded = vectors([str(m.get('content') or '') for m in memories]) or []
@@ -185,9 +186,14 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
             continue
         keep, drop = _keep_first(first, second, counts)
         if score >= EXACT_DUPLICATE:
-            if drop['memory_id'] in guard:
+            # The guard is recomputed over what is still active: two carriers
+            # of one answer may both look like duplicates of a third record,
+            # and retiring them one by one must never remove the last carrier.
+            live = [m for m in memories if m['memory_id'] not in retired]
+            guard_now = protected_ids(live, questions)
+            if drop['memory_id'] in guard_now:
                 keep, drop = drop, keep
-            if drop['memory_id'] in guard:
+            if drop['memory_id'] in guard_now:
                 report['suggestions'].append({'kind': 'DUPLICATE_PROTECTED', 'memory_id': drop['memory_id'],
                                               'other_id': keep['memory_id'], 'similarity': round(score, 3)})
                 continue
