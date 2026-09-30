@@ -58,3 +58,11 @@ def test_no_notice_without_memories(tmp_path):
     # The state section alone may still be delivered (unchanged behavior);
     # the notice never rides on a bootstrap without memories.
     assert '## Owner action' not in result['context'] and result['selected_ids'] == []
+
+
+def test_stale_counts_are_not_shown(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    write_json(RuntimeConfig(vault).root / 'owner-notice.json', {
+        'at': '2026-01-01T00:00:00+00:00', 'projects': {'': {'waiting': 3, 'model_accept': 1,
+                                                          'not_evaluated': 0, 'audit': 0}}})
+    assert owner_notice(vault) == ''

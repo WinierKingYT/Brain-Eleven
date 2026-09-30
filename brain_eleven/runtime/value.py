@@ -18,6 +18,7 @@ pending (and expire on their own) and "show all" lists them.
 from __future__ import annotations
 
 DAILY_LIMIT = 10
+NOTICE_MAX_AGE_SECONDS = 24 * 3600
 
 _COMMITMENT = {'COMMITTED': 1.0, 'OBSERVED': 0.55, 'UNCERTAIN': 0.3, 'PROPOSED': 0.3,
                'HYPOTHETICAL': 0.15, 'QUESTION': 0.1, 'NEGATED': 0.2, 'QUOTED': 0.05}
@@ -60,6 +61,12 @@ def _audit_suggestions(vault, project_id=None):
             and (project_id is None or active[s['memory_id']].get('project_id') == project_id)]
 
 
+def _model_accept(entry):
+    """The model suggested acceptance: left for a person (MODEL_ACCEPT) or allowed (ACCEPT)."""
+    entry = entry or {}
+    return entry.get('reason') == 'MODEL_ACCEPT' or entry.get('suggestion') == 'ACCEPT'
+
+
 def _safe_text(text, limit=160):
     """Memory text for display, withheld when it fails the capture safety check."""
     from context_compiler_v2.safety import contains_secret
@@ -89,7 +96,7 @@ def refresh_owner_counts(vault):
         counts = projects.setdefault(str((item.get('candidate') or {}).get('project_id') or ''),
                                      {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
         counts['waiting'] += 1
-        counts['model_accept'] += entry.get('reason') == 'MODEL_ACCEPT' or verdict == 'ACCEPT'
+        counts['model_accept'] += _model_accept(entry)
         counts['not_evaluated'] += not verdict
     for suggestion in _audit_suggestions(vault):
         project = str(suggestion.get('project_id') or '')
@@ -103,7 +110,14 @@ def refresh_owner_counts(vault):
 def owner_notice(vault, project_id=None):
     """One line for SessionStart from the precomputed counts, else ''."""
     from .storage import RuntimeConfig, read_json
+    from datetime import datetime, timezone
     document = read_json(RuntimeConfig(vault).root / 'owner-notice.json', {}) or {}
+    try:
+        age = datetime.now(timezone.utc) - datetime.fromisoformat(str(document.get('at')))
+    except (TypeError, ValueError):
+        return ''
+    if age.total_seconds() > NOTICE_MAX_AGE_SECONDS:
+        return ''  # stale counts would mislead; queue triage refreshes them every 30 min
     projects = document.get('projects') if isinstance(document.get('projects'), dict) else {}
     rows = [projects.get(project_id) or {}] if project_id else list(projects.values())
     total = {key: sum(int(row.get(key) or 0) for row in rows if isinstance(row, dict))
@@ -139,7 +153,7 @@ def digest(vault, *, limit=DAILY_LIMIT):
         same_project = [m for m in memories if m.get('project_id') == candidate.get('project_id')]
         item['similar'] = [{'similarity': score} for score, _ in rank_similar(candidate.get('content', ''), same_project)[:1]]
     def order(item):
-        model_accept = (suggestions.get(item.get('id')) or {}).get('reason') == 'MODEL_ACCEPT'
+        model_accept = _model_accept(suggestions.get(item.get('id')))
         return (model_accept, value_score(item))
     ranked = sorted(pending, key=order, reverse=True)[:limit]
     refresh_owner_counts(vault)
@@ -147,7 +161,7 @@ def digest(vault, *, limit=DAILY_LIMIT):
             'top': [{'id': x['id'], 'score': value_score(x),
                      'commitment': (x.get('candidate') or {}).get('commitment'),
                      'type': (x.get('candidate') or {}).get('memory_type'),
-                     'model_accept': (suggestions.get(x['id']) or {}).get('reason') == 'MODEL_ACCEPT',
+                     'model_accept': _model_accept(suggestions.get(x['id'])),
                      'text': ((x.get('candidate') or {}).get('content') or (x.get('candidate') or {}).get('text') or '')[:160]}
                     for x in ranked],
             'memory_audit': [{**s, 'text': _safe_text(next((m.get('content') for m in memories
