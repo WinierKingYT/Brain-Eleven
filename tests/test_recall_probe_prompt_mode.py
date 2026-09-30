@@ -277,11 +277,46 @@ def test_prompt_never_waits_for_loading_providers(tmp_path, monkeypatch):
     config = tmp_path / "ig-provider-config.json"
     config.write_text("{}", encoding="utf-8")
 
-    # Another thread holds the load lock: the prompt returns at once.
-    with context._PROVIDER_LOCK:
+    # Another thread is loading or warming: the prompt returns at once, even
+    # when providers are already cached, and starts nothing.
+    import threading
+    holding, release = threading.Event(), threading.Event()
+
+    def hold():
+        with context._PROVIDER_LOCK:
+            holding.set()
+            release.wait(5)
+
+    holder = threading.Thread(target=hold)
+    holder.start()
+    holding.wait(5)
+    try:
         assert context._prompt_providers(config, block=False) is None
+    finally:
+        release.set()
+        holder.join(5)
     assert started == []
-    # Nobody is loading: the prompt still returns at once but starts a load.
+
+    # Providers already cached under the real key, but warm-up still holds the
+    # lock: the prompt still gets None instead of competing with the warm-up.
+    import brain_eleven.retrieval.embedding_provider as providers
+    monkeypatch.setattr(providers, "create_embedding_provider", lambda **kw: "E")
+    monkeypatch.setattr(providers, "create_reranker", lambda **kw: "R")
+    assert context._prompt_providers(config) == ("E", "R")
+    holding.clear(); release.clear()
+    holder = threading.Thread(target=hold)
+    holder.start()
+    holding.wait(5)
+    try:
+        assert context._prompt_providers(config, block=False) is None
+    finally:
+        release.set()
+        holder.join(5)
+    assert context._prompt_providers(config, block=False) == ("E", "R")
+    assert started == []
+    # Nobody is loading and nothing is cached: the prompt still returns at
+    # once but starts a load.
+    context._PROVIDER_CACHE.clear()
     assert context._prompt_providers(config, block=False) is None
     for _ in range(50):
         if started:

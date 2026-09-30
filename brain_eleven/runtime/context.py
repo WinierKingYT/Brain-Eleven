@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import threading
+import time
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
@@ -162,10 +163,15 @@ PROMPT_RERANK_BUDGET = 0.9
 # Moving average of measured cross-encoder seconds per pair (CPU estimate).
 _RERANK_PAIR_SECONDS = [0.03]
 _EMBEDDING_CACHE_LIMIT = 5000
-_PROVIDER_LOCK = threading.Lock()
+# Held while providers load *and* while warm-up embeds the pool: a prompt that
+# finds it held keeps the V1 order instead of competing for the CPU.
+_PROVIDER_LOCK = threading.RLock()
 _PROVIDER_CACHE = {}
 _EMBEDDING_CACHE = {}
 _PROVIDER_LOCK_EMBED = threading.Lock()
+# Warm-up embeds the pool in batches of this size, pausing between them.
+WARM_EMBED_BATCH = 4
+WARM_EMBED_PAUSE = 0.05
 # New texts a prompt may embed itself (query plus a few changed memories).
 PROMPT_INLINE_EMBED = 8
 
@@ -218,11 +224,15 @@ def _prompt_providers(config_path, *, block=True, warm_texts=()):
         stamp = None
     key = (str(path.resolve()), stamp, *(environment.get(name, '') for name in (
         'IG_EMBEDDING_PROVIDER', 'IG_RERANKER_PROVIDER', 'IG_LOCAL_EMBEDDING_MODEL', 'IG_LOCAL_RERANKER_MODEL')))
-    cached = _PROVIDER_CACHE.get(key)
-    if cached is not None or not block:
-        if cached is None and _PROVIDER_LOCK.acquire(blocking=False):
-            # Nobody is loading: start a load for later prompts, do not wait.
+    if not block:
+        if not _PROVIDER_LOCK.acquire(blocking=False):
+            return None  # loading or warming: keep V1, do not wait or compete
+        try:
+            cached = _PROVIDER_CACHE.get(key)
+        finally:
             _PROVIDER_LOCK.release()
+        if cached is None:
+            # Nobody is loading: start a load for later prompts, do not wait.
             threading.Thread(target=warm_prompt_providers, args=(config_path, tuple(warm_texts)),
                              daemon=True).start()
         return cached
@@ -247,9 +257,24 @@ def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), t
         if vault is not None:
             document = _legacy_context_compiler()(str(vault)).memory_store.load()
             texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
-        embedding_provider, reranker = _prompt_providers(config_path)
-        if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
-            reranker.rerank('warm-up', ['warm-up'])
+        with _PROVIDER_LOCK:
+            embedding_provider, reranker = _prompt_providers(config_path)
+            # Small batches with a pause between them: one large batch holds
+            # the interpreter for ~2 s and the service cannot answer a hook.
+            batch = ['warm-up', *texts]
+            embedded = True
+            for start in range(0, len(batch), WARM_EMBED_BATCH):
+                if _embed_cached(embedding_provider, batch[start:start + WARM_EMBED_BATCH]) is None:
+                    embedded = False
+                    break
+                time.sleep(WARM_EMBED_PAUSE)
+            if embedded:
+                # A full-size shortlist of real texts: the first real-sized
+                # cross-encoder call is much slower than later ones, and it
+                # must not land on a user's prompt.
+                sample = [text for text in texts if text][:RERANK_SHORTLIST] or ['warm-up']
+                reranker.rerank('warm-up', sample)
+                reranker.rerank('warm-up', sample)
     except Exception:
         pass
 
