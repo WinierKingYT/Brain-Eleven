@@ -42,11 +42,20 @@ def _claude_slug(project_root):
     return re.sub(r"[^A-Za-z0-9]", "-", str(project_root.resolve()))
 
 
+# Since the 2026-09-30 source policy an owner status remark is not memory; the
+# review path is fed by session summaries, so review-effect tests use one.
+REVIEW_SUMMARY = ("Summary:\n4. Errors and fixes:\n"
+                  "   - The nightly build was broken on Windows and a retry fixed it.\n")
+
+
 def _transcript(tmp_path, text="We decided to use SQLite for persistent storage.", *, session_id="session"):
     directory = tmp_path / _claude_slug(tmp_path / "vault")
     directory.mkdir(exist_ok=True)
     path = directory / (session_id + ".jsonl")
-    path.write_text(json.dumps({"type": "user", "sessionId": session_id, "message": {"role": "user", "content": text}}) + "\n", encoding="utf-8")
+    record = {"type": "user", "sessionId": session_id, "message": {"role": "user", "content": text}}
+    if text == REVIEW_SUMMARY:
+        record["isCompactSummary"] = True
+    path.write_text(json.dumps(record) + "\n", encoding="utf-8")
     return path
 
 
@@ -278,7 +287,7 @@ def test_state_mutation_worker_golden_path_records_verified_effect(runtime, tmp_
 
 def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="missing-review")
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="missing-review")
     enqueue(vault, "claude", {"session_id": "missing-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -297,7 +306,7 @@ def test_replay_rejects_missing_review_effect(runtime, tmp_path, monkeypatch):
 
 def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review")
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="tampered-review")
     enqueue(vault, "claude", {"session_id": "tampered-review", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -317,7 +326,7 @@ def test_replay_rejects_tampered_review_candidate_identity(runtime, tmp_path, mo
 
 def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
     vault, _ = runtime
-    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review-source")
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="tampered-review-source")
     enqueue(vault, "claude", {"session_id": "tampered-review-source", "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -338,7 +347,7 @@ def test_replay_rejects_tampered_review_source(runtime, tmp_path, monkeypatch):
 @pytest.mark.parametrize("tampered_field", ["session_hash", "evidence_id"])
 def test_replay_rejects_unbounded_review_source_ids(runtime, tmp_path, monkeypatch, tampered_field):
     vault, _ = runtime
-    path = _transcript(tmp_path, "The nightly build is currently broken on Windows.", session_id="tampered-review-ids-" + tampered_field)
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="tampered-review-ids-" + tampered_field)
     enqueue(vault, "claude", {"session_id": "tampered-review-ids-" + tampered_field, "cwd": str(vault), "transcript_path": str(path)})
     worker = Worker(vault)
     monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
@@ -492,7 +501,7 @@ def test_replay_rejects_cross_project_memory_effect(runtime, tmp_path, monkeypat
     ("text", "receipt_field"),
     [
         ("We decided to use SQLite for persistent storage.", "canonical_operation_ids"),
-        ("The nightly build is currently broken on Windows.", "review_effect_ids"),
+        (REVIEW_SUMMARY, "review_effect_ids"),
     ],
 )
 def test_replay_rejects_receipt_count_list_tampering(runtime, tmp_path, monkeypatch, text, receipt_field):
@@ -698,3 +707,25 @@ def test_dead_lettered_capture_can_be_requeued_after_the_fix(runtime, tmp_path, 
     assert Worker(vault).once()["status"] == "PROCESSED"
     ledger = (vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl").read_text(encoding="utf-8")
     assert '"REQUEUED_FROM_DEAD_LETTER"' in ledger
+
+
+def test_untampered_summary_review_replays_after_crash_before_queue_ack(runtime, tmp_path, monkeypatch):
+    # Review of PR #50 (HIGH): a summary-sourced review item carries role
+    # 'summary'; the replay check must accept it, or the job never acks. The
+    # tamper tests above use the same fixture, so this also shows that they
+    # fail on the tampered field, not on the role.
+    vault, _ = runtime
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="summary-ack-crash")
+    enqueue(vault, "claude", {"session_id": "summary-ack-crash", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    original_commit = worker.queue.commit
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    assert list((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"))
+
+    monkeypatch.setattr(worker.queue, "commit", original_commit)
+    second = worker.once()
+
+    assert second["status"] == "PROCESSED" and second["receipt_replayed"] is True

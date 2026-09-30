@@ -41,7 +41,7 @@ SOURCE_TYPES = frozenset(
         SOURCE_MIGRATED_LEGACY_NOTE,
     }
 )
-ROLE_VALUES = frozenset({"user", "assistant", "tool", "system", "legacy"})
+ROLE_VALUES = frozenset({"user", "assistant", "tool", "system", "legacy", "summary"})
 MAX_TRANSCRIPT_BYTES = 2 * 1024 * 1024
 MAX_TRANSCRIPT_MESSAGES = 10_000
 _DAILY_HEADING = re.compile(r"^# Daily Notes - (\d{4}-\d{2}-\d{2})\s*$")
@@ -347,8 +347,9 @@ def _meta_role_upgrade(prior, document) -> bool:
     Same evidence, only the role differs: keep the stored metadata instead of
     failing the job, so a replay or backfill over old transcripts still runs.
     """
-    return (isinstance(prior, dict) and prior.get("role") == "user" and document.get("role") == "system"
-            and {**prior, "role": "system"} == document)
+    return (isinstance(prior, dict) and prior.get("role") == "user"
+            and document.get("role") in {"system", "summary"}
+            and {**prior, "role": document.get("role")} == document)
 
 
 class EvidenceStore:

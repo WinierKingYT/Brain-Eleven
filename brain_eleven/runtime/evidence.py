@@ -91,7 +91,11 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
                 conversation_records += 1
                 message = doc.get('message', {})
                 role, content = message.get('role', kind), message.get('content')
-                if role == 'user' and doc.get('isMeta') is True:
+                if role == 'user' and doc.get('isCompactSummary') is True:
+                    # Owner decision 2026-09-30: a session summary is its own
+                    # source (the main one), not the owner speaking.
+                    role = 'summary'
+                elif role == 'user' and doc.get('isMeta') is True:
                     # Claude Code writes injected text (skill bodies, subagent
                     # hand-backs, harness notes) as meta user records. It is
                     # kept as evidence but never counts as the user speaking:
@@ -106,7 +110,7 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
             raise ValueError('UNSUPPORTED_CLIENT')
         if role is None:
             continue
-        if role not in {'user', 'assistant', 'system', 'developer', 'tool'}:
+        if role not in {'user', 'assistant', 'system', 'developer', 'tool', 'summary'}:
             raise ValueError('UNSUPPORTED_MESSAGE_ROLE')
         if isinstance(content, list):
             # Tool results carried in a Claude user envelope are never treated
