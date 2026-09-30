@@ -331,3 +331,13 @@ yeni yakalamalarda dolgular temizlenir, eski kayıt değişmedi. Hook süresi (y
 yeniden başlatmada 63 istemden 1 kayıp. Not: `recall-probe --mode prompt` PR #39'a kadar yeni süreçte
 modelleri ısıtmadan ölçüyordu (V1 sırası); bu tarihten önceki istem-modu CLI sonuçları buna göre okunmalı.
 
+## Gerçek kullanım puanları (2026-09-30'dan itibaren)
+
+Yöntem: Brain-Eleven klasöründe yeni oturum, ilk mesaj doğrudan soru + "Dosyalara ve git'e bakma,
+yalnız sana verilen bağlamdan cevapla; bilmiyorsan bilmiyorum de." Her soru ayrı oturum. Puanı
+sahip verir (doğru / kısmen / yanlış / hiç). Bu, probe'dan farklı olarak cevabın kendisini ölçer.
+
+| Tarih | Soru | Puan | Not |
+|---|---|---|---|
+| 2026-09-30 | Bandit subprocess bulgusu nasıl giderildi? (W39 Q4) | doğru | `nosec` kuralı, kapı değişmedi; bağlamda olmayan ayrıntıları (dosya, kural kodu) "bilmiyorum" diye ayırdı. İstem-zamanı bağlamı cevabın üç parçasını getirdi. |
+
