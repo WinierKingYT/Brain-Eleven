@@ -25,17 +25,20 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
 
     calls = []
 
-    def compile_context(vault_arg, root, request, **kwargs):
-        calls.append((request, kwargs))
+    def request_service(vault_arg, route, payload, timeout):
+        calls.append((route, payload, timeout))
         return {
             "status": "SUCCESS",
-            "context": "## TOP MEMORIES\n\nWe decided alpha is delivered at prompt time." if request == "Alpha?" else "",
+            "context": "## TOP MEMORIES\n\nWe decided alpha is delivered at prompt time."
+            if payload["request"] == "Alpha?" else "",
             "selected_ids": [],
-            "delivered": request == "Alpha?",
+            "delivered": payload["request"] == "Alpha?",
         }
 
-    monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
-    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda *args, **kwargs: None)
+    monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *args, **kwargs: True)
+    monkeypatch.setattr("brain_eleven.runtime.launcher.request_service", request_service)
+    monkeypatch.setattr("brain_eleven.runtime.context.compile_bootstrap",
+                        lambda *args, **kwargs: {"context": "", "selected_ids": []})
     result = probe(vault, questions_path=questions, mode="prompt")
     by_id = {entry["id"]: entry for entry in result["results"]}
 
@@ -45,9 +48,12 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
     assert by_id[2]["status"] == "IN_MEMORY_NOT_DELIVERED"
     assert by_id[3]["status"] == "NOT_IN_MEMORY"
     assert by_id[2]["why_not_delivered"]
-    assert [request for request, _ in calls] == ["Alpha?", "Beta?", "Gamma?"]
-    assert all(options["client"] == "manual" and options["event"] == "UserPromptSubmit" for _, options in calls)
-    assert [options["turn"] for _, options in calls] == ["recall-probe:1", "recall-probe:2", "recall-probe:3"]
+    assert [payload["request"] for _, payload, _ in calls] == ["Alpha?", "Beta?", "Gamma?"]
+    assert all(route == "/api/context" and payload["client"] == "codex"
+               and payload["event"] == "UserPromptSubmit" and timeout == 2
+               for route, payload, timeout in calls)
+    assert [payload["turn"] for _, payload, _ in calls] == [
+        "recall-probe:1", "recall-probe:2", "recall-probe:3"]
 
 
 def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path, capsys, monkeypatch):
@@ -62,12 +68,14 @@ def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path
     ]}), encoding="utf-8")
     calls = []
 
-    def compile_context(vault_arg, root, request, **kwargs):
-        calls.append(kwargs.get("event"))
+    def request_service(vault_arg, route, payload, timeout):
+        calls.append(payload.get("event"))
         return {"status": "SUCCESS", "context": "alpha", "selected_ids": [], "delivered": True}
 
-    monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
-    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda *args, **kwargs: None)
+    monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *args, **kwargs: True)
+    monkeypatch.setattr("brain_eleven.runtime.launcher.request_service", request_service)
+    monkeypatch.setattr("brain_eleven.runtime.context.compile_bootstrap",
+                        lambda *args, **kwargs: {"context": "", "selected_ids": []})
     main(["--vault", str(vault), "recall-probe", "--questions", str(questions)])
     default_result = json.loads(capsys.readouterr().out)
     assert "mode" not in default_result
@@ -368,25 +376,21 @@ def test_prompt_rerank_respects_its_time_budget(monkeypatch):
     assert reranker.texts == []
 
 
-def test_prompt_probe_warms_providers_before_asking(tmp_path, monkeypatch):
+def test_prompt_probe_fails_closed_when_live_service_is_unavailable(tmp_path, monkeypatch):
     vault, _ = _runtime(tmp_path, shadow_accept=True)
     questions = tmp_path / "q.json"
     questions.write_text(json.dumps({"questions": [{"id": 1, "question": "Alpha?", "groups": [["alpha"]]}]}),
                          encoding="utf-8")
-    order = []
-    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers",
-                        lambda path, **kwargs: order.append(("warm", kwargs.get("vault"), path)))
+    monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *args, **kwargs: False)
+    monkeypatch.setattr("brain_eleven.runtime.launcher.request_service",
+                        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("must not call")))
+    monkeypatch.setattr("brain_eleven.runtime.context.compile_bootstrap",
+                        lambda *args, **kwargs: {"context": "", "selected_ids": []})
+    result = probe(vault, questions_path=questions, mode="prompt")
 
-    def compile_context(vault_arg, root, request, **kwargs):
-        order.append(("ask", request))
-        return {"status": "SUCCESS", "context": "", "selected_ids": [], "delivered": False}
-
-    monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
-    probe(vault, questions_path=questions, mode="prompt")
-
-    from brain_eleven.runtime.context import prompt_provider_config
-    # Warm-up uses exactly the config path compile_context will use.
-    assert order == [("warm", vault, prompt_provider_config(vault)), ("ask", "Alpha?")]
+    assert result["score"] == 0
+    assert result["prompt_context_statuses"] == {"1": "SERVICE_UNAVAILABLE"}
+    assert result["results"][0]["status"] == "NOT_IN_MEMORY"
 
 
 def test_service_stays_up_longer_while_prompt_models_are_loaded(monkeypatch):

@@ -141,11 +141,13 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
             why = {}
     else:
         from brain_eleven.projects.registry import ProjectRegistry
-        from .context import prompt_provider_config, warm_prompt_providers
-        # A prompt never waits for model loading (it keeps V1 order), so a
-        # fresh probe process must warm up first or it measures V1 only. It
-        # must warm the same config path compile_context will use.
-        warm_prompt_providers(prompt_provider_config(project_root), vault=vault)
+        from .context import compile_bootstrap
+        # A real fresh turn sees both surfaces: SessionStart remains in the
+        # model context when UserPromptSubmit adds question-specific context.
+        # Measure their union instead of treating the prompt addition as the
+        # whole model-facing context.
+        prompt_bootstrap = compile_bootstrap(vault, project_root)
+        context = prompt_bootstrap.get('context', '') or ''
         project = ProjectRegistry(vault).resolve(project_root)
         project_id = project.get('project_id') if project else None
     memories = [m for m in MemoryStore(vault).load()['validated_memory']
@@ -159,12 +161,26 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
         prompt_context = None
         question_context = context
         if mode == 'prompt':
-            from .context import compile_context
-            prompt_context = compile_context(
-                vault, project_root, question['question'], client='manual',
-                session='recall-probe', turn=f"recall-probe:{question['id']}",
-                event='UserPromptSubmit')
-            question_context = prompt_context.get('context', '') or ''
+            from .launcher import ensure_service, request_service
+            if ensure_service(vault, wait=True, wait_timeout=2.2):
+                try:
+                    prompt_context = request_service(vault, '/api/context', {
+                        'project_root': str(project_root),
+                        'request': question['question'],
+                        'client': 'codex',
+                        'session': 'recall-probe',
+                        'turn': f"recall-probe:{question['id']}",
+                        'event': 'UserPromptSubmit',
+                    }, timeout=2)
+                except (OSError, ValueError, json.JSONDecodeError):
+                    prompt_context = None
+            if prompt_context is None:
+                prompt_context = {
+                    'status': 'SERVICE_UNAVAILABLE', 'context': '',
+                    'selected_ids': [], 'delivered': False,
+                }
+            prompt_addition = prompt_context.get('context', '') or ''
+            question_context = '\n\n'.join(part for part in (context, prompt_addition) if part)
             prompt_context_statuses[str(question['id'])] = prompt_context.get('status', 'UNKNOWN')
         placement = in_context(question_context, groups)
         if placement == 'WHOLE':
