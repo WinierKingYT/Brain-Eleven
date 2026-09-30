@@ -180,6 +180,7 @@ def create_app(vault, *, token=None, background=True):
                     delay = .05
             except Exception:
                 write_json(cfg.root / 'last-worker.json', {'at': now(), 'status': 'FAILED', 'error': 'WORKER_UNAVAILABLE'})
+            await maybe_queue_triage(app)
             if time.monotonic() - app.state.last_activity > idle_limit_seconds():
                 app.state.idle = True
             await asyncio.sleep(delay)
@@ -196,6 +197,9 @@ def create_app(vault, *, token=None, background=True):
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.last_activity = time.monotonic()
     app.state.idle = False
+    app.state.vault = vault
+    app.state.queue_triage_running = False
+    app.state.queue_triage_at = float('-inf')
     app.state.token = token
 
     @app.middleware('http')
@@ -408,6 +412,44 @@ def create_app(vault, *, token=None, background=True):
         except Exception:
             return {'status': 'FAILED', 'context': '', 'warnings': ['CONTEXT_UNAVAILABLE']}
     return app
+
+
+QUEUE_TRIAGE_INTERVAL_SECONDS = 1800
+
+
+async def maybe_queue_triage(app):
+    """Owner decision 2026-09-30: pre-evaluate the review queue in the background.
+
+    Runs at most every 30 minutes when ``queue_triage`` is on, one run at a time,
+    off the event loop (the local model takes seconds per item). Rejects hide
+    items; model accepts stay for a person. Never raises into the worker loop.
+    """
+    vault = app.state.vault
+    try:
+        if not RuntimeConfig(vault).load().get('queue_triage'):
+            return
+    except Exception:
+        return
+    if app.state.queue_triage_running or time.monotonic() - app.state.queue_triage_at < QUEUE_TRIAGE_INTERVAL_SECONDS:
+        return
+    app.state.queue_triage_running = True
+    app.state.queue_triage_at = time.monotonic()
+
+    def run():
+        from .queue_triage import triage
+        try:
+            result = {'at': now(), **triage(vault)}
+        except Exception:
+            result = {'at': now(), 'status': 'FAILED'}
+        write_json(RuntimeConfig(vault).root / 'last-queue-triage.json', result)
+
+    async def background():
+        try:
+            await asyncio.to_thread(run)
+        finally:
+            app.state.queue_triage_running = False
+
+    asyncio.create_task(background())
 
 
 IDLE_LIMIT_SECONDS = 900
