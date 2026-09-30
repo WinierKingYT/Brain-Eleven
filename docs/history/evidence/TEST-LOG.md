@@ -19,7 +19,7 @@ Yeni faz, paket veya değerlendirme kümesi bu dosyanın konusu değildir.
 |---|---|---|
 | 1 | Holdout (corpus-v2) kapısı kırmızıyken ne karar verdik? | Kırmızı bilerek bırakıldı; dondurulmuş corpus-v2 kapısı korunur, PRE-13 promosyonu ertelendi. Eşik düşürülmez, test atlanmaz. |
 | 2 | Gerçek Claude oturumları neden hiç kanonik hafızaya girmiyordu? | 205/205 iş `EVIDENCE_INVALID` ile dead-letter olmuştu: okuyucu bilinmeyen kayıt tipinde tüm oturumu reddediyordu. Boyut hipotezi çürütüldü. Düzeltme: bilinmeyen tipler atlanıp sayılıyor. |
-| 3 | `master` neden origin'e push edilmedi? | Push, `ghcr.io/...:latest` imajını yayınlar; PRE-13 kalitesi kırmızıyken bu istenmedi. Varsayılan: push yok. |
+| 3 | SRT-00 nasıl kapandı, master push edildi mi? | 2026-09-23'te CI yeşil kapandı ve master'a push edildi; bu bir stabilizasyon kapanışı, bağımsız SHIP değil; PRE-13 holdout kapısı bilerek kırmızı. (2026-09-30, sahip onayı: eski soru "master neden push edilmedi?" push sonrası yanlış kaldığı için değişti.) |
 | 4 | Phase 20 ve aktif program hangi durumda? | Phase 20 FROZEN. Aktif program Intelligence Graduation (IG). Knowledge Engine başlatılmaz. |
 | 5 | Retrieval-kalite sözleşmesi hakkında ne dedik? | Kullanıcı bunu ayırdı (kapsam dışı bıraktı); holdout kararını o sözleşme değiştirebilir ama şimdilik yürürlükte değil. |
 
