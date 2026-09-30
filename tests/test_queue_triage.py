@@ -159,3 +159,46 @@ def test_auto_accept_verified_flag_is_off_by_default(tmp_path):
     assert config.load()['auto_accept_verified'] is False
     config.set_auto_accept_verified(True)
     assert config.load()['auto_accept_verified'] is True
+
+
+def test_nonsense_model_answer_is_retried_not_hidden():
+    from brain_eleven.runtime.queue_triage import verify_candidate
+    fact = {'candidate_type': 'NEW_MEMORY', 'project_id': 'p1',
+            'content': 'Bandit gate failure was fixed per the repo nosec convention, gate untouched.'}
+    for answer in ({}, {'decision': 'MAYBE'}):
+        assert verify_candidate(fact, {'p1': 'brain-eleven'}, chat=lambda prompt, a=answer: a) == (
+            'UNAVAILABLE', 'MODEL_INVALID')
+
+
+def test_wrong_project_is_left_for_the_owner(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    import brain_eleven.runtime.queue_triage as queue_triage
+    labels = {keep['project_id']: 'brain-eleven', 'other': 'whale-tracker'}
+    original = queue_triage._project_labels
+    queue_triage._project_labels = lambda vault_arg: labels
+    try:
+        triage(vault, chat=_chat(project='whale-tracker'))
+    finally:
+        queue_triage._project_labels = original
+    entry = load_suggestions(vault)[keep['id']]
+    assert (entry['suggestion'], entry['reason']) == ('REVIEW', 'WRONG_PROJECT')
+
+
+def test_turning_auto_accept_on_promotes_items_verified_earlier(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    triage(vault, chat=_chat())
+    assert load_suggestions(vault)[keep['id']]['suggestion'] == 'REVIEW'
+    triage(vault, chat=_chat(), accept_verified=True)
+    assert load_suggestions(vault)[keep['id']]['suggestion'] == 'ACCEPT'
+
+
+def test_fragment_rule_keeps_identifiers_and_brackets():
+    from brain_eleven.runtime.queue_triage import _FRAGMENT
+    for ok in ('qwen2.5:7b is the default local model for triage.', 'npm ci installs the locked tree.',
+               '[Brain-Eleven] decision: summaries are the main source.', 'İstem-zamanı hafıza çalışıyor.'):
+        assert not _FRAGMENT.match(ok), ok
+    for fragment in ('the JUNK list can still delete real work.', 'Ancak bundan sonra V2 kararını vermek.',
+                     've sonra testleri çalıştırdık.'):
+        assert _FRAGMENT.match(fragment), fragment

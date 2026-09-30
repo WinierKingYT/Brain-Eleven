@@ -7,10 +7,12 @@ run by hand; when those sessions stopped, nothing reached memory from capture
 1. Deterministic rules first. Clear noise (pasted tool output, diffs and
    markup, questions, fragments, observed-only state changes) is REJECTED,
    i.e. hidden until it expires. Rules never accept.
-2. Everything the rules leave open goes to a local model through Ollama
-   (default ``qwen2.5:7b``); no cloud quota is used. Its REJECTs hide the item;
-   its ACCEPTs are left for a person, marked MODEL_ACCEPT, unless explicitly
-   allowed. When the model is not reachable, items stay for a person.
+2. Everything the rules leave open goes to the verifier: the local model
+   (Ollama, default ``qwen2.5:7b``, no cloud quota) answers KEEP/DROP, then a
+   fragment and project check. VERIFIED items are left for a person as
+   MODEL_VERIFIED, or written when ``auto_accept_verified`` is on; DROP and
+   fragments are hidden; a suspected wrong project is left for a person. When
+   the model is not reachable or answers nonsense, items are retried later.
 
 Suggestions are applied only through ``value.apply_suggestions`` (safety, CAS,
 audit, a note naming who suggested it); nothing is deleted, and a wrong
@@ -130,7 +132,10 @@ Answer JSON only: {"project": "<one of the names above>" or "UNKNOWN"}
 Statement: <<<%s>>>"""
 
 # A statement that starts mid-sentence needs missing context.
-_FRAGMENT = re.compile(r"^[a-zçğıöşü(\[]|^(?i:ancak|ama|fakat|çünkü|dolayısıyla|yani|ve|and|but|then|so|or)\b")
+# A leading article/particle or conjunction means the text starts mid-sentence;
+# identifiers such as "qwen2.5:7b" or "npm ci" are not fragments.
+_FRAGMENT = re.compile(r"^(?:the|a|an|of|to|in|on|at|for|with|is|are|was|were|ve|ile|bu|şu|da|de)\s"
+                       r"|^(?i:ancak|ama|fakat|çünkü|dolayısıyla|yani|and|but|then|so|or)\b")
 MIN_VERIFIED_CHARS = 25
 
 
@@ -161,7 +166,10 @@ def verify_candidate(candidate, project_labels, *, model=DEFAULT_MODEL, chat=Non
     answer = ask(_VERIFY_PROMPT % text[:MAX_KEEP_CHARS])
     if answer is None:
         return 'UNAVAILABLE', 'MODEL_UNAVAILABLE'
-    if str(answer.get('decision') or '').upper() != 'KEEP':
+    decision = str(answer.get('decision') or '').upper()
+    if decision not in {'KEEP', 'DROP'}:
+        return 'UNAVAILABLE', 'MODEL_INVALID'  # retried on a later run, never hidden
+    if decision == 'DROP':
         return 'DROP', 'VERIFY_DROP'
     own = project_labels.get(candidate.get('project_id'))
     if own and len(project_labels) > 1:
@@ -203,8 +211,16 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
     suggestions = dict(document.get('suggestions') or {}) if isinstance(document, dict) else {}
     memories = [m for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active']
-    pending = [x for x in ReviewStore(vault).list()
-               if x.get('status') == 'PENDING' and x.get('id') not in suggestions]
+    listed = ReviewStore(vault).list()
+    pending = [x for x in listed if x.get('status') == 'PENDING' and x.get('id') not in suggestions]
+    promoted = {}
+    if accept_verified:
+        # Turning the flag on later also promotes items verified while it was off.
+        for x in listed:
+            entry = suggestions.get(x.get('id'))
+            if (x.get('status') == 'PENDING' and isinstance(entry, dict)
+                    and entry.get('suggestion') == 'REVIEW' and entry.get('reason') == 'MODEL_VERIFIED'):
+                promoted[x['id']] = {**entry, 'suggestion': 'ACCEPT'}
     counts = {'pending_without_suggestion': len(pending), 'rule_reject': 0,
               'model_accept': 0, 'model_reject': 0, 'model_review': 0, 'left': 0}
     asked = 0
@@ -233,6 +249,11 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
                 if outcome == 'VERIFIED':
                     verdict = 'ACCEPT' if accept_verified else 'REVIEW'
                     counts['model_accept' if accept_verified else 'model_review'] += 1
+                elif outcome == 'WRONG_PROJECT':
+                    # A real fact about another project: the owner decides,
+                    # it is never hidden on one model answer.
+                    verdict = 'REVIEW'
+                    counts['model_review'] += 1
                 else:
                     verdict = 'REJECT'
                     counts['model_reject'] += 1
@@ -256,6 +277,7 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
         merged = {}
         for review_id, entry in (current.get('suggestions') or {}).items() if isinstance(current, dict) else ():
             merged[review_id] = entry if not isinstance(entry, dict) or entry.get('by') else {**entry, 'by': author}
+        merged.update(promoted)
         merged.update(fresh)
         write_json(path, {'by': 'queue-triage', 'suggestions': merged})
     try:

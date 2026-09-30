@@ -424,7 +424,8 @@ async def maybe_queue_triage(app):
 
     Runs at most every 30 minutes when ``queue_triage`` is on, one run at a time,
     off the event loop (the local model takes seconds per item). Rejects hide
-    items; model accepts stay for a person. Never raises into the worker loop.
+    items; verified ones stay for a person unless auto_accept_verified is on.
+    Never raises into the worker loop.
     """
     vault = app.state.vault
     try:
