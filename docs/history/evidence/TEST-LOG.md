@@ -312,3 +312,22 @@ her oturumunu yeni ölçülebilirlik şartlarına göre geriye dönük doğrulam
 değil. Gelecek koşularda sıfır dışı CLI çıkışı, boş yanıt, timeout veya
 DELIVERED olmayan makbuz oturumu puan dışı bırakır; yalnızca sayısal durum
 saklanır. Eşik, holdout ve corpus değişmedi.
+
+## 2026-09-30 — istem-zamanı hafıza ölçümü
+
+Yöntem: `recall-probe` (resmî 5 soru ve yerel W39 soruları), gerçek `launcher.py` hook'u ile uçtan uca süre ölçümü.
+Model cevabı puanlanmadı; bu, bağlamda cevap var mı ölçümüdür (IN_CONTEXT).
+
+| Yol | Önce (2026-09-29) | Sonra |
+|---|---|---|
+| W39, SessionStart | 0/5 | 0/5 (değişmedi: 8 sabit kayıt) |
+| W39, istem-zamanı | 0/5 (yerel modeller kapalı, V1 sırası) | 4/5 |
+| Resmî 5, istem-zamanı | — | 4/5 |
+| Resmî 5, SessionStart | 5/5 | 4/5 |
+
+Kaçan W39 sorusu (1): cevap kaydı dikte dolgusuyla bozuk yakalanmış ("Dökümanları e, uzun bir süre…");
+yeni yakalamalarda dolgular temizlenir, eski kayıt değişmedi. Hook süresi (yerel modeller açık): sürekli
+çalışmada 60/60 teslim, p50 1.11 sn, maks 1.19 sn; servis yeniden başlarken ilk ~20 sn V1 sırası, üç
+yeniden başlatmada 63 istemden 1 kayıp. Not: `recall-probe --mode prompt` PR #39'a kadar yeni süreçte
+modelleri ısıtmadan ölçüyordu (V1 sırası); bu tarihten önceki istem-modu CLI sonuçları buna göre okunmalı.
+
