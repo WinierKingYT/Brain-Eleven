@@ -35,6 +35,7 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
         }
 
     monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
+    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda **kwargs: None)
     result = probe(vault, questions_path=questions, mode="prompt")
     by_id = {entry["id"]: entry for entry in result["results"]}
 
@@ -66,6 +67,7 @@ def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path
         return {"status": "SUCCESS", "context": "alpha", "selected_ids": [], "delivered": True}
 
     monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
+    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers", lambda **kwargs: None)
     main(["--vault", str(vault), "recall-probe", "--questions", str(questions)])
     default_result = json.loads(capsys.readouterr().out)
     assert "mode" not in default_result
@@ -364,3 +366,22 @@ def test_prompt_rerank_respects_its_time_budget(monkeypatch):
     monkeypatch.setattr(context, "_RERANK_PAIR_SECONDS", [1.0])
     assert [item["memory_id"] for item in run()] == ["m0", "m1", "m2", "m3", "m4"]
     assert reranker.texts == []
+
+
+def test_prompt_probe_warms_providers_before_asking(tmp_path, monkeypatch):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    questions = tmp_path / "q.json"
+    questions.write_text(json.dumps({"questions": [{"id": 1, "question": "Alpha?", "groups": [["alpha"]]}]}),
+                         encoding="utf-8")
+    order = []
+    monkeypatch.setattr("brain_eleven.runtime.context.warm_prompt_providers",
+                        lambda **kwargs: order.append(("warm", kwargs.get("vault"))))
+
+    def compile_context(vault_arg, root, request, **kwargs):
+        order.append(("ask", request))
+        return {"status": "SUCCESS", "context": "", "selected_ids": [], "delivered": False}
+
+    monkeypatch.setattr("brain_eleven.runtime.context.compile_context", compile_context)
+    probe(vault, questions_path=questions, mode="prompt")
+
+    assert order == [("warm", vault), ("ask", "Alpha?")]
