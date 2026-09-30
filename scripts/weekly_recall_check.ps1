@@ -167,11 +167,30 @@ $failedProcess = [pscustomobject]@{ exit_code = -1; started = $false; timed_out 
 if ($pythonPath) {
     $measureResult = Invoke-CapturedProcess -FileName $pythonPath -Arguments @('-m', 'brain_eleven', 'measure') -WorkingDirectory $repositoryRoot
     $probeResult = Invoke-CapturedProcess -FileName $pythonPath -Arguments @('-m', 'brain_eleven', 'recall-probe') -WorkingDirectory $repositoryRoot
+    # Prompt-time memory (2026-09-30) is where recall happens now; measure it
+    # too so a regression shows up in the weekly record, not only SessionStart.
+    $promptProbeResult = Invoke-CapturedProcess -FileName $pythonPath -Arguments @('-m', 'brain_eleven', 'recall-probe', '--mode', 'prompt') -WorkingDirectory $repositoryRoot
 }
 else {
     $measureResult = $failedProcess
     $probeResult = $failedProcess
+    $promptProbeResult = $failedProcess
 }
+
+$promptProbeScore = $null
+$promptProbeTotal = $null
+if ($promptProbeResult.started -and -not $promptProbeResult.timed_out) {
+    try {
+        $promptProbeData = ConvertFrom-Json -InputObject $promptProbeResult.stdout -ErrorAction Stop
+        $promptProbeScore = $promptProbeData.score
+        $promptProbeTotal = $promptProbeData.of
+    }
+    catch {
+        $promptProbeScore = $null
+        $promptProbeTotal = $null
+    }
+}
+$promptProbeAssessment = Get-RecallProbeAssessment -Score $promptProbeScore -Total $promptProbeTotal
 
 $probeScore = $null
 $probeTotal = $null
@@ -247,6 +266,10 @@ $report = [ordered]@{
     recall_probe_score = $probeScore
     recall_probe_total = $probeTotal
     recall_probe_status = $probeStatus
+    recall_probe_prompt_exit_code = [int]$promptProbeResult.exit_code
+    recall_probe_prompt_score = $promptProbeAssessment.score
+    recall_probe_prompt_total = $promptProbeAssessment.total
+    recall_probe_prompt_status = $promptProbeAssessment.status
     sessions = @($questionResults.ToArray())
 }
 $reportJson = ConvertTo-Json -InputObject $report -Depth 6
@@ -260,10 +283,13 @@ $timeoutCount = @($questionResults | Where-Object { $_.timeout }).Count
 $scorableCount = @($questionResults | Where-Object { $_.scorable }).Count
 $invalidCount = $questionResults.Count - $scorableCount
 $probeDisplay = if ($null -ne $probeScore -and $null -ne $probeTotal) { "$probeScore/$probeTotal" } else { 'unavailable' }
-Write-Output "weekly-recall-check date=$date measure_exit=$($measureResult.exit_code) probe_exit=$($probeResult.exit_code) probe=$probeDisplay sessions=$($questionResults.Count) scorable=$scorableCount invalid=$invalidCount delivered=$deliveredCount timeouts=$timeoutCount file=weekly-$date.json"
+$promptProbeDisplay = if ($promptProbeAssessment.status -eq 'VALID') { "$($promptProbeAssessment.score)/$($promptProbeAssessment.total)" } else { 'unavailable' }
+Write-Output "weekly-recall-check date=$date measure_exit=$($measureResult.exit_code) probe_exit=$($probeResult.exit_code) probe=$probeDisplay prompt_probe=$promptProbeDisplay sessions=$($questionResults.Count) scorable=$scorableCount invalid=$invalidCount delivered=$deliveredCount timeouts=$timeoutCount file=weekly-$date.json"
 
 $hasReceiptFailure = @($questionResults | Where-Object { $_.delivery_receipt_status -ne 'DELIVERED' }).Count -gt 0
 $hasInvalidSession = $invalidCount -gt 0
-if ($measureResult.exit_code -ne 0 -or $probeResult.exit_code -ne 0 -or $probeStatus -ne 'VALID' -or -not $claudePath -or $hasReceiptFailure -or $hasInvalidSession) {
+if ($measureResult.exit_code -ne 0 -or $probeResult.exit_code -ne 0 -or $probeStatus -ne 'VALID' -or
+    $promptProbeResult.exit_code -ne 0 -or $promptProbeAssessment.status -ne 'VALID' -or
+    -not $claudePath -or $hasReceiptFailure -or $hasInvalidSession) {
     exit 1
 }
