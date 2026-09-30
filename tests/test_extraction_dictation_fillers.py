@@ -26,6 +26,9 @@ def test_standalone_fillers_are_removed(raw, clean):
 
 @pytest.mark.parametrize("text", [
     "II ve III farklı.",
+    "E vitamini alacağım.",
+    "E. coli testi.",
+    "E blok taşınacak.",
     "III. bölüm önemli.",
     "keep HMM model",
     "Harfler a, b, c, d, e, f olsun.",

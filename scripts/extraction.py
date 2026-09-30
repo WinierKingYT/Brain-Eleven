@@ -170,7 +170,7 @@ def _content_hash(content: str) -> str:
 # - at the start of a segment: "E,", "Ee,", "ııı", "Hmm," ...
 # - inside a segment: lowercase "ee+", "ıı+", "hmm+" between spaces, and "e,"
 #   only right after a word (a letter "e" in "d, e, f" or "fn(a, e)" stays).
-_LEADING_FILLER = re.compile(r"^(?:(?:[Ee]e*|ıı+|[Hh]mm+)[,.]?\s+)+")
+_LEADING_FILLER = re.compile(r"^(?:(?:[Ee],|[Ee]e+[,.]?|ıı+[,.]?|[Hh]mm+[,.]?)\s+)+")
 _INNER_FILLER = re.compile(r"(?<=\w) e,(?= )| (?:ee+|ıı+|hmm+)[,.]?(?= )")
 
 
