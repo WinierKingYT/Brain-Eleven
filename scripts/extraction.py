@@ -293,7 +293,10 @@ def _memory_type(content: str) -> str:
 
 # Compact-summary sections whose bullets are outcomes worth remembering; the
 # rest (request, files, all user messages, pending tasks, next step) are not.
-_SUMMARY_SECTION = re.compile(r"^\s*\d+\.\s*([^:\n]+):\s*$", re.MULTILINE)
+# "4. Errors and fixes:", also "## 4. Errors and fixes:", "**4. Errors and fixes:**"
+# and "4. **Errors and fixes**:" (review of PR #50).
+_SUMMARY_SECTION = re.compile(r"^\s*(?:#{1,6}\s*)?(?:\*\*)?\s*\d+\.\s*(?:\*\*)?([^:\n*]+?)(?:\*\*)?:\s*(?:\*\*)?\s*$",
+                              re.MULTILINE)
 _SUMMARY_KEEP = re.compile(r"errors?\s+and\s+fix|problem\s+solving|hatalar|problem\s+çözme", re.IGNORECASE)
 _SUMMARY_BULLET = re.compile(r"^\s*[-*•]\s+(.*)$")
 MIN_SUMMARY_FACT_CHARS = 30

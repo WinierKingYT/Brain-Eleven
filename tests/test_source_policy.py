@@ -74,3 +74,12 @@ def test_summary_record_stored_as_user_before_the_change_still_persists(runtime,
     store.persist([replace(record, role='user')])
     store.persist([record])  # no EvidenceCorruptError on a replay after the change
     assert json.loads((store.root / (record.evidence_id + '.json')).read_text(encoding='utf-8'))['role'] == 'user'
+
+
+def test_summary_heading_forms():
+    from brain_eleven.runtime.extraction import _legacy
+    body = "   - The nightly build was broken on Windows and a retry fixed it."
+    for heading in ("4. Errors and fixes:", "## 4. Errors and fixes:", "**4. Errors and fixes:**",
+                    "4. **Errors and fixes**:", "4. Hatalar ve düzeltmeler:"):
+        assert _legacy.summary_facts("Summary:" + NL + heading + NL + body) == [
+            "The nightly build was broken on Windows and a retry fixed it."], heading

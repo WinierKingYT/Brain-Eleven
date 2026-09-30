@@ -548,7 +548,7 @@ class Worker:
                 return False
             if item.get('reason') not in _REVIEW_REASONS or set(source) - _REVIEW_SOURCE_FIELDS:
                 return False
-            if source.get('client') not in {'claude', 'codex'} or source.get('role') not in {'user', 'assistant', 'tool', 'system'}:
+            if source.get('client') not in {'claude', 'codex'} or source.get('role') not in {'user', 'assistant', 'tool', 'system', 'summary'}:
                 return False
             if (not isinstance(references, list) or not references or len(references) > 64
                     or len(references) != len(set(references))

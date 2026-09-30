@@ -707,3 +707,25 @@ def test_dead_lettered_capture_can_be_requeued_after_the_fix(runtime, tmp_path, 
     assert Worker(vault).once()["status"] == "PROCESSED"
     ledger = (vault / ".brain-eleven" / "capture" / "capture-ledger.jsonl").read_text(encoding="utf-8")
     assert '"REQUEUED_FROM_DEAD_LETTER"' in ledger
+
+
+def test_untampered_summary_review_replays_after_crash_before_queue_ack(runtime, tmp_path, monkeypatch):
+    # Review of PR #50 (HIGH): a summary-sourced review item carries role
+    # 'summary'; the replay check must accept it, or the job never acks. The
+    # tamper tests above use the same fixture, so this also shows that they
+    # fail on the tampered field, not on the role.
+    vault, _ = runtime
+    path = _transcript(tmp_path, REVIEW_SUMMARY, session_id="summary-ack-crash")
+    enqueue(vault, "claude", {"session_id": "summary-ack-crash", "cwd": str(vault), "transcript_path": str(path)})
+    worker = Worker(vault)
+    original_commit = worker.queue.commit
+    monkeypatch.setattr(worker.queue, "commit", lambda *_args: (_ for _ in ()).throw(OSError("ack crash")))
+
+    first = worker.once()
+    assert first["status"] == "QUEUED"
+    assert list((vault / ".brain-eleven" / "runtime" / "review").glob("rev_*.json"))
+
+    monkeypatch.setattr(worker.queue, "commit", original_commit)
+    second = worker.once()
+
+    assert second["status"] == "PROCESSED" and second["receipt_replayed"] is True
