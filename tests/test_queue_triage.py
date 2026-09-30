@@ -114,3 +114,91 @@ def test_queue_triage_flag_is_off_by_default_and_owner_can_turn_it_on(tmp_path):
     assert read_json(config.path)['queue_triage'] is True
     with pytest.raises(ValueError):
         config.set_queue_triage('yes')
+
+
+def _chat(keep=True, project=None):
+    def chat(prompt):
+        if 'Which software project' in prompt:
+            return {'project': project or 'UNKNOWN'}
+        return {'decision': 'KEEP' if keep else 'DROP'}
+    return chat
+
+
+def test_verifier_outcomes():
+    from brain_eleven.runtime.queue_triage import verify_candidate
+    labels = {'p1': 'brain-eleven', 'p2': 'whale-tracker'}
+    fact = {'candidate_type': 'NEW_MEMORY', 'project_id': 'p1',
+            'content': 'Bandit gate failure was fixed per the repo nosec convention, gate untouched.'}
+    assert verify_candidate(fact, labels, chat=_chat()) == ('VERIFIED', 'MODEL_VERIFIED')
+    assert verify_candidate(fact, labels, chat=_chat(keep=False)) == ('DROP', 'VERIFY_DROP')
+    assert verify_candidate(fact, labels, chat=_chat(project='whale-tracker')) == ('WRONG_PROJECT', 'WRONG_PROJECT')
+    assert verify_candidate(fact, labels, chat=_chat(project='brain-eleven'))[0] == 'VERIFIED'
+    assert verify_candidate(fact, labels, chat=lambda prompt: None)[0] == 'UNAVAILABLE'
+    for fragment in ('Ancak bundan sonra V2 kararını vermek gerekiyor artık.', 'the JUNK list can still delete real work.'):
+        assert verify_candidate({**fact, 'content': fragment}, labels, chat=_chat())[0] == 'FRAGMENT'
+
+
+def test_verified_candidates_wait_for_the_owner_unless_auto_accept(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    triage(vault, chat=_chat())
+    assert load_suggestions(vault)[keep['id']]['suggestion'] == 'REVIEW'
+
+    (tmp_path / 'second').mkdir()
+    vault2, _ = _runtime(tmp_path / 'second', shadow_accept=True)
+    keep2 = _review_item(tmp_path / 'second', vault2, 'keep', 'We decided to use SQLite because the app is local.',
+                         NEW_TIME)
+    triage(vault2, chat=_chat(), accept_verified=True)
+    entry = load_suggestions(vault2)[keep2['id']]
+    assert (entry['suggestion'], entry['reason']) == ('ACCEPT', 'MODEL_VERIFIED')
+
+
+def test_auto_accept_verified_flag_is_off_by_default(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    config = RuntimeConfig(vault)
+    assert config.load()['auto_accept_verified'] is False
+    config.set_auto_accept_verified(True)
+    assert config.load()['auto_accept_verified'] is True
+
+
+def test_nonsense_model_answer_is_retried_not_hidden():
+    from brain_eleven.runtime.queue_triage import verify_candidate
+    fact = {'candidate_type': 'NEW_MEMORY', 'project_id': 'p1',
+            'content': 'Bandit gate failure was fixed per the repo nosec convention, gate untouched.'}
+    for answer in ({}, {'decision': 'MAYBE'}):
+        assert verify_candidate(fact, {'p1': 'brain-eleven'}, chat=lambda prompt, a=answer: a) == (
+            'UNAVAILABLE', 'MODEL_INVALID')
+
+
+def test_wrong_project_is_left_for_the_owner(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    import brain_eleven.runtime.queue_triage as queue_triage
+    labels = {keep['project_id']: 'brain-eleven', 'other': 'whale-tracker'}
+    original = queue_triage._project_labels
+    queue_triage._project_labels = lambda vault_arg: labels
+    try:
+        triage(vault, chat=_chat(project='whale-tracker'))
+    finally:
+        queue_triage._project_labels = original
+    entry = load_suggestions(vault)[keep['id']]
+    assert (entry['suggestion'], entry['reason']) == ('REVIEW', 'WRONG_PROJECT')
+
+
+def test_turning_auto_accept_on_promotes_items_verified_earlier(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    triage(vault, chat=_chat())
+    assert load_suggestions(vault)[keep['id']]['suggestion'] == 'REVIEW'
+    triage(vault, chat=_chat(), accept_verified=True)
+    assert load_suggestions(vault)[keep['id']]['suggestion'] == 'ACCEPT'
+
+
+def test_fragment_rule_keeps_identifiers_and_brackets():
+    from brain_eleven.runtime.queue_triage import _FRAGMENT
+    for ok in ('qwen2.5:7b is the default local model for triage.', 'npm ci installs the locked tree.',
+               '[Brain-Eleven] decision: summaries are the main source.', 'İstem-zamanı hafıza çalışıyor.'):
+        assert not _FRAGMENT.match(ok), ok
+    for fragment in ('the JUNK list can still delete real work.', 'Ancak bundan sonra V2 kararını vermek.',
+                     've sonra testleri çalıştırdık.'):
+        assert _FRAGMENT.match(fragment), fragment

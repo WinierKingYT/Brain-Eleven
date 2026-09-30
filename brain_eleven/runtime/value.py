@@ -64,7 +64,7 @@ def _audit_suggestions(vault, project_id=None):
 def _model_accept(entry):
     """The model suggested acceptance: left for a person (MODEL_ACCEPT) or allowed (ACCEPT)."""
     entry = entry or {}
-    return entry.get('reason') == 'MODEL_ACCEPT' or entry.get('suggestion') == 'ACCEPT'
+    return entry.get('reason') in ('MODEL_ACCEPT', 'MODEL_VERIFIED') or entry.get('suggestion') == 'ACCEPT'
 
 
 def _safe_text(text, limit=160):

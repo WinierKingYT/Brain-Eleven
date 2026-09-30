@@ -424,7 +424,8 @@ async def maybe_queue_triage(app):
 
     Runs at most every 30 minutes when ``queue_triage`` is on, one run at a time,
     off the event loop (the local model takes seconds per item). Rejects hide
-    items; model accepts stay for a person. Never raises into the worker loop.
+    items; verified ones stay for a person unless auto_accept_verified is on.
+    Never raises into the worker loop.
     """
     vault = app.state.vault
     try:
@@ -440,7 +441,11 @@ async def maybe_queue_triage(app):
     def run():
         from .queue_triage import triage
         try:
-            result = {'at': now(), **triage(vault)}
+            accept = bool(RuntimeConfig(vault).load().get('auto_accept_verified'))
+            result = {'at': now(), **triage(vault, accept_verified=accept)}
+            if accept:
+                from .value import apply_suggestions
+                result['applied'] = apply_suggestions(vault, apply=True)
         except Exception:
             result = {'at': now(), 'status': 'FAILED'}
         write_json(RuntimeConfig(vault).root / 'last-queue-triage.json', result)
