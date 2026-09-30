@@ -54,35 +54,69 @@ def _audit_suggestions(vault, project_id=None):
     report = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
     active = {m.get('memory_id'): m for m in MemoryStore(vault).load()['validated_memory']
               if str(m.get('status') or 'active') == 'active'}
-    return [s for s in report.get('suggestions') or []
+    return [{**s, 'project_id': active[s['memory_id']].get('project_id')}
+            for s in report.get('suggestions') or []
             if isinstance(s, dict) and s.get('memory_id') in active
             and (project_id is None or active[s['memory_id']].get('project_id') == project_id)]
 
 
-def owner_notice(vault, project_id=None):
-    """One line for SessionStart when something waits for the owner, else ''."""
+def _safe_text(text, limit=160):
+    """Memory text for display, withheld when it fails the capture safety check."""
+    from context_compiler_v2.safety import contains_secret
+    from .capture_safety import evaluate_capture
+    text = str(text or '')
+    return text[:limit] if not contains_secret(text) and evaluate_capture(text).accepted else '[withheld]'
+
+
+def refresh_owner_counts(vault):
+    """Count what waits for the owner, per project, into runtime/owner-notice.json.
+
+    This scans the whole review store (~1.5 s on 4,500 files), so it runs
+    off the prompt path: after queue triage, after the memory audit and on
+    ``digest``. SessionStart only reads the small result file.
+    """
     from .review import ReviewStore
+    from .storage import RuntimeConfig, now, write_json
     suggestions = load_suggestions(vault)
-    waiting = model_accept = 0
+    projects = {}
     for item in ReviewStore(vault).list():
         if item.get('status') != 'PENDING':
             continue
-        if project_id and (item.get('candidate') or {}).get('project_id') != project_id:
-            continue
         entry = suggestions.get(item.get('id')) or {}
-        if entry.get('suggestion') in ('REJECT', 'DUPLICATE'):
+        verdict = entry.get('suggestion')
+        if verdict in ('REJECT', 'DUPLICATE'):
             continue
-        if entry.get('suggestion') == 'REVIEW':
-            waiting += 1
-            model_accept += entry.get('reason') == 'MODEL_ACCEPT'
-    audit = len(_audit_suggestions(vault, project_id))
-    if not waiting and not audit:
+        counts = projects.setdefault(str((item.get('candidate') or {}).get('project_id') or ''),
+                                     {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
+        counts['waiting'] += 1
+        counts['model_accept'] += entry.get('reason') == 'MODEL_ACCEPT' or verdict == 'ACCEPT'
+        counts['not_evaluated'] += not verdict
+    for suggestion in _audit_suggestions(vault):
+        project = str(suggestion.get('project_id') or '')
+        projects.setdefault(project, {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
+        projects[project]['audit'] += 1
+    document = {'at': now(), 'projects': projects}
+    write_json(RuntimeConfig(vault).root / 'owner-notice.json', document)
+    return document
+
+
+def owner_notice(vault, project_id=None):
+    """One line for SessionStart from the precomputed counts, else ''."""
+    from .storage import RuntimeConfig, read_json
+    document = read_json(RuntimeConfig(vault).root / 'owner-notice.json', {}) or {}
+    projects = document.get('projects') if isinstance(document.get('projects'), dict) else {}
+    rows = [projects.get(project_id) or {}] if project_id else list(projects.values())
+    total = {key: sum(int(row.get(key) or 0) for row in rows if isinstance(row, dict))
+             for key in ('waiting', 'model_accept', 'not_evaluated', 'audit')}
+    if not total['waiting'] and not total['audit']:
         return ''
     parts = []
-    if waiting:
-        parts.append(f'{waiting} review candidates wait for the owner ({model_accept} suggested by the local model)')
-    if audit:
-        parts.append(f'memory audit has {audit} suggestion(s)')
+    if total['waiting']:
+        parts.append(f"{total['waiting']} review candidates wait for the owner "
+                     f"({total['model_accept']} suggested for acceptance by the model, "
+                     f"{total['not_evaluated']} not evaluated yet)")
+    if total['audit']:
+        parts.append(f"memory audit has {total['audit']} suggestion(s)")
     return '- ' + '; '.join(parts) + '. Details: `python -m brain_eleven digest`.'
 
 
@@ -108,6 +142,7 @@ def digest(vault, *, limit=DAILY_LIMIT):
         model_accept = (suggestions.get(item.get('id')) or {}).get('reason') == 'MODEL_ACCEPT'
         return (model_accept, value_score(item))
     ranked = sorted(pending, key=order, reverse=True)[:limit]
+    refresh_owner_counts(vault)
     return {'pending': len(pending), 'auto_filtered_total': summary(vault).get('total', 0),
             'top': [{'id': x['id'], 'score': value_score(x),
                      'commitment': (x.get('candidate') or {}).get('commitment'),
@@ -115,8 +150,8 @@ def digest(vault, *, limit=DAILY_LIMIT):
                      'model_accept': (suggestions.get(x['id']) or {}).get('reason') == 'MODEL_ACCEPT',
                      'text': ((x.get('candidate') or {}).get('content') or (x.get('candidate') or {}).get('text') or '')[:160]}
                     for x in ranked],
-            'memory_audit': [{**s, 'text': str(next((m.get('content') for m in memories
-                                                     if m.get('memory_id') == s['memory_id']), ''))[:160]}
+            'memory_audit': [{**s, 'text': _safe_text(next((m.get('content') for m in memories
+                                                            if m.get('memory_id') == s['memory_id']), ''))}
                              for s in _audit_suggestions(vault)]}
 
 
