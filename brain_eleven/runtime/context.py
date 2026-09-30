@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import threading
+import time
 from time import perf_counter
 from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json, write_json
 from brain_eleven.runtime.worker import allowed
@@ -168,6 +169,9 @@ _PROVIDER_LOCK = threading.RLock()
 _PROVIDER_CACHE = {}
 _EMBEDDING_CACHE = {}
 _PROVIDER_LOCK_EMBED = threading.Lock()
+# Warm-up embeds the pool in batches of this size, pausing between them.
+WARM_EMBED_BATCH = 4
+WARM_EMBED_PAUSE = 0.05
 # New texts a prompt may embed itself (query plus a few changed memories).
 PROMPT_INLINE_EMBED = 8
 
@@ -255,7 +259,16 @@ def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), t
             texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
         with _PROVIDER_LOCK:
             embedding_provider, reranker = _prompt_providers(config_path)
-            if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
+            # Small batches with a pause between them: one large batch holds
+            # the interpreter for ~2 s and the service cannot answer a hook.
+            batch = ['warm-up', *texts]
+            embedded = True
+            for start in range(0, len(batch), WARM_EMBED_BATCH):
+                if _embed_cached(embedding_provider, batch[start:start + WARM_EMBED_BATCH]) is None:
+                    embedded = False
+                    break
+                time.sleep(WARM_EMBED_PAUSE)
+            if embedded:
                 # A full-size shortlist of real texts: the first real-sized
                 # cross-encoder call is much slower than later ones, and it
                 # must not land on a user's prompt.
