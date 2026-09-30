@@ -31,9 +31,12 @@ MAX_KEEP_CHARS = 600
 MIN_KEEP_CHARS = 20
 DUPLICATE_SIMILARITY = 0.6
 
-_MARKUP = re.compile(
-    r'```|^\s*[+\-]\s|^\s*#{1,6}\s|^\s*\|.*\|\s*$|^\s*[-*]\s\[[ x]\]'
-    r'|\\n|\\u00|\x1b|\*\*|^\s*//|^\s*[{\[]|\{\\?"', re.MULTILINE)
+# Certain machine content: code fences, diff hunks and headers, escaped text
+# pasted from logs, ANSI codes, JSON objects. Rejected outright.
+_MACHINE = re.compile(
+    r'```|^[+\-]{3} [ab]/|^@@ |^\s*\+\s*$|\\n[^\n]*\\n|\\u00|\x1b|\{\\?"[\w-]+\\?"\s*:', re.MULTILINE)
+# Formatting the owner also types (bold, bullets, headings, tables, comments)
+# is deliberately not a rule: such items go to the model (review 2026-09-30).
 _MODEL_REASON = re.compile(r'[A-Z_]{1,40}')
 _MODEL_VERDICTS = {'ACCEPT', 'REJECT', 'REVIEW'}
 
@@ -74,8 +77,8 @@ def rule_verdict(candidate, *, similarity=0.0):
     commitment = candidate.get('commitment')
     if _pasted_output(text):
         return 'REJECT', 'PASTED_OUTPUT'
-    if _MARKUP.search(text):
-        return 'REJECT', 'MARKUP'
+    if _MACHINE.search(text):
+        return 'REJECT', 'MACHINE_CONTENT'
     if len(text) > MAX_KEEP_CHARS:
         return 'REJECT', 'TOO_LONG'
     if len(text) < MIN_KEEP_CHARS:
@@ -123,7 +126,7 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
     """
     from brain_eleven.memory import MemoryStore
     from .review import ReviewStore, rank_similar
-    from .storage import RuntimeConfig, read_json, write_json
+    from .storage import RuntimeConfig, read_json, runtime_file_lock as file_lock, write_json
 
     path = RuntimeConfig(vault).root / 'review-suggestions.json'
     document = read_json(path, {}) or {}
@@ -135,6 +138,7 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
     counts = {'pending_without_suggestion': len(pending), 'rule_reject': 0,
               'model_accept': 0, 'model_reject': 0, 'model_review': 0, 'left': 0}
     asked = 0
+    fresh = {}
     ask = model_fn or (lambda candidate: model_verdict(candidate, model=model))
     for item in pending:
         candidate = item.get('candidate') or {}
@@ -152,10 +156,20 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
             if verdict == 'ACCEPT' and not accept_model:
                 verdict, reason = 'REVIEW', 'MODEL_ACCEPT'
             counts['model_' + verdict.lower()] += 1
-            if reason == 'MODEL_UNAVAILABLE':
+            if reason in ('MODEL_UNAVAILABLE', 'MODEL_INVALID'):
                 continue  # retry on a later run instead of recording a non-answer
         else:
             counts['rule_' + verdict.lower()] += 1
-        suggestions[item['id']] = {'suggestion': verdict, 'reason': reason, 'by': by}
-    write_json(path, {'by': 'auto-triage', 'suggestions': suggestions})
+        fresh[item['id']] = {'suggestion': verdict, 'reason': reason, 'by': by}
+    # Model calls take minutes: merge into the file as it is *now*, so a run
+    # that finished meanwhile (service or CLI) keeps its entries, and give
+    # older entries without their own ``by`` the author the file named.
+    with file_lock(path):
+        current = read_json(path, {}) or {}
+        author = str(current.get('by') or 'model') if isinstance(current, dict) else 'model'
+        merged = {}
+        for review_id, entry in (current.get('suggestions') or {}).items() if isinstance(current, dict) else ():
+            merged[review_id] = entry if not isinstance(entry, dict) or entry.get('by') else {**entry, 'by': author}
+        merged.update(fresh)
+        write_json(path, {'by': 'queue-triage', 'suggestions': merged})
     return counts

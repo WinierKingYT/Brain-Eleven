@@ -239,8 +239,8 @@ class RuntimeConfig:
         # V2 stays content-free and the holdout gate for CANARY is untouched.
         value.setdefault('shadow_recall', False)
         # Owner decision 2026-09-30, off by default: the service pre-evaluates the
-        # review queue (rules reject noise, a local model decides the rest) and
-        # applies ACCEPT through the normal review path.
+        # review queue (rules reject noise, a local model judges the rest). It
+        # only writes suggestions; model accepts stay for a person.
         value.setdefault('queue_triage', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and

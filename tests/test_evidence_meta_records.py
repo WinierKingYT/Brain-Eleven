@@ -32,3 +32,21 @@ def test_meta_user_record_is_system_evidence_and_not_a_memory(runtime, tmp_path)
     memories = [c.content for c in DeterministicExtractor().extract(batch).candidates
                 if isinstance(c, NewMemoryCandidate)]
     assert memories == ['We decided to use Postgres for the reporting service.']
+
+
+def test_meta_record_stored_as_user_before_the_change_still_persists(runtime, tmp_path):  # noqa: F811
+    from dataclasses import replace
+    import pytest
+    from brain_eleven.runtime.evidence import EvidenceStore
+
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [_user('Base directory for this skill: notes.', meta=True)])
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-09-30T00:00:00Z')
+    record = batch.messages[0].record
+    store = EvidenceStore(vault)
+    store.persist([replace(record, role='user')])  # as stored before 2026-09-30
+
+    store.persist([record])  # a replay after the change: no EvidenceCorruptError
+    # Any other difference is still refused.
+    with pytest.raises(Exception):
+        store.persist([replace(record, role='assistant')])

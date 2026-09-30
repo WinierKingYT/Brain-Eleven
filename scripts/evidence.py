@@ -341,6 +341,16 @@ def _atomic_write(path: Path, document: Mapping[str, Any]) -> None:
         raise EvidenceStoreError("evidence metadata could not be written") from exc
 
 
+def _meta_role_upgrade(prior, document) -> bool:
+    """A record stored as 'user' before meta records became 'system' (2026-09-30).
+
+    Same evidence, only the role differs: keep the stored metadata instead of
+    failing the job, so a replay or backfill over old transcripts still runs.
+    """
+    return (isinstance(prior, dict) and prior.get("role") == "user" and document.get("role") == "system"
+            and {**prior, "role": "system"} == document)
+
+
 class EvidenceStore:
     """Idempotent local metadata store with default zero-day raw retention."""
 
@@ -360,7 +370,7 @@ class EvidenceStore:
                             prior = json.loads(path.read_text(encoding="utf-8"))
                         except (OSError, json.JSONDecodeError) as exc:
                             raise EvidenceCorruptError("persisted evidence metadata is unreadable") from exc
-                        if prior != document:
+                        if prior != document and not _meta_role_upgrade(prior, document):
                             raise EvidenceCorruptError("evidence identity does not match existing metadata")
                         continue
                     _atomic_write(path, document)
