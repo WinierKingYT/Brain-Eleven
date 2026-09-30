@@ -250,7 +250,8 @@ def _prompt_providers(config_path, *, block=True, warm_texts=()):
 def prompt_providers_loaded():
     """Whether real prompt-time models are loaded in this process."""
     return any(getattr(embedding, 'provider_id', 'unavailable') != 'unavailable'
-               for embedding, _ in _PROVIDER_CACHE.values())
+               # list() copies atomically: a warm-up may clear/insert concurrently.
+               for embedding, _ in list(_PROVIDER_CACHE.values()))
 
 
 def prompt_provider_config(project_root):

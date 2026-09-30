@@ -418,7 +418,11 @@ PROMPT_MODELS_IDLE_LIMIT_SECONDS = 4 * 3600
 
 def idle_limit_seconds():
     from .context import prompt_providers_loaded
-    return PROMPT_MODELS_IDLE_LIMIT_SECONDS if prompt_providers_loaded() else IDLE_LIMIT_SECONDS
+    try:
+        loaded = prompt_providers_loaded()
+    except Exception:
+        loaded = False  # never let the idle check end the worker loop
+    return PROMPT_MODELS_IDLE_LIMIT_SECONDS if loaded else IDLE_LIMIT_SECONDS
 
 
 def serve(vault):

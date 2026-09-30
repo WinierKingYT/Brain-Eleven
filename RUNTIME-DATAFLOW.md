@@ -106,5 +106,6 @@ Raw transcript files remain client-owned. Safe review proposal text expires
 after seven days of operational cleanup, or on acceptance/rejection; physical
 cleanup waits if the service is offline. Telemetry excludes prompt/context text.
 Windows native launchers use windowless Python; agent verification must also
-remain hidden. Service startup is on demand, idle shutdown is fifteen minutes,
-and native trust is never inferred from `doctor` saying configured.
+remain hidden. Service startup is on demand, idle shutdown is fifteen minutes
+(four hours while local prompt-time models are loaded, since a restart costs a
+~25 s warm-up; those models hold ~2.2 GB RAM until then), and native trust is never inferred from `doctor` saying configured.
