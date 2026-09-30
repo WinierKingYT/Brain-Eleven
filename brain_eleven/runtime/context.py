@@ -256,7 +256,12 @@ def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), t
         with _PROVIDER_LOCK:
             embedding_provider, reranker = _prompt_providers(config_path)
             if _embed_cached(embedding_provider, ['warm-up', *texts]) is not None:
-                reranker.rerank('warm-up', ['warm-up'])
+                # A full-size shortlist of real texts: the first real-sized
+                # cross-encoder call is much slower than later ones, and it
+                # must not land on a user's prompt.
+                sample = [text for text in texts if text][:RERANK_SHORTLIST] or ['warm-up']
+                reranker.rerank('warm-up', sample)
+                reranker.rerank('warm-up', sample)
     except Exception:
         pass
 
