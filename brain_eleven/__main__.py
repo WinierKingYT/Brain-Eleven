@@ -50,6 +50,12 @@ def main(argv=None):
     sub.add_parser('digest', help="the day's most valuable review candidates")
     applier = sub.add_parser('apply-suggestions', help="apply the model's review verdicts (ACCEPT writes, REJECT hides)")
     applier.add_argument('--apply', action='store_true', help='write accepts (default: count only)')
+    auto = sub.add_parser('queue-triage', help='pre-evaluate the review queue: rules reject noise, a local model decides the rest')
+    auto.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service schedule on/off (default: run once)')
+    auto.add_argument('--no-model', action='store_true', help='rules only')
+    auto.add_argument('--limit', type=int, help='at most this many model calls')
+    auto.add_argument('--apply', action='store_true', help='also apply the verdicts (ACCEPT writes, REJECT hides)')
+    auto.add_argument('--accept-model', action='store_true', help="let the model's ACCEPT write memory (default: left for a person)")
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -106,6 +112,17 @@ def main(argv=None):
         elif args.command == 'apply-suggestions':
             from .runtime.value import apply_suggestions
             result = apply_suggestions(args.vault, apply=args.apply)
+        elif args.command == 'queue-triage':
+            if args.state:
+                from .runtime.storage import RuntimeConfig
+                result = RuntimeConfig(args.vault).set_queue_triage(args.state == 'ON')
+            else:
+                from .runtime.queue_triage import triage
+                from .runtime.value import apply_suggestions
+                result = {'triage': triage(args.vault, use_model=not args.no_model, limit=args.limit,
+                                          accept_model=args.accept_model)}
+                if args.apply:
+                    result['applied'] = apply_suggestions(args.vault, apply=True)
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)

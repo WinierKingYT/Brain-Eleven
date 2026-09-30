@@ -91,6 +91,12 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
                 conversation_records += 1
                 message = doc.get('message', {})
                 role, content = message.get('role', kind), message.get('content')
+                if role == 'user' and doc.get('isMeta') is True:
+                    # Claude Code writes injected text (skill bodies, subagent
+                    # hand-backs, harness notes) as meta user records. It is
+                    # kept as evidence but never counts as the user speaking:
+                    # 2026-09-30 it was most of the review-queue noise.
+                    role = 'system'
             elif kind not in _CLAUDE_METADATA_TYPES:
                 # An unrecognised type never becomes evidence, even when it
                 # carries a message-shaped field; it is only counted by name.

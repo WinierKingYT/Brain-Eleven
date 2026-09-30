@@ -46,6 +46,28 @@ python -m brain_eleven triage --apply   # "Otomatik süzgeç: <kural>" notuyla r
 
 Kapatmak için runtime yapılandırmasında `"auto_triage": false`.
 
+## Kuyruk ön değerlendirmesi (queue-triage)
+
+Sahip kararı (2026-09-30): `review-suggestions.json` artık elle çalıştırılan bir
+model oturumunu beklemeden yazılabilir. Önce kurallar açık gürültüyü (yapıştırılmış
+çıktı, diff/markdown, soru, taahhütsüz durum değişikliği, yakın kopya) `REJECT`
+eder; kurallar hiçbir zaman kabul etmez. Kalanını yerel model (Ollama,
+`qwen2.5:7b`, bulut kotası harcamaz) değerlendirir. Modelin `REJECT`'i adayı
+gizler (7 günde düşer); `ACCEPT`'i varsayılan olarak `REVIEW` + `MODEL_ACCEPT`
+olarak sahibe bırakılır, çünkü gerçek kuyrukta (2026-09-30) modelin 62 kabulünden
+yalnız ~10'u saklanmaya değerdi.
+
+```
+python -m brain_eleven queue-triage                 # bir kez çalıştır (öneri yazar, uygulamaz)
+python -m brain_eleven queue-triage --no-model      # yalnız kurallar
+python -m brain_eleven queue-triage ON              # servis 30 dakikada bir çalıştırır
+python -m brain_eleven queue-triage OFF             # geri al
+```
+
+Meta kayıtlar (skill gövdeleri, alt ajan raporları, harness notları; Claude
+dökümünde `isMeta: true`) artık kullanıcı sözü sayılmaz, `system` kanıtı olarak
+okunur; kuyruk gürültüsünün ana kaynağı buydu.
+
 ## Model ön değerlendirmesi
 
 Bir model (ör. Codex / GPT Luna) bekleyen kararları okuyup

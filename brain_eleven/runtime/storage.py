@@ -225,7 +225,7 @@ class RuntimeConfig:
             guard_runtime_path(self.root, self.path, create=False)
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
                                       'b1_human_approval': False, 'shadow_accept': False,
-                                      'shadow_recall': False})
+                                      'shadow_recall': False, 'queue_triage': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -238,6 +238,10 @@ class RuntimeConfig:
         # runtime stays in SHADOW, deliver the existing V1 per-prompt context.
         # V2 stays content-free and the holdout gate for CANARY is untouched.
         value.setdefault('shadow_recall', False)
+        # Owner decision 2026-09-30, off by default: the service pre-evaluates the
+        # review queue (rules reject noise, a local model decides the rest) and
+        # applies ACCEPT through the normal review path.
+        value.setdefault('queue_triage', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -250,6 +254,8 @@ class RuntimeConfig:
             raise ValueError('Invalid shadow accept configuration')
         if not isinstance(value['shadow_recall'], bool):
             raise ValueError('Invalid shadow recall configuration')
+        if not isinstance(value['queue_triage'], bool):
+            raise ValueError('Invalid queue triage configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -318,6 +324,18 @@ class RuntimeConfig:
 
         def mutate(current):
             current['shadow_recall'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_queue_triage(self, enabled):
+        """Let the service pre-evaluate and apply the review queue (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Queue triage flag must be boolean')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['queue_triage'] = enabled
 
         return self._commit(snapshot, mutate)
 

@@ -119,7 +119,8 @@ def load_suggestions(vault):
             continue
         reason = str(entry.get('reason') or '')
         clean[review_id] = {'suggestion': verdict, 'reason': reason if _REASON.fullmatch(reason) else '',
-                            'duplicate_of': duplicate_of, 'by': str(document.get('by') or 'model')[:40]}
+                            'duplicate_of': duplicate_of,
+                            'by': str(entry.get('by') or document.get('by') or 'model')[:40]}
     return clean
 
 
