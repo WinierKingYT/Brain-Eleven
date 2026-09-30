@@ -131,3 +131,70 @@ def test_guard_keeps_the_last_carrier_when_retiring_one_by_one(tmp_path):
     # One carrier and the hub go; the last carrier of the answer always stays.
     assert len({first, second} & _active(vault)) == 1
     assert {r['memory_id'] for r in report['retired']} == ({first, second} - _active(vault)) | {hub}
+
+
+def test_guard_is_per_project(tmp_path):
+    from brain_eleven.runtime.memory_audit import protected_ids as guard
+    memories = [{'memory_id': 'a', 'project_id': 'P', 'content': 'alpha red'},
+                {'memory_id': 'x', 'project_id': 'Q', 'content': 'alpha red too'}]
+    assert guard(memories, [{'groups': [['alpha'], ['red']]}]) == {'a', 'x'}
+
+
+def test_missing_official_questions_blocks_every_retirement(tmp_path, monkeypatch):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    first = _memory(tmp_path, vault, 'a', 'We decided the dashboard stays read-only for now.')
+    second = _memory(tmp_path, vault, 'b', 'We decided the dashboard remains read-only for now.')
+
+    def unreadable(path=None):
+        raise OSError('questions.json missing')
+
+    monkeypatch.setattr('brain_eleven.runtime.recall_probe.load_questions', unreadable)
+    report = audit(vault, apply=True, use_model=False, now=LATER, similarity_fn=_exact(first, second))
+
+    assert report['retired'] == [] and report['warning'] == 'RECALL_QUESTIONS_UNAVAILABLE'
+    assert [s['kind'] for s in report['suggestions']] == ['EXACT_DUPLICATE']
+    assert {first, second} <= _active(vault)
+
+
+def test_automatic_retirement_is_attributed_to_the_audit(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    kept = _memory(tmp_path, vault, 'a', 'We decided the dashboard stays read-only for now.')
+    dropped = _memory(tmp_path, vault, 'b', 'We decided the dashboard remains read-only for now.')
+    record_delivery(vault, [kept], session_key='k', event='UserPromptSubmit', at=NEW_TIME)
+    audit(vault, apply=True, use_model=False, now=LATER, similarity_fn=_exact(kept, dropped))
+    memory = next(m for m in MemoryStore(vault).load()['validated_memory'] if m['memory_id'] == dropped)
+    assert memory.get('resolved_by') == 'memory-audit'
+
+
+def test_interrupted_audit_still_reports_what_it_retired(tmp_path, monkeypatch):
+    import pytest
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    kept = _memory(tmp_path, vault, 'a', 'We decided the dashboard stays read-only for now.')
+    dropped = _memory(tmp_path, vault, 'b', 'We decided the dashboard remains read-only for now.')
+    record_delivery(vault, [kept], session_key='k', event='UserPromptSubmit', at=NEW_TIME)
+
+    def explode(*args, **kwargs):
+        raise RuntimeError('crash after the first retirement')
+
+    monkeypatch.setattr('brain_eleven.runtime.memory_audit._age_days', explode)
+    with pytest.raises(RuntimeError):
+        audit(vault, apply=True, use_model=False, now=LATER, similarity_fn=_exact(kept, dropped))
+    saved = json.loads((RuntimeConfig(vault).root / 'memory-audit.json').read_text(encoding='utf-8'))
+    assert [r['memory_id'] for r in saved['retired']] == [dropped] and saved['status'] == 'RUNNING'
+
+
+def test_queue_triage_launch_does_not_clear_the_audit_running_flag(tmp_path, monkeypatch):
+    import asyncio
+    from brain_eleven.runtime import service
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    RuntimeConfig(vault).set_queue_triage(True)
+    app = service.create_app(vault, token='t', background=False)
+    app.state.memory_audit_running = True
+    monkeypatch.setattr('brain_eleven.runtime.queue_triage.triage', lambda vault_arg: {})
+
+    async def launch():
+        await service.maybe_queue_triage(app)
+        await asyncio.sleep(0.05)
+
+    asyncio.run(launch())
+    assert app.state.memory_audit_running is True

@@ -123,7 +123,7 @@ def acknowledge(vault, memory_id, path):
     return {'status': 'ACKNOWLEDGED', 'memory_id': memory_id, 'path': path}
 
 
-def retire(vault, memory_id, note=''):
+def retire(vault, memory_id, note='', *, resolved_by='human-staleness-review'):
     """Resolve a stale memory through the truth engine's RESOLVE_EXISTING operation."""
     from brain_eleven.memory import MemoryStore
     from brain_eleven.memory.truth import MemoryTruthEngine
@@ -135,7 +135,7 @@ def retire(vault, memory_id, note=''):
     candidate = {'candidate_id': 'stale_' + memory_id, 'content': memory['content'],
                  'memory_type': memory.get('type') or 'observation', 'scope': memory.get('scope') or 'project',
                  'project_id': memory.get('project_id', ''), 'operation': 'RESOLVE_EXISTING',
-                 'target_memory_id': memory_id, 'resolved_by': 'human-staleness-review',
+                 'target_memory_id': memory_id, 'resolved_by': resolved_by,
                  'note': (note or 'Source changed; retired in staleness review.')[:280]}
     result = MemoryTruthEngine(vault).process([candidate], commit=True).to_dict()
     after = next((x for x in MemoryStore(vault).load()['validated_memory'] if x.get('memory_id') == memory_id), {})

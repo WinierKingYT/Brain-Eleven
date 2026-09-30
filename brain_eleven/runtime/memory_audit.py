@@ -54,13 +54,14 @@ def _age_days(memory, now):
 
 
 def _recall_questions(vault):
+    """Recall questions for the guard; None when the official set cannot be read."""
     from .recall_probe import load_questions
     from .storage import RuntimeConfig
     questions = []
     try:
         questions += load_questions()
     except (OSError, ValueError, KeyError):
-        pass
+        return None  # fail closed: no guard, no retirement
     for path in sorted(RuntimeConfig(vault).root.glob('questions-*.json')):
         try:
             questions += load_questions(path)
@@ -70,13 +71,21 @@ def _recall_questions(vault):
 
 
 def protected_ids(memories, questions):
-    """Ids that are the only whole-answer carrier for some recall question."""
+    """Ids that are the only whole-answer carrier for a recall question in their project.
+
+    Counted per project: a carrier in another project does not make this
+    project's last carrier safe to retire.
+    """
     from .recall_probe import covers
     protected = set()
     for question in questions:
-        carriers = [m['memory_id'] for m in memories if covers(str(m.get('content') or ''), question['groups'])]
-        if len(carriers) == 1:
-            protected.add(carriers[0])
+        carriers = {}
+        for memory in memories:
+            if covers(str(memory.get('content') or ''), question['groups']):
+                carriers.setdefault(memory.get('project_id'), []).append(memory['memory_id'])
+        for ids in carriers.values():
+            if len(ids) == 1:
+                protected.add(ids[0])
     return protected
 
 
@@ -153,10 +162,13 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
     from .storage import RuntimeConfig, write_json
 
     now = now or datetime.now(timezone.utc)
+    report_path = RuntimeConfig(vault).root / 'memory-audit.json'
     memories = [dict(m) for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active' and m.get('memory_id')]
     counts = usage(vault)
     questions = _recall_questions(vault)
+    can_retire = questions is not None
+    questions = questions or []
     guard = protected_ids(memories, questions)
     method, vectors, similarity = similarity_fn or _similarity_fn(vault)
     if vectors is not None:
@@ -169,6 +181,8 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
 
     report = {'at': now.isoformat(), 'method': method, 'active': len(memories), 'protected': sorted(guard),
               'retired': [], 'suggestions': []}
+    if not can_retire:
+        report['warning'] = 'RECALL_QUESTIONS_UNAVAILABLE'  # guard unknown: nothing is retired
     retired = set()
     pairs = []
     for i, first in enumerate(memories):
@@ -198,11 +212,21 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
                                               'other_id': keep['memory_id'], 'similarity': round(score, 3)})
                 continue
             entry = {'memory_id': drop['memory_id'], 'kept': keep['memory_id'], 'similarity': round(score, 3)}
+            if not can_retire:
+                report['suggestions'].append({'kind': 'EXACT_DUPLICATE', **entry})
+                continue
             if apply:
                 try:
-                    retire(vault, drop['memory_id'], f"Hafıza denetimi: birebir tekrar, {keep['memory_id']} korundu.")
+                    retire(vault, drop['memory_id'], f"Hafıza denetimi: birebir tekrar, {keep['memory_id']} korundu.",
+                           resolved_by='memory-audit')
                 except ValueError:
                     continue
+                # Written after every retirement: an interrupted run still
+                # leaves a record of what it changed.
+                report['retired'].append(entry)
+                retired.add(drop['memory_id'])
+                write_json(report_path, {**report, 'status': 'RUNNING'})
+                continue
             retired.add(drop['memory_id'])
             report['retired'].append(entry)
         elif score >= NEAR_DUPLICATE:
@@ -237,5 +261,6 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
             report['suggestions'].append({'kind': 'NEVER_DELIVERED', 'memory_id': memory['memory_id']})
 
     report['applied'] = bool(apply)
-    write_json(RuntimeConfig(vault).root / 'memory-audit.json', report)
+    report['status'] = 'OK'
+    write_json(report_path, report)
     return report

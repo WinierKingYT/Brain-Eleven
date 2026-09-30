@@ -450,7 +450,6 @@ async def maybe_queue_triage(app):
             await asyncio.to_thread(run)
         finally:
             app.state.queue_triage_running = False
-    app.state.memory_audit_running = False
 
     asyncio.create_task(background())
 
@@ -481,8 +480,12 @@ async def maybe_memory_audit(app):
         from .memory_audit import audit
         try:
             audit(vault, apply=True)
-        except Exception:
-            write_json(RuntimeConfig(vault).root / 'memory-audit.json', {'at': now(), 'status': 'FAILED'})
+        except Exception as exc:
+            # audit() already wrote what it retired before failing; keep that
+            # and add a content-free error code.
+            report = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
+            write_json(RuntimeConfig(vault).root / 'memory-audit.json',
+                       {**report, 'at': now(), 'status': 'FAILED', 'error': type(exc).__name__[:60]})
 
     async def background():
         try:
