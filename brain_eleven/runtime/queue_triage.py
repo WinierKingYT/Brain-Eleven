@@ -172,4 +172,9 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
             merged[review_id] = entry if not isinstance(entry, dict) or entry.get('by') else {**entry, 'by': author}
         merged.update(fresh)
         write_json(path, {'by': 'queue-triage', 'suggestions': merged})
+    try:
+        from .value import refresh_owner_counts
+        refresh_owner_counts(vault)
+    except Exception:
+        pass  # the notice is advisory
     return counts

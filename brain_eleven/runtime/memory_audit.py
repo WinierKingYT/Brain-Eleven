@@ -263,4 +263,9 @@ def audit(vault, *, apply=False, use_model=True, now=None, model_fn=None, simila
     report['applied'] = bool(apply)
     report['status'] = 'OK'
     write_json(report_path, report)
+    try:
+        from .value import refresh_owner_counts
+        refresh_owner_counts(vault)
+    except Exception:
+        pass  # the notice is advisory
     return report

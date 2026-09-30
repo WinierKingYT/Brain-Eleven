@@ -18,6 +18,7 @@ pending (and expire on their own) and "show all" lists them.
 from __future__ import annotations
 
 DAILY_LIMIT = 10
+NOTICE_MAX_AGE_SECONDS = 24 * 3600
 
 _COMMITMENT = {'COMMITTED': 1.0, 'OBSERVED': 0.55, 'UNCERTAIN': 0.3, 'PROPOSED': 0.3,
                'HYPOTHETICAL': 0.15, 'QUESTION': 0.1, 'NEGATED': 0.2, 'QUOTED': 0.05}
@@ -48,24 +49,124 @@ def value_score(item):
     return round(score, 4)
 
 
+def _audit_suggestions(vault, project_id=None):
+    from brain_eleven.memory import MemoryStore
+    from .storage import RuntimeConfig, read_json
+    report = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
+    active = {m.get('memory_id'): m for m in MemoryStore(vault).load()['validated_memory']
+              if str(m.get('status') or 'active') == 'active'}
+    return [{**s, 'project_id': active[s['memory_id']].get('project_id')}
+            for s in report.get('suggestions') or []
+            if isinstance(s, dict) and s.get('memory_id') in active
+            and (project_id is None or active[s['memory_id']].get('project_id') == project_id)]
+
+
+def _model_accept(entry):
+    """The model suggested acceptance: left for a person (MODEL_ACCEPT) or allowed (ACCEPT)."""
+    entry = entry or {}
+    return entry.get('reason') == 'MODEL_ACCEPT' or entry.get('suggestion') == 'ACCEPT'
+
+
+def _safe_text(text, limit=160):
+    """Memory text for display, withheld when it fails the capture safety check."""
+    from context_compiler_v2.safety import contains_secret
+    from .capture_safety import evaluate_capture
+    text = str(text or '')
+    return text[:limit] if not contains_secret(text) and evaluate_capture(text).accepted else '[withheld]'
+
+
+def refresh_owner_counts(vault):
+    """Count what waits for the owner, per project, into runtime/owner-notice.json.
+
+    This scans the whole review store (~1.5 s on 4,500 files), so it runs
+    off the prompt path: after queue triage, after the memory audit and on
+    ``digest``. SessionStart only reads the small result file.
+    """
+    from .review import ReviewStore
+    from .storage import RuntimeConfig, now, write_json
+    suggestions = load_suggestions(vault)
+    projects = {}
+    for item in ReviewStore(vault).list():
+        if item.get('status') != 'PENDING':
+            continue
+        entry = suggestions.get(item.get('id')) or {}
+        verdict = entry.get('suggestion')
+        if verdict in ('REJECT', 'DUPLICATE'):
+            continue
+        counts = projects.setdefault(str((item.get('candidate') or {}).get('project_id') or ''),
+                                     {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
+        counts['waiting'] += 1
+        counts['model_accept'] += _model_accept(entry)
+        counts['not_evaluated'] += not verdict
+    for suggestion in _audit_suggestions(vault):
+        project = str(suggestion.get('project_id') or '')
+        projects.setdefault(project, {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
+        projects[project]['audit'] += 1
+    document = {'at': now(), 'projects': projects}
+    write_json(RuntimeConfig(vault).root / 'owner-notice.json', document)
+    return document
+
+
+def owner_notice(vault, project_id=None):
+    """One line for SessionStart from the precomputed counts, else ''."""
+    from .storage import RuntimeConfig, read_json
+    from datetime import datetime, timezone
+    document = read_json(RuntimeConfig(vault).root / 'owner-notice.json', {}) or {}
+    try:
+        age = datetime.now(timezone.utc) - datetime.fromisoformat(str(document.get('at')))
+    except (TypeError, ValueError):
+        return ''
+    if age.total_seconds() > NOTICE_MAX_AGE_SECONDS:
+        return ''  # stale counts would mislead; queue triage refreshes them every 30 min
+    projects = document.get('projects') if isinstance(document.get('projects'), dict) else {}
+    rows = [projects.get(project_id) or {}] if project_id else list(projects.values())
+    total = {key: sum(int(row.get(key) or 0) for row in rows if isinstance(row, dict))
+             for key in ('waiting', 'model_accept', 'not_evaluated', 'audit')}
+    if not total['waiting'] and not total['audit']:
+        return ''
+    parts = []
+    if total['waiting']:
+        parts.append(f"{total['waiting']} review candidates wait for the owner "
+                     f"({total['model_accept']} suggested for acceptance by the model, "
+                     f"{total['not_evaluated']} not evaluated yet)")
+    if total['audit']:
+        parts.append(f"memory audit has {total['audit']} suggestion(s)")
+    return '- ' + '; '.join(parts) + '. Details: `python -m brain_eleven digest`.'
+
+
 def digest(vault, *, limit=DAILY_LIMIT):
-    """The day's most valuable pending candidates, for a quick look without the browser."""
+    """The day's most valuable pending candidates, for a quick look without the browser.
+
+    Items the queue triage hid (REJECT/DUPLICATE) are skipped; the local
+    model's accept suggestions come first, and memory-audit suggestions are
+    listed separately.
+    """
     from brain_eleven.memory import MemoryStore
     from .review import ReviewStore, rank_similar
     from .triage import summary
     memories = [m for m in MemoryStore(vault).load()['validated_memory'] if str(m.get('status') or 'active') == 'active']
-    pending = [x for x in ReviewStore(vault).list() if x.get('status') == 'PENDING']
+    suggestions = load_suggestions(vault)
+    pending = [x for x in ReviewStore(vault).list() if x.get('status') == 'PENDING'
+               and (suggestions.get(x.get('id')) or {}).get('suggestion') not in ('REJECT', 'DUPLICATE')]
     for item in pending:
         candidate = item.get('candidate') or {}
         same_project = [m for m in memories if m.get('project_id') == candidate.get('project_id')]
         item['similar'] = [{'similarity': score} for score, _ in rank_similar(candidate.get('content', ''), same_project)[:1]]
-    ranked = sorted(pending, key=value_score, reverse=True)[:limit]
+    def order(item):
+        model_accept = _model_accept(suggestions.get(item.get('id')))
+        return (model_accept, value_score(item))
+    ranked = sorted(pending, key=order, reverse=True)[:limit]
+    refresh_owner_counts(vault)
     return {'pending': len(pending), 'auto_filtered_total': summary(vault).get('total', 0),
             'top': [{'id': x['id'], 'score': value_score(x),
                      'commitment': (x.get('candidate') or {}).get('commitment'),
                      'type': (x.get('candidate') or {}).get('memory_type'),
+                     'model_accept': _model_accept(suggestions.get(x['id'])),
                      'text': ((x.get('candidate') or {}).get('content') or (x.get('candidate') or {}).get('text') or '')[:160]}
-                    for x in ranked]}
+                    for x in ranked],
+            'memory_audit': [{**s, 'text': _safe_text(next((m.get('content') for m in memories
+                                                            if m.get('memory_id') == s['memory_id']), ''))}
+                             for s in _audit_suggestions(vault)]}
 
 
 _SUGGESTIONS = {'ACCEPT', 'REJECT', 'REVIEW'}

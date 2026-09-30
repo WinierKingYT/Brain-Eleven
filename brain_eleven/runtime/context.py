@@ -532,6 +532,23 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     except Exception:
         # A stale or unavailable derived report must never block bootstrap.
         pass
+    if memories:
+        try:
+            # Owner notice (2026-09-30): precomputed counts only (never a scan of
+            # the review store on this path), after the maintenance reminder so it
+            # never takes its budget, and only alongside real memories.
+            from .value import owner_notice
+            notice = owner_notice(vault, project['project_id'])
+            base = reminder_context or context
+            if notice and base:
+                candidate_context = base + '\n\n## Owner action\n' + notice
+                if estimator.estimate(candidate_context).count <= budget and safe(candidate_context):
+                    if reminder_context:
+                        reminder_context = candidate_context
+                    else:
+                        context = candidate_context
+        except Exception:
+            pass
     status = 'SUCCESS'
     effective_context = reminder_context or context
     if not safe(effective_context) or estimator.estimate(effective_context).count > budget:
