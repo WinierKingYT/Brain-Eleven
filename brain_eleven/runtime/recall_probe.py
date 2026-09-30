@@ -141,6 +141,11 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
             why = {}
     else:
         from brain_eleven.projects.registry import ProjectRegistry
+        from .context import prompt_provider_config, warm_prompt_providers
+        # A prompt never waits for model loading (it keeps V1 order), so a
+        # fresh probe process must warm up first or it measures V1 only. It
+        # must warm the same config path compile_context will use.
+        warm_prompt_providers(prompt_provider_config(project_root), vault=vault)
         project = ProjectRegistry(vault).resolve(project_root)
         project_id = project.get('project_id') if project else None
     memories = [m for m in MemoryStore(vault).load()['validated_memory']

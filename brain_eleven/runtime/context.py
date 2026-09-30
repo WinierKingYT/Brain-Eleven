@@ -247,6 +247,11 @@ def _prompt_providers(config_path, *, block=True, warm_texts=()):
         return _PROVIDER_CACHE[key]
 
 
+def prompt_provider_config(project_root):
+    """The provider config every prompt-time path uses; one key for the cache."""
+    return os.environ.get('IG_PROVIDER_CONFIG') or Path(project_root) / '.claude' / 'ig-provider-config.json'
+
+
 def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), texts=(), vault=None):
     """Load prompt providers and memory vectors ahead of prompts; never raises.
 
@@ -572,10 +577,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
             if fallback is compile_task_v1:
                 fallback_options.update(
                     prompt=request,
-                    provider_config_path=(
-                        os.environ.get('IG_PROVIDER_CONFIG')
-                        or Path(project_root) / '.claude' / 'ig-provider-config.json'
-                    ),
+                    provider_config_path=prompt_provider_config(project_root),
                 )
             legacy = fallback(vault, task, **fallback_options)
             legacy['provider'] = 'V1'
@@ -586,10 +588,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         result = compile_task_v1(vault, task, budget=budget,
                                  human_approval=config.get('b1_human_approval', False),
                                  prompt=request if event == 'UserPromptSubmit' else None,
-                                 provider_config_path=(
-                                     os.environ.get('IG_PROVIDER_CONFIG')
-                                     or Path(project_root) / '.claude' / 'ig-provider-config.json'
-                                 ))
+                                 provider_config_path=prompt_provider_config(project_root))
         result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
     if client in {'claude', 'codex'}:
