@@ -385,9 +385,12 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
 
 BOOTSTRAP_POOL = 15
-# Prompt-time candidate pool: wide enough to reach memories far below the
-# static top five; bounded so a local cross-encoder stays prompt-fast.
-PROMPT_POOL = 100
+# Prompt-time candidate pool: every eligible memory of the scope, so the
+# question (embedding shortlist + cross-encoder) picks, not the static V1 order.
+# RETV3-00 (2026-10-01): a 100 cap dropped the answer from the pool for 4 of 10
+# questions once memory grew to 143; uncapped, 401 memories gave 9/10 at
+# <=0.7 s. The bound is a safety stop; the cross-encoder still sees <=20 per tier.
+PROMPT_POOL = 2000
 # SessionStart memory slots (owner decision C2, 2026-09-26): 5 left recall
 # answers out with SLOT_LIMIT in a real session; the 3000-token budget still bounds it.
 BOOTSTRAP_SLOTS = 8
