@@ -125,7 +125,11 @@ SERVICE_WARM_TIMEOUT_SECONDS = 90
 
 
 def wait_for_service_warm(vault, *, timeout=SERVICE_WARM_TIMEOUT_SECONDS, sleep=None):
-    """Seconds waited until the service reports prompt models ready, or None on timeout."""
+    """Seconds waited until the service reports prompt models ready, or None.
+
+    None also when the service settled without real models (nothing to wait
+    for; it answers in V1 order) or never became reachable.
+    """
     import time
     from .launcher import ensure_service, request_service
     sleep = sleep or time.sleep
@@ -134,9 +138,12 @@ def wait_for_service_warm(vault, *, timeout=SERVICE_WARM_TIMEOUT_SECONDS, sleep=
         return None
     while time.monotonic() - start < timeout:
         try:
-            if (request_service(vault, '/api/runtime/status', None, timeout=2) or {}).get('prompt_providers_ready'):
+            status = request_service(vault, '/api/runtime/status', None, timeout=2) or {}
+            if status.get('prompt_providers_ready'):
                 return round(time.monotonic() - start, 1)
-        except (OSError, ValueError, KeyError):
+            if status.get('prompt_providers_state') == 'unavailable':
+                return None
+        except (OSError, ValueError, KeyError, AttributeError):
             pass
         sleep(1)
     return None
