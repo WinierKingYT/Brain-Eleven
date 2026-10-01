@@ -37,6 +37,7 @@ def test_prompt_mode_uses_each_user_prompt_context_and_keeps_memory_scoring(tmp_
 
     monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *args, **kwargs: True)
     monkeypatch.setattr("brain_eleven.runtime.launcher.request_service", request_service)
+    monkeypatch.setattr("brain_eleven.runtime.recall_probe.wait_for_service_warm", lambda vault: 0.0)
     monkeypatch.setattr("brain_eleven.runtime.context.compile_bootstrap",
                         lambda *args, **kwargs: {"context": "", "selected_ids": []})
     result = probe(vault, questions_path=questions, mode="prompt")
@@ -74,6 +75,7 @@ def test_recall_probe_cli_defaults_to_bootstrap_and_accepts_prompt_mode(tmp_path
 
     monkeypatch.setattr("brain_eleven.runtime.launcher.ensure_service", lambda *args, **kwargs: True)
     monkeypatch.setattr("brain_eleven.runtime.launcher.request_service", request_service)
+    monkeypatch.setattr("brain_eleven.runtime.recall_probe.wait_for_service_warm", lambda vault: 0.0)
     monkeypatch.setattr("brain_eleven.runtime.context.compile_bootstrap",
                         lambda *args, **kwargs: {"context": "", "selected_ids": []})
     main(["--vault", str(vault), "recall-probe", "--questions", str(questions)])
@@ -409,3 +411,53 @@ def test_service_stays_up_longer_while_prompt_models_are_loaded(monkeypatch):
     assert service.idle_limit_seconds() == service.IDLE_LIMIT_SECONDS
     context._PROVIDER_CACHE["k"] = (Loaded(), None)
     assert service.idle_limit_seconds() == service.PROMPT_MODELS_IDLE_LIMIT_SECONDS
+
+
+def test_prompt_probe_waits_for_the_service_warm_up(monkeypatch):
+    from brain_eleven.runtime import recall_probe
+    states = iter([{'prompt_providers_ready': False}, {'prompt_providers_ready': False},
+                   {'prompt_providers_ready': True}])
+    monkeypatch.setattr('brain_eleven.runtime.launcher.ensure_service', lambda vault, **kw: True)
+    monkeypatch.setattr('brain_eleven.runtime.launcher.request_service', lambda vault, route, payload=None, **kw: next(states))
+    slept = []
+    assert recall_probe.wait_for_service_warm('v', sleep=slept.append) is not None
+    assert len(slept) == 2
+
+    monkeypatch.setattr('brain_eleven.runtime.launcher.request_service',
+                        lambda vault, route, payload=None, **kw: {'prompt_providers_ready': False})
+    assert recall_probe.wait_for_service_warm('v', timeout=0, sleep=slept.append) is None
+
+
+def test_prompt_probe_does_not_wait_when_models_settled_unavailable(monkeypatch):
+    # Review 2026-10-01 (MEDIUM): without local models the wait used to run the full 90 s.
+    from brain_eleven.runtime import recall_probe
+    monkeypatch.setattr('brain_eleven.runtime.launcher.ensure_service', lambda vault, **kw: True)
+    monkeypatch.setattr('brain_eleven.runtime.launcher.request_service', lambda vault, route, payload=None, **kw: {
+        'prompt_providers_ready': False, 'prompt_providers_state': 'unavailable'})
+    slept = []
+    assert recall_probe.wait_for_service_warm('v', sleep=slept.append) is None
+    assert slept == []
+
+
+def test_prompt_providers_state(monkeypatch):
+    from brain_eleven.runtime import context, service
+
+    class Provider:
+        def __init__(self, provider_id):
+            self.provider_id = provider_id
+
+    monkeypatch.setattr(context, '_PROVIDER_CACHE', {})
+    assert service._prompt_providers_state() == 'loading'
+    context._PROVIDER_CACHE['k'] = (Provider('unavailable'), None)
+    assert service._prompt_providers_state() == 'unavailable'
+    context._PROVIDER_CACHE['k'] = (Provider('local'), None)
+    assert service._prompt_providers_state() == 'ready'
+    assert service._prompt_providers_ready() is True
+    with context._PROVIDER_LOCK:
+        # The RLock is re-entrant, so hold it from another thread.
+        import threading
+        seen = []
+        thread = threading.Thread(target=lambda: seen.append(service._prompt_providers_state()))
+        thread.start()
+        thread.join()
+    assert seen == ['loading']

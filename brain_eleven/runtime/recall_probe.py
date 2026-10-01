@@ -121,6 +121,34 @@ def review_tags(pending, questions=None):
     return tags
 
 
+SERVICE_WARM_TIMEOUT_SECONDS = 90
+
+
+def wait_for_service_warm(vault, *, timeout=SERVICE_WARM_TIMEOUT_SECONDS, sleep=None):
+    """Seconds waited until the service reports prompt models ready, or None.
+
+    None also when the service settled without real models (nothing to wait
+    for; it answers in V1 order) or never became reachable.
+    """
+    import time
+    from .launcher import ensure_service, request_service
+    sleep = sleep or time.sleep
+    start = time.monotonic()
+    if not ensure_service(vault, wait=True, wait_timeout=2.2):
+        return None
+    while time.monotonic() - start < timeout:
+        try:
+            status = request_service(vault, '/api/runtime/status', None, timeout=2) or {}
+            if status.get('prompt_providers_ready'):
+                return round(time.monotonic() - start, 1)
+            if status.get('prompt_providers_state') == 'unavailable':
+                return None
+        except (OSError, ValueError, KeyError, AttributeError):
+            pass
+        sleep(1)
+    return None
+
+
 def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
     from brain_eleven.memory import MemoryStore
     if mode not in {'bootstrap', 'prompt'}:
@@ -156,6 +184,12 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
     pending = pending_candidate_texts(vault, project_id)
     results = []
     prompt_context_statuses = {}
+    warm_wait = None
+    if mode == 'prompt':
+        # The prompt path is served by the background service; right after it
+        # starts it answers in V1 order for ~25 s while models load. Wait for
+        # it, so the probe measures what a normal prompt gets.
+        warm_wait = wait_for_service_warm(vault)
     for question in load_questions(questions_path):
         groups = question['groups']
         prompt_context = None
@@ -223,5 +257,6 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
               'results': results}
     if mode == 'prompt':
         result['mode'] = mode
+        result['service_warm_wait_s'] = warm_wait
         result['prompt_context_statuses'] = prompt_context_statuses
     return result
