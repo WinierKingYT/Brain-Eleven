@@ -202,3 +202,51 @@ def test_fragment_rule_keeps_identifiers_and_brackets():
     for fragment in ('the JUNK list can still delete real work.', 'Ancak bundan sonra V2 kararını vermek.',
                      've sonra testleri çalıştırdık.'):
         assert _FRAGMENT.match(fragment), fragment
+
+
+def test_fragment_rejects_the_current_rule_lets_through_are_asked_again(tmp_path):
+    # 2026-10-01: an earlier, broader fragment rule hid complete statements.
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    path = RuntimeConfig(vault).root / 'review-suggestions.json'
+    write_json(path, {'by': 'auto-triage', 'suggestions': {keep['id']: {'suggestion': 'REJECT', 'reason': 'FRAGMENT'}}})
+    counts = triage(vault, chat=_chat())
+    assert counts['fragment_recheck'] == 1
+    entry = load_suggestions(vault)[keep['id']]
+    assert (entry['suggestion'], entry['reason']) == ('REVIEW', 'MODEL_VERIFIED')
+    assert triage(vault, chat=_chat())['fragment_recheck'] == 0
+
+
+def test_an_entry_written_while_the_model_runs_is_not_overwritten(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    path = RuntimeConfig(vault).root / 'review-suggestions.json'
+
+    def chat(prompt):
+        write_json(path, {'by': 'owner', 'suggestions': {keep['id']: {'suggestion': 'REJECT', 'reason': 'OWNER', 'by': 'owner'}}})
+        return {'decision': 'KEEP'}
+
+    triage(vault, chat=chat)
+    assert load_suggestions(vault)[keep['id']]['reason'] == 'OWNER'
+
+
+def test_promotion_uses_the_file_as_it_is_at_write_time(tmp_path):
+    # Review residual (LOW): promotion used to be decided on the snapshot read
+    # before minutes of model calls, so a later reject could be turned into ACCEPT.
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    verified = _review_item(tmp_path, vault, 'verified', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    other = _review_item(tmp_path, vault, 'other', 'We decided the dashboard stays read-only for now.', NEW_TIME)
+    path = RuntimeConfig(vault).root / 'review-suggestions.json'
+    write_json(path, {'by': 'queue-triage', 'suggestions': {
+        verified['id']: {'suggestion': 'REVIEW', 'reason': 'MODEL_VERIFIED', 'by': 'qwen2.5:7b'}}})
+
+    def chat(prompt):
+        document = read_json(path)
+        document['suggestions'][verified['id']] = {'suggestion': 'REJECT', 'reason': 'OWNER', 'by': 'owner'}
+        write_json(path, document)
+        return {'decision': 'KEEP'}
+
+    triage(vault, chat=chat, accept_verified=True)
+    saved = load_suggestions(vault)
+    assert saved[verified['id']]['suggestion'] == 'REJECT'
+    assert saved[other['id']]['suggestion'] == 'ACCEPT'

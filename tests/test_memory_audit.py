@@ -198,3 +198,16 @@ def test_queue_triage_launch_does_not_clear_the_audit_running_flag(tmp_path, mon
 
     asyncio.run(launch())
     assert app.state.memory_audit_running is True
+
+
+def test_audit_schedule_retries_a_failed_run_within_hours():
+    from datetime import datetime, timedelta, timezone
+    from brain_eleven.runtime.service import memory_audit_due
+    current = datetime(2026, 10, 1, 12, tzinfo=timezone.utc)
+    at = lambda hours: (current - timedelta(hours=hours)).isoformat()
+    assert memory_audit_due({}, current) is True
+    assert memory_audit_due({'at': 'garbled'}, current) is True
+    assert memory_audit_due({'at': at(24), 'status': 'OK'}, current) is False
+    assert memory_audit_due({'at': at(24 * 7), 'status': 'OK'}, current) is True
+    assert memory_audit_due({'at': at(1), 'status': 'FAILED'}, current) is False
+    assert memory_audit_due({'at': at(7), 'status': 'FAILED'}, current) is True
