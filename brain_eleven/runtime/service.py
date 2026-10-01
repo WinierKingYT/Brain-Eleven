@@ -502,8 +502,11 @@ def memory_audit_due(report, current=None):
             when = when.replace(tzinfo=timezone.utc)
     except (KeyError, ValueError, TypeError):
         return True  # never ran, or an unreadable time: run rather than stall forever
+    elapsed = ((current or datetime.now(timezone.utc)) - when).total_seconds()
+    if elapsed < 0:
+        return True  # a time in the future (clock change) must not block the audit
     wait = MEMORY_AUDIT_RETRY_SECONDS if report.get('status') == 'FAILED' else MEMORY_AUDIT_INTERVAL_SECONDS
-    return ((current or datetime.now(timezone.utc)) - when).total_seconds() >= wait
+    return elapsed >= wait
 
 
 async def maybe_memory_audit(app):

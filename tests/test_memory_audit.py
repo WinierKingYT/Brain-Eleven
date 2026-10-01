@@ -211,3 +211,5 @@ def test_audit_schedule_retries_a_failed_run_within_hours():
     assert memory_audit_due({'at': at(24 * 7), 'status': 'OK'}, current) is True
     assert memory_audit_due({'at': at(1), 'status': 'FAILED'}, current) is False
     assert memory_audit_due({'at': at(7), 'status': 'FAILED'}, current) is True
+    assert memory_audit_due({'at': at(-48), 'status': 'OK'}, current) is True
+    assert memory_audit_due({'at': '2026-09-30T12:00:00', 'status': 'OK'}, current) is False
