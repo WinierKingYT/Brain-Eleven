@@ -1,4 +1,4 @@
-"""RETV3-00 scale probe: does the prompt path still find the answer once memory grows past the pool?
+"""RETV3-00 scale probe (usage: python scripts/retv3_scale_probe.py 0 100 300; POOL=n overrides the pool): does the prompt path still find the answer once memory grows past the pool?
 
 Read-only on the real vault: copies memory/registry/state into a temp vault and adds
 real pending review-candidate texts as extra active memories (distractors).
