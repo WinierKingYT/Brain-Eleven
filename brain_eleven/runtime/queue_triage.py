@@ -183,6 +183,14 @@ def verify_candidate(candidate, project_labels, *, model=DEFAULT_MODEL, chat=Non
     return 'VERIFIED', 'MODEL_VERIFIED'
 
 
+def _stale_fragment(entry, candidate):
+    """A FRAGMENT reject whose text the current fragment rule would let through."""
+    if not isinstance(entry, dict) or entry.get('reason') != 'FRAGMENT':
+        return False
+    text = ' '.join(_text(candidate).split())
+    return len(text) >= MIN_VERIFIED_CHARS and not _FRAGMENT.match(text)
+
+
 def _project_labels(vault):
     try:
         from brain_eleven.projects.registry import ProjectRegistry
@@ -212,17 +220,14 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
     memories = [m for m in MemoryStore(vault).load()['validated_memory']
                 if str(m.get('status') or 'active') == 'active']
     listed = ReviewStore(vault).list()
-    pending = [x for x in listed if x.get('status') == 'PENDING' and x.get('id') not in suggestions]
-    promoted = {}
-    if accept_verified:
-        # Turning the flag on later also promotes items verified while it was off.
-        for x in listed:
-            entry = suggestions.get(x.get('id'))
-            if (x.get('status') == 'PENDING' and isinstance(entry, dict)
-                    and entry.get('suggestion') == 'REVIEW' and entry.get('reason') == 'MODEL_VERIFIED'):
-                promoted[x['id']] = {**entry, 'suggestion': 'ACCEPT'}
-    counts = {'pending_without_suggestion': len(pending), 'rule_reject': 0,
-              'model_accept': 0, 'model_reject': 0, 'model_review': 0, 'left': 0}
+    open_items = [x for x in listed if x.get('status') == 'PENDING']
+    pending = [x for x in open_items if x.get('id') not in suggestions]
+    # A FRAGMENT reject the current rule no longer makes is asked again
+    # (2026-10-01: an earlier, broader rule hid 22 complete statements).
+    stale = [x for x in open_items if _stale_fragment(suggestions.get(x.get('id')), x.get('candidate') or {})]
+    pending += stale
+    counts = {'pending_without_suggestion': len(pending) - len(stale), 'fragment_recheck': len(stale),
+              'rule_reject': 0, 'model_accept': 0, 'model_reject': 0, 'model_review': 0, 'left': 0}
     asked = 0
     fresh = {}
     labels = _project_labels(vault)
@@ -277,8 +282,19 @@ def triage(vault, *, use_model=True, model=DEFAULT_MODEL, limit=None, model_fn=N
         merged = {}
         for review_id, entry in (current.get('suggestions') or {}).items() if isinstance(current, dict) else ():
             merged[review_id] = entry if not isinstance(entry, dict) or entry.get('by') else {**entry, 'by': author}
-        merged.update(promoted)
-        merged.update(fresh)
+        current_raw = current.get('suggestions') or {} if isinstance(current, dict) else {}
+        for review_id, entry in fresh.items():
+            # Only replace what this run read; an entry someone wrote meanwhile wins.
+            if current_raw.get(review_id) == suggestions.get(review_id):
+                merged[review_id] = entry
+        if accept_verified:
+            # Turning the flag on later also promotes items verified while it was
+            # off. Decided on the file as it is now, so a later change wins.
+            open_ids = {x.get('id') for x in open_items}
+            for review_id, entry in list(merged.items()):
+                if (review_id in open_ids and isinstance(entry, dict) and entry.get('suggestion') == 'REVIEW'
+                        and entry.get('reason') == 'MODEL_VERIFIED'):
+                    merged[review_id] = {**entry, 'suggestion': 'ACCEPT'}
         write_json(path, {'by': 'queue-triage', 'suggestions': merged})
     try:
         from .value import refresh_owner_counts

@@ -488,6 +488,25 @@ async def maybe_queue_triage(app):
 
 
 MEMORY_AUDIT_INTERVAL_SECONDS = 7 * 24 * 3600
+# A failed run is retried after hours, not a week later.
+MEMORY_AUDIT_RETRY_SECONDS = 6 * 3600
+
+
+def memory_audit_due(report, current=None):
+    """Whether the last audit report is old enough for another run."""
+    from datetime import datetime, timezone
+    report = report if isinstance(report, dict) else {}
+    try:
+        when = datetime.fromisoformat(str(report['at']))
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError, TypeError):
+        return True  # never ran, or an unreadable time: run rather than stall forever
+    elapsed = ((current or datetime.now(timezone.utc)) - when).total_seconds()
+    if elapsed < 0:
+        return True  # a time in the future (clock change) must not block the audit
+    wait = MEMORY_AUDIT_RETRY_SECONDS if report.get('status') == 'FAILED' else MEMORY_AUDIT_INTERVAL_SECONDS
+    return elapsed >= wait
 
 
 async def maybe_memory_audit(app):
@@ -496,14 +515,11 @@ async def maybe_memory_audit(app):
     Runs when ``memory_audit`` is on and the last report is a week old; it
     retires only guarded exact duplicates and writes suggestions for the rest.
     """
-    from datetime import datetime, timezone
     vault = app.state.vault
     try:
         if not RuntimeConfig(vault).load().get('memory_audit') or app.state.memory_audit_running:
             return
-        last = read_json(RuntimeConfig(vault).root / 'memory-audit.json', {}) or {}
-        when = datetime.fromisoformat(str(last.get('at'))) if last.get('at') else None
-        if when and (datetime.now(timezone.utc) - when).total_seconds() < MEMORY_AUDIT_INTERVAL_SECONDS:
+        if not memory_audit_due(read_json(RuntimeConfig(vault).root / 'memory-audit.json', {})):
             return
     except Exception:
         return
