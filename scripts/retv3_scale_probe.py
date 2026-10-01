@@ -6,7 +6,7 @@ real pending review-candidate texts as extra active memories (distractors).
 import json, shutil, sys, tempfile, time
 from pathlib import Path
 
-REAL = Path(r'C:\Users\faruk\Documents\Brain-Eleven')
+REAL = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REAL))
 from brain_eleven.runtime.recall_probe import load_questions, covers, in_context, pending_candidate_texts
 from brain_eleven.runtime import context as ctx
