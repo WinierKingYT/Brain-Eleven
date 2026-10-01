@@ -146,13 +146,26 @@ def _claim_conflict(vault, result):
             'occurred_at': memory.get('occurred_at', ''), 'timestamp': memory.get('timestamp', '')}
 
 
+def _prompt_providers_ready():
+    """True when prompt-time models are loaded and no warm-up holds them."""
+    try:
+        from .context import _PROVIDER_LOCK, prompt_providers_loaded
+        if not prompt_providers_loaded() or not _PROVIDER_LOCK.acquire(blocking=False):
+            return False
+        _PROVIDER_LOCK.release()
+        return True
+    except Exception:
+        return False
+
+
 def runtime_status(vault):
     cfg = RuntimeConfig(vault)
     capture = Path(vault) / '.brain-eleven' / 'capture'
     config = cfg.load()
     return {'mode': config['mode'], 'shadow_accept': config['shadow_accept'], 'shadow_recall': config['shadow_recall'], 'queue': {name: len(list((capture / name).glob('*.json'))) for name in ('queued', 'processing', 'completed', 'dead-letter')},
             'worker': read_json(cfg.root / 'last-worker.json'), 'context': read_json(cfg.root / 'last-context.json'),
-            'model': read_json(cfg.root / 'model-status.json'), 'graduation': read_json(cfg.root / 'graduation.json', {'status': 'PENDING_REAL_USE'})}
+            'model': read_json(cfg.root / 'model-status.json'), 'graduation': read_json(cfg.root / 'graduation.json', {'status': 'PENDING_REAL_USE'}),
+            'prompt_providers_ready': _prompt_providers_ready()}
 
 
 def create_app(vault, *, token=None, background=True):
