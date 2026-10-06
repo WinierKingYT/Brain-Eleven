@@ -226,7 +226,8 @@ class RuntimeConfig:
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
                                       'b1_human_approval': False, 'shadow_accept': False,
                                       'shadow_recall': False, 'queue_triage': False, 'memory_audit': False,
-                                      'auto_accept_verified': False, 'probation_review': False})
+                                      'auto_accept_verified': False, 'probation_review': False,
+                                      'cross_project_recall': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -252,6 +253,11 @@ class RuntimeConfig:
         # Owner decision 2026-10-02, off by default: memories written without a
         # person are re-checked for 14 days (rules retire, the model only flags).
         value.setdefault('probation_review', False)
+        # Owner decision 2026-10-02, off by default: prompts may also get up to
+        # three relevant decisions/lessons of other projects, labelled as
+        # references. Projects listed in cross_project_private are never shared.
+        value.setdefault('cross_project_recall', False)
+        value.setdefault('cross_project_private', [])
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -272,6 +278,11 @@ class RuntimeConfig:
             raise ValueError('Invalid auto accept configuration')
         if not isinstance(value['probation_review'], bool):
             raise ValueError('Invalid probation configuration')
+        if not isinstance(value['cross_project_recall'], bool):
+            raise ValueError('Invalid cross-project configuration')
+        if not isinstance(value['cross_project_private'], list) or not all(
+                isinstance(x, str) and x for x in value['cross_project_private']):
+            raise ValueError('Invalid cross-project private list')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -388,6 +399,22 @@ class RuntimeConfig:
 
         def mutate(current):
             current['probation_review'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_cross_project_recall(self, enabled, *, private=None):
+        """Share other projects' decisions/lessons as labelled references (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Cross-project flag must be boolean')
+        if private is not None and (not isinstance(private, list) or not all(isinstance(x, str) and x for x in private)):
+            raise ValueError('Private projects must be a list of project ids')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['cross_project_recall'] = enabled
+            if private is not None:
+                current['cross_project_private'] = sorted(set(private))
 
         return self._commit(snapshot, mutate)
 
