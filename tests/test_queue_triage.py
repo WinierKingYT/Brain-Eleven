@@ -250,3 +250,13 @@ def test_promotion_uses_the_file_as_it_is_at_write_time(tmp_path):
     saved = load_suggestions(vault)
     assert saved[verified['id']]['suggestion'] == 'REJECT'
     assert saved[other['id']]['suggestion'] == 'ACCEPT'
+
+
+def test_project_labels_read_the_real_registry(tmp_path):
+    # 2026-10-06: the lookup called a missing method and silently returned {},
+    # so the WRONG_PROJECT check never ran.
+    from brain_eleven.runtime.queue_triage import _project_labels
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    item = _review_item(tmp_path, vault, 'keep', 'We decided to use SQLite because the app is local.', NEW_TIME)
+    labels = _project_labels(vault)
+    assert item['project_id'] in labels and labels[item['project_id']]

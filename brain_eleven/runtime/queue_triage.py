@@ -194,7 +194,7 @@ def _stale_fragment(entry, candidate):
 def _project_labels(vault):
     try:
         from brain_eleven.projects.registry import ProjectRegistry
-        return {p['project_id']: str(p.get('project_label') or '') for p in ProjectRegistry(vault).list()
+        return {p['project_id']: str(p.get('project_label') or '') for p in ProjectRegistry(vault).list_projects()
                 if p.get('project_id')}
     except Exception:
         return {}
