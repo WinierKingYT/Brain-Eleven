@@ -56,7 +56,7 @@ def _related(**extra):
 
 def _refs(scores, **kw):
     options = dict(project_id='here', private={'secret'}, embedding_provider=_Embedding(),
-                   reranker=_Reranker(scores), safe=lambda text: True)
+                   reranker=_Reranker(scores), eligible=lambda memory: True)
     options.update(kw)
     return [m['memory_id'] for m in ctx._cross_project_references('Yedeği nasıl alırım?', MEMORIES, **options)]
 
@@ -72,13 +72,13 @@ def test_unrelated_questions_get_nothing_and_the_limit_holds():
     many = [_memory(f'w{n}', 'whale', f'Yedek kuralı {n}.') for n in range(6)]
     found = ctx._cross_project_references(
         'Yedeği nasıl alırım?', many, project_id='here', private=set(), embedding_provider=_Embedding(),
-        reranker=_Reranker({m['content']: 1.0 for m in many}), safe=lambda text: True)
+        reranker=_Reranker({m['content']: 1.0 for m in many}), eligible=lambda memory: True)
     assert len(found) == ctx.CROSS_PROJECT_LIMIT
 
 
 def test_unsafe_text_and_a_failed_rerank_give_nothing():
     scores = _related()
-    assert _refs(scores, safe=lambda text: 'manifest' not in text) == ['m3']
+    assert _refs(scores, eligible=lambda memory: 'manifest' not in memory['content']) == ['m3']
 
     class Broken:
         def rerank(self, query, texts):
@@ -106,3 +106,19 @@ def test_flag_and_cli(tmp_path):
     project = ProjectRegistry(vault).list_projects()[0]
     assert main(['--vault', str(vault), 'cross-project', 'ON', '--private', project['project_label']]) == 0
     assert config.load()['cross_project_private'] == [project['project_id']]
+
+
+def test_unapproved_memories_of_other_projects_never_come():
+    # Review 2026-10-06 (HIGH): the check must see the whole memory, not only its text.
+    unapproved = dict(MEMORIES[1], is_approved=False)
+    found = ctx._cross_project_references(
+        'Yedeği nasıl alırım?', [unapproved, MEMORIES[2]], project_id='here', private=set(),
+        embedding_provider=_Embedding(), reranker=_Reranker(_related()),
+        eligible=lambda memory: memory.get('is_approved', True) is True)
+    assert [m['memory_id'] for m in found] == ['m3']
+
+
+def test_a_spent_deadline_skips_the_cross_encoder():
+    from time import perf_counter
+    assert _refs(_related(), deadline=perf_counter() - 1) == []
+    assert _refs(_related(), deadline=perf_counter() + 60) == ['m2', 'm3']

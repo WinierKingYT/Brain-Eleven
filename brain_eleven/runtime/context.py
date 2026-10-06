@@ -300,6 +300,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     scoped primitives, so this adapter deliberately supplies empty related
     and unscoped note inputs to ``_generate_context_block``.
     """
+    compile_started = perf_counter()
     compiler = _legacy_context_compiler()(str(vault), project_id=project_id)
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
@@ -366,8 +367,8 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
                 references = _cross_project_references(
                     prompt, document['validated_memory'], project_id=project_id,
                     private=set(runtime_config.get('cross_project_private') or ()),
-                    embedding_provider=providers[0], reranker=providers[1],
-                    safe=lambda text: eligible({'content': text}))
+                    embedding_provider=providers[0], reranker=providers[1], eligible=eligible,
+                    deadline=compile_started + CROSS_PROJECT_DEADLINE)
                 while references:
                     candidate = context + '\n\n' + _format_cross_project(references, labels)
                     if estimator.estimate(candidate).count <= budget and safe(candidate):
@@ -414,17 +415,28 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 CROSS_PROJECT_SHORTLIST = 8
 CROSS_PROJECT_LIMIT = 3
 CROSS_PROJECT_FLOOR = -2.0
+# Newest other-project memories considered; the cosine scan is pure Python.
+CROSS_PROJECT_POOL = 500
+# Seconds after the prompt compile started past which references are skipped,
+# so they never push a prompt over the 2 s hook budget.
+CROSS_PROJECT_DEADLINE = 1.2
 _CROSS_PROJECT_TYPES = frozenset({'decision', 'lesson'})
 CROSS_PROJECT_HEADING = '## Diğer projelerden (referans; bu projenin kararı değil)'
 
 
-def _cross_project_references(prompt, memories, *, project_id, private, embedding_provider, reranker, safe):
-    """Up to CROSS_PROJECT_LIMIT other-project memories the cross-encoder finds relevant."""
+def _cross_project_references(prompt, memories, *, project_id, private, embedding_provider, reranker, eligible,
+                              deadline=None):
+    """Up to CROSS_PROJECT_LIMIT other-project memories the cross-encoder finds relevant.
+
+    ``eligible`` gets the whole memory, so human approval and safety apply as
+    they do to this project's memories (review 2026-10-06, HIGH).
+    """
     pool = [m for m in memories
             if isinstance(m, dict) and str(m.get('status') or 'active') == 'active'
             and m.get('type') in _CROSS_PROJECT_TYPES and m.get('project_id')
             and m.get('project_id') != project_id and m.get('project_id') not in private
-            and safe(m.get('content'))]
+            and eligible(m)]
+    pool = sorted(pool, key=lambda m: str(m.get('timestamp') or ''), reverse=True)[:CROSS_PROJECT_POOL]
     if not pool:
         return []
     texts = [str(m.get('content', '')) for m in pool]
@@ -438,6 +450,11 @@ def _cross_project_references(prompt, memories, *, project_id, private, embeddin
 
     order = sorted(range(len(pool)), key=lambda i: -cosine(vectors[0], vectors[i + 1]))[:CROSS_PROJECT_SHORTLIST]
     shortlist = [pool[i] for i in order]
+    if deadline is not None:
+        affordable = int((deadline - perf_counter()) / max(_RERANK_PAIR_SECONDS[0], 1e-4))
+        shortlist = shortlist[:max(affordable, 0)]
+        if not shortlist:
+            return []
     reranked = reranker.rerank(prompt, [str(m.get('content', '')) for m in shortlist])
     if reranked.status != 'EMBEDDING_AVAILABLE' or len(reranked.scores) != len(shortlist):
         return []
