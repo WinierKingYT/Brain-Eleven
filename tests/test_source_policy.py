@@ -107,7 +107,18 @@ def test_a_pasted_proposal_document_is_not_the_owner_deciding(runtime, tmp_path)
 
 def test_pasted_document_detector_thresholds():
     import extraction
+    NL = chr(10)
+    prose ='Bu satır bir paragrafın parçası ve yeterince uzun bir açıklama içeriyor burada. '
     assert not extraction._pasted_document('kısa bir not')
     assert not extraction._pasted_document('tek paragraf dikte ' * 200)
-    assert extraction._pasted_document('\n'.join(f'## Başlık {n}\nAçıklama satırı burada duruyor.' * 1
-                                                 for n in range(30)) + ' ' * 10 + 'x' * 600)
+    # Line-count branch: 30 lines, no headings.
+    assert extraction._pasted_document(NL.join([prose] * 30))
+    # Heading branch: 6 headings on fewer than 25 lines.
+    headed = NL.join(f'## Bölüm {n}{NL}{prose * 3}' for n in range(6))
+    assert len(headed.splitlines()) < 25 and extraction._pasted_document(headed)
+    # A short structured list and a document just under the size floor are not documents.
+    assert not extraction._pasted_document(NL.join(f'{n}. madde' for n in range(1, 10)))
+    assert not extraction._pasted_document(NL.join([prose] * 30)[:1499])
+    # Version-like words are not headings.
+    assert not extraction._HEADING_LINE.match('UTF-8 kodlaması kullanılacak')
+    assert extraction._HEADING_LINE.match('RETV3-05 — Query planner')

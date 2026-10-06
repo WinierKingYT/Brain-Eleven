@@ -163,7 +163,7 @@ _PASTED_OUTPUT = re.compile(
 PASTED_DOCUMENT_MIN_CHARS = 1500
 PASTED_DOCUMENT_MIN_LINES = 25
 PASTED_DOCUMENT_MIN_HEADINGS = 5
-_HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s|\d{1,2}[.)]\s|[-*•]\s|[A-Z][A-Z0-9]*-\d+\b)")
+_HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s|\d{1,2}[.)]\s|[-*•]\s|[A-Z][A-Z0-9]{3,}-\d+\b)")
 
 
 def _pasted_document(content: str) -> bool:
