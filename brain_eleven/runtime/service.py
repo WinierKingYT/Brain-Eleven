@@ -469,6 +469,7 @@ async def maybe_queue_triage(app):
 
     def run():
         from .queue_triage import triage
+        config = {}
         try:
             config = RuntimeConfig(vault).load()
             accept = bool(config.get('auto_accept_verified'))
@@ -478,12 +479,16 @@ async def maybe_queue_triage(app):
                 if accept:
                     from .value import apply_suggestions
                     result['applied'] = apply_suggestions(vault, apply=True)
+        except Exception:
+            result = {'at': now(), 'status': 'FAILED'}
+        try:
             if config.get('probation_review'):
                 # Right after new writes: rules retire junk, the model only flags.
                 from .probation import review as probation_review
                 result['probation'] = probation_review(vault, apply=True)
         except Exception:
-            result = {'at': now(), 'status': 'FAILED'}
+            # A probation failure must not hide the triage result.
+            result['probation'] = {'status': 'FAILED'}
         write_json(RuntimeConfig(vault).root / 'last-queue-triage.json', result)
 
     async def background():

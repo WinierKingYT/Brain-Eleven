@@ -117,5 +117,61 @@ def test_flag_and_cli(tmp_path, capsys):
         config.set_probation_review('yes')
 
     good = _memory(tmp_path, vault, 'good', GOOD, note=MODEL_NOTE)
-    assert main(['--vault', str(vault), 'retire', good, 'mem_missing']) == 0
+    # Review 2026-10-06: a failed id must show in the exit code.
+    assert main(['--vault', str(vault), 'retire', good, 'mem_missing']) == 1
     assert _status(vault, good)['resolved_by'] == 'owner'
+    assert main(['--vault', str(vault), 'probation', 'OFF']) == 0
+    assert config.load()['probation_review'] is False
+
+
+def test_a_stopped_model_is_asked_once_per_run_and_progress_is_saved(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    for n in range(3):
+        _memory(tmp_path, vault, f'm{n}', f'We decided the module {n} keeps its own cache layer.', note=MODEL_NOTE)
+    calls = []
+
+    def down(prompt):
+        calls.append(prompt)
+        return None
+
+    report = review(vault, apply=True, now=SOON, chat=down)
+    assert len(calls) == 1 and report['unavailable'] == 3
+
+    answers = iter([{'decision': 'KEEP'}, RuntimeError('crash')])
+
+    def flaky(prompt):
+        answer = next(answers)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    with pytest.raises(RuntimeError):
+        review(vault, apply=True, now=SOON, chat=flaky)
+    from brain_eleven.runtime.storage import read_json
+    assert len(read_json(RuntimeConfig(vault).root / 'probation.json')['checked']) == 1
+
+
+def test_service_cycle_keeps_triage_result_when_probation_fails(tmp_path, monkeypatch):
+    import asyncio
+    from types import SimpleNamespace
+    from brain_eleven.runtime import service
+    from brain_eleven.runtime.storage import read_json
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    config = RuntimeConfig(vault)
+    config.set_queue_triage(True)
+    config.set_probation_review(True)
+    monkeypatch.setattr('brain_eleven.runtime.queue_triage.triage', lambda vault_arg, **kw: {'rule_reject': 2})
+
+    def boom(vault_arg, **kw):
+        raise RuntimeError('probation broke')
+    monkeypatch.setattr('brain_eleven.runtime.probation.review', boom)
+    app = SimpleNamespace(state=SimpleNamespace(vault=vault, queue_triage_running=False, queue_triage_at=-1e9))
+
+    async def cycle():
+        await service.maybe_queue_triage(app)
+        while app.state.queue_triage_running:
+            await asyncio.sleep(0.01)
+    asyncio.run(cycle())
+
+    saved = read_json(config.root / 'last-queue-triage.json')
+    assert saved['rule_reject'] == 2 and saved['probation'] == {'status': 'FAILED'}

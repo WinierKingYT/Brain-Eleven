@@ -196,7 +196,7 @@ def owner_check(vault, memories, *, now=None):
         human = set()
     recent = sorted(i for i, m in active.items()
                     if i not in seen and i not in human and m.get('source') == 'worker'
-                    and (_age_days(m, now) or SAMPLE_DAYS) < SAMPLE_DAYS)
+                    and 0 <= (_age_days(m, now) if _age_days(m, now) is not None else SAMPLE_DAYS) < SAMPLE_DAYS)
     year, week, _ = now.isocalendar()
     for memory_id in random.Random(f'{year}-{week}').sample(recent, min(SAMPLE_SIZE, len(recent))):
         shown.append({'memory_id': memory_id, 'why': 'SAMPLE', 'text': _safe_text(active[memory_id].get('content'))})

@@ -84,8 +84,12 @@ def human_accepted_ids(vault):
             continue
         result = item.get('result') if isinstance(item.get('result'), dict) else {}
         for decision in result.get('decisions') or ():
-            if isinstance(decision, dict) and decision.get('successor_memory_id'):
-                found.add(decision['successor_memory_id'])
+            if not isinstance(decision, dict):
+                continue
+            # A person confirming an existing memory (duplicate/confirm) names it as target.
+            for key in ('successor_memory_id', 'target_memory_id'):
+                if decision.get(key):
+                    found.add(decision[key])
     return found
 
 
@@ -122,6 +126,7 @@ def review(vault, *, apply=False, now=None, chat=None, limit=20):
     report = {'at': now.isoformat(), 'apply': apply, 'kept': 0, 'retired': [], 'flagged': [],
               'protected': [], 'unavailable': 0, 'pending': 0}
     asked = 0
+    model_down = False
     retired = set()
     for memory in on_probation(active, human_accepted_ids(vault), now):
         memory_id = memory['memory_id']
@@ -147,10 +152,13 @@ def review(vault, *, apply=False, now=None, chat=None, limit=20):
                 report['pending'] += 1
                 continue
             asked += 1
-            opinion = second_opinion(memory.get('content'), chat=chat)
+            opinion = None if model_down else second_opinion(memory.get('content'), chat=chat)
             if opinion is None:
+                # Asked again on a later run; after one failure this run stops
+                # asking, so a stopped local model cannot hold the cycle for minutes.
+                model_down = True
                 report['unavailable'] += 1
-                continue  # asked again on a later run
+                continue
             verdict = 'MODEL_' + opinion
             if opinion == 'DROP':
                 report['flagged'].append(memory_id)
@@ -158,6 +166,8 @@ def review(vault, *, apply=False, now=None, chat=None, limit=20):
                 report['kept'] += 1
         if apply:
             checked[memory_id] = {'at': now.isoformat(), 'verdict': verdict}
+            # Saved after every verdict: an interrupted run keeps its progress.
+            write_json(path, {'checked': checked, 'last': report})
     if apply:
         write_json(path, {'checked': checked, 'last': report})
     return report
