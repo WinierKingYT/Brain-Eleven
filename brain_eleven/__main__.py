@@ -68,6 +68,12 @@ def main(argv=None):
     project_cmd.add_argument('action', choices=['add'])
     project_cmd.add_argument('root')
     project_cmd.add_argument('--label')
+    study = sub.add_parser('study', help='study a project folder or GitHub repo for decisions/lessons (used by /study)')
+    study.add_argument('action', choices=['status', 'write', 'mark'])
+    study.add_argument('target', help='enrolled project folder or https://github.com/<owner>/<repo>')
+    study.add_argument('--items', help='write: JSON file with the owner-approved items')
+    study.add_argument('--commit', help='write/mark: the commit the study read')
+    study.add_argument('--no-sync', action='store_true', help='status: do not fetch an external repo')
     cross = sub.add_parser('cross-project', help="prompts also get other projects' relevant decisions/lessons as references")
     cross.add_argument('state', choices=['OFF', 'ON'])
     cross.add_argument('--private', nargs='*', metavar='PROJECT', help='project labels or ids never shared with other projects')
@@ -163,6 +169,17 @@ def main(argv=None):
         elif args.command == 'project':
             from .runtime.storage import RuntimeConfig
             result = RuntimeConfig(args.vault).enroll_project(args.root, label=args.label)
+        elif args.command == 'study':
+            from .runtime import study as study_module
+            if args.action == 'status':
+                result = study_module.status(args.vault, args.target, sync=not args.no_sync)
+            elif args.action == 'mark':
+                result = study_module.mark(args.vault, args.target, commit=args.commit)
+            else:
+                if not args.items:
+                    raise ValueError('study write needs --items <file>')
+                items = json.loads(Path(args.items).read_text(encoding='utf-8-sig'))
+                result = study_module.write(args.vault, args.target, items, commit=args.commit)
         elif args.command == 'cross-project':
             from .runtime.storage import RuntimeConfig
             private = None
@@ -205,7 +222,7 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if args.command == 'doctor' and result.get('status') != 'READY':
             return 1
-        if args.command == 'retire' and result.get('failed'):
+        if args.command in {'retire', 'study'} and result.get('failed'):
             return 1
         return 0
     except (ValueError, OSError) as exc:
