@@ -25,6 +25,9 @@ SUITES = {"smoke": ("test",), "public": ("dev", "test"), "holdout": ("holdout",)
 SOURCE = {"type": "user", "reference": "phase16-evaluation"}
 NOW = "2026-09-03T12:00:00Z"
 STALE_NOW = datetime(2026, 10, 4, tzinfo=timezone.utc)
+# Non-stale cases resolve at a fixed time too: with the real clock every case
+# turned stale_candidate once NOW was 30 days old (2026-10-03).
+CURRENT_NOW = datetime(2026, 9, 3, 12, tzinfo=timezone.utc)
 
 
 @dataclass(frozen=True)
@@ -289,7 +292,7 @@ def _evaluate_state_case(root: Path, case: StateCase) -> dict[str, Any]:
             ProjectRegistry(root).set_status(target_project, "archived")
         elif case.scenario not in {"available", "stale"}:
             raise TaskStateEvaluationError(f"unsupported state scenario: {case.scenario}")
-        resolver_now = STALE_NOW if case.scenario == "stale" else None
+        resolver_now = STALE_NOW if case.scenario == "stale" else CURRENT_NOW
         result = StateResolver(root).resolve(target_project, now=resolver_now)
 
     expected = case.expected
