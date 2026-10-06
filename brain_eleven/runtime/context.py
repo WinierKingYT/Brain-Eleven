@@ -357,7 +357,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
             compiler._generate_context_block(memories, {}, '', '', state), state,
         )
     references = []
-    if providers is not None and context:
+    if providers is not None and context and not is_automated_prompt(prompt):
         try:
             runtime_config = RuntimeConfig(vault).load()
             if runtime_config.get('cross_project_recall'):
@@ -422,6 +422,17 @@ CROSS_PROJECT_POOL = 500
 CROSS_PROJECT_DEADLINE = 1.2
 _CROSS_PROJECT_TYPES = frozenset({'decision', 'lesson'})
 CROSS_PROJECT_HEADING = '## Diğer projelerden (referans; bu projenin kararı değil)'
+
+
+# Turns the harness sends on its own (background task done, subagent report).
+# Observed 2026-10-06: they pulled tangential cross-project references twice.
+_AUTOMATED_PROMPT_PREFIXES = ('<task-notification>', '<system-reminder>', '<agent-message',
+                              'Another Claude session sent a message')
+
+
+def is_automated_prompt(prompt):
+    """True for harness-generated turns, which are not the owner asking something."""
+    return isinstance(prompt, str) and prompt.lstrip().startswith(_AUTOMATED_PROMPT_PREFIXES)
 
 
 def _cross_project_references(prompt, memories, *, project_id, private, embedding_provider, reranker, eligible,
