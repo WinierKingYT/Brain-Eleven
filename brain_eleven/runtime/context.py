@@ -300,6 +300,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     scoped primitives, so this adapter deliberately supplies empty related
     and unscoped note inputs to ``_generate_context_block``.
     """
+    compile_started = perf_counter()
     compiler = _legacy_context_compiler()(str(vault), project_id=project_id)
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
@@ -321,6 +322,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
 
     ranked = compiler._rank_memories(limit=5)
     memories = [item for item in ranked if eligible(item)]
+    providers = None
     if isinstance(prompt, str) and prompt.strip() and memories:
         ranked_pool = compiler._rank_memories(limit=PROMPT_POOL)
         safe_pool = [item for item in ranked_pool if eligible(item)]
@@ -354,6 +356,27 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
         context = _normalize_v1_state_identity(
             compiler._generate_context_block(memories, {}, '', '', state), state,
         )
+    references = []
+    if providers is not None and context:
+        try:
+            runtime_config = RuntimeConfig(vault).load()
+            if runtime_config.get('cross_project_recall'):
+                from brain_eleven.projects.registry import ProjectRegistry
+                labels = {p['project_id']: str(p.get('project_label') or '')
+                          for p in ProjectRegistry(vault).list_projects() if p.get('project_id')}
+                references = _cross_project_references(
+                    prompt, document['validated_memory'], project_id=project_id,
+                    private=set(runtime_config.get('cross_project_private') or ()),
+                    embedding_provider=providers[0], reranker=providers[1], eligible=eligible,
+                    deadline=compile_started + CROSS_PROJECT_DEADLINE)
+                while references:
+                    candidate = context + '\n\n' + _format_cross_project(references, labels)
+                    if estimator.estimate(candidate).count <= budget and safe(candidate):
+                        context = candidate
+                        break
+                    references.pop()
+        except Exception:
+            references = []  # references are optional; the project context stands
     if not safe(context) or estimator.estimate(context).count > budget:
         context = ''
         status = 'DEGRADED'
@@ -366,8 +389,9 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     return {
         'status': status,
         'context': context,
-        'selected_ids': [_memory_identity(item) for item in memories] if context else [],
+        'selected_ids': [_memory_identity(item) for item in [*memories, *references]] if context else [],
         'project_id': project_id,
+        'cross_project_ids': [_memory_identity(item) for item in references] if context else [],
         'provider': 'V1',
         'delivery_approved': False,
         'delivered': False,
@@ -382,6 +406,72 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
         },
         'estimated_tokens': estimator.estimate(context).count,
     }
+
+
+# Cross-project references (owner decision 2026-10-02): another project's
+# decisions and lessons, labelled with their source, never as this project's
+# decision. Measured 2026-10-06 (mmarco cross-encoder, 21 whale-tracker
+# memories): related questions scored -0.3..4.8, unrelated ones <= -4.6.
+CROSS_PROJECT_SHORTLIST = 8
+CROSS_PROJECT_LIMIT = 3
+CROSS_PROJECT_FLOOR = -2.0
+# Newest other-project memories considered; the cosine scan is pure Python.
+CROSS_PROJECT_POOL = 500
+# Seconds after the prompt compile started past which references are skipped,
+# so they never push a prompt over the 2 s hook budget.
+CROSS_PROJECT_DEADLINE = 1.2
+_CROSS_PROJECT_TYPES = frozenset({'decision', 'lesson'})
+CROSS_PROJECT_HEADING = '## Diğer projelerden (referans; bu projenin kararı değil)'
+
+
+def _cross_project_references(prompt, memories, *, project_id, private, embedding_provider, reranker, eligible,
+                              deadline=None):
+    """Up to CROSS_PROJECT_LIMIT other-project memories the cross-encoder finds relevant.
+
+    ``eligible`` gets the whole memory, so human approval and safety apply as
+    they do to this project's memories (review 2026-10-06, HIGH).
+    """
+    pool = [m for m in memories
+            if isinstance(m, dict) and str(m.get('status') or 'active') == 'active'
+            and m.get('type') in _CROSS_PROJECT_TYPES and m.get('project_id')
+            and m.get('project_id') != project_id and m.get('project_id') not in private
+            and eligible(m)]
+    pool = sorted(pool, key=lambda m: str(m.get('timestamp') or ''), reverse=True)[:CROSS_PROJECT_POOL]
+    if not pool:
+        return []
+    texts = [str(m.get('content', '')) for m in pool]
+    vectors = _embed_cached(embedding_provider, [prompt, *texts], inline_limit=PROMPT_INLINE_EMBED)
+    if vectors is None:
+        return []
+
+    def cosine(left, right):
+        norm = math.sqrt(sum(a * a for a in left)) * math.sqrt(sum(b * b for b in right))
+        return sum(a * b for a, b in zip(left, right)) / norm if norm else 0.0
+
+    order = sorted(range(len(pool)), key=lambda i: -cosine(vectors[0], vectors[i + 1]))[:CROSS_PROJECT_SHORTLIST]
+    shortlist = [pool[i] for i in order]
+    if deadline is not None:
+        affordable = int((deadline - perf_counter()) / max(_RERANK_PAIR_SECONDS[0], 1e-4))
+        shortlist = shortlist[:max(affordable, 0)]
+        if not shortlist:
+            return []
+    reranked = reranker.rerank(prompt, [str(m.get('content', '')) for m in shortlist])
+    if reranked.status != 'EMBEDDING_AVAILABLE' or len(reranked.scores) != len(shortlist):
+        return []
+    scored = [(float(score), memory) for score, memory in zip(reranked.scores, shortlist)
+              if math.isfinite(float(score)) and float(score) >= CROSS_PROJECT_FLOOR]
+    scored.sort(key=lambda entry: -entry[0])
+    return [memory for _, memory in scored[:CROSS_PROJECT_LIMIT]]
+
+
+def _format_cross_project(references, labels):
+    lines = [CROSS_PROJECT_HEADING]
+    for memory in references:
+        label = labels.get(memory.get('project_id')) or 'başka proje'
+        when = str(memory.get('timestamp') or memory.get('occurred_at') or '')[:7]
+        source = f'{label}, {when}' if when else label
+        lines.append(f"- [{source}] {' '.join(str(memory.get('content', '')).split())}")
+    return '\n'.join(lines)
 
 
 BOOTSTRAP_POOL = 15

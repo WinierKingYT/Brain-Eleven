@@ -64,6 +64,9 @@ def main(argv=None):
     probation = sub.add_parser('probation', help='re-check memories written without a person (rules retire, model flags)')
     probation.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service run on/off (default: run once, dry)')
     probation.add_argument('--apply', action='store_true', help='retire rule hits and record verdicts (default: report only)')
+    cross = sub.add_parser('cross-project', help="prompts also get other projects' relevant decisions/lessons as references")
+    cross.add_argument('state', choices=['OFF', 'ON'])
+    cross.add_argument('--private', nargs='*', metavar='PROJECT', help='project labels or ids never shared with other projects')
     retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
     retire_cmd.add_argument('memory_ids', nargs='+')
     retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
@@ -153,6 +156,19 @@ def main(argv=None):
             else:
                 from .runtime.probation import review as probation_review
                 result = probation_review(args.vault, apply=args.apply)
+        elif args.command == 'cross-project':
+            from .runtime.storage import RuntimeConfig
+            private = None
+            if args.private is not None:
+                from .projects.registry import ProjectRegistry
+                known = {p['project_id']: p for p in ProjectRegistry(args.vault).list_projects()}
+                by_label = {str(p.get('project_label') or ''): pid for pid, p in known.items()}
+                private = []
+                for name in args.private:
+                    if name not in known and name not in by_label:
+                        raise ValueError(f'Unknown project: {name}')
+                    private.append(name if name in known else by_label[name])
+            result = RuntimeConfig(args.vault).set_cross_project_recall(args.state == 'ON', private=private)
         elif args.command == 'retire':
             from .runtime.staleness import retire
             result = {'retired': [], 'failed': {}}
