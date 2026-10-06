@@ -83,3 +83,31 @@ def test_summary_heading_forms():
                     "4. **Errors and fixes**:", "4. Hatalar ve düzeltmeler:"):
         assert _legacy.summary_facts("Summary:" + NL + heading + NL + body) == [
             "The nightly build was broken on Windows and a retry fixed it."], heading
+
+
+def test_a_pasted_proposal_document_is_not_the_owner_deciding(runtime, tmp_path):  # noqa: F811
+    # 2026-10-01: a pasted retrieval proposal became four "decision" memories.
+    vault, project = runtime
+    document = '\n'.join(
+        [f'{n}. Bölüm {n}' if n % 4 == 0 else 'Bunu V1 üzerinde shadow çalıştıracağız ve ölçeceğiz.'
+         for n in range(1, 41)])
+    dictated = ('bence şöyle yapalım, kuyruğu ayıklamak için yerel modeli kullanacağız ve '
+                'sonra sonuçlara birlikte bakacağız ') * 12
+    path = _native_path(tmp_path, vault, 'claude', 's', [_user(document), _user(dictated.strip())])
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-09-30T00:00:00Z')
+    result = DeterministicExtractor().extract(batch)
+
+    sources = {c.evidence_refs[0] for c in result.candidates if isinstance(c, NewMemoryCandidate)}
+    document_id = batch.messages[0].record.evidence_id
+    assert document_id not in sources
+    assert 'USER_PASTED_DOCUMENT' in {q.reason for q in result.quarantined}
+    # A long dictated message (one paragraph) still yields its decisions.
+    assert batch.messages[1].record.evidence_id in sources
+
+
+def test_pasted_document_detector_thresholds():
+    import extraction
+    assert not extraction._pasted_document('kısa bir not')
+    assert not extraction._pasted_document('tek paragraf dikte ' * 200)
+    assert extraction._pasted_document('\n'.join(f'## Başlık {n}\nAçıklama satırı burada duruyor.' * 1
+                                                 for n in range(30)) + ' ' * 10 + 'x' * 600)

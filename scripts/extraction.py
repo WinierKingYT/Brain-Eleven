@@ -156,6 +156,24 @@ _PASTED_OUTPUT = re.compile(
 )
 
 
+# A long, structured document the owner pasted (a proposal, plan, handoff or
+# article) is material to discuss, not the owner deciding: 2026-10-01 a pasted
+# retrieval proposal became four "decision" memories. Dictated messages are long
+# but have few lines, so they are not matched.
+PASTED_DOCUMENT_MIN_CHARS = 1500
+PASTED_DOCUMENT_MIN_LINES = 25
+PASTED_DOCUMENT_MIN_HEADINGS = 5
+_HEADING_LINE = re.compile(r"^\s*(?:#{1,6}\s|\d{1,2}[.)]\s|[-*•]\s|[A-Z][A-Z0-9]*-\d+\b)")
+
+
+def _pasted_document(content: str) -> bool:
+    if len(content) < PASTED_DOCUMENT_MIN_CHARS:
+        return False
+    lines = [line for line in content.splitlines() if line.strip()]
+    headings = sum(1 for line in lines if _HEADING_LINE.match(line))
+    return len(lines) >= PASTED_DOCUMENT_MIN_LINES or headings >= PASTED_DOCUMENT_MIN_HEADINGS
+
+
 def _candidate_id(message: EvidenceMessage, index: int, kind: str) -> str:
     raw = "|".join((message.record.evidence_id, str(index), kind))
     return "cand_" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
@@ -359,6 +377,7 @@ class DeterministicExtractor:
             if position - 1 in confirmations:
                 # The approval turn carries no fact of its own; it is evidence on the approved candidate.
                 continue
+            pasted_document = message.record.role == "user" and _pasted_document(message.content)
             for index, content in enumerate(_segments(message.content)):
                 # Fillers are dropped from the text only; the segment index
                 # (and so the candidate id) is unchanged.
@@ -381,6 +400,15 @@ class DeterministicExtractor:
                         QuarantineCandidate(
                             **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
                             reason="PASTED_OUTPUT",
+                            content_hash=_content_hash(content),
+                        )
+                    )
+                    continue
+                if pasted_document:
+                    quarantined.append(
+                        QuarantineCandidate(
+                            **_base(message, index, CandidateKind.QUARANTINE.value, commitment, 0.0, components),
+                            reason="USER_PASTED_DOCUMENT",
                             content_hash=_content_hash(content),
                         )
                     )
