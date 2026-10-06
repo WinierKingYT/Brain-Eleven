@@ -64,6 +64,10 @@ def main(argv=None):
     probation = sub.add_parser('probation', help='re-check memories written without a person (rules retire, model flags)')
     probation.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service run on/off (default: run once, dry)')
     probation.add_argument('--apply', action='store_true', help='retire rule hits and record verdicts (default: report only)')
+    project_cmd = sub.add_parser('project', help='enroll a project folder for memory capture')
+    project_cmd.add_argument('action', choices=['add'])
+    project_cmd.add_argument('root')
+    project_cmd.add_argument('--label')
     cross = sub.add_parser('cross-project', help="prompts also get other projects' relevant decisions/lessons as references")
     cross.add_argument('state', choices=['OFF', 'ON'])
     cross.add_argument('--private', nargs='*', metavar='PROJECT', help='project labels or ids never shared with other projects')
@@ -156,6 +160,9 @@ def main(argv=None):
             else:
                 from .runtime.probation import review as probation_review
                 result = probation_review(args.vault, apply=args.apply)
+        elif args.command == 'project':
+            from .runtime.storage import RuntimeConfig
+            result = RuntimeConfig(args.vault).enroll_project(args.root, label=args.label)
         elif args.command == 'cross-project':
             from .runtime.storage import RuntimeConfig
             private = None

@@ -418,6 +418,29 @@ class RuntimeConfig:
 
         return self._commit(snapshot, mutate)
 
+    def enroll_project(self, project_root, *, label=None):
+        """Register a project and enable capture for it (owner request 2026-10-06).
+
+        Registers the root with proactive capture, initialises its state and
+        adds it to the runtime scope; repeating it is harmless.
+        """
+        from brain_eleven.projects.registry import ProjectRegistry
+        from brain_eleven.state import StateService, StateStore
+        root = Path(project_root).resolve()
+        if not root.is_dir():
+            raise ValueError(f'Project folder not found: {root}')
+        project = ProjectRegistry(self.vault).register(root, project_label=label, proactive_capture=True)
+        if project['status'] != 'active':
+            raise ValueError('Project is archived')
+        if StateStore(self.vault).project_revision(project['project_id']) is None:
+            StateService(self.vault).init_project(project['project_id'],
+                                                  source={'type': 'user', 'reference': 'project-add'})
+
+        def add(config):
+            config['project_ids'] = list(dict.fromkeys(config['project_ids'] + [project['project_id']]))
+        self._mutate_current(add)
+        return {'project_id': project['project_id'], 'project_label': project['project_label'], 'root': str(root)}
+
     def _commit(self, expected_fingerprint, mutate):
         """Apply one config mutation only if its validated snapshot is current."""
         with file_lock(self.path):

@@ -58,7 +58,7 @@ jobs:
           tests/test_measure.py tests/test_review_bulk.py tests/test_review_retention.py tests/test_doctor_trend.py tests/test_worker_confirmed_proposal.py tests/test_backfill.py tests/test_evidence_oversized_line.py tests/test_triage.py tests/test_value_score.py tests/test_review_suggestions.py tests/test_doctor_pipeline.py
           tests/test_shadow_recall.py tests/test_recall_probe.py tests/test_recall_probe_prompt_mode.py
           tests/test_queue_triage.py tests/test_evidence_meta_records.py tests/test_memory_usage.py tests/test_memory_audit.py
-          tests/test_owner_notice.py tests/test_source_policy.py tests/test_probation.py tests/test_cross_project.py -q
+          tests/test_owner_notice.py tests/test_source_policy.py tests/test_probation.py tests/test_cross_project.py tests/test_project_enroll.py -q
           --junitxml=pre13-runtime.xml --cov=brain_eleven/runtime
           --cov-fail-under=80 --cov-report=xml:pre13-coverage.xml
       - name: Verify content-free weekly recall measurement classification
