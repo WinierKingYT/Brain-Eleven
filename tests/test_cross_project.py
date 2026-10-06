@@ -122,3 +122,16 @@ def test_a_spent_deadline_skips_the_cross_encoder():
     from time import perf_counter
     assert _refs(_related(), deadline=perf_counter() - 1) == []
     assert _refs(_related(), deadline=perf_counter() + 60) == ['m2', 'm3']
+
+
+@pytest.mark.parametrize(('prompt', 'automated'), [
+    ('<task-notification>\n<task-id>b1</task-id>', True),
+    ('  <system-reminder>\nCI done', True),
+    ('Another Claude session sent a message:\n<agent-message from="a1">', True),
+    ('SQLite yedeğini güvenli nasıl alırım?', False),
+    ('Bu <task-notification> etiketini neden görüyorum?', False),
+    (None, False),
+])
+def test_harness_turns_are_recognised(prompt, automated):
+    # Observed 2026-10-06: notifications pulled tangential references twice.
+    assert ctx.is_automated_prompt(prompt) is automated
