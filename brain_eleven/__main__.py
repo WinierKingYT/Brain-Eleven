@@ -222,7 +222,7 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if args.command == 'doctor' and result.get('status') != 'READY':
             return 1
-        if args.command == 'retire' and result.get('failed'):
+        if args.command in {'retire', 'study'} and result.get('failed'):
             return 1
         return 0
     except (ValueError, OSError) as exc:

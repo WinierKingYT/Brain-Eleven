@@ -12,6 +12,7 @@ items reach other projects only as labelled cross-project references.
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess  # nosec B404 - fixed git argv, no shell
@@ -38,10 +39,13 @@ def resolve_target(vault, target):
     match = _GITHUB.match(str(target).strip())
     if match:
         owner, repo = match.groups()
+        if any(name in {'.', '..'} or name.endswith('.') or name.startswith('-') for name in (owner, repo)):
+            raise ValueError(f'Not a valid GitHub repository: {target}')
         slug = f'{owner}/{repo}'.lower()
         return {'key': f'github:{slug}', 'label': f'ext:{slug}', 'external': True,
                 'url': f'https://github.com/{owner}/{repo}.git',
-                'root': _runtime_root(vault) / CACHE_DIR / f'{owner}__{repo}'.lower()}
+                # '+' cannot occur in GitHub names, so owner/repo map to one folder.
+                'root': _runtime_root(vault) / CACHE_DIR / f'{owner}+{repo}'.lower()}
     from brain_eleven.projects.registry import ProjectRegistry
     root = Path(target).expanduser().resolve()
     if not root.is_dir():
@@ -52,16 +56,29 @@ def resolve_target(vault, target):
     project = next((found for found in (registry.resolve(folder) for folder in (root, *root.parents)) if found), None)
     if project is None:
         raise ValueError('Project is not enrolled; run: python -m brain_eleven project add <folder>')
+    # project_root is the enrolled folder; when the target is a sub-folder the
+    # owner is shown that attribution before anything is written (review 2026-10-06).
     return {'key': f"project:{project['project_id']}", 'label': project['project_label'], 'external': False,
-            'root': root, 'project_id': project['project_id']}
+            'root': root, 'project_id': project['project_id'], 'project_root': Path(project['root'])}
+
+
+# A studied repo is untrusted: its own config must not run anything (fsmonitor,
+# external diff or textconv drivers, hooks, credential prompts).
+_SAFE_GIT = ('-c', 'core.fsmonitor=false', '-c', f'core.hooksPath={os.devnull}', '-c', 'diff.external=',
+             '-c', 'core.sshCommand=', '-c', 'protocol.file.allow=never')
+SHA = re.compile(r'^[0-9a-f]{40}$')
 
 
 def _git(root, *args, timeout=120):
     git = shutil.which('git')
     if not git:
         raise ValueError('git is not installed')
-    result = subprocess.run([git, '-C', str(root), *args], capture_output=True, text=True,  # nosec B603
-                            encoding='utf-8', errors='replace', timeout=timeout)
+    env = {**os.environ, 'GIT_TERMINAL_PROMPT': '0', 'GIT_CONFIG_NOSYSTEM': '1', 'GIT_ASKPASS': ''}
+    try:
+        result = subprocess.run([git, *_SAFE_GIT, '-C', str(root), *args], capture_output=True, text=True,  # nosec B603
+                                encoding='utf-8', errors='replace', timeout=timeout, env=env)
+    except subprocess.TimeoutExpired as exc:
+        raise ValueError(f'git {args[0]} timed out') from exc
     if result.returncode != 0:
         raise ValueError(f"git {args[0]} failed: {result.stderr.strip()[:200]}")
     return result.stdout
@@ -97,6 +114,8 @@ def status(vault, target, *, sync=True):
     report = {'target': info['key'], 'label': info['label'], 'root': str(root), 'external': info['external'],
               'head': head, 'last_commit': last.get('commit'), 'last_at': last.get('at'),
               'mode': 'FULL', 'changed_docs': [], 'commits': []}
+    if not info['external'] and Path(info['project_root']).resolve() != Path(root).resolve():
+        report['project_root'] = str(info['project_root'])  # a sub-folder: show the owner this attribution
     if not last.get('commit') or not head:
         return report
     if last['commit'] == head:
@@ -107,11 +126,12 @@ def status(vault, target, *, sync=True):
     except ValueError:
         return report  # history rewritten or beyond the shallow clone: study fully again
     span = f"{last['commit']}..{head}"
-    changed = [line for line in _git(root, 'diff', '--name-only', span).splitlines() if line.strip()]
+    changed = [line for line in _git(root, 'diff', '--no-ext-diff', '--no-textconv', '--name-only', span, '--').splitlines()
+               if line.strip()]
     report['mode'] = 'INCREMENTAL'
     report['changed_docs'] = [path for path in changed if path.lower().endswith(DOC_SUFFIXES)]
     report['changed_files'] = len(changed)
-    report['commits'] = _git(root, 'log', '--oneline', f'-{MAX_COMMITS_LISTED}', span).splitlines()
+    report['commits'] = _git(root, 'log', '--no-decorate', '--oneline', f'-{MAX_COMMITS_LISTED}', span, '--').splitlines()
     return report
 
 
@@ -136,6 +156,7 @@ def write(vault, target, items, *, commit=None):
     from brain_eleven.projects.registry import ProjectRegistry
 
     cleaned = _validate(items)
+    _check_commit(commit, required=False)
     info = resolve_target(vault, target)
     if info['external']:
         if not info['root'].is_dir():
@@ -143,21 +164,31 @@ def write(vault, target, items, *, commit=None):
         # Registered so its memories have a project; never added to the capture scope.
         project = ProjectRegistry(vault).register(info['root'], project_label=info['label'])
         info['project_id'] = project['project_id']
+        info['project_root'] = info['root']
     written, failed = [], []
     for item in cleaned:
         content = f"{item['text']} (kaynak: {info['label']} {item['source']})"
-        result = remember(item['type'], content, vault_path=vault, project_root=info['root'],
+        result = remember(item['type'], content, vault_path=vault, project_root=info['project_root'],
                           scope='project', project_id=info['project_id'], project=info['label'])
         ok = isinstance(result, dict) and result.get('status') in {'created', 'duplicate_returned_existing'}
         (written if ok else failed).append(item['source'])
-    _record(vault, info, commit, len(written))
-    return {'target': info['key'], 'project_id': info['project_id'], 'written': len(written), 'failed': failed}
+    # Only a complete write marks the study done; otherwise the next run reads it again.
+    if not failed:
+        _record(vault, info, commit, len(written))
+    return {'target': info['key'], 'project_id': info['project_id'], 'written': len(written), 'failed': failed,
+            'recorded': not failed}
+
+
+def _check_commit(commit, *, required):
+    if commit is None and not required:
+        return
+    if not isinstance(commit, str) or not SHA.match(commit):
+        raise ValueError('--commit must be the full 40-character commit id from study status')
 
 
 def mark(vault, target, *, commit):
     """Record that the target was studied up to ``commit`` without writing items."""
-    if not commit:
-        raise ValueError('mark needs --commit')
+    _check_commit(commit, required=True)
     info = resolve_target(vault, target)
     if info['external']:
         from brain_eleven.projects.registry import ProjectRegistry

@@ -118,3 +118,59 @@ def test_cli_status_write_and_mark(tmp_path, capsys):
     capsys.readouterr()
     assert main(['--vault', str(vault), 'study', 'status', str(repo)]) == 0
     assert json.loads(capsys.readouterr().out)['mode'] == 'UP_TO_DATE'
+
+
+def test_a_failed_item_leaves_the_study_unrecorded(tmp_path, monkeypatch):
+    # Review 2026-10-06 (HIGH): a rejected item must be studied again next time.
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    repo = _repo(tmp_path / 'proj')
+    RuntimeConfig(vault).enroll_project(repo)
+    monkeypatch.setattr('brain_eleven.memory.capture.remember', lambda *a, **k: {'accepted': False, 'reason': 'SECRET'})
+    result = study.write(vault, repo, [ITEM], commit=_head(repo))
+    assert result['written'] == 0 and result['failed'] == ['docs/PLAN.md'] and result['recorded'] is False
+    assert study.status(vault, repo)['mode'] == 'FULL'
+
+
+@pytest.mark.parametrize('commit', ['HEAD', 'abc', '--output=x', 'g' * 40])
+def test_commit_must_be_a_full_id(tmp_path, commit):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    repo = _repo(tmp_path / 'proj')
+    RuntimeConfig(vault).enroll_project(repo)
+    with pytest.raises(ValueError):
+        study.mark(vault, repo, commit=commit)
+    with pytest.raises(ValueError):
+        study.write(vault, repo, [ITEM], commit=commit)
+
+
+@pytest.mark.parametrize('url', ['https://github.com/a/..', 'https://github.com/-x/repo', 'https://github.com/a/b.',
+                                 'https://github.com/a/b/../c', 'https://gitlab.com/a/b', 'file:///c/repo'])
+def test_bad_repository_names_are_rejected(tmp_path, url):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    with pytest.raises(ValueError):
+        study.resolve_target(vault, url)
+
+
+def test_sub_folder_write_is_saved_under_the_enrolled_project(tmp_path):
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    outer = tmp_path / 'vault-folder'
+    inner = _repo(outer / 'inner')
+    project = RuntimeConfig(vault).enroll_project(outer)
+    from pathlib import Path
+    assert Path(study.status(vault, inner)['project_root']) == outer.resolve()
+    assert study.write(vault, inner, [ITEM], commit=_head(inner))['written'] == 1
+    assert len(_memories(vault, project['project_id'])) == 1
+
+
+def test_a_repositorys_own_config_cannot_run_commands(tmp_path):
+    # Review 2026-10-06: an enrolled folder may carry a hostile .git/config.
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    repo = _repo(tmp_path / 'proj')
+    RuntimeConfig(vault).enroll_project(repo)
+    study.mark(vault, repo, commit=_head(repo))
+    marker = tmp_path / 'pwned'
+    _git(repo, 'config', 'core.fsmonitor', f'echo x > "{marker.as_posix()}"')
+    (repo / 'NOTES.md').write_text('x\n', encoding='utf-8')
+    _git(repo, '-c', 'core.fsmonitor=false', 'add', '.')
+    _git(repo, '-c', 'core.fsmonitor=false', 'commit', '-qm', 'notes')
+    assert study.status(vault, repo)['changed_docs'] == ['NOTES.md']
+    assert not marker.exists()
