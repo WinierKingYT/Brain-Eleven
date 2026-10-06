@@ -103,6 +103,11 @@ def refresh_owner_counts(vault):
         projects.setdefault(project, {'waiting': 0, 'model_accept': 0, 'not_evaluated': 0, 'audit': 0})
         projects[project]['audit'] += 1
     document = {'at': now(), 'projects': projects}
+    try:
+        from .study import pending_studies
+        document['studies'] = pending_studies(vault)
+    except Exception:
+        document['studies'] = []  # the reminder is advisory
     write_json(RuntimeConfig(vault).root / 'owner-notice.json', document)
     return document
 
@@ -122,7 +127,9 @@ def owner_notice(vault, project_id=None):
     rows = [projects.get(project_id) or {}] if project_id else list(projects.values())
     total = {key: sum(int(row.get(key) or 0) for row in rows if isinstance(row, dict))
              for key in ('waiting', 'model_accept', 'not_evaluated', 'audit')}
-    if not total['waiting'] and not total['audit']:
+    studies = [row for row in (document.get('studies') or []) if isinstance(row, dict)
+               and (not project_id or row.get('project_id') == project_id)]
+    if not total['waiting'] and not total['audit'] and not studies:
         return ''
     parts = []
     if total['waiting']:
@@ -131,7 +138,13 @@ def owner_notice(vault, project_id=None):
                      f"{total['not_evaluated']} not evaluated yet)")
     if total['audit']:
         parts.append(f"memory audit has {total['audit']} suggestion(s)")
-    return '- ' + '; '.join(parts) + '. Details: `python -m brain_eleven digest`.'
+    lines = ['- ' + '; '.join(parts) + '. Details: `python -m brain_eleven digest`.'] if parts else []
+    for row in studies:
+        # Owner request 2026-10-06: Codex summaries are encrypted, so a project's
+        # new decisions reach memory through /study of its documents.
+        lines.append(f"- {row.get('label') or 'project'}: {int(row.get('new_commits') or 0)} new commit(s) "
+                     "since the last study; run `/study` there to save new decisions and lessons.")
+    return '\n'.join(lines)
 
 
 def digest(vault, *, limit=DAILY_LIMIT):

@@ -174,3 +174,26 @@ def test_a_repositorys_own_config_cannot_run_commands(tmp_path):
     _git(repo, '-c', 'core.fsmonitor=false', 'commit', '-qm', 'notes')
     assert study.status(vault, repo)['changed_docs'] == ['NOTES.md']
     assert not marker.exists()
+
+
+def test_owner_notice_reminds_about_new_commits_since_the_last_study(tmp_path):
+    # Owner request 2026-10-06: Codex summaries are encrypted, so /study is how
+    # a project's new decisions reach memory; the notice says when it is due.
+    from brain_eleven.runtime.value import owner_notice, refresh_owner_counts
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    repo = _repo(tmp_path / 'proj')
+    project = RuntimeConfig(vault).enroll_project(repo)
+    study.mark(vault, repo, commit=_head(repo))
+    assert study.pending_studies(vault) == []
+
+    for n in range(2):
+        (repo / f'f{n}.md').write_text('x\n', encoding='utf-8')
+        _git(repo, 'add', '.')
+        _git(repo, 'commit', '-qm', f'c{n}')
+    assert study.pending_studies(vault) == [
+        {'project_id': project['project_id'], 'label': project['project_label'], 'new_commits': 2}]
+
+    refresh_owner_counts(vault)
+    notice = owner_notice(vault, project['project_id'])
+    assert f"{project['project_label']}: 2 new commit(s) since the last study" in notice and '/study' in notice
+    assert 'new commit' not in owner_notice(vault, 'proj_other')
