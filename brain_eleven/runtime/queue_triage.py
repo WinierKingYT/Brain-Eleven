@@ -36,7 +36,7 @@ DUPLICATE_SIMILARITY = 0.6
 # Certain machine content: code fences, diff hunks and headers, escaped text
 # pasted from logs, ANSI codes, JSON objects. Rejected outright.
 _MACHINE = re.compile(
-    r'```|^[+\-]{3} [ab]/|^@@ |^\s*\+\s*$|\\n[^\n]*\\n|\\u00|\x1b|\{\\?"[\w-]+\\?"\s*:', re.MULTILINE)
+    r'```|^[+\-]{3} [ab]/|^@@ |^\s*\+\s*$|\\n[^\n]*\\n|\\u00|\x1b|\{\\?"[\w-]+\\?"\s*:|\{\x27[\w-]+\x27\s*:', re.MULTILINE)
 # Formatting the owner also types (bold, bullets, headings, tables, comments)
 # is deliberately not a rule: such items go to the model (review 2026-09-30).
 _MODEL_REASON = re.compile(r'[A-Z_]{1,40}')

@@ -61,6 +61,12 @@ def main(argv=None):
     audit.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the weekly service run on/off (default: run once, dry)')
     audit.add_argument('--apply', action='store_true', help='retire guarded exact duplicates (default: report only)')
     audit.add_argument('--no-model', action='store_true', help='skip the local-model duplicate/conflict check')
+    probation = sub.add_parser('probation', help='re-check memories written without a person (rules retire, model flags)')
+    probation.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service run on/off (default: run once, dry)')
+    probation.add_argument('--apply', action='store_true', help='retire rule hits and record verdicts (default: report only)')
+    retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
+    retire_cmd.add_argument('memory_ids', nargs='+')
+    retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
     graduation = sub.add_parser('graduation')
     graduation.add_argument('--labels', required=True)
     graduation.add_argument('--quality-report', required=True)
@@ -140,6 +146,22 @@ def main(argv=None):
             else:
                 from .runtime.memory_audit import audit
                 result = audit(args.vault, apply=args.apply, use_model=not args.no_model)
+        elif args.command == 'probation':
+            if args.state:
+                from .runtime.storage import RuntimeConfig
+                result = RuntimeConfig(args.vault).set_probation_review(args.state == 'ON')
+            else:
+                from .runtime.probation import review as probation_review
+                result = probation_review(args.vault, apply=args.apply)
+        elif args.command == 'retire':
+            from .runtime.staleness import retire
+            result = {'retired': [], 'failed': {}}
+            for memory_id in args.memory_ids:
+                try:
+                    retire(args.vault, memory_id, args.note, resolved_by='owner')
+                    result['retired'].append(memory_id)
+                except ValueError as exc:
+                    result['failed'][memory_id] = str(exc)[:120]
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)
@@ -159,6 +181,8 @@ def main(argv=None):
             result = {'url': url}
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if args.command == 'doctor' and result.get('status') != 'READY':
+            return 1
+        if args.command == 'retire' and result.get('failed'):
             return 1
         return 0
     except (ValueError, OSError) as exc:
