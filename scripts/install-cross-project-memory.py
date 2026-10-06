@@ -233,6 +233,7 @@ def install(home: Path, vault: Path, dry_run: bool = False) -> Dict:
     manifest_path = claude_dir / MANIFEST_NAME
     file_specs = {
         claude_dir / "commands" / "remember.md": TEMPLATE_ROOT / "commands" / "remember.md",
+        claude_dir / "commands" / "study.md": TEMPLATE_ROOT / "commands" / "study.md",
         claude_dir / "hooks" / "brain-eleven-session-start": TEMPLATE_ROOT / "hooks" / "brain-eleven-session-start",
         claude_dir / "hooks" / "brain-eleven-remember-opt-in": TEMPLATE_ROOT / "hooks" / "brain-eleven-remember-opt-in",
     }
