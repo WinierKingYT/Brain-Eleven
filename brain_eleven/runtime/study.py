@@ -207,6 +207,30 @@ def _record(vault, info, commit, written):
         previous = studies.get(info['key']) or {}
         studies[info['key']] = {'commit': commit or previous.get('commit'),
                                 'at': datetime.now(timezone.utc).isoformat(), 'label': info['label'],
-                                'project_id': info['project_id'],
+                                'project_id': info['project_id'], 'root': str(info['root']),
                                 'written': int(previous.get('written') or 0) + written}
         write_json(path, {'studies': studies})
+
+
+def pending_studies(vault):
+    """Enrolled local projects with commits since their last study, for the owner notice.
+
+    Runs off the prompt path (with the owner counts). External repositories
+    are skipped: checking them needs the network.
+    """
+    from brain_eleven.projects.registry import ProjectRegistry
+    roots = {p['project_id']: p.get('root') for p in ProjectRegistry(vault).list_projects()}
+    due = []
+    for key, entry in sorted(_studies(vault).items()):
+        if not key.startswith('project:') or not isinstance(entry, dict) or not entry.get('commit'):
+            continue
+        root = Path(entry.get('root') or roots.get(entry.get('project_id')) or '')
+        if not str(root) or not (root / '.git').exists():
+            continue
+        try:
+            count = int(_git(root, 'rev-list', '--count', f"{entry['commit']}..HEAD", timeout=20).strip() or 0)
+        except (ValueError, OSError):
+            continue  # history rewritten or repo moved: nothing reliable to say
+        if count:
+            due.append({'project_id': entry.get('project_id'), 'label': entry.get('label'), 'new_commits': count})
+    return due
