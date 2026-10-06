@@ -166,7 +166,41 @@ def digest(vault, *, limit=DAILY_LIMIT):
                     for x in ranked],
             'memory_audit': [{**s, 'text': _safe_text(next((m.get('content') for m in memories
                                                             if m.get('memory_id') == s['memory_id']), ''))}
-                             for s in _audit_suggestions(vault)]}
+                             for s in _audit_suggestions(vault)],
+            'check': owner_check(vault, memories)}
+
+
+SAMPLE_SIZE = 5
+SAMPLE_DAYS = 7
+
+
+def owner_check(vault, memories, *, now=None):
+    """Memories for the owner to glance at: the model's probation flags, then a weekly sample.
+
+    The sample is drawn from memories written without a person in the last
+    SAMPLE_DAYS and is stable within an ISO week, so repeated digests show the
+    same items. A wrong one is retired with ``python -m brain_eleven retire <id>``.
+    """
+    import random
+    from datetime import datetime, timezone
+    from .memory_audit import _age_days
+    from .probation import flagged_ids, human_accepted_ids
+    now = now or datetime.now(timezone.utc)
+    active = {m.get('memory_id'): m for m in memories if m.get('memory_id')}
+    shown = [{'memory_id': i, 'why': 'FLAGGED', 'text': _safe_text(active[i].get('content'))}
+             for i in flagged_ids(vault) if i in active]
+    seen = {x['memory_id'] for x in shown}
+    try:
+        human = human_accepted_ids(vault)
+    except Exception:
+        human = set()
+    recent = sorted(i for i, m in active.items()
+                    if i not in seen and i not in human and m.get('source') == 'worker'
+                    and (_age_days(m, now) or SAMPLE_DAYS) < SAMPLE_DAYS)
+    year, week, _ = now.isocalendar()
+    for memory_id in random.Random(f'{year}-{week}').sample(recent, min(SAMPLE_SIZE, len(recent))):
+        shown.append({'memory_id': memory_id, 'why': 'SAMPLE', 'text': _safe_text(active[memory_id].get('content'))})
+    return shown
 
 
 _SUGGESTIONS = {'ACCEPT', 'REJECT', 'REVIEW'}

@@ -84,6 +84,26 @@ Meta kayıtlar (skill gövdeleri, alt ajan raporları, harness notları; Claude
 dökümünde `isMeta: true`) artık kullanıcı sözü sayılmaz, `system` kanıtı olarak
 okunur; kuyruk gürültüsünün ana kaynağı buydu.
 
+## Deneme süresi (probation)
+
+Sahip kararı 2026-10-02: kişi onayı olmadan yazılan hafıza (worker ya da model
+kabulü) ilk 14 gün yeniden kontrol edilir. `remember`, günlük not ve elle
+kabul edilen kayıtlar deneme süresine girmez.
+
+- **Kural isabeti iptal eder:** makine içeriği, yapıştırılmış çıktı,
+  yapıştırılmış belge. Uzunluk ya da soru kuralı iptal etmez. İptal silme
+  değildir (`resolved_by: probation`); hatırlama sorusunun son taşıyıcısı korunur.
+- **Yerel model yalnız işaretler:** 2026-10-06 ölçümünde qwen2.5:7b kod ve
+  araç çıktısını tutup kısa Türkçe kararları attı; bu yüzden DROP kanıt sayılmaz.
+- **Kullanılmamak neden değildir:** başka projede aylar sonra lazım olabilir.
+
+```bash
+python -m brain_eleven probation           # kuru çalıştırma
+python -m brain_eleven probation ON        # servis her 30 dakikada çalıştırır
+python -m brain_eleven digest              # "check": işaretlenenler + haftalık 5'lik örnek
+python -m brain_eleven retire <memory_id>  # yanlış kaydı iptal et (silinmez)
+```
+
 ## Model ön değerlendirmesi
 
 Bir model (ör. Codex / GPT Luna) bekleyen kararları okuyup

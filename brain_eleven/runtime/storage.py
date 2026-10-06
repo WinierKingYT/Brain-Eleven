@@ -226,7 +226,7 @@ class RuntimeConfig:
         value = read_json(self.path, {'schema_version': 1, 'mode': 'OFF', 'project_ids': [], 'local_model': None,
                                       'b1_human_approval': False, 'shadow_accept': False,
                                       'shadow_recall': False, 'queue_triage': False, 'memory_audit': False,
-                                      'auto_accept_verified': False})
+                                      'auto_accept_verified': False, 'probation_review': False})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -249,6 +249,9 @@ class RuntimeConfig:
         # Owner decision 2026-09-30, off by default: write the candidates the
         # verifier marks VERIFIED without a click (through the review path).
         value.setdefault('auto_accept_verified', False)
+        # Owner decision 2026-10-02, off by default: memories written without a
+        # person are re-checked for 14 days (rules retire, the model only flags).
+        value.setdefault('probation_review', False)
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
         # are represented by bounded telemetry only.
@@ -267,6 +270,8 @@ class RuntimeConfig:
             raise ValueError('Invalid memory audit configuration')
         if not isinstance(value['auto_accept_verified'], bool):
             raise ValueError('Invalid auto accept configuration')
+        if not isinstance(value['probation_review'], bool):
+            raise ValueError('Invalid probation configuration')
         if not isinstance(value.get('project_ids'), list) or not all(isinstance(x, str) and x for x in value['project_ids']):
             raise ValueError('Invalid runtime project scope')
         model = value.get('local_model')
@@ -371,6 +376,18 @@ class RuntimeConfig:
 
         def mutate(current):
             current['auto_accept_verified'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_probation_review(self, enabled):
+        """Let the service re-check memories written without a person (off by default)."""
+        if not isinstance(enabled, bool):
+            raise ValueError('Probation flag must be boolean')
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['probation_review'] = enabled
 
         return self._commit(snapshot, mutate)
 
