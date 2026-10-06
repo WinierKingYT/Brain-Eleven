@@ -407,6 +407,18 @@ class TestSingleCandidateValidation:
         assert len(issues) == 1
         assert issues[0].type == "contradiction"
 
+    def test_words_containing_a_pattern_are_not_contradictions(self, temp_vault):
+        # 2026-10-07: 'no' matched 'node'/'normal' and 'use' matched 'user', so a
+        # studied decision was flagged against 8 unrelated ones (quality 0.9 -> 0.1).
+        v1 = MemoryValidator(str(temp_vault))
+        first, _, _ = v1.validate_single("decision", "The node normalizer keeps user sessions asynchronous.")
+        v1.append_validated(first)
+
+        v2 = MemoryValidator(str(temp_vault))
+        second, issues, _ = v2.validate_single("decision", "Yes, evidence decides when a feature is complete.")
+
+        assert [issue for issue in issues if issue.type == "contradiction"] == []
+
     def test_append_validated_persists_full_schema(self, temp_vault):
         """
         The API's old raw-append path wrote a record with only

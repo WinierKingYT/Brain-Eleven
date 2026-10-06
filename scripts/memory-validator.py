@@ -110,6 +110,16 @@ class ValidatedMemory:
         }
 
 
+def _has_term(text: str, term: str) -> bool:
+    """Whole-word match: 'no' must not match 'node' or 'normal', nor 'use' 'user'.
+
+    2026-10-07: substring matching flagged a studied robloxdevOs decision as
+    contradicting 8 unrelated decisions ('yes' vs 'no'), cutting its quality
+    score from 0.9 to 0.1.
+    """
+    return re.search(r"(?<![\w'])" + re.escape(term) + r"(?![\w'])", text) is not None
+
+
 class MemoryValidator:
     """Validates candidates before persistence"""
 
@@ -492,7 +502,7 @@ class MemoryValidator:
         ]
 
         for positive, negative in contradictions:
-            if positive in content1 and negative in content2:
+            if _has_term(content1, positive) and _has_term(content2, negative):
                 return ValidationIssue(
                     type="contradiction",
                     severity="warning",
@@ -501,7 +511,7 @@ class MemoryValidator:
                     recommendation="Review both decisions; keep the newer one or combine them"
                 )
 
-            if negative in content1 and positive in content2:
+            if _has_term(content1, negative) and _has_term(content2, positive):
                 return ValidationIssue(
                     type="contradiction",
                     severity="warning",
@@ -533,7 +543,7 @@ class MemoryValidator:
         ]
 
         for positive, negative in contradictions:
-            if positive in content_new and negative in content_prior:
+            if _has_term(content_new, positive) and _has_term(content_prior, negative):
                 return ValidationIssue(
                     type="contradiction",
                     severity="warning",
@@ -542,7 +552,7 @@ class MemoryValidator:
                     recommendation=f"Review and reconcile with prior decision {prior_mem['memory_id']}"
                 )
 
-            if negative in content_new and positive in content_prior:
+            if _has_term(content_new, negative) and _has_term(content_prior, positive):
                 return ValidationIssue(
                     type="contradiction",
                     severity="warning",
