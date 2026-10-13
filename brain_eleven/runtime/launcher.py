@@ -140,6 +140,8 @@ def hook(vault, client, event, payload):
         _capture_outcome(cfg, client, event, payload, str(result.get('status')), result.get('error'))
         ensure_service(vault)
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
+    if event == 'SubagentStart':
+        return subagent_start(vault, client, payload)
     deadline = time.monotonic() + 2.5
     ready = ensure_service(vault, wait=True, wait_timeout=2.2)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
@@ -206,11 +208,47 @@ def hook(vault, client, event, payload):
                               'context_elapsed_ms':result.get('elapsed_ms', 0)}
 
 
+SUBAGENT_FINDINGS_HEADING = '### Brain-Eleven bulguları'
+SUBAGENT_INSTRUCTION = (
+    'Brain-Eleven: Raporunu bitirirken en sona "' + SUBAGENT_FINDINGS_HEADING + '" başlığı ekle ve altına '
+    'bu işte öğrendiğin kalıcı şeyleri madde madde yaz: verilen kararlar, bulunan hatalar ve çözümleri, '
+    'projeye dair doğrulanmış gerçekler. Her madde tek başına anlaşılır olsun. Geçici durum, tahmin, '
+    'dosya içeriği, sır veya tam dosya yolu yazma. Kalıcı bir şey yoksa başlığı hiç ekleme.')
+SUBAGENT_CONTEXT_CHARS = 2500
+
+
+def subagent_start(vault, client, payload):
+    """Give a starting subagent the project's memory and ask it to report durable findings.
+
+    A subagent starts without the parent's SessionStart context, and what it
+    learns is lost unless it comes back in its report. The report reaches the
+    parent transcript, where the findings section is captured for review.
+    """
+    if client != 'claude':
+        raise ValueError('Unsupported hook event')
+    session, agent = payload.get('session_id'), payload.get('agent_id')
+    if not isinstance(session, str) or not session or not isinstance(agent, str) or not agent:
+        raise ValueError('Invalid subagent event')
+    context = ''
+    if ensure_service(vault, wait=True, wait_timeout=1.5):
+        try:
+            result = request_service(vault, '/api/context', {
+                'project_root': payload['cwd'], 'request': '', 'client': client, 'session': session,
+                'turn': identity('subagent_', agent), 'event': 'SessionStart'}, timeout=1.2)
+            if (result.get('delivery_approved') is True and result.get('delivered') is True
+                    and result.get('provider') in {'V1', 'W06B_TASK_AWARE'} and isinstance(result.get('context'), str)):
+                context = result['context'][:SUBAGENT_CONTEXT_CHARS]
+        except (OSError, ValueError, KeyError, http.client.HTTPException):
+            context = ''
+    text = (context + '\n\n' if context else '') + SUBAGENT_INSTRUCTION
+    return {'hookSpecificOutput': {'hookEventName': 'SubagentStart', 'additionalContext': text}}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--vault', required=True)
     parser.add_argument('--client', choices=['claude', 'codex'])
-    parser.add_argument('--event', choices=['SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd'])
+    parser.add_argument('--event', choices=['SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart'])
     parser.add_argument('--serve', action='store_true')
     args = parser.parse_args(argv)
     if args.serve:

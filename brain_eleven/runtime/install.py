@@ -10,7 +10,9 @@ import shlex
 import sys
 from .storage import RuntimeConfig, identity, read_json, write_json, now, runtime_file_lock as file_lock
 
-EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')
+EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart')
+# Codex has no subagent lifecycle hook.
+CLIENT_EVENTS = {'claude': EVENTS, 'codex': ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')}
 
 
 def hook_python():
@@ -131,7 +133,7 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
             before = read_json(path, {})
             if not isinstance(before, dict):
                 raise ValueError('Invalid client configuration')
-            additions = {event: {'hooks': [{'type': 'command', 'command': hook_command(vault, client, event), 'timeout': 3}]} for event in EVENTS}
+            additions = {event: {'hooks': [{'type': 'command', 'command': hook_command(vault, client, event), 'timeout': 3}]} for event in CLIENT_EVENTS[client]}
             if client == 'claude':
                 # Native exec form avoids Git Bash / PowerShell differences.
                 for event, entry in additions.items():
