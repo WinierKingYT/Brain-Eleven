@@ -694,10 +694,32 @@ def _record_usage_delivery(vault, result, *, client, session, turn, event):
     record_delivery(vault, memory_ids, session_key=capture_session_key(client, session), event=event, at=now())
 
 
+def _add_session_cards(vault, result, *, client, session):
+    """Append this project's latest session cards to a native SessionStart context.
+
+    Cards are derived, owner-readable notes (``session_cards``); a missing or
+    damaged card store never blocks the bootstrap.
+    """
+    if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED'}:
+        return
+    try:
+        from .session_cards import context as cards_context
+        from .worker import capture_session_key
+        cards = cards_context(vault, result['project_id'],
+                              exclude_session=capture_session_key(client, session) if session else None)
+    except Exception:
+        return
+    if not cards:
+        return
+    result['context'] = (result['context'] + '\n\n' + cards) if result.get('context') else cards
+    result['delivered'] = result['delivery_approved'] = True
+
+
 def compile_context(vault, project_root, request, *, client='manual', session='', turn='', budget=3000, event='UserPromptSubmit'):
     start = perf_counter()
     if event == 'SessionStart':
         result = compile_bootstrap(vault, project_root, budget=budget, session=session)
+        _add_session_cards(vault, result, client=client, session=session)
         _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
         result['elapsed_ms'] = round((perf_counter() - start) * 1000)
         return result

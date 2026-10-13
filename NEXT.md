@@ -3,8 +3,15 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-10-13)
+## Şu an (2026-10-14)
 
+- **Oturum kartları ve açık konular (PR #70).** Her yakalanan oturum, proje
+  notunda (`🔮 Companion/Oturumlar/<proje>.md`) kısa bir kart tutuyor: ilk ve
+  son istek, son yanıt, özetten sıradaki adım. Notun üstünde StateStore'daki
+  açık konular var. Kart bölümü 3000 karakteri aşınca en eski kartlar
+  kelimesi kelimesine `🔮 Companion/Arşiv/` altına taşınıyor. SessionStart son
+  iki kartı bağlama ekliyor. Model çağrısı yok. Repodaki eski proje hook'ları
+  (bayat "Last Session" basan `session-start.sh` vb.) kaldırıldı.
 - **Alt ajan desteği (PR #69).** `SubagentStart` hook'u her alt ajana proje
   hafızasını (en çok 2500 karakter) ve raporunun sonuna
   `### Brain-Eleven bulguları` başlığıyla kalıcı bulgularını yazma talimatını
@@ -29,18 +36,15 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
-2. **Last-Session ve Threads kartları.** Oturum başına kısa devir kartı ve
-   açık konuların güncel durumu; boyut sınırı, taşan kısım kelimesi kelimesine
-   arşive (avenoxbeyin'deki yapı).
-3. **`recap`.** Model çağırmadan son N günün kaynaklı iş listesi.
-4. **Tüketim modları.** Normal, ekonomik ve manuel modlar; bağlam karakter
+2. **`recap`.** Model çağırmadan son N günün kaynaklı iş listesi.
+3. **Tüketim modları.** Normal, ekonomik ve manuel modlar; bağlam karakter
    bütçesi.
-5. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
+4. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
    veritabanı türev).
-6. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
-7. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
+5. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
+6. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
-8. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
+7. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
    katmak.
 
 ## Açık konular

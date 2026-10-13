@@ -904,6 +904,14 @@ class Worker:
             except OSError:
                 pass
         EvidenceStore(self.vault).persist(batch.records)
+        try:
+            # Derived, owner-readable session card; advisory, never fails a capture.
+            from .session_cards import update as update_session_card
+            update_session_card(self.vault, project, session, batch.messages)
+        except RuntimePathError:
+            raise
+        except Exception:
+            pass
         outcomes = []
         effect_ids = []
         canonical_operation_ids = []
