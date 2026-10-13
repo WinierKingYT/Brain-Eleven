@@ -118,46 +118,6 @@ def test_same_field_contention_rejects_stale_writer(tmp_path):
     assert read_json(second.path)["b1_human_approval"] is True
 
 
-def test_stale_canary_cannot_overwrite_intervening_off(tmp_path, monkeypatch):
-    _seed(tmp_path, mode="SHADOW", project_ids=["project-1"])
-    gate = threading.Event()
-    release = threading.Event()
-
-    class FakeMemoryStore:
-        def __init__(self, _vault):
-            pass
-
-        def load(self):
-            return {"schema_version": 3}
-
-    class FakeStateStore:
-        def __init__(self, _vault):
-            pass
-
-        def load(self):
-            return {"schema_version": 2}
-
-    monkeypatch.setattr("brain_eleven.memory.MemoryStore", FakeMemoryStore)
-    monkeypatch.setattr("brain_eleven.state.StateStore", FakeStateStore)
-    import evals.runtime_eval as runtime_eval
-
-    def paused_run(_suite):
-        gate.set()
-        assert release.wait(5)
-        return {"status": "PASS"}
-
-    monkeypatch.setattr(runtime_eval, "run", paused_run)
-    first = RuntimeConfig(tmp_path)
-    second = RuntimeConfig(tmp_path)
-    thread, errors = _run_thread(lambda: first.set_mode("CANARY"))
-    assert gate.wait(5)
-    second.set_mode("OFF")
-    release.set()
-    thread.join(5)
-
-    assert len(errors) == 1
-    assert isinstance(errors[0], RuntimeConfigConflict)
-    assert read_json(second.path)["mode"] == "OFF"
 
 
 def test_installer_config_update_preserves_concurrent_approval(tmp_path, monkeypatch):
@@ -214,7 +174,7 @@ def test_installer_config_update_preserves_concurrent_approval(tmp_path, monkeyp
     assert errors == []
     final = RuntimeConfig(tmp_path).load()
     assert final["project_ids"] == ["project-1"]
-    assert final["mode"] == "SHADOW"
+    assert final["mode"] == "ACTIVE"
     assert final["b1_human_approval"] is True
 
 

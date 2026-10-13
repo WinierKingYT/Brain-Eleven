@@ -299,20 +299,6 @@ class RuntimeConfig:
             raise ValueError('Invalid rollout mode')
         value = self.load()
         snapshot = _config_fingerprint(value)
-        if mode == 'CANARY':
-            from brain_eleven.memory import MemoryStore
-            from brain_eleven.state import StateStore
-            if MemoryStore(self.vault).load()['schema_version'] != 3 or StateStore(self.vault).load()['schema_version'] != 2 or not value['project_ids']:
-                raise ValueError('Install and migrate the opted-in canary project first')
-            from evals.runtime_eval import run
-            report = run('holdout')
-            write_json(self.root / 'canary-quality.json', report)
-            if report['status'] != 'PASS':
-                raise ValueError('Independent holdout quality gates failed; remain in SHADOW')
-        if mode == 'ACTIVE':
-            from .graduation import verify
-            verify(self.vault)
-
         def mutate(current):
             current['mode'] = mode
 

@@ -25,31 +25,6 @@ def test_read_only_resolution_callers_use_the_package_boundary() -> None:
     assert TaskProjectRegistryError is ProjectRegistryError
 
 
-def test_remaining_production_callers_use_the_package_boundary() -> None:
-    root = Path(__file__).resolve().parents[1]
-    callers = (
-        "scripts/context-compiler.py",
-        "scripts/memory_backup.py",
-        "scripts/memory_scope.py",
-        "scripts/remember.py",
-        "scripts/search-api.py",
-        "scripts/state_boundary.py",
-        "evals/authority_evaluation.py",
-        "evals/compiler_v2_benchmark.py",
-        "evals/compiler_v2_evaluation.py",
-        "evals/router_benchmark.py",
-        "evals/router_evaluation.py",
-        "evals/router_provider.py",
-        "evals/task_state_eval.py",
-    )
-    for relative_path in callers:
-        tree = ast.parse((root / relative_path).read_text(encoding="utf-8"))
-        imports = {
-            node.module
-            for node in ast.walk(tree)
-            if isinstance(node, ast.ImportFrom)
-        }
-        assert "brain_eleven.projects.registry" in imports, relative_path
 
 
 def test_legacy_registry_imports_are_limited_to_compatibility_edges() -> None:

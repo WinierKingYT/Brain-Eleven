@@ -739,15 +739,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
                                  provider_config_path=prompt_provider_config(project_root))
         result.setdefault('provider', 'V1')
     result['project_id'] = project['project_id']
-    if client in {'claude', 'codex'}:
-        from types import SimpleNamespace
-        from evals.baseline import BaselineContextProvider
-        from evals.runtime_eval import budget_baseline, implementation_fingerprint
-        reference, _ = budget_baseline(BaselineContextProvider().select(SimpleNamespace(task_id=task.task.task_id,
-            project_id=project['project_id'], prompt=request), vault), request, budget)
-        result['v1_ids'] = [x.id for x in reference.selected_items]
-        result['implementation_fingerprint'] = implementation_fingerprint()
-    # Baseline comparison also takes time: revalidate immediately before return.
+    # Revalidate immediately before return.
     current_config = runtime.load()
     current_project = allowed(vault, project_root)
     if current_config['mode'] == 'OFF' or not current_project or current_project['project_id'] != project['project_id']:

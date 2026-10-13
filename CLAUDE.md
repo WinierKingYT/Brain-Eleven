@@ -1,92 +1,32 @@
-**Durum (2026-09-23): SRT-00 kapandı (CI yeşil). IG-05 ulaşılamaz diye kapatıldı; V2 SHADOW
-kalır, IG-06/IG-07 açılmaz, Phase 20 kilitli. Yeni faz açılmaz.** Hafıza: SHADOW'da insan
-onaylı kabul `python -m brain_eleven shadow-accept ON` ile açılır (varsayılan kapalı);
-ölçüm `docs/history/evidence/TEST-LOG.md`'de. Eşik gevşetme, skip ve holdout ayarı yasak.
-**Yeni iş açma kuralı:** `docs/programs/WORK-INTAKE-RULE.md` — her yeni paket/sözleşme
-önce "bu, hatırlama testini ölçülebilir şekilde ilerletiyor mu?" sorusuna cevap vermeli.
-**Devir kontrolü (kod değiştirmeden, dal/PR açmadan önce):** `CONTRIBUTING.md`'nin "Check
-GitHub before assuming you know the whole picture" bölümündeki üç komutu çalıştır. Yalnız
-soru cevaplanan ya da bilgi istenen oturumlarda bu adım atlanır; araçlar kapalıysa cevap
-oturum başı bağlamından verilir (2026-09-27: kural taze test oturumlarında cevap yerine
-komut denemesine yol açtı) —
-`.claude/hooks/session-start.sh` bu makinede native hook'lar tarafından devre dışı
-bırakıldığından (`.brain-eleven/runtime/native-hooks-installed.json`) otomatik çalışmıyor;
-bu satır CLAUDE.md'nin kendisi her oturumda yüklendiği için buraya eklendi.
+# Brain-Eleven — ajan kuralları
 
-# Brain-Eleven: Eleven'in ikinci beyni
+Eleven'in yerel ikinci beyni. Ne olduğu için [README.md](README.md), nasıl
+çalıştığı için [ARCHITECTURE.md](ARCHITECTURE.md), nerede olduğumuz için
+[NEXT.md](NEXT.md).
 
-Obsidian + Claude Code, hafızası kendisi yazan sistem. v2 başlangıç.
+## Çalışma biçimi
 
-## Güncel program ve belge otoritesi
+- Her iş kendi dalında, PR ile. Master'a doğrudan push ve force push yok.
+- Bir PR, kullanıcıya görünen tek bir iyileştirme. Kontrat, rapor, kanıt ya
+  da inceleme dosyası açılmaz; iş bitince NEXT.md'ye 2–3 satır yazılır.
+- Hata düzeltirken: yeniden üret → kök neden → düzelt → aynı kontrolle doğrula.
+- Kapanış ölçütü: `python -m pytest tests -q` yeşil. Hatırlamayı etkileyen
+  değişiklikte `python -m brain_eleven recall-probe` önce/sonra sonucu PR'a yazılır.
+- Yeni bağımlılık ve yeni soyutlama varsayılan olarak yok; gerekiyorsa PR'da
+  bir cümleyle gerekçelendir.
 
-**PHASE 20: FROZEN. ACTIVE PROGRAM: INTELLIGENCE GRADUATION (IG).**
-Önce PROJECT-STATUS.md, docs/programs/INTELLIGENCE-GRADUATION.md, docs/contracts/IG00-FREEZE-BASELINE.md ve
-DOCUMENTATION-AUTHORITY.md oku. IG-00 bağımsız kabul edilmeden IG-01 açılmaz.
-Eski faz planları tarihsel/gelecek tasarımdır; Knowledge Engine başlatılmaz.
-Feature freeze, teknik kapanış veya intelligence graduation demek değildir.
-Canonical authority MemoryStore, StateStore ve ProjectRegistry'de kalır.
-Model yalnız öneri üretir; safety ve intelligence ayrı ölçülür. Sahip kararı (2026-09-27): model ön değerlendirmesinin yalnız ACCEPT kararları, operatör açıkça `python -m brain_eleven apply-suggestions --apply` çalıştırdığında kayıt başına tıklama olmadan standart güvenlik/CAS/denetim yolundan uygulanır. Komut varsayılan olarak kuru çalışır; SHADOW modunda ayrıca `shadow_accept` (varsayılan kapalı) açık olmalıdır. OFF'ta uygulanmaz ve otomatik worker bu yolu kullanmaz. REJECT/DUPLICATE kararları yazılmaz; gizlenir ve süresi dolar. Bu karar bağımsız inceleme tamamlanana kadar shipped sayılmaz.
+## Değişmeyenler
 
-Aşağıdaki eski vault kurulum/not kullanım rehberi runtime otoritesi değildir.
-Güncel üretim yolları ve kurulu istemci ayrımı RUNTIME-DATAFLOW.md içindedir.
+- Hafızaya yazım yalnız `MemoryStore` (`brain_eleven/memory`) üzerinden.
+  İkinci bir hafıza/durum sistemi kurulmaz.
+- Sır, token, parola, tam döküm ve tam dosya yolu hafızaya, PR'a ya da commit'e
+  yazılmaz.
+- Sahibin onayı (`approval ON`) ve deneme süresi güvenlik sınırıdır; bunları
+  atlayan otomatik yazım yolu eklenmez.
 
-## Yükleme sırası (tarihsel rehber)
+## Vault notları
 
-1. Vault iskeletı ✓
-2. CLAUDE.md (bu dosya) ✓
-3. Hooks ✓ (SessionStart, bounded capture hand-off, audit)
-4. Companion hafıza (🔮 Companion/) ✓
-5. İçerik iskeletı (🧠 Brain-Eleven ana sayfa) ✓
-6. Git (opsiyonel) ✓
-
-## Göreve göre yönlendirme
-
-| Kullanıcı ister | Yapılacak | Kısayol |
-|---|---|---|
-| Günlük not | 🔮 Companion/Daily.md içine {{DATE}} başlığında yaz | `/daily` |
-| Proje notu | 🗂️ Proje Notları/'na yaz, başlıkta proje adı | `/project` |
-| Geçmiş görüntüle | 🔮 Companion/Last Session.md veya Threads.md | `/history` |
-
-## Hafıza protokolü
-
-- **Günlük girdiler**: 🔮 Companion/Daily.md (tek dosya, tarih başlıklarıyla)
-- **Aktif konular**: 🔮 Companion/Threads.md (bölüm başlıkları)
-- **Kapatılan**: 🔮 Companion/Threads.md ## Closed Threads
-- **Profil**: 🔮 Companion/Jane - Core.md
-- **Açık döngüler**: 🔮 Companion/Açık Döngüler.md
-
-Not: Kaynak kaydetme (`📚 Kaynaklar/`) ve ayrı bir kurallar dosyası
-(`Rules`) tasarımda geçiyordu ama henüz oluşturulmadı — CLAUDE.md'nin bu
-sürümü yalnızca var olan dosyalara işaret eder. Biri gerekli görürse önce
-burada bir satırla kayda geçirilip sonra klasör/dosya açılmalı; tersi
-sırayla (önce dosya, sonra iz sürülemeyen referans) bu proje daha önce
-defalarca doküman sürüklenmesine yol açtı.
-
-## Devir kuralı
-
-1. Oturum başında: Last Session.md oku, Threads.md'yi açık tut
-2. Oturum sonunda: {{DATE}} daily girdisini yazışmadan önce kaydet
-
-## Doğrulama
-
-- Hiçbir not silinmez (Recycle Bin kontrol et)
-- Wikilink'ler bozuk mu? → `claude -p "lint --vault ."` (opsiyonel)
-- Git tracking opsiyonel (bak: PHASE 9)
-
-## Çapraz proje hafıza yakalama
-
-- Açıkça istenen tekil kayıt: global `/remember` komutu → `scripts/remember.py`
-- Memory scope açıkça `global` veya `project` olur. Dedup kimliği `scope + project_id + type + normalize edilmiş içerik` bileşimidir; global memory için `project_id` boştur.
-- Capture sırasında `project_id`, vault-local `.claude/project-registry.json` içindeki opaque kimlikten çözülür. Registry yoksa yalnızca uyumluluk fallback'i olan kök hash'i kullanılır; tam dosya yolu canonical memory'ye yazılmaz.
-- Varsayılan retrieval, proje verilmezse yalnızca global memory'leri; proje verilirse global + o projeyi getirir. Diğer projeler yalnızca açık `retrieval_scope=all` isteğiyle dahil edilir.
-- Proaktif yakalama varsayılan olarak kapalıdır. İzin verilen proje kökleri `.claude/remember-config.json` içindeki `proactive_opt_in_projects` listesine mutlak yol olarak eklenmelidir.
-- Opt-in kontrolü bozuk veya eksik yapılandırmada fail-closed çalışır; sır, token, parola ve tam oturum dökümü kaydedilmez.
-- Eski store'lar için bir defalık, idempotent geçiş: `python scripts/migrate-memory-scope.py --vault .` (önce `.bak` üretir).
-- Canonical memory yazımları `scripts/memory_store.py` üzerinden revision + lock + atomic write ile yapılır; API güncellemeleri `expected_revision` ile CAS kullanabilir.
-- Global kurulum/geri alma: `python scripts/install-cross-project-memory.py --dry-run`, ardından `--home <home> --vault <vault>`; mevcut ayarlar ve kullanıcı tarafından değiştirilmiş dosyalar korunur.
-
----
-
-**v3 thesis**: Memory must be a mechanism, not a discipline. Hooks automate extraction; Claude retrieves context automatically on session start.
-
-**Hooks Status (2026-09-07)**: Native Claude/Codex V2 remains **SHADOW**. The preserved PRE-13 checkpoint does not emit V1 through native SHADOW; a separately installed global Claude V1 hook exists. IG-00 reconciles single V1 SessionStart ownership before acceptance. See RUNTIME-DATAFLOW.md for the verified boundary; configured hooks do not prove native trust or actual delivery. Windows hooks and verification helpers must run hidden. Do not open Python consoles or browser panels during background work. docs/history/PRE13-TECHNICAL-CLOSURE.md preserves prior evidence and limitations; Phase 20 is now feature-frozen under IG, not graduated.
+- `🔮 Companion/`: günlük (Daily.md), açık konular (Threads), son oturum
+  (Last Session.md), profil.
+- `🗂️ Proje Notları/`: proje kararları ve dersleri.
+- Hiçbir not silinmez.

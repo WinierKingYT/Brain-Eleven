@@ -37,5 +37,4 @@ include = [
     "context_compiler_v2*",
     "context_density_v2*",
     "retrieval_decision_v2*",
-    "evals*",
 ]

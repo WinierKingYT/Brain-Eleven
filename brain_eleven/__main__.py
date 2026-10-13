@@ -80,9 +80,6 @@ def main(argv=None):
     retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
     retire_cmd.add_argument('memory_ids', nargs='+')
     retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
-    graduation = sub.add_parser('graduation')
-    graduation.add_argument('--labels', required=True)
-    graduation.add_argument('--quality-report', required=True)
     args = parser.parse_args(argv)
     try:
         if args.command in {'install', 'uninstall', 'doctor'}:
@@ -205,9 +202,6 @@ def main(argv=None):
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)
-        elif args.command == 'graduation':
-            from .runtime.graduation import record
-            result = record(args.vault, args.labels, args.quality_report)
         elif args.command == 'review':
             from .runtime.launcher import ensure_service
             from .runtime.storage import RuntimeConfig, read_json

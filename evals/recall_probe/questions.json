@@ -1,16 +1,86 @@
 {
-  "source": "docs/history/evidence/TEST-LOG.md, 'Sorular ve anahtar cevaplar' (owner-written, 2026-09-20). Same five questions automated; not a new evaluation set.",
+  "source": "Owner-written recall questions (2026-09-20); the official five-question recall test.",
   "note": "A question counts as present in a text when every group has at least one term. Terms are matched case-insensitively after Turkish-aware lowercasing.",
   "questions": [
-    {"id": 1, "question": "Holdout (corpus-v2) kapısı kırmızıyken ne karar verdik?",
-     "groups": [["holdout", "corpus-v2"], ["kırmızı", "red"]]},
-    {"id": 2, "question": "Gerçek Claude oturumları neden hiç kanonik hafızaya girmiyordu?",
-     "groups": [["evidence_invalid", "dead-letter", "dead letter", "dead-lettered"], ["bilinmeyen", "unknown", "kayıt tip", "record type"]]},
-    {"id": 3, "question": "SRT-00 nasıl kapandı, master push edildi mi?",
-     "groups": [["push"], ["srt-00"], ["ship"]]},
-    {"id": 4, "question": "Phase 20 ve aktif program hangi durumda?",
-     "groups": [["phase 20"], ["frozen", "donduruldu", "dondurulmuş"], ["intelligence graduation"]]},
-    {"id": 5, "question": "Retrieval-kalite sözleşmesi hakkında ne dedik?",
-     "groups": [["retrieval-kalite", "retrieval kalite", "retrieval quality", "retrieval-quality"], ["sözleşme", "contract"]]}
+    {
+      "id": 1,
+      "question": "Holdout (corpus-v2) kapısı kırmızıyken ne karar verdik?",
+      "groups": [
+        [
+          "holdout",
+          "corpus-v2"
+        ],
+        [
+          "kırmızı",
+          "red"
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "question": "Gerçek Claude oturumları neden hiç kanonik hafızaya girmiyordu?",
+      "groups": [
+        [
+          "evidence_invalid",
+          "dead-letter",
+          "dead letter",
+          "dead-lettered"
+        ],
+        [
+          "bilinmeyen",
+          "unknown",
+          "kayıt tip",
+          "record type"
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "question": "SRT-00 nasıl kapandı, master push edildi mi?",
+      "groups": [
+        [
+          "push"
+        ],
+        [
+          "srt-00"
+        ],
+        [
+          "ship"
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "question": "Phase 20 ve aktif program hangi durumda?",
+      "groups": [
+        [
+          "phase 20"
+        ],
+        [
+          "frozen",
+          "donduruldu",
+          "dondurulmuş"
+        ],
+        [
+          "intelligence graduation"
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "question": "Retrieval-kalite sözleşmesi hakkında ne dedik?",
+      "groups": [
+        [
+          "retrieval-kalite",
+          "retrieval kalite",
+          "retrieval quality",
+          "retrieval-quality"
+        ],
+        [
+          "sözleşme",
+          "contract"
+        ]
+      ]
+    }
   ]
 }
