@@ -48,6 +48,13 @@ def main(argv=None):
     triage = sub.add_parser('triage', help='apply the automatic noise filter to pending review candidates')
     triage.add_argument('--apply', action='store_true', help='reject matches with a note (default: count only)')
     sub.add_parser('digest', help="the day's most valuable review candidates")
+    recap_cmd = sub.add_parser('recap', help='recent sessions and new memories, without a model call')
+    recap_cmd.add_argument('--days', type=int, help='last N local days including today (default 7)')
+    recap_cmd.add_argument('--since', help='YYYY-MM-DD (local day) or a timestamp with Z/offset')
+    recap_cmd.add_argument('--until', help='YYYY-MM-DD (whole local day) or a timestamp with Z/offset')
+    recap_cmd.add_argument('--project', help='project label or id')
+    recap_cmd.add_argument('--limit', type=int, default=50)
+    recap_cmd.add_argument('--json', action='store_true', help='print counts and text as JSON')
     applier = sub.add_parser('apply-suggestions', help="apply the model's review verdicts (ACCEPT writes, REJECT hides)")
     applier.add_argument('--apply', action='store_true', help='write accepts (default: count only)')
     auto = sub.add_parser('queue-triage', help='pre-evaluate the review queue: rules reject noise, a local model decides the rest')
@@ -199,6 +206,13 @@ def main(argv=None):
                     result['retired'].append(memory_id)
                 except ValueError as exc:
                     result['failed'][memory_id] = str(exc)[:120]
+        elif args.command == 'recap':
+            from .runtime.recap import recap
+            result = recap(args.vault, days=args.days, since=args.since, until=args.until,
+                           project=args.project, limit=args.limit)
+            if not args.json:
+                print(result['text'], end='')
+                return 0
         elif args.command == 'digest':
             from .runtime.value import digest
             result = digest(args.vault)

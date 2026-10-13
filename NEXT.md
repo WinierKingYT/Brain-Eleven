@@ -5,6 +5,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **`recap` (PR #71).** `recap --days 7` (ya da `--since/--until`, `--project`)
+  oturum kartlarından ve o aralıkta yazılmış aktif hafızalardan Markdown liste
+  basar. Model çağırmaz, döküm okumaz. Arşive taşınmış kartlar listelenmez.
 - **Oturum kartları ve açık konular (PR #70).** Her yakalanan oturum, proje
   notunda (`🔮 Companion/Oturumlar/<proje>.md`) kısa bir kart tutuyor: ilk ve
   son istek, son yanıt, özetten sıradaki adım. Notun üstünde StateStore'daki
@@ -36,15 +39,14 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
-2. **`recap`.** Model çağırmadan son N günün kaynaklı iş listesi.
-3. **Tüketim modları.** Normal, ekonomik ve manuel modlar; bağlam karakter
+2. **Tüketim modları.** Normal, ekonomik ve manuel modlar; bağlam karakter
    bütçesi.
-4. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
+3. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
    veritabanı türev).
-5. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
-6. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
+4. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
+5. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
-7. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
+6. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
    katmak.
 
 ## Açık konular
