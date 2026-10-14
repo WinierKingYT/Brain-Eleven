@@ -5,6 +5,13 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **Seni tanıma (PR #75).** `🔮 Companion/Core.md` (sahip kim, nasıl
+  çalışılır) ve `Kurallar.md` (sahibin düzeltmeleri: kural + neden) proje
+  bağımsız; her SessionStart bağlamı bunlarla açılır, sonra oturum kartları,
+  sonra hafıza. "Nerede kalmıştık / beni tanıyor musun" türü istemlerde de
+  eklenir (avenoxbeyin'in kalıbı). `install` iki başlangıç notunu bir kez
+  oluşturur, var olanı ezmez; boşken ajana doldurma talimatı gider. Claude'a
+  giden bağlam 9500 karakterde satır sınırında kesilir (baş kısım korunur).
 - **Skill üçlüsü (PR #74).** `install` `~/.claude/skills/` altına `beyin`,
   `beyin-doktor`, `beyin-guncelle` yazar (Python ve vault yolu doldurulmuş).
   Sahibin değiştirdiği ya da başka kaynaktan gelen aynı adlı dosya ezilmez;

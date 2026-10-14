@@ -243,6 +243,8 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
             manifest['clients'][client]['owned_entries'] = [entries]
             write_json(cfg.root / 'installation.json', manifest)
         write_json(cfg.root / 'native-hooks-installed.json', {'clients': list(manifest['clients'])})
+        from .companion import ensure_starters
+        ensure_starters(vault)
         skills, skipped = {}, []
         if 'claude' in clients:
             previous = {name: item.get('sha256') for name, item in manifest.get('skills', {}).items()}

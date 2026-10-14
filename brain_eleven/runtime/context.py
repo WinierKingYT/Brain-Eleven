@@ -700,7 +700,7 @@ def _add_session_cards(vault, result, *, client, session):
     Cards are derived, owner-readable notes (``session_cards``); a missing or
     damaged card store never blocks the bootstrap.
     """
-    if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED'}:
+    if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
         return
     try:
         from .session_cards import context as cards_context
@@ -716,11 +716,35 @@ def _add_session_cards(vault, result, *, client, session):
     result['delivered'] = result['delivery_approved'] = True
 
 
+def _asks_continuity(request):
+    try:
+        from .companion import returning
+        return returning(request)
+    except Exception:
+        return False
+
+
+def _add_companion(vault, result, *, client, hints=False):
+    """Put the owner's Core/Kurallar notes first in a native context; never blocks it."""
+    if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
+        return
+    try:
+        from .companion import section
+        text = section(vault, hints=hints)
+    except Exception:
+        return
+    if not text:
+        return
+    result['context'] = (text + '\n\n' + result['context']) if result.get('context') else text
+    result['delivered'] = result['delivery_approved'] = True
+
+
 def compile_context(vault, project_root, request, *, client='manual', session='', turn='', budget=3000, event='UserPromptSubmit'):
     start = perf_counter()
     if event == 'SessionStart':
         result = compile_bootstrap(vault, project_root, budget=budget, session=session)
         _add_session_cards(vault, result, client=client, session=session)
+        _add_companion(vault, result, client=client, hints=True)
         _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
         result['elapsed_ms'] = round((perf_counter() - start) * 1000)
         return result
@@ -770,6 +794,11 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     elif (config.get('retrieval_mode') != 'W06B_TASK_AWARE' and result.get('input_revisions')
           and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ()) )):
         result.update(status='STALE_INPUT', context='', selected_ids=[])
+    elif event == 'UserPromptSubmit' and _asks_continuity(request):
+        # "Nerede kalmıştık / beni tanıyor musun": deterministic continuity,
+        # not left to whether the question's words hit a memory.
+        _add_session_cards(vault, result, client=client, session=session)
+        _add_companion(vault, result, client=client)
     # SHADOW computes no model-facing normal-turn context, unless the owner
     # turned on shadow_recall (2026-09-27): then only V1 providers deliver.
     # CANARY/ACTIVE still use V1 only while the product-level V2 status

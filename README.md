@@ -16,6 +16,9 @@ hafızaya yazar ve her yeni oturumda/istemde ilgili hafızayı bağlama ekler.
 - **Hatırlama:** Her istemde uygun hafızalar yerel embedding ile kısa
   listeye alınır, cross-encoder ile sıralanır (~1 sn). Başka projelerin en
   ilgili 3 karar/dersi kaynak etiketiyle eklenebilir (`cross-project ON`).
+- **Seni tanıma:** `🔮 Companion/Core.md` (kim olduğun, nasıl çalışmak
+  istediğin) ve `Kurallar.md` (ajanı düzelttiğinde eklenen kurallar) her
+  oturumun başında bağlama girer.
 - **Proje çalışması:** `project add` bir klasörü yakalamaya kaydeder,
   `study` bir projeyi ya da GitHub reposunu okuyup karar/ders önerir.
 
