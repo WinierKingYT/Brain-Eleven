@@ -14,7 +14,8 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity, now, runtime_file_lock as file_lock
+from brain_eleven.runtime.storage import (ECONOMICAL_SESSION_CHARS, ECONOMICAL_SUBAGENT_CHARS, RuntimeConfig, read_json,
+                                          write_json, identity, now, runtime_file_lock as file_lock)
 
 
 def request_service(vault, route, payload=None, timeout=.35):
@@ -142,6 +143,10 @@ def hook(vault, client, event, payload):
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     if event == 'SubagentStart':
         return subagent_start(vault, client, payload)
+    profile = cfg.load().get('context_profile', 'normal')
+    if profile == 'manual' or (profile == 'economical' and event == 'UserPromptSubmit'):
+        # The owner chose fewer injected tokens; nothing is compiled or started.
+        return {}
     deadline = time.monotonic() + 2.5
     ready = ensure_service(vault, wait=True, wait_timeout=2.2)
     if event not in {'SessionStart', 'UserPromptSubmit'}:
@@ -184,7 +189,10 @@ def hook(vault, client, event, payload):
         approved = result.get('delivery_approved') is True
         provider_allowed = provider in {'V1', 'W06B_TASK_AWARE'}
         if approved and provider_allowed and result.get('delivered') is True and result.get('context'):
-            output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': result['context']}
+            text = result['context']
+            if profile == 'economical':
+                text = text[:ECONOMICAL_SESSION_CHARS]
+            output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': text}
         if result.get('missing_critical_needs') or result.get('status') not in {'SUCCESS', 'EMPTY', 'OFF', 'SCOPE_DISABLED'}:
             output['systemMessage'] = 'Brain-Eleven: bağlam eksik veya kullanılamıyor; çalışma devam ediyor. İnceleme ekranını kontrol edin.'
         delivered = bool(output.get('hookSpecificOutput'))
@@ -229,6 +237,10 @@ def subagent_start(vault, client, payload):
     session, agent = payload.get('session_id'), payload.get('agent_id')
     if not isinstance(session, str) or not session or not isinstance(agent, str) or not agent:
         raise ValueError('Invalid subagent event')
+    profile = RuntimeConfig(vault).load().get('context_profile', 'normal')
+    if profile == 'manual':
+        return {}
+    limit = ECONOMICAL_SUBAGENT_CHARS if profile == 'economical' else SUBAGENT_CONTEXT_CHARS
     context = ''
     if ensure_service(vault, wait=True, wait_timeout=1.5):
         try:
@@ -237,7 +249,7 @@ def subagent_start(vault, client, payload):
                 'turn': identity('subagent_', agent), 'event': 'SessionStart'}, timeout=1.2)
             if (result.get('delivery_approved') is True and result.get('delivered') is True
                     and result.get('provider') in {'V1', 'W06B_TASK_AWARE'} and isinstance(result.get('context'), str)):
-                context = result['context'][:SUBAGENT_CONTEXT_CHARS]
+                context = result['context'][:limit]
         except (OSError, ValueError, KeyError, http.client.HTTPException):
             context = ''
     text = (context + '\n\n' if context else '') + SUBAGENT_INSTRUCTION

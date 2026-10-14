@@ -43,6 +43,7 @@ python -m brain_eleven --vault <vault> rollout ACTIVE
 | `review` | Onay bekleyen hafızalar (tarayıcıda) |
 | `digest` | Günün en değerli adayları |
 | `recap --days 7` | Son günlerin oturumları ve yeni hafızaları (model çağırmaz; `--since/--until YYYY-AA-GG`, `--project`) |
+| `profile [normal\|economical\|manual]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç). Yakalama her modda sürer. |
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |
 | `recall-probe` | 5 soruluk hatırlama testi |

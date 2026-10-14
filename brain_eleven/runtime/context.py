@@ -711,7 +711,8 @@ def _add_session_cards(vault, result, *, client, session):
         return
     if not cards:
         return
-    result['context'] = (result['context'] + '\n\n' + cards) if result.get('context') else cards
+    # Cards come first: a shortened (economical) context still keeps them.
+    result['context'] = (cards + '\n\n' + result['context']) if result.get('context') else cards
     result['delivered'] = result['delivery_approved'] = True
 
 

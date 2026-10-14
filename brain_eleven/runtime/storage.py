@@ -199,6 +199,13 @@ def read_json(path, default=None):
     return json.loads(path.read_text(encoding='utf-8-sig'))
 
 
+
+# How much context native hooks inject (owner request 2026-10-14). Capture is
+# never affected: sessions are still captured in every profile.
+CONTEXT_PROFILES = ('normal', 'economical', 'manual')
+ECONOMICAL_SESSION_CHARS = 2000
+ECONOMICAL_SUBAGENT_CHARS = 1000
+
 class RuntimeConfigConflict(ValueError):
     """Raised when a runtime-config mutation uses a stale snapshot."""
 
@@ -227,7 +234,7 @@ class RuntimeConfig:
                                       'b1_human_approval': False, 'shadow_accept': False,
                                       'shadow_recall': False, 'queue_triage': False, 'memory_audit': False,
                                       'auto_accept_verified': False, 'probation_review': False,
-                                      'cross_project_recall': False})
+                                      'cross_project_recall': False, 'context_profile': 'normal'})
         if not isinstance(value, dict) or value.get('schema_version') != 1 or value.get('mode') not in {'OFF', 'SHADOW', 'CANARY', 'ACTIVE'}:
             raise ValueError('Invalid runtime configuration')
         # The key was introduced additively so existing vaults keep the
@@ -257,6 +264,8 @@ class RuntimeConfig:
         # three relevant decisions/lessons of other projects, labelled as
         # references. Projects listed in cross_project_private are never shared.
         value.setdefault('cross_project_recall', False)
+        # Owner request 2026-10-14: how much context hooks inject (additive).
+        value.setdefault('context_profile', 'normal')
         value.setdefault('cross_project_private', [])
         retrieval_mode = value.get('retrieval_mode', 'V1_LEGACY')
         # This is an additive rollout gate.  Invalid values fail closed and
@@ -278,6 +287,8 @@ class RuntimeConfig:
             raise ValueError('Invalid auto accept configuration')
         if not isinstance(value['probation_review'], bool):
             raise ValueError('Invalid probation configuration')
+        if value['context_profile'] not in CONTEXT_PROFILES:
+            raise ValueError('Invalid context profile')
         if not isinstance(value['cross_project_recall'], bool):
             raise ValueError('Invalid cross-project configuration')
         if not isinstance(value['cross_project_private'], list) or not all(
@@ -385,6 +396,18 @@ class RuntimeConfig:
 
         def mutate(current):
             current['probation_review'] = enabled
+
+        return self._commit(snapshot, mutate)
+
+    def set_context_profile(self, profile):
+        """normal: SessionStart + every prompt; economical: SessionStart only, short; manual: none."""
+        if profile not in CONTEXT_PROFILES:
+            raise ValueError('Context profile must be one of: ' + ', '.join(CONTEXT_PROFILES))
+        value = self.load()
+        snapshot = _config_fingerprint(value)
+
+        def mutate(current):
+            current['context_profile'] = profile
 
         return self._commit(snapshot, mutate)
 

@@ -113,7 +113,7 @@ def test_session_start_gets_the_latest_cards_except_its_own(runtime, tmp_path): 
               'delivered': True, 'delivery_approved': True, 'selected_ids': ['mem_1']}
     _add_session_cards(vault, result, client='claude', session='current')
     context = result['context']
-    assert context.startswith('## Hafıza')
+    assert context.startswith(session_cards.CONTEXT_HEADING) and context.endswith('- bir şey')
     assert 'İstek new metni.' in context and 'İstek mid metni.' in context
     assert 'İstek old metni.' not in context and 'İstek current metni.' not in context
     assert context.index('İstek new') < context.index('İstek mid')

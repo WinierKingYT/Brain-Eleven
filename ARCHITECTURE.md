@@ -55,6 +55,13 @@ verir), `ACTIVE` (normal çalışma). `CANARY` eski uyumluluk için duruyor,
 `ACTIVE` ile aynı davranır. Mod değişikliğinde kalite kapısı yoktur; güvenlik
 sahibin onayından (`approval ON`) ve deneme süresinden gelir.
 
+## Tüketim profili
+
+`context_profile` (`profile` komutu): `normal` her olayda bağlam verir;
+`economical` yalnız SessionStart'ta, 2000 karakterle (alt ajan 1000) verir ve
+istemlerde servisi çağırmaz; `manual` hiç bağlam vermez. Yakalama profilden
+etkilenmez.
+
 ## Güvenlik kuralları
 
 - Hafızaya yazım yalnız `MemoryStore` üzerinden.

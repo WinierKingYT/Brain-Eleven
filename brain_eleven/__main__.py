@@ -84,6 +84,8 @@ def main(argv=None):
     cross = sub.add_parser('cross-project', help="prompts also get other projects' relevant decisions/lessons as references")
     cross.add_argument('state', choices=['OFF', 'ON'])
     cross.add_argument('--private', nargs='*', metavar='PROJECT', help='project labels or ids never shared with other projects')
+    profile_cmd = sub.add_parser('profile', help='how much context hooks inject: normal, economical (session start only, short) or manual (none)')
+    profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual'], help='omit to show the current profile')
     retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
     retire_cmd.add_argument('memory_ids', nargs='+')
     retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
@@ -184,6 +186,12 @@ def main(argv=None):
                     raise ValueError('study write needs --items <file>')
                 items = json.loads(Path(args.items).read_text(encoding='utf-8-sig'))
                 result = study_module.write(args.vault, args.target, items, commit=args.commit)
+        elif args.command == 'profile':
+            from .runtime.storage import RuntimeConfig
+            config = RuntimeConfig(args.vault)
+            if args.profile:
+                config.set_context_profile(args.profile)
+            result = {'context_profile': config.load()['context_profile']}
         elif args.command == 'cross-project':
             from .runtime.storage import RuntimeConfig
             private = None
