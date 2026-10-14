@@ -27,7 +27,7 @@ def test_receipt_is_recorded_once_and_shown_in_the_project_note(runtime):  # noq
     assert '`#75`' in note
 
 
-@pytest.mark.parametrize('source', ['/home/me/secret/file.py', 'C:/Users/me/x.py', '~/x', '../outside.md', 'a b'])
+@pytest.mark.parametrize('source', ['/home/me/secret/file.py', 'C:/Users/me/x.py', '~/x', '../outside.md', 'a b', 'AKIAIOSFODNN7EXAMPLE'])
 def test_absolute_or_escaping_sources_are_refused(runtime, source):  # noqa: F811
     vault, _ = runtime
     with pytest.raises(ValueError):

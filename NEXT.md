@@ -5,6 +5,14 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **Yakala (PR #77, Windows kısayolu denenmedi).** `yakala ekle <URL|dosya|metin>`
+  `📥 Gelen/` altına bekleyen öğe yazar (sır reddedilir, dosyalar `Ekler/`e
+  kopyalanır). `yakala kur` Windows'ta Başlat Menüsü'ne `Ctrl+Alt+B` kısayolu
+  ekler (panodakini atar; dinleyici yok). `beyin-yakala` skill'i öğeleri okuyup
+  `🧠 Bilgi/` notlarına çevirir, içeriği güvenilmeyen veri sayar, `yakala bitti`
+  ile işaretler. Obsidian Web Clipper şablonu: `templates/obsidian/beyne-at.json`.
+  Açık: kısayolun gerçek Windows'ta denenmesi; YouTube transkripti ajanın kendi
+  araçlarına bağlı.
 - **İş sonucu kayıtları (PR #76).** `receipt "<ne bitti>" --next … --source …`:
   ajan anlamlı bir iş bitince kısa, kaynaklı bir sonuç bırakır (beyin skill'i
   söyler). Kayıtlar değişmez, aynısı tekrar gönderilirse kopya oluşmaz; tam
@@ -64,6 +72,8 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Sıradaki işler (sırayla)
 
+0. **Yakala'yı Windows'ta dene.** `install` + `yakala kur`, sonra bir
+   bağlantıyı kopyalayıp Ctrl+Alt+B; `yakala liste` ile gör.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.

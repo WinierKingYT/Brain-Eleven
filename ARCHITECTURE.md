@@ -54,6 +54,13 @@ dosyasına eklenir. SessionStart bağlamına son iki kart eklenir.
 kökünde dosya başına bir JSON. Proje notu, SessionStart kart bölümü ve `recap`
 bunları gösterir; kanonik hafızaya girmez.
 
+## Yakala
+
+`runtime/yakala.py`: `📥 Gelen/` gelen kutusu (Markdown öğe, `durum: bekliyor`),
+pano okuma ve Windows Başlat Menüsü kısayolu. URL açmaz, model çağırmaz;
+işleme `beyin-yakala` skill'iyle ajanın kendi araçlarıyla yapılır, sonuç
+`🧠 Bilgi/` notlarıdır (kanonik hafıza değil).
+
 ## Alt ajanlar
 
 `SubagentStart` (yalnız Claude) alt ajana proje hafızasını ve bir talimat
