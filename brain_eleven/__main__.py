@@ -95,6 +95,8 @@ def main(argv=None):
     yakala_cmd.add_argument('value', nargs='?', help='ekle: URL, file path or text; bitti: inbox item file name')
     yakala_cmd.add_argument('--not', dest='note', help='bitti: the knowledge note the item became')
     yakala_cmd.add_argument('--hepsi', action='store_true', help='liste: include processed items')
+    why_cmd = sub.add_parser('why', help='where a memory came from: its source role, approval and the original text if still available')
+    why_cmd.add_argument('memory_id')
     sub.add_parser('notes', help='rewrite the readable memory notes under Companion/Hafıza now')
     profile_cmd = sub.add_parser('profile', help='how much context hooks inject: normal, economical (session start only, short) or manual (none)')
     profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual'], help='omit to show the current profile')
@@ -215,6 +217,9 @@ def main(argv=None):
                 result = yakala.done(args.vault, args.value or '', args.note)
             else:
                 result = yakala.install_shortcut(args.vault)
+        elif args.command == 'why':
+            from .runtime.why import why
+            result = why(args.vault, args.memory_id)
         elif args.command == 'notes':
             from .runtime.memory_notes import refresh
             result = refresh(args.vault, force=True)

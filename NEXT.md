@@ -5,6 +5,15 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **`why` (PR #78).** `why <mem_id>`: hafızanın içeriği, durumu, sahip onayı ve
+  her kanıtı için rol ve asıl mesaj. Kanıt yalnız hash tuttuğu için döküm,
+  güvenilen köklerde yol hash'iyle bulunur ve bayt aralığı normal okuyucuyla
+  yeniden okunur; alıntı yalnız evidence id birebir tutarsa gösterilir
+  (değişmiş dosya `SOURCE_CHANGED`, silinmiş `SOURCE_DELETED`). `doctor`
+  artık Claude'un döküm saklama süresini (`cleanupPeriodDays`, varsayılan 30)
+  gösterir ve 90 günden azsa önerir; ayarı değiştirmez. TencentDB
+  araştırmasının tek "alınmalı" maddesi buydu; diğerleri ertelendi ya da
+  gereksiz bulundu (proxy gerektiren offload, ekip odaklı asset/ACL).
 - **Yakala (PR #77, Windows kısayolu denenmedi).** `yakala ekle <URL|dosya|metin>`
   `📥 Gelen/` altına bekleyen öğe yazar (sır reddedilir, dosyalar `Ekler/`e
   kopyalanır). `yakala kur` Windows'ta Başlat Menüsü'ne `Ctrl+Alt+B` kısayolu

@@ -60,6 +60,7 @@ ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasın�
 | `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler) |
 | `recall-probe` | 5 soruluk hatırlama testi |
 | `measure` | Gerçek kullanım ölçümü |
+| `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |
 
 Tüm komutlar: `python -m brain_eleven --help`.

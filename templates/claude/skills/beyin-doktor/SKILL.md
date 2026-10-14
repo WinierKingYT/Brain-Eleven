@@ -24,6 +24,7 @@ bağlamın içeriğindedir (adım 3).
 | `mode: SHADOW` | yakalar ama bağlam vermez | `rollout ACTIVE` |
 | `service: STOPPED` | servis kapalı | normal; ilk hook başlatır. Hemen gerekiyorsa `status` |
 | `last_hook.status: DEGRADED` | son hook hata verdi | adım 2 |
+| `transcript_retention.ok: false` | Claude dökümleri erken siliyor; `why` eski kaynakları gösteremez | `advice` alanındaki ayarı kullanıcıya öner; kendin değiştirme |
 
 ## 2. Yakalama
 

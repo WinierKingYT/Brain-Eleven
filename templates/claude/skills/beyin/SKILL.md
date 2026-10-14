@@ -21,6 +21,7 @@ Bütün komutlar şu önekle çalışır:
 | "X hakkında ne biliyoruz?" | `context "<soru>" --project-root "$PWD"` |
 | "Son günlerde ne yaptık?" | `recap --days 7` (ya da `--since YYYY-AA-GG --until YYYY-AA-GG`, `--project <ad>`) |
 | "Onay bekleyenler / hafıza kuyruğu" | `digest`; tek tek onay için `review` (tarayıcı açar) |
+| "Bunu neden hatırlıyorsun?" / "bu nereden geldi?" | `why <mem_id>` (kaynak rolü, onay, varsa asıl mesaj) |
 | "Şu kayıt yanlış, sil" | `retire <mem_id> --note "<neden>"` (silmez, iptal eder) |
 | "Bu projeyi incele, kararlarını çıkar" | `/study` komutu |
 | "Daha az / hiç bağlam ekleme" | `profile economical` ya da `profile manual`; geri: `profile normal` |
