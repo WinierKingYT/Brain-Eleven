@@ -166,6 +166,7 @@ def update(vault, project, session, messages):
     from .context import is_automated_prompt
     path = _state_path(vault, project['project_id'])
     state = read_json(path, {'schema_version': 1, 'cards': {}})
+    state['project_id'] = project['project_id']
     key = identity('card_', session)
     card = state['cards'].get(key) or {'client': session.split(':')[0], 'prompts': 0, 'started_at': None, 'updated_at': None}
     changed = False
@@ -200,6 +201,17 @@ def update(vault, project, session, messages):
     state = render(vault, project, state)
     write_json(path, state)
     return card
+
+
+def all_cards(vault):
+    """Every kept card of every project as (project_id, card); archived cards are not included."""
+    root = RuntimeConfig(vault).root / 'session-cards'
+    for path in sorted(root.glob('cards_*.json')) if root.is_dir() else ():
+        state = read_json(path, {})
+        project_id = state.get('project_id')
+        if isinstance(project_id, str) and isinstance(state.get('cards'), dict):
+            for card in state['cards'].values():
+                yield project_id, card
 
 
 def context(vault, project_id, *, exclude_session=None, limit=CONTEXT_LIMIT):
