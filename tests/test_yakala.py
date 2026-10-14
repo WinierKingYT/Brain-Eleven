@@ -1,6 +1,7 @@
 """Yakala inbox (2026-10-14)."""
 
 import json
+import types
 from pathlib import Path
 
 import pytest
@@ -71,7 +72,8 @@ def test_windows_shortcut_script_targets_pythonw_with_the_hotkey(tmp_path):
 
 
 def test_non_windows_install_returns_the_command(tmp_path, monkeypatch):
-    monkeypatch.setattr(yakala.os, 'name', 'posix')
+    # Patch only the module's os: changing os.name globally breaks pathlib on Windows.
+    monkeypatch.setattr(yakala, 'os', types.SimpleNamespace(name='posix'))
     result = yakala.install_shortcut(tmp_path)
     assert result['status'] == 'MANUAL' and 'yakala pano' in result['command']
 
