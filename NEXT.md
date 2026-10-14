@@ -5,6 +5,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **Tüketim modları (PR #72).** `profile normal|economical|manual`. Normal:
+  oturum başı + her istem (eskisi gibi). Ekonomik: yalnız oturum başı, en çok
+  2000 karakter; alt ajana 1000 karakter; istemlerde hiçbir şey derlenmez.
+  Manuel: hiçbir bağlam eklenmez. Yakalama her modda sürer. Oturum kartları
+  artık bağlamın başında, kısaltmada ilk onlar kalır.
 - **`recap` (PR #71).** `recap --days 7` (ya da `--since/--until`, `--project`)
   oturum kartlarından ve o aralıkta yazılmış aktif hafızalardan Markdown liste
   basar. Model çağırmaz, döküm okumaz. Arşive taşınmış kartlar listelenmez.
@@ -39,14 +44,12 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
-2. **Tüketim modları.** Normal, ekonomik ve manuel modlar; bağlam karakter
-   bütçesi.
-3. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
+2. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
    veritabanı türev).
-4. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
-5. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
+3. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
+4. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
-6. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
+5. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
    katmak.
 
 ## Açık konular
