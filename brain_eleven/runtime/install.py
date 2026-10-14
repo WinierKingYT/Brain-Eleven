@@ -512,6 +512,26 @@ def _pipeline_health(vault, cfg, home=None):
     return health
 
 
+RETENTION_ADVICE_DAYS = 90
+
+
+def transcript_retention(home=None):
+    """Claude Code deletes transcripts after cleanupPeriodDays (30 by default); `why` needs them.
+
+    Advisory only: never changes the owner's settings and never affects READY.
+    """
+    path = (Path(home) if home else Path.home()) / '.claude' / 'settings.json'
+    value = read_json(path, {})
+    days = value.get('cleanupPeriodDays', 30) if isinstance(value, dict) else 30
+    days = days if isinstance(days, int) and not isinstance(days, bool) else 30
+    result = {'claude_days': days, 'ok': days >= RETENTION_ADVICE_DAYS}
+    if not result['ok']:
+        result['advice'] = (f'Claude Code konuşma dökümlerini {days} gün sonra siliyor; bundan eski hafızaların '
+                            f'kaynağı `why` ile gösterilemez. Uzatmak için ~/.claude/settings.json içine '
+                            f'"cleanupPeriodDays": 365 ekle.')
+    return result
+
+
 def doctor(vault, *, home=None):
     cfg = RuntimeConfig(vault)
     checks = {'python': {'version': sys.version.split()[0], 'executable': sys.executable}}
@@ -555,4 +575,5 @@ def doctor(vault, *, home=None):
         and all(x['configured'] for x in checks['clients'].values())
         and not session_failed and not native_hook_failed
     ) else 'ATTENTION'
+    checks['transcript_retention'] = transcript_retention(home)
     return checks
