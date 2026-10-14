@@ -38,6 +38,14 @@ def test_secrets_empty_and_oversized_text_are_refused(tmp_path):
     assert not (tmp_path / yakala.INBOX).exists()
 
 
+def test_file_with_a_secret_is_not_copied(tmp_path):
+    key = tmp_path / '.env'
+    key.write_text('AWS_KEY=AKIAIOSFODNN7EXAMPLE', encoding='utf-8')
+    with pytest.raises(ValueError):
+        yakala.add(tmp_path / 'vault', str(key))
+    assert not (tmp_path / 'vault' / yakala.ATTACHMENTS).exists()
+
+
 def test_same_second_captures_do_not_overwrite(tmp_path):
     first = yakala.add(tmp_path, 'https://example.com/a')
     second = yakala.add(tmp_path, 'https://example.com/a')

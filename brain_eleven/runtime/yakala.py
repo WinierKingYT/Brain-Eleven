@@ -72,6 +72,13 @@ def add(vault, value):
     if '\n' not in value and len(value) < 1000 and candidate.is_file():
         if candidate.stat().st_size > FILE_LIMIT:
             raise ValueError('File is larger than 50 MB')
+        # shortcut: only text files are scanned; a binary key file (.p12, .kdbx) still copies.
+        try:
+            text = candidate.read_bytes()[:TEXT_LIMIT].decode('utf-8')
+        except UnicodeDecodeError:
+            text = ''
+        if contains_secret(text):
+            raise ValueError('The file looks like it contains a secret; not captured')
         target_dir = Path(vault) / ATTACHMENTS
         target_dir.mkdir(parents=True, exist_ok=True)
         target, counter = target_dir / candidate.name, 2

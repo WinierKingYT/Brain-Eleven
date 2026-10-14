@@ -24,6 +24,7 @@ def _root(vault, project_id):
 
 def _clean_sources(sources):
     """Relative paths, URLs, commit ids or #PR numbers only; absolute paths are refused."""
+    from context_compiler_v2.safety import contains_secret
     cleaned = []
     for source in sources or []:
         value = str(source).strip().replace('\\', '/')
@@ -31,6 +32,8 @@ def _clean_sources(sources):
             continue
         if not _SOURCE.fullmatch(value) or '..' in value.split('/'):
             raise ValueError('Sources must be relative paths, URLs, commit ids or #numbers (no absolute paths)')
+        if contains_secret(value):
+            raise ValueError('A source looks like it contains a secret')
         if value not in cleaned:
             cleaned.append(value)
     if len(cleaned) > MAX_SOURCES:
