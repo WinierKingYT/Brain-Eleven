@@ -46,6 +46,7 @@ python -m brain_eleven --vault <vault> rollout ACTIVE
 | `profile [normal\|economical\|manual]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç). Yakalama her modda sürer. |
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |
+| `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler) |
 | `recall-probe` | 5 soruluk hatırlama testi |
 | `measure` | Gerçek kullanım ölçümü |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |

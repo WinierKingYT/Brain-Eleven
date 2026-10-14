@@ -55,6 +55,12 @@ verir), `ACTIVE` (normal çalışma). `CANARY` eski uyumluluk için duruyor,
 `ACTIVE` ile aynı davranır. Mod değişikliğinde kalite kapısı yoktur; güvenlik
 sahibin onayından (`approval ON`) ve deneme süresinden gelir.
 
+## Hafıza notları
+
+`runtime/memory_notes.py`: MemoryStore'dan proje başına okunur not üretir
+(`🔮 Companion/Hafıza/`). Servis döngüsü revizyon değiştiğinde yeniler; notlar
+yalnız görünümdür, yazım yolu MemoryStore'dur.
+
 ## Tüketim profili
 
 `context_profile` (`profile` komutu): `normal` her olayda bağlam verir;

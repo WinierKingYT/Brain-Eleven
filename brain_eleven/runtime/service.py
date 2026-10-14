@@ -210,6 +210,7 @@ def create_app(vault, *, token=None, background=True):
                 write_json(cfg.root / 'last-worker.json', {'at': now(), 'status': 'FAILED', 'error': 'WORKER_UNAVAILABLE'})
             await maybe_queue_triage(app)
             await maybe_memory_audit(app)
+            await maybe_memory_notes(app)
             if time.monotonic() - app.state.last_activity > idle_limit_seconds():
                 app.state.idle = True
             await asyncio.sleep(delay)
@@ -520,6 +521,25 @@ def memory_audit_due(report, current=None):
         return True  # a time in the future (clock change) must not block the audit
     wait = MEMORY_AUDIT_RETRY_SECONDS if report.get('status') == 'FAILED' else MEMORY_AUDIT_INTERVAL_SECONDS
     return elapsed >= wait
+
+
+MEMORY_NOTES_INTERVAL = 30
+
+
+async def maybe_memory_notes(app):
+    """Refresh the readable memory notes at most every 30 s, only when memory changed."""
+    last = getattr(app.state, 'memory_notes_at', 0)
+    if time.monotonic() - last < MEMORY_NOTES_INTERVAL:
+        return
+    app.state.memory_notes_at = time.monotonic()
+    try:
+        if RuntimeConfig(app.state.vault).load()['mode'] == 'OFF':
+            return
+        from .memory_notes import refresh
+        await asyncio.to_thread(refresh, app.state.vault)
+    except Exception:
+        # A derived view never stops the worker loop.
+        pass
 
 
 async def maybe_memory_audit(app):
