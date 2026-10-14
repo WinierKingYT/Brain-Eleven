@@ -5,6 +5,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **Hafıza notları (PR #73).** `🔮 Companion/Hafıza/<proje>.md` ve `Genel.md`:
+  aktif hafızalar türlerine göre (Kararlar, Dersler, …), id ve tarihle. Servis
+  hafıza revizyonu değişince en çok 30 sn'de bir yeniler; `notes` hemen yazar.
+  Notlar türetilmiş görünüm: elle düzenleme hafızaya geri yazılmaz. "Markdown
+  kaynak" yönü (notu düzenleyip hafızayı değiştirmek) hâlâ açık.
 - **Tüketim modları (PR #72).** `profile normal|economical|manual`. Normal:
   oturum başı + her istem (eskisi gibi). Ekonomik: yalnız oturum başı, en çok
   2000 karakter; alt ajana 1000 karakter; istemlerde hiçbir şey derlenmez.
@@ -44,8 +49,8 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
-2. **Markdown görünümü.** Hafızanın Obsidian'da okunur hali (Markdown kaynak,
-   veritabanı türev).
+2. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
+   işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 3. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
 4. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
