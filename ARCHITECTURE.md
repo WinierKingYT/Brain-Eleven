@@ -32,6 +32,14 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
 
+## Seni tanıma notları
+
+`runtime/companion.py`: `🔮 Companion/Core.md` ve `Kurallar.md` sahibin
+notlarıdır, kanonik hafıza değildir; ajan düzeltmeleri `Kurallar.md`'ye ekler
+(beyin skill'i). SessionStart bağlam sırası: sahip notları → oturum kartları →
+hafıza. Devam/kimlik sorusu soran istemlerde notlar ve kartlar da eklenir.
+Launcher bağlamı istemci sınırına (9500 karakter) satır sınırında sığdırır.
+
 ## Oturum kartları
 
 `runtime/session_cards.py`: worker her yakalamadan sonra oturumun kartını

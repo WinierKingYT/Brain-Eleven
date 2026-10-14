@@ -189,9 +189,7 @@ def hook(vault, client, event, payload):
         approved = result.get('delivery_approved') is True
         provider_allowed = provider in {'V1', 'W06B_TASK_AWARE'}
         if approved and provider_allowed and result.get('delivered') is True and result.get('context'):
-            text = result['context']
-            if profile == 'economical':
-                text = text[:ECONOMICAL_SESSION_CHARS]
+            text = fit_context(result['context'], ECONOMICAL_SESSION_CHARS if profile == 'economical' else CLIENT_CONTEXT_CHARS)
             output['hookSpecificOutput'] = {'hookEventName': event, 'additionalContext': text}
         if result.get('missing_critical_needs') or result.get('status') not in {'SUCCESS', 'EMPTY', 'OFF', 'SCOPE_DISABLED'}:
             output['systemMessage'] = 'Brain-Eleven: bağlam eksik veya kullanılamıyor; çalışma devam ediyor. İnceleme ekranını kontrol edin.'
@@ -214,6 +212,20 @@ def hook(vault, client, event, payload):
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
                               'project_id': result.get('project_id'),
                               'context_elapsed_ms':result.get('elapsed_ms', 0)}
+
+
+# Claude Code shows at most ~10,000 characters of hook context inline; owner
+# notes, session cards and memory together must fit under it.
+CLIENT_CONTEXT_CHARS = 9500
+
+
+def fit_context(text, limit):
+    """Cut at a line boundary so the head (owner notes, cards) always survives."""
+    if len(text) <= limit:
+        return text
+    marker = '\n… (bağlam kısaltıldı)'
+    cut = text.rfind('\n', 0, limit - len(marker))
+    return text[:cut if cut > 0 else limit - len(marker)] + marker
 
 
 SUBAGENT_FINDINGS_HEADING = '### Brain-Eleven bulguları'
@@ -249,7 +261,7 @@ def subagent_start(vault, client, payload):
                 'turn': identity('subagent_', agent), 'event': 'SessionStart'}, timeout=1.2)
             if (result.get('delivery_approved') is True and result.get('delivered') is True
                     and result.get('provider') in {'V1', 'W06B_TASK_AWARE'} and isinstance(result.get('context'), str)):
-                context = result['context'][:limit]
+                context = fit_context(result['context'], limit)
         except (OSError, ValueError, KeyError, http.client.HTTPException):
             context = ''
     text = (context + '\n\n' if context else '') + SUBAGENT_INSTRUCTION

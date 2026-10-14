@@ -39,10 +39,18 @@ def test_default_profile_is_normal_and_unchanged(runtime, service):  # noqa: F81
     assert _context(_hook(vault, 'UserPromptSubmit', turn_id='t1')) == LONG
 
 
+def test_context_is_cut_at_a_line_under_the_client_limit():
+    text = '## Seni tanıma\n' + 'x' * 50 + '\n' + 'satır\n' * 3000
+    cut = launcher.fit_context(text, launcher.CLIENT_CONTEXT_CHARS)
+    assert len(cut) <= launcher.CLIENT_CONTEXT_CHARS and cut.startswith('## Seni tanıma')
+    assert cut.endswith('(bağlam kısaltıldı)')
+    assert launcher.fit_context('kısa', 100) == 'kısa'
+
+
 def test_economical_gives_a_short_session_start_and_no_prompt_context(runtime, service):  # noqa: F811
     vault, _ = runtime
     RuntimeConfig(vault).set_context_profile('economical')
-    assert len(_context(_hook(vault, 'SessionStart'))) == ECONOMICAL_SESSION_CHARS
+    assert len(_context(_hook(vault, 'SessionStart'))) <= ECONOMICAL_SESSION_CHARS
     calls = len(service)
     assert _hook(vault, 'UserPromptSubmit', turn_id='t2') == {}
     assert len(service) == calls  # nothing compiled for the prompt

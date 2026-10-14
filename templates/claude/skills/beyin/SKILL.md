@@ -36,6 +36,18 @@ ya da tahmin kaydedilmez. Metin tek başına anlaşılır olsun ve NEDEN'i içer
 {{PYTHON}} "{{VAULT_PATH}}/scripts/remember.py" --vault "{{VAULT_PATH}}" --project-root "$PWD" --type <decision|lesson|observation|open_loop> --content "<metin>"
 ```
 
+## Seni tanıma notları
+
+`🔮 Companion/Core.md` (sahip kim, nasıl çalışmak istiyor) ve
+`🔮 Companion/Kurallar.md` (sahibin düzeltmeleri) her oturum başında bağlama girer.
+
+- Sahip seni düzeltirse ("hayır, böyle değil", "bundan sonra şöyle yap") aynı
+  oturumda `Kurallar.md`'ye bir madde ekle: `- **kural:** … **neden:** …`
+  (tek satır). Tek seferlik istek kural değildir.
+- Sahip kendisi hakkında kalıcı bir şey söylerse (ad, hitap, çalışma biçimi)
+  `Core.md`'deki ilgili maddeyi güncelle; tahmin yazma.
+- İkisini de kısa tut; uzun anlatım ayrı nota gider.
+
 ## Kurallar
 
 - Sır, token, parola, kart/hesap numarası, tam dosya yolu ya da sohbet dökümü
