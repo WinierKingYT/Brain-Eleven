@@ -32,6 +32,14 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
 
+## Oturum kartları
+
+`runtime/session_cards.py`: worker her yakalamadan sonra oturumun kartını
+günceller ve proje notunu (`🔮 Companion/Oturumlar/<proje>.md`) yeniden yazar.
+Kart durumu JSON olarak runtime kökünde durur, not ondan türetilir. Kart bölümü
+3000 karakteri aşınca en eski kartlar `🔮 Companion/Arşiv/<proje> - YYYY-AA.md`
+dosyasına eklenir. SessionStart bağlamına son iki kart eklenir.
+
 ## Alt ajanlar
 
 `SubagentStart` (yalnız Claude) alt ajana proje hafızasını ve bir talimat

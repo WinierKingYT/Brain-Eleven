@@ -6,52 +6,6 @@
     "dailyTemplate": "🔮 Companion/Daily.md",
     "threadsFile": "🔮 Companion/Threads.md"
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/session-start.sh",
-            "statusMessage": "Last Session ve Threads'i oku, bağlantıyı kur"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/prompt-counter.sh",
-            "statusMessage": "İstem olayını yerel capture kuyruğuna al"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/session-end.sh",
-            "statusMessage": "Oturum olayını hızlıca yerel capture kuyruğuna al"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/pre-compact.sh",
-            "statusMessage": "Derleme günlüğünü güncelle"
-          }
-        ]
-      }
-    ]
-  },
   "memory": {
     "scope": "core+goals",
     "autoSave": true,
