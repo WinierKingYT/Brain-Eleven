@@ -52,6 +52,62 @@ def windows_codex_command(args):
     return '& ' + ' '.join("'" + part.replace("'", "''") + "'" for part in args)
 
 
+SKILLS = ('beyin', 'beyin-doktor', 'beyin-guncelle')
+SKILL_TEMPLATES = Path(__file__).resolve().parents[2] / 'templates' / 'claude' / 'skills'
+
+
+def _sha(text):
+    import hashlib
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def render_skill(name, vault):
+    text = (SKILL_TEMPLATES / name / 'SKILL.md').read_text(encoding='utf-8')
+    return text.replace('{{PYTHON}}', str(Path(sys.executable).resolve())).replace('{{VAULT_PATH}}', str(Path(vault).resolve()))
+
+
+def install_skills(vault, home, previous):
+    """Write the skill trio under ~/.claude/skills; never overwrite a file someone else changed.
+
+    ``previous`` maps a skill to the hash Brain-Eleven last wrote. A file that
+    exists with any other content is left alone and reported.
+    """
+    root = (Path(home) if home else Path.home()) / '.claude' / 'skills'
+    written, skipped = {}, []
+    for name in SKILLS:
+        path = root / name / 'SKILL.md'
+        text = render_skill(name, vault)
+        if path.exists():
+            current = _sha(path.read_text(encoding='utf-8'))
+            if current != previous.get(name) and current != _sha(text):
+                skipped.append(name)
+                continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name('SKILL.md.tmp')
+        temporary.write_text(text, encoding='utf-8')
+        temporary.replace(path)
+        written[name] = {'path': str(path), 'sha256': _sha(text)}
+    return written, skipped
+
+
+def uninstall_skills(recorded):
+    """Remove only the skill files whose content is still what Brain-Eleven wrote."""
+    removed = []
+    for name, item in recorded.items():
+        path = Path(item['path'])
+        try:
+            if path.is_file() and _sha(path.read_text(encoding='utf-8')) == item['sha256']:
+                path.unlink()
+                removed.append(name)
+                try:
+                    path.parent.rmdir()
+                except OSError:
+                    pass
+        except OSError:
+            continue
+    return removed
+
+
 def merge_hooks(document, additions, previous=None):
     value = deepcopy(document)
     hooks = value.setdefault('hooks', {})
@@ -187,7 +243,14 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
             manifest['clients'][client]['owned_entries'] = [entries]
             write_json(cfg.root / 'installation.json', manifest)
         write_json(cfg.root / 'native-hooks-installed.json', {'clients': list(manifest['clients'])})
-        return {'status': 'INSTALLED', 'mode': config['mode'], 'clients': list(clients), 'project_id': project['project_id'], 'hook_trust': 'CLIENT_REVIEW_REQUIRED'}
+        skills, skipped = {}, []
+        if 'claude' in clients:
+            previous = {name: item.get('sha256') for name, item in manifest.get('skills', {}).items()}
+            skills, skipped = install_skills(vault, home, previous)
+            manifest['skills'] = {**manifest.get('skills', {}), **skills}
+            write_json(cfg.root / 'installation.json', manifest)
+        return {'status': 'INSTALLED', 'mode': config['mode'], 'clients': list(clients), 'project_id': project['project_id'],
+                'hook_trust': 'CLIENT_REVIEW_REQUIRED', 'skills': sorted(skills), 'skills_skipped_modified': skipped}
 
 
 def uninstall(vault):
@@ -211,6 +274,7 @@ def uninstall(vault):
                         if entry not in hooks:
                             hooks.append(entry)
                 write_json(path, restored)
+        uninstall_skills(manifest.get('skills', {}))
         write_json(cfg.root / 'installation.json', {'clients': {}, 'uninstalled_at': now()})
         (cfg.root / 'native-hooks-installed.json').unlink(missing_ok=True)
     return {'status': 'UNINSTALLED', 'canonical_data': 'PRESERVED'}

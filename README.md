@@ -37,6 +37,12 @@ python -m brain_eleven --vault <vault> rollout ACTIVE
 
 ## Günlük kullanım
 
+`install` Claude Code'a üç skill de kurar (`~/.claude/skills/`): **beyin**
+("hatırla", "ne biliyoruz", "son işler"), **beyin-doktor** (bir şey
+çalışmıyorsa), **beyin-guncelle** ("beynimi güncelle", geri alma). Komut
+ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasının
+üstüne yazılmaz.
+
 | Komut | Ne işe yarar |
 |---|---|
 | `doctor` | Kurulum ve hook sağlığı |

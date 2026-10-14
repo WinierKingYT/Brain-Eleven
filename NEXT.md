@@ -5,6 +5,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **Skill üçlüsü (PR #74).** `install` `~/.claude/skills/` altına `beyin`,
+  `beyin-doktor`, `beyin-guncelle` yazar (Python ve vault yolu doldurulmuş).
+  Sahibin değiştirdiği ya da başka kaynaktan gelen aynı adlı dosya ezilmez;
+  `uninstall` yalnız kendi yazdığı, değişmemiş dosyaları siler. Güncelleme
+  skill'i git tabanlı: yalnız `pull --ff-only`, yerel değişiklik varsa durur.
 - **Hafıza notları (PR #73).** `🔮 Companion/Hafıza/<proje>.md` ve `Genel.md`:
   aktif hafızalar türlerine göre (Kararlar, Dersler, …), id ve tarihle. Servis
   hafıza revizyonu değişince en çok 30 sn'de bir yeniler; `notes` hemen yazar.
@@ -51,10 +56,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
 2. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
-3. **Skill üçlüsü.** `beyin` / `beyin-doktor` / `beyin-guncelle`.
-4. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
+3. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
-5. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
+4. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
    katmak.
 
 ## Açık konular
