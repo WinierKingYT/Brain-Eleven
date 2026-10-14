@@ -152,6 +152,10 @@ def render(vault, project, state):
         '',
         *(threads or ['- (kayıtlı açık konu yok)']),
         '',
+        RECEIPTS_HEADING,
+        '',
+        *(_receipt_lines(vault, project['project_id'], NOTE_RECEIPTS) or ['- (henüz iş sonucu yok)']),
+        '',
         HEADING,
         '',
         '\n\n'.join(render_card(c) for c in kept) if kept else '(henüz kart yok)',
@@ -214,13 +218,29 @@ def all_cards(vault):
                 yield project_id, card
 
 
+RECEIPTS_HEADING = '## Son iş sonuçları'
+NOTE_RECEIPTS, CONTEXT_RECEIPTS = 5, 3
+
+
+def _receipt_lines(vault, project_id, limit):
+    try:
+        from .receipts import latest, render as render_receipt
+        return [render_receipt(item) for item in latest(vault, project_id, limit)]
+    except Exception:  # Receipts are advisory; a bad file never breaks the note.
+        return []
+
+
 def context(vault, project_id, *, exclude_session=None, limit=CONTEXT_LIMIT):
-    """The latest cards of this project for a starting session, newest first."""
+    """Latest work outcomes and cards of this project for a starting session, newest first."""
     state = read_json(_state_path(vault, project_id), {'cards': {}})
     skip = identity('card_', exclude_session) if exclude_session else None
     cards = sorted((c for k, c in state.get('cards', {}).items() if k != skip),
                    key=lambda c: c['updated_at'], reverse=True)[:CONTEXT_CARDS]
-    if not cards:
+    receipts = _receipt_lines(vault, project_id, CONTEXT_RECEIPTS)
+    if not cards and not receipts:
         return ''
-    text = CONTEXT_HEADING + '\n\n' + '\n\n'.join(render_card(c) for c in cards)
-    return text[:limit]
+    parts = [CONTEXT_HEADING]
+    if receipts:
+        parts.append('İş sonuçları (ajanın kaydı):\n' + '\n'.join(receipts))
+    parts += [render_card(c) for c in cards]
+    return '\n\n'.join(parts)[:limit]

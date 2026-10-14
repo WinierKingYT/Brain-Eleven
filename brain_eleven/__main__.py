@@ -84,6 +84,12 @@ def main(argv=None):
     cross = sub.add_parser('cross-project', help="prompts also get other projects' relevant decisions/lessons as references")
     cross.add_argument('state', choices=['OFF', 'ON'])
     cross.add_argument('--private', nargs='*', metavar='PROJECT', help='project labels or ids never shared with other projects')
+    receipt_cmd = sub.add_parser('receipt', help='record a work outcome for this project (agent-written, immutable)')
+    receipt_cmd.add_argument('summary', help='what was finished, one or two sentences')
+    receipt_cmd.add_argument('--next', dest='next_step', help='the next step, if any')
+    receipt_cmd.add_argument('--source', action='append', default=[], help='relative path, URL, commit id or #PR (repeatable)')
+    receipt_cmd.add_argument('--project-root', default=None, help='default: current folder')
+    receipt_cmd.add_argument('--client', default='manual', choices=['claude', 'codex', 'manual'])
     sub.add_parser('notes', help='rewrite the readable memory notes under Companion/Hafıza now')
     profile_cmd = sub.add_parser('profile', help='how much context hooks inject: normal, economical (session start only, short) or manual (none)')
     profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual'], help='omit to show the current profile')
@@ -187,6 +193,11 @@ def main(argv=None):
                     raise ValueError('study write needs --items <file>')
                 items = json.loads(Path(args.items).read_text(encoding='utf-8-sig'))
                 result = study_module.write(args.vault, args.target, items, commit=args.commit)
+        elif args.command == 'receipt':
+            import os
+            from .runtime.receipts import submit
+            result = submit(args.vault, args.project_root or os.getcwd(), args.summary, next_step=args.next_step,
+                            sources=args.source, client=args.client)
         elif args.command == 'notes':
             from .runtime.memory_notes import refresh
             result = refresh(args.vault, force=True)

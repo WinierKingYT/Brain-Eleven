@@ -48,6 +48,12 @@ Kart durumu JSON olarak runtime kökünde durur, not ondan türetilir. Kart böl
 3000 karakteri aşınca en eski kartlar `🔮 Companion/Arşiv/<proje> - YYYY-AA.md`
 dosyasına eklenir. SessionStart bağlamına son iki kart eklenir.
 
+## İş sonuçları
+
+`runtime/receipts.py`: ajanın yazdığı değişmez sonuç kayıtları, runtime
+kökünde dosya başına bir JSON. Proje notu, SessionStart kart bölümü ve `recap`
+bunları gösterir; kanonik hafızaya girmez.
+
 ## Alt ajanlar
 
 `SubagentStart` (yalnız Claude) alt ajana proje hafızasını ve bir talimat

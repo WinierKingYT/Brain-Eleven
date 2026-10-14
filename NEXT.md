@@ -5,6 +5,12 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **İş sonucu kayıtları (PR #76).** `receipt "<ne bitti>" --next … --source …`:
+  ajan anlamlı bir iş bitince kısa, kaynaklı bir sonuç bırakır (beyin skill'i
+  söyler). Kayıtlar değişmez, aynısı tekrar gönderilirse kopya oluşmaz; tam
+  dosya yolu ve sır reddedilir. Proje notunda "Son iş sonuçları", SessionStart'ta
+  son 3 sonuç, `recap`'te projenin ilk bölümü olarak görünür. Kanonik hafıza
+  değildir, ajanın iddiasıdır.
 - **Seni tanıma (PR #75).** `🔮 Companion/Core.md` (sahip kim, nasıl
   çalışılır) ve `Kurallar.md` (sahibin düzeltmeleri: kural + neden) proje
   bağımsız; her SessionStart bağlamı bunlarla açılır, sonra oturum kartları,

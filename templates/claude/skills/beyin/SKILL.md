@@ -36,6 +36,19 @@ ya da tahmin kaydedilmez. Metin tek başına anlaşılır olsun ve NEDEN'i içer
 {{PYTHON}} "{{VAULT_PATH}}/scripts/remember.py" --vault "{{VAULT_PATH}}" --project-root "$PWD" --type <decision|lesson|observation|open_loop> --content "<metin>"
 ```
 
+## İş sonucu kaydı
+
+Anlamlı bir iş bittiğinde (PR açıldı, hata çözüldü, karar uygulandı) tek bir
+kayıt bırak:
+
+```text
+{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" receipt "<ne bitti, bir iki cümle>" --next "<sıradaki adım>" --source <göreli/yol> --source <#PR veya commit> --project-root "$PWD" --client claude
+```
+
+Kaynaklar göreli yol, URL, commit id ya da `#numara` olur; tam dosya yolu
+yazılmaz. Aynı kayıt iki kez gönderilirse kopya oluşmaz. Küçük ara adımlar
+için kayıt açma; oturum başına birkaç anlamlı sonuç yeter.
+
 ## Seni tanıma notları
 
 `🔮 Companion/Core.md` (sahip kim, nasıl çalışmak istiyor) ve
