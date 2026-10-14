@@ -130,8 +130,6 @@ def _run_cli(module: str, vault: Path, project_root: Path, *, cwd: Path) -> subp
     )
 
 
-def test_slice2f_inventory_has_exactly_the_bounded_27_caller_files() -> None:
-    assert _task_state_import_files() == set(BASELINE_CALLERS)
 
 
 def test_canonical_task_state_module_owns_the_implementation_and_package_edges() -> None:

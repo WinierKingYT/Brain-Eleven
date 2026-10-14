@@ -202,8 +202,7 @@ def hook(vault, client, event, payload):
                               'session_hash': identity('session_', session), 'turn_hash': identity('turn_', turn),
                               'context_delivered': delivered,
                               'selected_ids': result.get('selected_ids', []) if output.get('hookSpecificOutput') else [],
-                              'v1_ids': result.get('v1_ids', []), 'project_id':result.get('project_id'),
-                              'implementation_fingerprint':result.get('implementation_fingerprint'),
+                              'project_id': result.get('project_id'),
                               'context_elapsed_ms':result.get('elapsed_ms', 0)}
 
 

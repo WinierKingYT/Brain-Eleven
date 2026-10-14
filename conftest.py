@@ -17,6 +17,8 @@ _ROOT = Path(__file__).parent
 
 
 def _alias_package_module(name: str) -> None:
+    if not (_ROOT / "scripts" / f"{name}.py").exists():
+        return
     module = importlib.import_module(f"scripts.{name}")
     sys.modules.setdefault(name, module)
 

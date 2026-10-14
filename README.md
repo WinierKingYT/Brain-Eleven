@@ -1,36 +1,61 @@
 # Brain-Eleven
 
-Local, privacy-first second-brain system: a revisioned canonical memory store,
-project-scoped state, safe retrieval, and a non-injecting context compiler,
-wired into Claude/Codex via hooks so context loads automatically at session
-start.
+Eleven'in yerel ikinci beyni. Claude Code ve Codex oturumlarını hook'larla
+yakalar, oturumlardan karar ve dersleri çıkarır, sahibin onayından geçenleri
+hafızaya yazar ve her yeni oturumda/istemde ilgili hafızayı bağlama ekler.
 
-## Quickstart
+## Ne yapar
+
+- **Yakalama:** `SessionStart`, `UserPromptSubmit`, `Stop`, `SessionEnd`
+  hook'ları oturum dökümlerini kuyruğa alır. Ana kaynak, oturum özetlerindeki
+  hata/çözüm maddeleri ve sahibin açık kararlarıdır. Yapıştırılan çıktı,
+  belge ve harness mesajları sahip sözü sayılmaz.
+- **Ayıklama:** Kurallar ve yerel model kuyruktaki çöpü eler; kalanlar
+  inceleme ekranına (`review`) ya da `digest` özetine düşer. Kişi onayı
+  olmadan yazılan kayıtlar 14 gün deneme süresinde izlenir.
+- **Hatırlama:** Her istemde uygun hafızalar yerel embedding ile kısa
+  listeye alınır, cross-encoder ile sıralanır (~1 sn). Başka projelerin en
+  ilgili 3 karar/dersi kaynak etiketiyle eklenebilir (`cross-project ON`).
+- **Proje çalışması:** `project add` bir klasörü yakalamaya kaydeder,
+  `study` bir projeyi ya da GitHub reposunu okuyup karar/ders önerir.
+
+## Kurulum
 
 ```bash
 pip install -r requirements.txt
-pip install pytest  # not in requirements.txt; needed to run tests locally
-python -m pytest tests -m "not integration and not graduation" -q
+python -m brain_eleven --vault <vault> install                  # hook'ları kurar
+python -m brain_eleven --vault <vault> project add <proje-klasörü>  # her proje için
+python -m brain_eleven --vault <vault> doctor
 ```
 
-Or via Docker: `make build && make up && make health`.
+Yeni kurulum doğrudan `ACTIVE` modda başlar ve her yakalanan hafıza sahibin
+onayına düşer (`approval ON`). Eski kurulumlar `SHADOW`'dan şu komutla çıkar:
 
-Copy `.env.example` to `.env` before running anything that touches embeddings
-or the API — see that file for what each variable does and what happens when
-it's left unset (semantic search and API auth both degrade safely, they don't
-fail open).
+```bash
+python -m brain_eleven --vault <vault> rollout ACTIVE
+```
 
-## Where to go next
+## Günlük kullanım
 
-| You want to... | Read |
+| Komut | Ne işe yarar |
 |---|---|
-| Understand how the pieces fit together | `ARCHITECTURE.md` |
-| Set up your environment, run tests, open a PR | `CONTRIBUTING.md` |
-| Know where we are and what's next, in plain language | `NEXT.md` |
-| Know what's actually done vs. in progress, with evidence | `PROJECT-STATUS.md` |
-| Know which other `.md` file to trust | `DOCUMENTATION-AUTHORITY.md` |
-| Use it day to day (`doctor`, review screen, `measure`) | `docs/OPERATOR-RUNBOOK.md` |
+| `doctor` | Kurulum ve hook sağlığı |
+| `review` | Onay bekleyen hafızalar (tarayıcıda) |
+| `digest` | Günün en değerli adayları |
+| `project add <klasör>` | Projeyi yakalamaya kaydet |
+| `study <klasör veya repo>` | Projeden karar/ders çıkar |
+| `recall-probe` | 5 soruluk hatırlama testi |
+| `measure` | Gerçek kullanım ölçümü |
+| `retire <id>` | Bir hafızayı iptal et (silmeden) |
 
-Older `IG*`, `PHASE*`, `PRE*` files are package-level contracts and closure
-reports, not entry points — `PROJECT-STATUS.md` tells you which one is
-currently active.
+Tüm komutlar: `python -m brain_eleven --help`.
+
+## Geliştirme
+
+```bash
+pip install pytest
+python -m pytest tests -q
+```
+
+Mimari: [ARCHITECTURE.md](ARCHITECTURE.md). Durum ve sıradaki işler:
+[NEXT.md](NEXT.md).

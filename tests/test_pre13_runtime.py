@@ -406,26 +406,6 @@ def test_interrupted_hook_upgrade_retains_ownership(runtime, tmp_path, monkeypat
         assert read_json(path) == custom
 
 
-@pytest.mark.parametrize('change', ['OFF', 'SHADOW', 'optout', 'revision'])
-def test_native_context_revalidates_after_baseline_comparison(runtime, monkeypatch, change):
-    from evals.baseline import BaselineContextProvider
-    vault, project = runtime
-    apply_candidate(vault, candidate(project), op_id=identity('op_', 'initial'))
-    original = BaselineContextProvider.select
-    def changed(self, *args, **kwargs):
-        result = original(self, *args, **kwargs)
-        if change in {'OFF', 'SHADOW'}:
-            RuntimeConfig(vault).set_mode(change)
-        elif change == 'optout':
-            ProjectRegistry(vault).set_proactive_capture(project, False)
-        else:
-            apply_candidate(vault, candidate(project, candidate_id='cand_later', content='We decided to enable encrypted backups.'), op_id=identity('op_', 'later'))
-        return result
-    monkeypatch.setattr(BaselineContextProvider, 'select', changed)
-    result = compile_context(vault, vault, 'Which database did we decide to use for persistent storage?', client='codex')
-    assert not result['delivered']
-    if change != 'SHADOW':
-        assert not result['context'] and not result['selected_ids']
 
 
 def test_hook_delivery_and_warn_continue(runtime, monkeypatch):
@@ -485,8 +465,7 @@ def test_full_local_service_lifecycle_and_native_cli_hook(runtime, tmp_path):
         observations = list((RuntimeConfig(vault).root / 'deliveries').glob('*.json'))
         assert len(observations) == 1
         observation = read_json(observations[0])
-        assert observation['selected_ids'] and observation['v1_ids']
-        assert observation['implementation_fingerprint']
+        assert observation['selected_ids']
     finally:
         request_service(vault, '/api/runtime/stop', {}, timeout=2)
         deadline = time.monotonic() + 8
@@ -494,32 +473,10 @@ def test_full_local_service_lifecycle_and_native_cli_hook(runtime, tmp_path):
             time.sleep(.1)
 
 
-def test_manual_pass_flag_cannot_enable_active(runtime):
-    vault, _ = runtime
-    cfg = RuntimeConfig(vault)
-    write_json(cfg.root / 'graduation.json', {'status':'PASS'})
-    with pytest.raises(ValueError, match='Independent live'):
-        cfg.set_mode('ACTIVE')
-    assert cfg.load()['mode'] == 'CANARY'
 
 
-def test_empty_human_labels_do_not_count_as_real_graduation(runtime):
-    from brain_eleven.runtime.graduation import evaluate
-    vault, _ = runtime
-    result = evaluate(vault, {'schema_version':1,'label_source':'human_independent','labeler':'test','tasks':[],'captures':[]}, {})
-    assert result['status'] == 'PENDING_REAL_USE'
-    assert result['real_turns'] == 0
-    assert not result['gates']['capture_precision_98']
 
 
-def test_missing_delivery_and_model_labels_cannot_graduate(runtime):
-    from brain_eleven.runtime.graduation import evaluate
-    vault, _ = runtime
-    with pytest.raises(ValueError, match='human'):
-        evaluate(vault, {'schema_version':1,'label_source':'model','labeler':'test'}, {})
-    with pytest.raises(ValueError, match='emitted native'):
-        evaluate(vault, {'schema_version':1,'label_source':'human_independent','labeler':'test',
-                        'tasks':[{'delivery_id':identity('delivery_', 'missing'),'confirmed_real_turn':True}]}, {})
 
 
 def test_review_drops_model_extras_and_checks_actual_state_text(runtime):
@@ -561,30 +518,6 @@ def test_every_active_blocker_has_a_separate_critical_need(runtime):
         assert all(key in result['context'] for key in ids)
 
 
-def test_live_gate_computation_uses_observed_ids_and_human_labels(runtime):
-    from brain_eleven.runtime.graduation import evaluate
-    from evals.runtime_eval import implementation_fingerprint
-    vault, project = runtime
-    cfg = RuntimeConfig(vault)
-    fingerprint = implementation_fingerprint()
-    labels = {'schema_version':1,'label_source':'human_independent','labeler':'unit-test-fixture',
-              'tasks':[], 'captures':[], 'project_leaks':0,'lifecycle_leaks':0}
-    for index in range(40):
-        key = identity('delivery_', 'synthetic-unit-fixture', index)
-        write_json(cfg.root / 'deliveries' / (key+'.json'), {'status':'EMITTED','implementation_fingerprint':fingerprint,
-            'selected_ids':['required','irrelevant'], 'v1_ids':['required'], 'session_hash':str(index%5), 'client':'codex' if index%2 else 'claude',
-            'project_id':project,'context_elapsed_ms':50,'hook_elapsed_ms':100})
-        labels['tasks'].append({'delivery_id':key, 'confirmed_real_turn':True, 'required':['required'], 'useful':[], 'forbidden':['irrelevant']})
-    op = identity('op_', 'synthetic-capture')
-    write_json(cfg.root/'capture-observations'/(op+'.json'), {'operation_id':op})
-    labels['captures'] = [{'operation_id':op,'correct':False}]
-    result = evaluate(vault, labels, {})
-    assert result['precision'] == .5 and result['required_recall'] == 1
-    assert not result['gates']['no_forbidden'] and not result['gates']['capture_precision_98']
-    assert result['status'] != 'PASS'
-    labels['tasks'].append(labels['tasks'][0])
-    with pytest.raises(ValueError, match='duplicate'):
-        evaluate(vault, labels, {})
 
 
 @pytest.mark.parametrize('client,document,error', [

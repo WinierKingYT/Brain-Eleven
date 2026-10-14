@@ -161,7 +161,10 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
         def update_runtime_config(config):
             config['project_ids'] = list(dict.fromkeys(config['project_ids'] + [project['project_id']]))
             if config['mode'] == 'OFF':
-                config['mode'] = 'SHADOW'
+                # No quality gates: a fresh install goes straight to ACTIVE and
+                # keeps every captured memory behind the owner's review.
+                config['mode'] = 'ACTIVE'
+                config['b1_human_approval'] = True
 
         config = cfg._mutate_current(update_runtime_config)
         for client, path, before, entries, after, suspended in plans:
