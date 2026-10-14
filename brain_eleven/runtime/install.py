@@ -52,7 +52,7 @@ def windows_codex_command(args):
     return '& ' + ' '.join("'" + part.replace("'", "''") + "'" for part in args)
 
 
-SKILLS = ('beyin', 'beyin-doktor', 'beyin-guncelle')
+SKILLS = ('beyin', 'beyin-doktor', 'beyin-guncelle', 'beyin-yakala')
 SKILL_TEMPLATES = Path(__file__).resolve().parents[2] / 'templates' / 'claude' / 'skills'
 
 

@@ -42,7 +42,7 @@ python -m brain_eleven --vault <vault> rollout ACTIVE
 
 `install` Claude Code'a üç skill de kurar (`~/.claude/skills/`): **beyin**
 ("hatırla", "ne biliyoruz", "son işler"), **beyin-doktor** (bir şey
-çalışmıyorsa), **beyin-guncelle** ("beynimi güncelle", geri alma). Komut
+çalışmıyorsa), **beyin-guncelle** ("beynimi güncelle", geri alma), **beyin-yakala** ("yakalananları işle"). Komut
 ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasının
 üstüne yazılmaz.
 
@@ -53,6 +53,7 @@ ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasın�
 | `digest` | Günün en değerli adayları |
 | `recap --days 7` | Son günlerin oturumları ve yeni hafızaları (model çağırmaz; `--since/--until YYYY-AA-GG`, `--project`) |
 | `receipt "<ne bitti>" --next … --source …` | İş sonucu kaydı (ajan yazar; recap ve oturum başında görünür) |
+| `yakala ekle <URL\|dosya\|metin>` / `liste` / `kur` | Gelen kutusuna at (`📥 Gelen/`); Windows'ta `kur` Ctrl+Alt+B kısayolunu ekler. İşlemek için ajana "yakalananları işle" de. |
 | `profile [normal\|economical\|manual]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç). Yakalama her modda sürer. |
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |

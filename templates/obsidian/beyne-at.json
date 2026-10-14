@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "Beyne at",
+  "behavior": "create",
+  "noteContentFormat": "{{url}}\n\n{{selection|blockquote}}\n\n{{content}}",
+  "properties": [
+    {"name": "tür", "value": "bağlantı", "type": "text"},
+    {"name": "kaynak", "value": "{{url}}", "type": "text"},
+    {"name": "yakalandı", "value": "{{date:YYYY-MM-DDTHH:mm:ssZ}}", "type": "text"},
+    {"name": "durum", "value": "bekliyor", "type": "text"}
+  ],
+  "triggers": [],
+  "noteNameFormat": "{{date:YYYY-MM-DD HHmmss}} {{title|safe_name}}",
+  "path": "📥 Gelen"
+}

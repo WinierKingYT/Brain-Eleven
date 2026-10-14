@@ -90,6 +90,11 @@ def main(argv=None):
     receipt_cmd.add_argument('--source', action='append', default=[], help='relative path, URL, commit id or #PR (repeatable)')
     receipt_cmd.add_argument('--project-root', default=None, help='default: current folder')
     receipt_cmd.add_argument('--client', default='manual', choices=['claude', 'codex', 'manual'])
+    yakala_cmd = sub.add_parser('yakala', help='inbox: capture a link, file or text; list, mark done, install the hotkey')
+    yakala_cmd.add_argument('action', choices=['ekle', 'pano', 'liste', 'bitti', 'kur'])
+    yakala_cmd.add_argument('value', nargs='?', help='ekle: URL, file path or text; bitti: inbox item file name')
+    yakala_cmd.add_argument('--not', dest='note', help='bitti: the knowledge note the item became')
+    yakala_cmd.add_argument('--hepsi', action='store_true', help='liste: include processed items')
     sub.add_parser('notes', help='rewrite the readable memory notes under Companion/Hafıza now')
     profile_cmd = sub.add_parser('profile', help='how much context hooks inject: normal, economical (session start only, short) or manual (none)')
     profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual'], help='omit to show the current profile')
@@ -198,6 +203,18 @@ def main(argv=None):
             from .runtime.receipts import submit
             result = submit(args.vault, args.project_root or os.getcwd(), args.summary, next_step=args.next_step,
                             sources=args.source, client=args.client)
+        elif args.command == 'yakala':
+            from .runtime import yakala
+            if args.action == 'ekle':
+                result = yakala.add(args.vault, args.value or '')
+            elif args.action == 'pano':
+                result = yakala.clipboard(args.vault)
+            elif args.action == 'liste':
+                result = yakala.items(args.vault, status=None if args.hepsi else yakala.PENDING)
+            elif args.action == 'bitti':
+                result = yakala.done(args.vault, args.value or '', args.note)
+            else:
+                result = yakala.install_shortcut(args.vault)
         elif args.command == 'notes':
             from .runtime.memory_notes import refresh
             result = refresh(args.vault, force=True)
