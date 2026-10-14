@@ -244,7 +244,7 @@ def _confidence_components(message: EvidenceMessage, content: str, commitment: C
         Commitment.QUOTED: 0.12,
         Commitment.UNCERTAIN: 0.25,
     }[commitment]
-    source_authority = {"user": 1.0, "summary": 0.7}.get(role, 0.25)
+    source_authority = {"user": 1.0, "summary": 0.7, "subagent": 0.5}.get(role, 0.25)
     classification = 0.90 if any(pattern.search(content) for pattern in (_DECISION, _LESSON, _PREFERENCE, _CURRENT, _REQUIREMENT)) else 0.55
     scope = 1.0 if message.record.project_id else 0.0
     temporal = 0.80 if message.record.occurred_at is not None else 0.55
@@ -360,6 +360,51 @@ def _summary_candidates(message: EvidenceMessage) -> list[NewMemoryCandidate]:
     return candidates
 
 
+SUBAGENT_FINDINGS_HEADING = "### Brain-Eleven bulguları"
+_NEXT_HEADING = re.compile(r"^\s*#{1,6}\s", re.MULTILINE)
+
+
+def subagent_facts(content: str) -> list[str]:
+    """Top-level bullets under the findings heading a subagent was asked to write."""
+    start = content.rfind(SUBAGENT_FINDINGS_HEADING)
+    if start < 0:
+        return []
+    body = content[start + len(SUBAGENT_FINDINGS_HEADING):]
+    following = _NEXT_HEADING.search(body)
+    if following:
+        body = body[:following.start()]
+    facts: list[str] = []
+    current: list[str] = []
+    for line in body.splitlines():
+        bullet = _SUMMARY_BULLET.match(line)
+        if bullet is not None and len(line) - len(line.lstrip()) <= 3:
+            if current:
+                facts.append(" ".join(current))
+            current = [bullet.group(1).strip()]
+        elif current and line.strip():
+            current.append(line.strip().lstrip("-*• ").strip())
+    if current:
+        facts.append(" ".join(current))
+    return [" ".join(fact.split()) for fact in facts if len(fact.strip()) >= MIN_SUMMARY_FACT_CHARS]
+
+
+def _subagent_candidates(message: EvidenceMessage) -> list[NewMemoryCandidate]:
+    candidates = []
+    for index, fact in enumerate(subagent_facts(message.content)):
+        if _PASTED_OUTPUT.search(fact) or not evaluate_capture(fact).accepted:
+            continue
+        confidence, components = _confidence_components(message, fact, Commitment.OBSERVED)
+        candidates.append(
+            NewMemoryCandidate(
+                **_base(message, index, CandidateKind.NEW_MEMORY.value, Commitment.OBSERVED, confidence, components),
+                memory_type=_memory_type(fact),
+                scope="project" if message.record.project_id else "unresolved",
+                content=fact,
+            )
+        )
+    return candidates
+
+
 class DeterministicExtractor:
     """Extract safe candidate proposals from a role-aware evidence batch."""
 
@@ -372,6 +417,12 @@ class DeterministicExtractor:
                 # Owner decision 2026-09-30: session summaries are the main
                 # source; only their outcome sections become candidates.
                 accepted.extend(_summary_candidates(message))
+                continue
+            if message.record.role == "subagent":
+                # 2026-10-13: a subagent report is not the owner speaking; only
+                # the findings section it was asked to write becomes candidates,
+                # and the worker always routes them to review.
+                accepted.extend(_subagent_candidates(message))
                 continue
             approver = confirmations.get(position)
             if position - 1 in confirmations:

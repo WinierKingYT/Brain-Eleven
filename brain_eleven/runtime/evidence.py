@@ -38,6 +38,35 @@ _CODEX_NON_MESSAGE_ITEMS = frozenset({'function_call', 'function_call_output', '
 _TYPE_NAME = re.compile(r'[A-Za-z0-9_-]{1,40}')
 
 
+SUBAGENT_FINDINGS_HEADING = '### Brain-Eleven bulguları'
+
+
+def _block_text(block):
+    """Text of one content block, descending into a tool result's own content."""
+    if not isinstance(block, dict):
+        return ''
+    if block.get('type') in {'text', 'input_text', 'output_text'} and isinstance(block.get('text'), str):
+        return block['text']
+    if block.get('type') == 'tool_result':
+        inner = block.get('content')
+        if isinstance(inner, str):
+            return inner
+        if isinstance(inner, list):
+            return '\n'.join(_block_text(x) for x in inner)
+    return ''
+
+
+def subagent_report(content):
+    """The report text when ``content`` carries a subagent findings section, else None."""
+    if isinstance(content, str):
+        text = content
+    elif isinstance(content, list):
+        text = '\n'.join(_block_text(x) for x in content)
+    else:
+        return None
+    return text if SUBAGENT_FINDINGS_HEADING in text else None
+
+
 def _count_ignored_type(counts, kind):
     """Count one unrecognised string record type by a bounded ASCII-identifier name."""
     name = kind if _TYPE_NAME.fullmatch(kind) else 'OTHER'
@@ -101,6 +130,13 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
                     # kept as evidence but never counts as the user speaking:
                     # 2026-09-30 it was most of the review-queue noise.
                     role = 'system'
+                if kind == 'user' and role in {'user', 'system'}:
+                    report = subagent_report(content)
+                    if report is not None:
+                        # A subagent's report (a foreground tool result or a
+                        # background hand-back) is never the owner speaking;
+                        # only its findings section is captured, for review.
+                        role, content = 'subagent', report
             elif kind not in _CLAUDE_METADATA_TYPES:
                 # An unrecognised type never becomes evidence, even when it
                 # carries a message-shaped field; it is only counted by name.
@@ -110,7 +146,7 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
             raise ValueError('UNSUPPORTED_CLIENT')
         if role is None:
             continue
-        if role not in {'user', 'assistant', 'system', 'developer', 'tool', 'summary'}:
+        if role not in {'user', 'assistant', 'system', 'developer', 'tool', 'summary', 'subagent'}:
             raise ValueError('UNSUPPORTED_MESSAGE_ROLE')
         if isinstance(content, list):
             # Tool results carried in a Claude user envelope are never treated

@@ -32,6 +32,14 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
 
+## Alt ajanlar
+
+`SubagentStart` (yalnız Claude) alt ajana proje hafızasını ve bir talimat
+verir: rapor `### Brain-Eleven bulguları` başlığıyla biter. Okuyucu
+(`runtime/evidence.py`) ana dökümde bu başlığı taşıyan araç sonucunu ya da meta
+kaydı `subagent` rolüyle alır. Çıkarıcı yalnız o başlığın maddelerini aday
+yapar, worker bunları her zaman incelemeye koyar.
+
 ## Modlar
 
 `OFF` (kapalı), `SHADOW` (yakalar ama yazmaz; `shadow-recall ON` ile bağlam

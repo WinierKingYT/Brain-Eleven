@@ -41,7 +41,7 @@ _ALLOWED_FIELDS = frozenset(
         "schema_version",
     }
 )
-_ROLES = frozenset({"user", "assistant", "tool", "system", "summary", "unknown"})
+_ROLES = frozenset({"user", "assistant", "tool", "system", "summary", "subagent", "unknown"})
 _COMMITMENTS = frozenset(
     {
         "committed",

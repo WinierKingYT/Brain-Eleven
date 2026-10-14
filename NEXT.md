@@ -5,6 +5,14 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-13)
 
+- **Alt ajan desteği (PR #69).** `SubagentStart` hook'u her alt ajana proje
+  hafızasını (en çok 2500 karakter) ve raporunun sonuna
+  `### Brain-Eleven bulguları` başlığıyla kalıcı bulgularını yazma talimatını
+  veriyor. Ana dökümdeki rapor (ön plan araç sonucu ya da arka plan dönüşü)
+  `subagent` rolüyle okunuyor; yalnız o başlığın maddeleri aday oluyor ve
+  her zaman incelemeye düşüyor. Codex'te alt ajan hook'u yok. Sınır: alt
+  ajanın raporuna yazmadığı ara bilgi hâlâ yakalanmıyor (alt ajan dökümleri
+  okunmuyor). Kurulumda yeni hook için `install` yeniden çalıştırılmalı.
 - **Büyük temizlik yapıldı.** 300'den fazla süreç belgesi, kontrat ve rapor;
   IG/PRE-13 eval korpusları; holdout ve graduation kalite kapıları; her
   istemde çalışan baseline karşılaştırması; ölü betikler ve bunların testleri
@@ -18,9 +26,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Sıradaki işler (sırayla)
 
-1. **Alt ajan desteği.** `SubagentStart` hook'u ile alt ajana proje hafızası
-   vermek; `<session>/subagents/*.jsonl` dökümlerini yakalamak; alt ajan
-   raporlarını ayrı bir kaynak olarak değerlendirmek.
+1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
+   sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
+   `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
 2. **Last-Session ve Threads kartları.** Oturum başına kısa devir kartı ve
    açık konuların güncel durumu; boyut sınırı, taşan kısım kelimesi kelimesine
    arşive (avenoxbeyin'deki yapı).
