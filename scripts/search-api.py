@@ -757,8 +757,7 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
     input text and expensive to (re)compute via the OpenAI API.
     """
     try:
-        _embedding_generator = _load_hyphenated_module("embedding_generator", "embedding-generator.py")
-        EmbeddingGenerator = _embedding_generator.EmbeddingGenerator
+        from brain_eleven.search.embedding import EmbeddingGenerator
 
         # Version the API cache alongside the provider-backed contract so old
         # deterministic/fallback vectors cannot be reused after migration.

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Brain-Eleven Embedding Generator
 Generate and cache vector embeddings for semantic search

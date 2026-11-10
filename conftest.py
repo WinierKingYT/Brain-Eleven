@@ -73,8 +73,5 @@ for _module_name in (
 
 for _module_name, _filename in {
     "memory_compiler": "memory-compiler.py",
-    "memory_retriever": "memory-retriever.py",
-    "hybrid_search": "hybrid-search.py",
-    "ml_ranker": "ml-ranker.py",
 }.items():
     _alias_legacy_script(_module_name, _filename)

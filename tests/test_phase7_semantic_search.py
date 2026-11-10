@@ -15,20 +15,10 @@ from types import SimpleNamespace
 
 # Setup path
 
-# Load modules with importlib
-def load_module(name, filename):
-    spec = importlib.util.spec_from_file_location(
-        name,
-        Path(__file__).parent.parent / "scripts" / filename
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-embedding_gen = load_module("embedding_generator", "embedding-generator.py")
-semantic_search = load_module("semantic_search", "semantic-search.py")
-hybrid_search = load_module("hybrid_search", "hybrid-search.py")
-ml_ranker = load_module("ml_ranker", "ml-ranker.py")
+from brain_eleven.search import embedding as embedding_gen
+from brain_eleven.search import hybrid as hybrid_search
+from brain_eleven.search import ranker as ml_ranker
+from brain_eleven.search import semantic as semantic_search
 
 EmbeddingGenerator = embedding_gen.EmbeddingGenerator
 SemanticSearchEngine = semantic_search.SemanticSearchEngine

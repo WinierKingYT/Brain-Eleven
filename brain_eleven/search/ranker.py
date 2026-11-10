@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
  Brain-Eleven weighted ranking engine
  Deterministic heuristic ranking combining multiple signals
