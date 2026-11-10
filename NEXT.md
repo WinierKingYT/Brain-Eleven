@@ -3,7 +3,12 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-10-14)
+## Şu an (2026-11-10)
+
+- **v1.0 başlangıç ölçümü.** Testler 1637 geçti, 0 kırmızı. `recall-probe`
+  oturum başı modunda 2/5 (üç yanıt hafızada ama 8 yere sığmıyor: `SLOT_LIMIT`),
+  `--mode prompt` ile 5/5. Gerileme değil: iki mod farklı şeyi ölçüyor.
+  v1.0 sadeleştirmesinde karşılaştırma tabanı bu iki sayıdır.
 
 - **`why` (PR #78).** `why <mem_id>`: hafızanın içeriği, durumu, sahip onayı ve
   her kanıtı için rol ve asıl mesaj. Kanıt yalnız hash tuttuğu için döküm,
