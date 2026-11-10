@@ -128,12 +128,12 @@ def test_runtime_capture_surfaces_preserve_legacy_object_identity():
         CurrentProjectState,
         StateResolver,
     )
-    from scripts.capture_event import (
+    from brain_eleven.runtime.capture_event import (
         CaptureEventError as LegacyCaptureEventError,
         HookEvent as LegacyHookEvent,
         parse_hook_event as legacy_parse_hook_event,
     )
-    from scripts.evidence import (
+    from brain_eleven.runtime.evidence import (
         EvidenceBatch as LegacyEvidenceBatch,
         EvidenceMessage as LegacyEvidenceMessage,
         EvidenceStore as LegacyEvidenceStore,
@@ -143,17 +143,17 @@ def test_runtime_capture_surfaces_preserve_legacy_object_identity():
         TranscriptProvenanceError as LegacyTranscriptProvenanceError,
         resolve_transcript_path as legacy_resolve_transcript_path,
     )
-    from scripts.capture_queue import (
+    from brain_eleven.runtime.capture_queue import (
         CaptureQueue as LegacyCaptureQueue,
         CaptureQueueError as LegacyCaptureQueueError,
     )
     from brain_eleven.runtime.capture_safety import evaluate_capture as legacy_evaluate_capture
-    from scripts.extraction import DeterministicExtractor as LegacyDeterministicExtractor
+    from brain_eleven.runtime.extraction import DeterministicExtractor as LegacyDeterministicExtractor
     from scripts.state_resolver import (
         CurrentProjectState as LegacyCurrentProjectState,
         StateResolver as LegacyStateResolver,
     )
-    from scripts.state_boundary import StateBoundary as LegacyStateBoundary
+    from brain_eleven.runtime.state_boundary import StateBoundary as LegacyStateBoundary
     from scripts.task_state_context import TaskStateComposer as LegacyTaskStateComposer
 
     assert CaptureEventError is LegacyCaptureEventError

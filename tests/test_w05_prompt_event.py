@@ -10,8 +10,8 @@ from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, write_json
 from brain_eleven.runtime.worker import Worker
 from brain_eleven.state import StateService, StateStore
-from capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
-from capture_queue import CaptureQueue
+from brain_eleven.runtime.capture_event import EVENT_USER_PROMPT_SUBMIT, parse_hook_event
+from brain_eleven.runtime.capture_queue import CaptureQueue
 
 
 @pytest.fixture

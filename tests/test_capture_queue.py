@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from capture_event import EVENT_SESSION_END, EVENT_USER_PROMPT_SUBMIT, parse_hook_event
-from capture_queue import (
+from brain_eleven.runtime.capture_event import EVENT_SESSION_END, EVENT_USER_PROMPT_SUBMIT, parse_hook_event
+from brain_eleven.runtime.capture_queue import (
     CLAIMED,
     COMMITTED,
     DEAD_LETTER,

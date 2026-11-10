@@ -11,8 +11,8 @@ import json
 
 import pytest
 
-from evidence import TranscriptReader
-from extraction import DeterministicExtractor, NewMemoryCandidate, StateMutationProposal
+from brain_eleven.runtime.evidence import TranscriptReader
+from brain_eleven.runtime.extraction import DeterministicExtractor, NewMemoryCandidate, StateMutationProposal
 
 
 def _extract(tmp_path, content):

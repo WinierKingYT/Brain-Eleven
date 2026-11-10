@@ -7,8 +7,8 @@ from brain_eleven.runtime import maintenance
 from brain_eleven.runtime.storage import RuntimeConfig, write_json
 from brain_eleven.runtime.worker import Worker
 from brain_eleven.state import StateStore
-from scripts.capture_event import HookEvent
-from scripts.capture_queue import CaptureQueue
+from brain_eleven.runtime.capture_event import HookEvent
+from brain_eleven.runtime.capture_queue import CaptureQueue
 import json
 import threading
 import time

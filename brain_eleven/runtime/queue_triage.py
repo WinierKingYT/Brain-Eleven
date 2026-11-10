@@ -62,7 +62,7 @@ Candidate (type=%s, commitment=%s):
 
 
 def _pasted_output(text):
-    from .extraction import _legacy
+    from . import extraction as _legacy
     return bool(_legacy._PASTED_OUTPUT.search(text))
 
 

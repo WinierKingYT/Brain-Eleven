@@ -37,7 +37,7 @@ def _evidence(vault, evidence_id):
 def _find_transcript(vault, client, path_hash):
     from . import capture_provenance as provenance
     from .capture_provenance import TranscriptProvenanceError
-    from .evidence import _legacy_evidence as evidence
+    from . import evidence
     try:
         roots = provenance._configured_roots(vault, client)
     except TranscriptProvenanceError:

@@ -2,7 +2,7 @@
 
 import pytest
 
-from extraction import Commitment, _classify_commitment, _memory_type
+from brain_eleven.runtime.extraction import Commitment, _classify_commitment, _memory_type
 
 
 @pytest.mark.parametrize("text", [

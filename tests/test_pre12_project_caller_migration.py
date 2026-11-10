@@ -4,8 +4,8 @@ import ast
 from pathlib import Path
 
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
-from capture_event import ProjectRegistry as CaptureProjectRegistry
-from capture_event import ProjectRegistryError as CaptureProjectRegistryError
+from brain_eleven.runtime.capture_event import ProjectRegistry as CaptureProjectRegistry
+from brain_eleven.runtime.capture_event import ProjectRegistryError as CaptureProjectRegistryError
 from state_resolver import ProjectRegistry as ResolverProjectRegistry
 from state_resolver import ProjectRegistryError as ResolverProjectRegistryError
 from task_model import ProjectRegistry as TaskProjectRegistry
@@ -27,7 +27,6 @@ def test_legacy_registry_imports_are_limited_to_compatibility_edges() -> None:
     root = Path(__file__).resolve().parents[1]
     allowed = {
         "brain_eleven/projects/registry.py",
-        "scripts/capture_event.py",
         "scripts/state_store.py",
     }
     for path in (root / "scripts").rglob("*.py"):

@@ -86,7 +86,7 @@ def test_compact_summary_keeps_its_own_role(runtime, tmp_path):  # noqa: F811
 
 
 def test_findings_section_ends_at_the_next_heading():
-    from brain_eleven.runtime.extraction import _legacy
+    from brain_eleven.runtime import extraction as _legacy
     text = REPORT + '\n## Sonraki adımlar\n- Bu satır bir bulgu değildir ama yeterince uzun bir maddedir.'
     assert _legacy.subagent_facts(text)[-1].startswith(FINDING_2)
     assert _legacy.subagent_facts('Bulgu yok.') == []

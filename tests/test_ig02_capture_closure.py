@@ -13,9 +13,9 @@ from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json, identity
 from brain_eleven.runtime.worker import Worker, apply_candidate, enqueue
 from brain_eleven.state import StateService, StateStore, StateStoreConflict
-from evidence import EvidenceBatch
+from brain_eleven.runtime.evidence import EvidenceBatch
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout
-from capture_queue import CaptureQueue
+from brain_eleven.runtime.capture_queue import CaptureQueue
 
 
 @pytest.fixture

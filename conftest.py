@@ -40,15 +40,11 @@ def _alias_legacy_script(name: str, filename: str) -> None:
 
 
 for _module_name in (
-    "capture_event",
-    "capture_queue",
     "anomaly_detector",
     "cache_manager",
     "chat_interface",
     "context_engine_foundation_evidence",
     "entity_extractor",
-    "evidence",
-    "extraction",
     "graduation_evidence",
     "knowledge_graph",
     "logging_config",
@@ -68,7 +64,6 @@ for _module_name in (
     "report_junit_failures",
     "report_trivy_findings",
     "session_pipeline",
-    "state_boundary",
     "state_resolver",
     "state_store",
     "summarizer",

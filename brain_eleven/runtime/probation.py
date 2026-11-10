@@ -55,7 +55,7 @@ RETIRE_REASONS = frozenset({'MACHINE_CONTENT', 'PASTED_OUTPUT', 'PASTED_DOCUMENT
 
 def rule_reason(text):
     """The deterministic reason a memory is junk, or ''."""
-    from .extraction import _legacy
+    from . import extraction as _legacy
     from .queue_triage import rule_verdict
     text = str(text or '')
     if _legacy._pasted_document(text):
