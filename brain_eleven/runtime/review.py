@@ -9,7 +9,7 @@ import json
 from datetime import datetime, timedelta, timezone
 import math
 import re
-from context_compiler_v2.safety import contains_secret
+from brain_eleven.runtime.secret_check import contains_secret
 from .capture_safety import evaluate_capture
 from .storage import read_json, write_json, identity, now, RuntimeConfig, runtime_file_lock as file_lock
 

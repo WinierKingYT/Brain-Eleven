@@ -69,7 +69,7 @@ def _model_accept(entry):
 
 def _safe_text(text, limit=160):
     """Memory text for display, withheld when it fails the capture safety check."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     from .capture_safety import evaluate_capture
     text = str(text or '')
     return text[:limit] if not contains_secret(text) and evaluate_capture(text).accepted else '[withheld]'

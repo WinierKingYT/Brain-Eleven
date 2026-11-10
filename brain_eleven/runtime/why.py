@@ -60,7 +60,7 @@ def _find_transcript(vault, client, path_hash):
 
 def _quote(vault, record, path, client):
     """The source text, only if re-reading the byte range reproduces the evidence id."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     from .evidence import _parse_lines
     locator = record['source'].get('locator', {})
     start, end = locator.get('byte_start'), locator.get('byte_end')

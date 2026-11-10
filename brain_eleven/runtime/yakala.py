@@ -64,7 +64,7 @@ def _write_item(vault, kind, source, body):
 
 def add(vault, value):
     """Capture a URL, an existing file path, or plain text."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     if not isinstance(value, str) or not value.strip():
         raise ValueError('Nothing to capture')
     value = value.strip()

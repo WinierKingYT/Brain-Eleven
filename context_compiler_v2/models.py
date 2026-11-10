@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
 
+from brain_eleven.runtime.token_estimate import ESTIMATION_MODES, TokenEstimate  # noqa: F401
+
 COMPILER_SCHEMA_VERSION = 1
 COMPILER_VERSION = "context-compiler-v2"
 COMPILATION_STATUSES = frozenset(
@@ -26,7 +28,6 @@ COMPILATION_STATUSES = frozenset(
     }
 )
 COMPILER_MODES = frozenset({"OFF", "SHADOW"})
-ESTIMATION_MODES = frozenset({"EXACT", "PROVIDER_ESTIMATE", "CONSERVATIVE_ESTIMATE"})
 COMPRESSION_MODES = frozenset({"FULL", "STRUCTURED", "EXTRACTIVE", "METADATA_ONLY", "OMIT"})
 CONTEXT_ROLES = frozenset(
     {
@@ -173,34 +174,6 @@ class CompilationRequest:
             raise CompilerContractError("task_state and resolution_result are required")
         if self.compiler_profile is not None:
             _string(self.compiler_profile, "compiler_profile")
-
-
-@dataclass(frozen=True)
-class TokenEstimate:
-    count: int
-    mode: str
-    adapter: str
-    version: str
-    byte_count: int
-
-    def __post_init__(self) -> None:
-        if isinstance(self.count, bool) or not isinstance(self.count, int) or self.count < 0:
-            raise CompilerContractError("token estimate count must be a non-negative integer")
-        if self.mode not in ESTIMATION_MODES:
-            raise CompilerContractError(f"Unsupported token estimate mode: {self.mode}")
-        _string(self.adapter, "token estimator adapter")
-        _string(self.version, "token estimator version")
-        if isinstance(self.byte_count, bool) or not isinstance(self.byte_count, int) or self.byte_count < 0:
-            raise CompilerContractError("token estimate byte_count must be a non-negative integer")
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "count": self.count,
-            "mode": self.mode,
-            "adapter": self.adapter,
-            "version": self.version,
-            "byte_count": self.byte_count,
-        }
 
 
 @dataclass(frozen=True)

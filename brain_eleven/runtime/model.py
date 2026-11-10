@@ -12,7 +12,7 @@ def propose(config, message):
     parsed = urlparse(url)
     if parsed.scheme != 'http' or parsed.hostname not in {'127.0.0.1', '::1'} or parsed.username or parsed.password or parsed.query or parsed.fragment:
         return [], 'LOCAL_MODEL_ENDPOINT_REJECTED'
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     if contains_secret(message.content) or not evaluate_capture(message.content).accepted:
         return [], 'SENSITIVE_SOURCE_SKIPPED'
     import httpx
