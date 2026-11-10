@@ -103,29 +103,8 @@ def _secret_cases():
     )
 
 
-def test_truth_surfaces_and_safety_policy_keep_identity():
-    legacy = importlib.import_module("memory_truth")
-    capture = importlib.import_module("brain_eleven.runtime.capture_safety")
-    package = importlib.import_module("brain_eleven.memory.truth")
-
-    for name in (
-        "TruthError",
-        "TruthInputError",
-        "TruthCorruptError",
-        "TruthAction",
-        "TruthStatus",
-        "TruthCandidate",
-        "TruthDecision",
-        "TruthResult",
-        "MemoryTruthEngine",
-        "legacy_request_projection",
-    ):
-        assert getattr(package, name) is getattr(legacy, name)
-    assert legacy.evaluate_capture is capture.evaluate_capture
-
-
 def test_truth_script_contains_no_second_write_authority():
-    path = Path(__file__).parents[1] / "scripts" / "memory_truth.py"
+    path = Path(__file__).parents[1] / "brain_eleven" / "memory" / "truth.py"
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source)
     assert not any(
@@ -280,7 +259,7 @@ def test_new_operation_still_obeys_archived_registry_policy(tmp_path):
 
 def test_registry_read_oserror_is_bounded_without_memory_load(tmp_path, monkeypatch):
     _project(tmp_path)
-    truth = importlib.import_module("scripts.memory_truth")
+    truth = importlib.import_module("brain_eleven.memory.truth")
 
     def fail_registry_read(self, _project_id):
         raise OSError("simulated registry read failure")
@@ -446,7 +425,7 @@ def test_review_accept_approved_worker_effect_matches_hash_and_replays(tmp_path)
 def test_registry_unavailable_is_bounded_and_does_not_load_memory(tmp_path, monkeypatch, registry_payload):
     _project(tmp_path)
     registry_path(tmp_path).write_bytes(registry_payload)
-    truth = importlib.import_module("scripts.memory_truth")
+    truth = importlib.import_module("brain_eleven.memory.truth")
 
     def fail_memory_load(self):
         raise AssertionError("memory must not be loaded for unavailable registry")
@@ -464,7 +443,7 @@ def test_registry_unavailable_is_bounded_and_does_not_load_memory(tmp_path, monk
 
 
 def test_global_metadata_is_rejected_without_registry_lookup(tmp_path, monkeypatch):
-    truth = importlib.import_module("scripts.memory_truth")
+    truth = importlib.import_module("brain_eleven.memory.truth")
 
     def fail_registry(*args, **kwargs):
         raise AssertionError("global candidates must not consult the registry")
@@ -595,7 +574,7 @@ def test_worker_unapproved_transition_stays_review_required(tmp_path):
 
 
 def test_cli_can_evaluate_without_persisting(tmp_path, capsys):
-    module = importlib.import_module("scripts.memory_truth")
+    module = importlib.import_module("brain_eleven.memory.truth")
     candidate_path = tmp_path / "candidates.json"
     candidate_path.write_text(
         json.dumps([{"candidate_id": "cli", "content": "A safe global decision."}]),

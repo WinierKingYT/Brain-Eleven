@@ -67,13 +67,6 @@ def test_brain_eleven_package_has_no_direct_scripts_import_edges():
         assert not any(name == "scripts" or name.startswith("scripts.") for name in imports), path
 
 
-def test_canonical_memory_truth_surface_preserves_legacy_identity():
-    from brain_eleven.memory.truth import MemoryTruthEngine as CanonicalMemoryTruthEngine
-    from scripts.memory_truth import MemoryTruthEngine as LegacyMemoryTruthEngine
-
-    assert CanonicalMemoryTruthEngine is LegacyMemoryTruthEngine
-
-
 def test_memory_store_implementation_is_canonical_and_legacy_path_is_an_adapter():
     from brain_eleven.memory import MemoryStore as CanonicalMemoryStore
     from scripts.memory_store import MemoryStore as LegacyMemoryStore
@@ -149,7 +142,7 @@ def test_runtime_capture_surfaces_preserve_legacy_object_identity():
     )
     from brain_eleven.runtime.capture_safety import evaluate_capture as legacy_evaluate_capture
     from brain_eleven.runtime.extraction import DeterministicExtractor as LegacyDeterministicExtractor
-    from scripts.state_resolver import (
+    from brain_eleven.state.resolver import (
         CurrentProjectState as LegacyCurrentProjectState,
         StateResolver as LegacyStateResolver,
     )

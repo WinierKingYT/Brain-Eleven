@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from project_registry import ProjectRegistry
-from state_resolver import STATE_AVAILABLE, STATE_CORRUPT, StateResolver
+from brain_eleven.state.resolver import STATE_AVAILABLE, STATE_CORRUPT, StateResolver
 from state_store import StateSchemaError, StateService, StateStoreCorrupt
 from task_state_context import TaskStateComposer
 

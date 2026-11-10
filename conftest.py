@@ -64,7 +64,6 @@ for _module_name in (
     "report_junit_failures",
     "report_trivy_findings",
     "session_pipeline",
-    "state_resolver",
     "state_store",
     "summarizer",
     "task_model",

@@ -6,8 +6,8 @@ from pathlib import Path
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
 from brain_eleven.runtime.capture_event import ProjectRegistry as CaptureProjectRegistry
 from brain_eleven.runtime.capture_event import ProjectRegistryError as CaptureProjectRegistryError
-from state_resolver import ProjectRegistry as ResolverProjectRegistry
-from state_resolver import ProjectRegistryError as ResolverProjectRegistryError
+from brain_eleven.state.resolver import ProjectRegistry as ResolverProjectRegistry
+from brain_eleven.state.resolver import ProjectRegistryError as ResolverProjectRegistryError
 from task_model import ProjectRegistry as TaskProjectRegistry
 from task_model import ProjectRegistryError as TaskProjectRegistryError
 
