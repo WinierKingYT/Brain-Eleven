@@ -5,6 +5,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-10-14)
 
+- **V2 kaldırıldı.** Gölgedeki V2 bağlam derleyicisi (beş paket, ~6.500 satır)
+  canlı yolda çalışmıyordu; silindi. Canlıda kullandığı tek şey, normal turdaki
+  bayatlık kontrolü, `context.py` içinde `_inputs_current` olarak kaldı.
+  150 V2 testi gitti, 4 yeni test geldi (1637 → 1491 geçti).
 - **`why` (PR #78).** `why <mem_id>`: hafızanın içeriği, durumu, sahip onayı ve
   her kanıtı için rol ve asıl mesaj. Kanıt yalnız hash tuttuğu için döküm,
   güvenilen köklerde yol hash'iyle bulunur ve bayt aralığı normal okuyucuyla
@@ -90,8 +94,6 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 3. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
    güncelleme.
-4. **V2 sadeleştirme.** Gölgedeki V2 paketlerini ölçüp kaldırmak ya da V1'e
-   katmak.
 
 ## Açık konular
 

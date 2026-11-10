@@ -32,9 +32,4 @@ probe = [
 include = [
     "brain_eleven*",
     "scripts*",
-    "context_router*",
-    "authority*",
-    "context_compiler_v2*",
-    "context_density_v2*",
-    "retrieval_decision_v2*",
 ]

@@ -11,7 +11,6 @@ from brain_eleven.runtime.context import compile_context
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateService, StateStore
 from brain_eleven.memory import MemoryStore
-from context_density_v2 import ContextDensityEngine, DensityOptions
 
 
 @pytest.fixture
@@ -27,19 +26,6 @@ def runtime(tmp_path):
     return vault, project['project_id']
 
 
-def test_critical_missing_is_degraded():
-    item = N(candidate_id='a', source_type='memory', project_id='p', content_type='lesson', lifecycle='ACTIVE', canonical_ref={'memory_id':'a'}, needs=('lesson',), decision_score=.8)
-    source = N(status='SUCCESS', input_revisions={}, selected=(item,), need_plan=N(needs=(N(need_id='blocker', priority='critical'),)))
-    result = ContextDensityEngine().select(source)
-    assert result.status == 'DEGRADED'
-    assert result.telemetry['missing_critical_needs'] == ['blocker']
-    assert ContextDensityEngine().select(replace_namespace(source, selected=())).status == 'DEGRADED'
-
-
-def replace_namespace(value, **changes):
-    return N(**{**vars(value), **changes})
-
-
 def _native_path(tmp_path, project_root, client, session_id, documents):
     if client == 'claude':
         # Mirror brain_eleven.runtime.ownership._project_slug exactly (the
@@ -53,17 +39,6 @@ def _native_path(tmp_path, project_root, client, session_id, documents):
         path = tmp_path / (session_id + '.jsonl')
     path.write_text('\n'.join(json.dumps(document) for document in documents) + '\n', encoding='utf-8')
     return path
-
-
-def test_diversity_weight_changes_actual_selection():
-    def item(key, score):
-        return N(candidate_id=key, source_type='memory', project_id='p', content_type='lesson', lifecycle='ACTIVE', canonical_ref={'memory_id':key}, needs=('lesson',), decision_score=score)
-    source = N(status='SUCCESS', input_revisions={}, selected=(item('a', .9), item('b', .8), item('c', .7)), need_plan=N(needs=()))
-    texts = {'a':'database sqlite local', 'b':'database sqlite local', 'c':'cache redis eviction'}
-    full = ContextDensityEngine().select(source, options=DensityOptions(max_selected=2, diversity_lambda=1), candidate_texts=texts)
-    varied = ContextDensityEngine().select(source, options=DensityOptions(max_selected=2, diversity_lambda=.1), candidate_texts=texts)
-    assert [x.candidate_id for x in full.selected] == ['a', 'b']
-    assert [x.candidate_id for x in varied.selected] == ['a', 'c']
 
 
 def candidate(project, **changes):
@@ -503,16 +478,12 @@ def test_model_proposals_are_bounded_and_strip_untrusted_extra_keys(monkeypatch)
     assert values == [{'content':'Use transactions for writes.','memory_type':'decision'}]
 
 
-def test_every_active_blocker_has_a_separate_critical_need(runtime):
-    from task_state_context import TaskStateComposer
-    from retrieval_decision_v2.engine import build_need_plan
+def test_every_active_blocker_reaches_normal_turn_context(runtime):
     vault, project = runtime
     ids = []
     for index, text in enumerate(['Build fails with locked database', 'Deployment is blocked by missing certificates']):
         result = apply_candidate(vault, candidate(project, candidate_type='STATE_MUTATION', text=text, operation='ADD_BLOCKER', commitment='OBSERVED'), op_id=identity('op_', index))
         ids.append(result['record_id'])
-    needs = build_need_plan(TaskStateComposer(vault, vault).compose('Debug the build'))
-    assert set(ids) <= {need.domain for need in needs.needs if need.priority == 'critical'}
     result = compile_context(vault, vault, 'Debug the build')
     if result['status'] == 'SUCCESS':
         assert all(key in result['context'] for key in ids)

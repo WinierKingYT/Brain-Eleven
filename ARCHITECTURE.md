@@ -28,7 +28,6 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `brain_eleven/projects/` | Proje kimliği ve kayıt defteri |
 | `brain_eleven/extraction/`, `retrieval/`, `search/` | Çıkarım sağlayıcıları, embedding |
 | `scripts/` | Eski betikler; bir kısmı hâlâ canlı yolda (`capture_queue.py`, `context-compiler.py`, `memory_store.py`), `search-api.py` Docker HTTP API'si |
-| `context_compiler_v2/`, `authority/`, `context_router/`, `retrieval_decision_v2/`, `context_density_v2/` | V2 bağlam derleyicisi. Yalnız gölge modda çalışır, model bağlamına girmez. Sadeleştirme adayı. |
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
 
