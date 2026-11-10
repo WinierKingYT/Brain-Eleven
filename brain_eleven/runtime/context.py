@@ -1,5 +1,4 @@
 """One measured context chain for evaluation, hooks, and manual inspection."""
-from dataclasses import replace
 import math
 import os
 from pathlib import Path
@@ -12,20 +11,14 @@ from brain_eleven.runtime.worker import allowed
 from brain_eleven.memory.scope import infer_memory_scope
 from .capture_safety import evaluate_capture
 from .task_state_context import TaskStateComposer
-from context_router import ContextRouter, RoutingOptions
-from authority import AuthorityResolver, AuthorityOptions
-from retrieval_decision_v2 import RetrievalDecisionEngine, DecisionOptions, NeedPlan
-from context_density_v2 import ContextDensityEngine, DensityOptions
-from context_compiler_v2 import ContextCompilerV2
-from context_compiler_v2.models import CompilationRequest, CompilationOptions, BudgetContract
+from brain_eleven.memory import MemoryStore, MemoryStoreError
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
+from brain_eleven.state.resolver import StateResolver
 from brain_eleven.runtime.secret_check import contains_secret
 from brain_eleven.runtime.token_estimate import ConservativeTokenEstimator
-from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapshot
 
 
-# V2 may be computed for comparison in a separately reviewed path, but it is
-# not a model-facing provider while the product remains in SHADOW.  Keep this
-# allow-list local to the delivery boundary so a provider label cannot drift
+# Only these providers may reach the model.  Keep this allow-list local to the delivery boundary so a provider label cannot drift
 # away from the text that is actually returned.
 MODEL_FACING_V1_PROVIDERS = frozenset({'V1', 'W06B_TASK_AWARE'})
 MAX_V1_STATE_ID_MARKERS = 64
@@ -761,20 +754,10 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         result = compile_task_w06b(vault, task, budget=min(budget, 1024), human_approval=config.get('b1_human_approval', False))
         task_need = result.get('task_need', {})
         if task_need.get('status') in {'NO_NEED', 'AMBIGUOUS', 'UNAVAILABLE', 'INVALID'}:
-            # The W06B fallback is also V1.  Keep the historical symbol
-            # injectable for existing callers/tests without routing the
-            # production fallback through the V2 compatibility function.
-            fallback = compile_task_v1 if compile_task is _V2_COMPAT_COMPILE_TASK else compile_task
-            fallback_options = {
-                'budget': budget,
-                'human_approval': config.get('b1_human_approval', False),
-            }
-            if fallback is compile_task_v1:
-                fallback_options.update(
-                    prompt=request,
-                    provider_config_path=prompt_provider_config(project_root),
-                )
-            legacy = fallback(vault, task, **fallback_options)
+            legacy = compile_task_v1(vault, task, budget=budget,
+                                     human_approval=config.get('b1_human_approval', False),
+                                     prompt=request,
+                                     provider_config_path=prompt_provider_config(project_root))
             legacy['provider'] = 'V1'
             legacy['task_need_status'] = task_need.get('status')
             legacy['task_need_error_code'] = task_need.get('error_code')
@@ -792,7 +775,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     if current_config['mode'] == 'OFF' or not current_project or current_project['project_id'] != project['project_id']:
         result.update(status='SCOPE_DISABLED', context='', selected_ids=[])
     elif (config.get('retrieval_mode') != 'W06B_TASK_AWARE' and result.get('input_revisions')
-          and not CompilerEvidenceAdapter(vault).inputs_current(CompilerSnapshot(result['input_revisions'], ()) )):
+          and not _inputs_current(vault, result['input_revisions'])):
         result.update(status='STALE_INPUT', context='', selected_ids=[])
     elif event == 'UserPromptSubmit' and _asks_continuity(request):
         # "Nerede kalmıştık / beni tanıyor musun": deterministic continuity,
@@ -801,8 +784,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         _add_companion(vault, result, client=client)
     # SHADOW computes no model-facing normal-turn context, unless the owner
     # turned on shadow_recall (2026-09-27): then only V1 providers deliver.
-    # CANARY/ACTIVE still use V1 only while the product-level V2 status
-    # remains SHADOW.
+    # CANARY/ACTIVE deliver only V1 providers.
     provider = result.get('provider')
     shadow_recall = (current_config['mode'] == 'SHADOW' and current_config.get('shadow_recall') is True
                      and provider in MODEL_FACING_V1_PROVIDERS)
@@ -825,6 +807,26 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     return result
 
 
+def _inputs_current(vault, revisions):
+    """True while the memory, state and registry revisions a result was built from are unchanged."""
+    try:
+        if MemoryStore(vault).revision() != revisions['memory']:
+            return False
+        resolver = StateResolver(vault)
+        for project_id, details in revisions['state'].items():
+            state = resolver.resolve(project_id)
+            if state.status != details.get('status') or state.state_revision != details.get('revision'):
+                return False
+        expected_registry = revisions.get('registry')
+        if expected_registry is not None:
+            registry = ProjectRegistry(vault).load()
+            if not isinstance(registry, dict) or registry.get('revision') != expected_registry:
+                return False
+    except (MemoryStoreError, ProjectRegistryError, OSError, TypeError, ValueError):
+        return False
+    return True
+
+
 def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     """Native UserPromptSubmit W-06B path; SessionStart never calls this."""
     from brain_eleven._legacy import load_legacy_module
@@ -842,7 +844,7 @@ def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     result = select(compiler, task.task, budget=budget, human_approval=human_approval)
     result['project_id'] = project_id
     # W-06B uses the legacy compiler projection; its state revision is an
-    # opaque scalar, unlike the V2 adapter's per-project mapping.
+    # opaque scalar, unlike the per-project mapping _inputs_current checks.
     result['input_revisions'] = {'memory': document['revision'], 'state_revision': source_state_revision}
     current_document = compiler.memory_store.load()
     compiler._resolve_current_state()
@@ -857,7 +859,7 @@ def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
 
 def compile_task_v1(vault, task, *, budget=3000, human_approval=False,
                     prompt=None, provider_config_path=None):
-    """Named normal-turn V1 adapter; never invokes a V2 compiler."""
+    """Named normal-turn V1 adapter."""
     project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
     if not project_id:
         return {
@@ -868,53 +870,3 @@ def compile_task_v1(vault, task, *, budget=3000, human_approval=False,
         vault, project_id, budget=budget, human_approval=human_approval,
         prompt=prompt, provider_config_path=provider_config_path,
     )
-
-
-def compile_task(vault, task, *, routing=None, budget=3000):
-    """Historical V2 compatibility API for offline evaluation only.
-
-    Native delivery never calls this function.  Keep the old name stable for
-    existing evaluation callers while the normal hook path uses the explicit
-    ``compile_task_v1`` adapter above.
-    """
-    routing = routing or RoutingOptions()
-    router = ContextRouter(vault).route(task, routing)
-    authority = AuthorityResolver(vault).resolve(task, router, AuthorityOptions(scope_mode=routing.scope_mode,
-        selected_project_ids=routing.selected_project_ids, include_global=routing.include_global, history_mode=routing.history_mode))
-    if authority.status not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
-        return {'status': authority.status, 'context': '', 'selected_ids': [], 'warnings': ['CONTEXT_UNAVAILABLE']}
-    adapter = CompilerEvidenceAdapter(vault)
-    snapshot = adapter.snapshot(task, authority)
-    estimator = ConservativeTokenEstimator()
-    texts = {item.resolution.candidate_id: item.text for item in snapshot.candidates if not contains_secret(item.text)}
-    decision = RetrievalDecisionEngine().select(task, router, authority, options=DecisionOptions(max_selected=len(router.candidates)), candidate_texts=texts)
-    decision = replace(decision, input_revisions=dict(authority.input_revisions))
-    # Rendered task text covers explicit constraints; only stored evidence
-    # needs require a selected canonical candidate.
-    decision = replace(decision, need_plan=NeedPlan(tuple(n for n in decision.need_plan.needs if n.kind != 'task')))
-    selected = tuple(replace(item, estimated_tokens=estimator.estimate(texts[item.candidate_id]).count)
-                     for item in decision.selected if item.candidate_id in texts)
-    decision = replace(decision, selected=selected)
-    density = ContextDensityEngine().select(decision, options=DensityOptions(max_selected=20), candidate_texts=texts)
-    if density.status not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
-        return {'status': 'INSUFFICIENT_BUDGET' if density.error == 'MANDATORY_CONTEXT_UNSATISFIED' else density.status,
-                'context': '', 'selected_ids': [], 'warnings': [density.error or 'SELECTION_UNAVAILABLE']}
-    bundle = ContextCompilerV2(vault).compile(CompilationRequest(task, authority, BudgetContract(budget), selection=density), CompilationOptions(cache_enabled=False))
-    missing = density.telemetry.get('missing_critical_needs', [])
-    status = bundle.status
-    if missing and status in {'SUCCESS', 'EMPTY'}:
-        status = 'DEGRADED'
-    context = bundle.rendered_context
-    if status not in {'SUCCESS', 'DEGRADED', 'EMPTY'} or not adapter.inputs_current(snapshot):
-        context = ''
-        if not adapter.inputs_current(snapshot):
-            status = 'STALE_INPUT'
-    return {'status': status, 'context': context, 'selected_ids': [item.candidate_id for item in bundle.selected] if context else [],
-              'missing_critical_needs': missing, 'warnings': list(bundle.warnings), 'input_revisions': dict(snapshot.revisions),
-              'estimated_tokens': estimator.estimate(context).count, 'density': dict(density.metrics)}
-
-
-# Explicit name for new diagnostic callers; the compatibility name above is
-# intentionally retained for the frozen evaluation provider.
-compile_task_v2_shadow = compile_task
-_V2_COMPAT_COMPILE_TASK = compile_task
