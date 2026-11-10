@@ -5,6 +5,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-10)
 
+- **Docker/Postgres/Redis kaldırıldı: kullanılmıyordu.** Dockerfile, compose,
+  Makefile, `scripts/search-api.py`, `scripts/ops/`, imaj yayını iş akışı ve
+  `.env.example` silindi; önbellekte Redis katmanı çıktı (bellek + disk kaldı).
+  Bağımlılıklardan `redis`, `python-dotenv`, `defusedxml` gitti.
+
 - **`scripts/` temizlendi.** 15 uyumluluk adaptörü ve 5 ölü betik
   (memory-compiler, session_pipeline, prompt-counter, state.py,
   migrate-legacy-memory) testleriyle silindi; testler doğrudan `brain_eleven`

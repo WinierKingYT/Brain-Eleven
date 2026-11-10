@@ -1,11 +1,11 @@
 # Brain-Eleven v3 - Production dependencies
 # Install: pip install -r requirements.txt
-# Versions pinned to what is verified working against scripts/*.py in this repo.
+# Versions pinned to what is verified working against brain_eleven and scripts in this repo.
 #
 # Starlette 1.6 prefers httpx2 for TestClient. Keep classic httpx as well:
 # OpenAI and direct client integrations still depend on that package.
 
-# API server
+# Local service (brain_eleven/runtime/service.py)
 fastapi==0.141.1
 # Explicit security floor: FastAPI allows older Starlette releases that are
 # currently vulnerable; keep the patched transitive dependency pinned.
@@ -19,18 +19,8 @@ httpx2==2.13.1
 numpy==2.4.2
 openai==2.24.0
 
-# Caching (Phase 9A)
-redis==7.1.0
-
 # Knowledge graph (Phase 11A) - in-process graph, no separate DB service
 networkx==3.6.1
 
 # Memory IDs
 python-ulid==4.0.1
-
-# Local .env loading (docker-compose injects env vars directly; this
-# only matters for `python scripts/search-api.py` outside a container)
-python-dotenv==1.2.2
-
-# Runtime evidence parsing (safe replacement for xml.etree on CI artifacts)
-defusedxml==0.7.1

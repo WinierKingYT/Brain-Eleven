@@ -103,8 +103,8 @@ class ChatAgent:
 
     Conversations are held in-process (self.conversations); like the
     original design, this does not persist across restarts - fine for a
-    single API process, but a multi-worker deployment would need a shared
-    store (Redis, same as the Phase 9 cache) instead.
+    single process, but a multi-worker deployment would need a shared
+    store instead.
     """
 
     def __init__(self, vault_path: str = "."):

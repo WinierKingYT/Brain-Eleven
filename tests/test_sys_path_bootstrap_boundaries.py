@@ -25,19 +25,6 @@ def _sys_path_mutations(relative_path: str) -> list[ast.Call]:
     ]
 
 
-def test_search_api_keeps_only_repository_root_bootstrap() -> None:
-    mutations = _sys_path_mutations("scripts/search-api.py")
-
-    assert len(mutations) == 1
-    assert ast.unparse(mutations[0].args[1]) == "str(REPO_ROOT)"
-
-    source = (ROOT / "scripts" / "search-api.py").read_text(encoding="utf-8")
-    assert "from brain_eleven.runtime.chat_interface import ChatAgent" in source
-    assert "from brain_eleven.runtime.capture_safety import" in source
-    assert "from chat_interface import ChatAgent" not in source
-    assert "from capture_safety import" not in source
-
-
 def test_memory_validator_uses_the_runtime_safety_surface() -> None:
     source = (ROOT / "brain_eleven" / "memory" / "validator.py").read_text(encoding="utf-8")
 

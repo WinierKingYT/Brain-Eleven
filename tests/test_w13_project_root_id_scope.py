@@ -1,17 +1,13 @@
 """W-13 regression cases for project-root/project-ID consistency."""
 
-import importlib.util
-import os
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
 from brain_eleven.memory.scope import project_identity, resolve_capture_scope
 from brain_eleven.projects.registry import ProjectRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
 
 
 def _registry(vault: Path, root: Path, project_id: str) -> None:
@@ -141,45 +137,3 @@ def test_remember_rejects_mismatch_before_canonical_write(tmp_path):
         )
 
     assert not (vault / ".claude" / "validated-memory.json").exists()
-
-
-def _load_search_api(vault: Path):
-    os.environ["VAULT_PATH"] = str(vault)
-    os.environ.pop("BRAIN_ELEVEN_API_KEY", None)
-    name = f"w13_search_api_{id(vault)}"
-    spec = importlib.util.spec_from_file_location(name, SCRIPTS / "search-api.py")
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
-
-
-@pytest.mark.integration
-def test_search_api_rejects_mismatched_root_and_project_id(tmp_path):
-    vault = tmp_path / "vault"
-    root_a = tmp_path / "project-a"
-    root_b = tmp_path / "project-b"
-    vault.joinpath(".claude").mkdir(parents=True)
-    root_a.mkdir()
-    root_b.mkdir()
-    _registry(vault, root_a, "project-a-id")
-    _registry(vault, root_b, "project-b-id")
-    module = _load_search_api(vault)
-
-    with TestClient(module.app) as client:
-        response = client.post(
-            "/memories",
-            json={
-                "type": "decision",
-                "content": "API mismatch must be rejected",
-                "scope": "project",
-                "project_id": "project-b-id",
-                "project_root": str(root_a),
-            },
-        )
-
-    assert response.status_code == 422
-    assert "PROJECT_ROOT_ID_MISMATCH" in response.json()["detail"]
-    memory_file = vault / ".claude" / "validated-memory.json"
-    assert not memory_file.exists() or "API mismatch must be rejected" not in memory_file.read_text(encoding="utf-8")
-
