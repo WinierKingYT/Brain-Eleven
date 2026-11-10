@@ -48,25 +48,6 @@ def test_shadow_normal_turn_is_empty_and_not_delivered(runtime):
     assert result["delivered"] is False
 
 
-def test_normal_v1_does_not_invoke_v2_renderer(runtime, monkeypatch):
-    vault, project = runtime
-    apply_candidate(vault, candidate(project), op_id=identity("op_", "w10-no-v2"))
-    config = RuntimeConfig(vault).load()
-    config["mode"] = "CANARY"
-    write_json(RuntimeConfig(vault).path, config)
-
-    import brain_eleven.runtime.context as context_module
-
-    def forbidden(*args, **kwargs):
-        raise AssertionError("V2 renderer must not run on the model-facing V1 path")
-
-    monkeypatch.setattr(context_module.ContextCompilerV2, "compile", forbidden)
-    result = compile_context(vault, vault, "Continue the database work")
-
-    assert result["provider"] == "V1"
-    assert result["delivered"] is True
-
-
 def test_launcher_requires_explicit_current_delivery_fields(runtime, monkeypatch):
     vault, _ = runtime
     from brain_eleven.runtime import launcher

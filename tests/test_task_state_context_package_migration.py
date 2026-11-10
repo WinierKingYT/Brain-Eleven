@@ -23,11 +23,7 @@ ADAPTER_PATH = ROOT / "scripts" / "task_state_context.py"
 
 BASELINE_CALLERS = frozenset(
     {
-        "authority/serialization.py",
-        "authority/shadow.py",
         "brain_eleven/runtime/context.py",
-        "context_compiler_v2/shadow.py",
-        "context_router/__main__.py",
         "evals/authority_evaluation.py",
         "evals/authority_provider.py",
         "evals/compiler_v2_benchmark.py",
@@ -39,17 +35,11 @@ BASELINE_CALLERS = frozenset(
         "evals/router_provider.py",
         "evals/runtime_provider.py",
         "tests/context_engine/test_foundation_pipeline.py",
-        "tests/test_authority_resolver.py",
         "tests/test_canonical_runtime_boundaries.py",
-        "tests/test_context_compiler_v2.py",
-        "tests/test_context_compiler_v2_hardening.py",
-        "tests/test_context_engine_operational_surfaces.py",
-        "tests/test_context_router.py",
         "tests/test_pre13_runtime.py",
         "tests/test_task_state_context.py",
         "tests/test_tsc01_timezone.py",
         "tests/test_tsc02_identity.py",
-        "tests/test_w22_optional_omission.py",
     }
 )
 
@@ -67,10 +57,7 @@ PUBLIC_NAMES = (
 def _task_state_import_files() -> set[str]:
     result: set[str] = set()
     source_roots = (
-        ROOT / "authority",
         ROOT / "brain_eleven",
-        ROOT / "context_compiler_v2",
-        ROOT / "context_router",
         ROOT / "evals",
         ROOT / "scripts",
         ROOT / "tests",

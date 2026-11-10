@@ -1,4 +1,4 @@
-"""Prompt-boundary and secret-leakage protections for model-facing context."""
+"""Secret-leakage protection for model-facing context."""
 
 from __future__ import annotations
 
@@ -14,19 +14,8 @@ _SECRET_PATTERNS = (
     re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 )
-_RESERVED = (
-    "[BRAIN-ELEVEN TASK CONTEXT V2]",
-    "[END BRAIN-ELEVEN CONTEXT]",
-)
 
 
 def contains_secret(text: str) -> bool:
     return any(pattern.search(text) is not None for pattern in _SECRET_PATTERNS)
 
-
-def escape_untrusted_text(text: str) -> str:
-    """Keep source meaning visible while neutralising our reserved delimiters."""
-    escaped = text
-    for marker in _RESERVED:
-        escaped = escaped.replace(marker, marker.replace("[", "[ESCAPED ", 1))
-    return escaped.replace("\x00", "�")

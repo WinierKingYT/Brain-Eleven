@@ -90,7 +90,7 @@ def test_no_need_uses_legacy_selection_with_bounded_task_status(runtime, monkeyp
     )
     monkeypatch.setattr(
         context_module,
-        "compile_task",
+        "compile_task_v1",
         lambda *args, **kwargs: {
             "status": "SUCCESS",
             "context": "legacy",
