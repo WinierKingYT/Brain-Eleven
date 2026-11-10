@@ -18,8 +18,8 @@ from retrieval_decision_v2 import RetrievalDecisionEngine, DecisionOptions, Need
 from context_density_v2 import ContextDensityEngine, DensityOptions
 from context_compiler_v2 import ContextCompilerV2
 from context_compiler_v2.models import CompilationRequest, CompilationOptions, BudgetContract
-from context_compiler_v2.safety import contains_secret
-from context_compiler_v2.tokenizer import ConservativeTokenEstimator
+from brain_eleven.runtime.secret_check import contains_secret
+from brain_eleven.runtime.token_estimate import ConservativeTokenEstimator
 from context_compiler_v2.adapters import CompilerEvidenceAdapter, CompilerSnapshot
 
 

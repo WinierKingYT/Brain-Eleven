@@ -241,7 +241,7 @@ def enqueue(vault, client, payload):
 
 def apply_candidate(vault, candidate, *, op_id, approved=False, target_id=None, expected_revision=None):
     """Apply one effect. Receipt and effect share the store transaction."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     if not canonical_accept_allowed(RuntimeConfig(vault).load(), approved=approved):
         return {'status': 'SCOPE_ERROR'}
     content = candidate.get('text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content', '')

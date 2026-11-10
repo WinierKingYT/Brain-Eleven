@@ -9,8 +9,8 @@ import hashlib
 import re
 from typing import Any
 
-from context_compiler_v2.safety import contains_secret
-from context_compiler_v2.tokenizer import ConservativeTokenEstimator
+from brain_eleven.runtime.secret_check import contains_secret
+from brain_eleven.runtime.token_estimate import ConservativeTokenEstimator
 from brain_eleven.memory.scope import infer_memory_scope
 from .capture_safety import evaluate_capture
 

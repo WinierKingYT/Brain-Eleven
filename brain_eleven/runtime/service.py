@@ -79,7 +79,7 @@ def review_action(vault, review_id, action, payload):
             note = payload.get('note')
             if note is not None:
                 from .capture_safety import evaluate_capture
-                from context_compiler_v2.safety import contains_secret
+                from brain_eleven.runtime.secret_check import contains_secret
                 if (not isinstance(note, str) or len(note) > DECISION_NOTE_MAX
                         or (note.strip() and (contains_secret(note) or not evaluate_capture(note).accepted))):
                     raise ValueError('Decision note must be at most 280 safe characters')
@@ -131,7 +131,7 @@ def _claim_conflict(vault, result):
     """Describe the active memory a same-claim_key acceptance collided with."""
     from brain_eleven.memory import MemoryStore
     from .capture_safety import evaluate_capture
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
 
     target = next((x.get('target_memory_id') for x in result.get('decisions', [])
                    if x.get('action') == 'CONFLICT' and x.get('reason_code') == 'ACTIVE_CLAIM_KEY_CONFLICT'), None)
@@ -301,7 +301,7 @@ def create_app(vault, *, token=None, background=True):
         from brain_eleven.state import StateStore
         from .capture_safety import evaluate_capture
         from .review import ReviewStore
-        from context_compiler_v2.safety import contains_secret
+        from brain_eleven.runtime.secret_check import contains_secret
         from brain_eleven.projects.registry import ProjectRegistry
         from .review import content_shape, rank_similar
         from .recall_probe import load_questions, pending_candidate_texts, review_tags
@@ -359,7 +359,7 @@ def create_app(vault, *, token=None, background=True):
     def stale_memories():
         from .capture_safety import evaluate_capture
         from .staleness import scan
-        from context_compiler_v2.safety import contains_secret
+        from brain_eleven.runtime.secret_check import contains_secret
         result = scan(vault)
         result['stale_candidates'] = [x for x in result['stale_candidates']
                                       if evaluate_capture(x['content']).accepted and not contains_secret(x['content'])]

@@ -34,7 +34,7 @@ _OPEN = {'blockers': ('Engel', {'ACTIVE', 'OPEN'}),
 
 def _safe(text, limit):
     """One bounded line, or None when the text must not be written to a note."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     from .capture_safety import evaluate_capture
     if not isinstance(text, str):
         return None

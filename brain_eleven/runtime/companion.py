@@ -75,7 +75,7 @@ def _starter_body(name):
 
 
 def _body(vault, name):
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     path = Path(vault) / COMPANION_DIR / name
     try:
         text = path.read_text(encoding='utf-8')

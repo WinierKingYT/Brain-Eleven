@@ -23,7 +23,7 @@ def _name(text):
 
 
 def _line(item):
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     content = ' '.join(str(item.get('content', '')).split())
     if not content or contains_secret(content):
         return None

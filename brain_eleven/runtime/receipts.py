@@ -24,7 +24,7 @@ def _root(vault, project_id):
 
 def _clean_sources(sources):
     """Relative paths, URLs, commit ids or #PR numbers only; absolute paths are refused."""
-    from context_compiler_v2.safety import contains_secret
+    from brain_eleven.runtime.secret_check import contains_secret
     cleaned = []
     for source in sources or []:
         value = str(source).strip().replace('\\', '/')
