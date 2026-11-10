@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only CAPTURE_SILENT_GAP audit over real sessions.
 
 Compares an independent denominator -- the native Claude Code transcript
@@ -26,13 +25,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from brain_eleven.projects.registry import normalize_registry_root  # noqa: E402
 from brain_eleven.runtime.ownership import _project_slug  # noqa: E402
 from brain_eleven.runtime.worker import capture_session_hash  # noqa: E402

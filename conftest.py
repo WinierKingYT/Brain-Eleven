@@ -8,7 +8,6 @@ keeps their identity/parity assertions intact without changing ``sys.path``.
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import sys
 from pathlib import Path
 
@@ -21,22 +20,6 @@ def _alias_package_module(name: str) -> None:
         return
     module = importlib.import_module(f"scripts.{name}")
     sys.modules.setdefault(name, module)
-
-
-def _alias_legacy_script(name: str, filename: str) -> None:
-    if name in sys.modules:
-        return
-    script_path = _ROOT / "scripts" / filename
-    specification = importlib.util.spec_from_file_location(name, script_path)
-    if specification is None or specification.loader is None:
-        raise ImportError(f"Cannot load legacy test module: {filename}")
-    module = importlib.util.module_from_spec(specification)
-    sys.modules[name] = module
-    try:
-        specification.loader.exec_module(module)
-    except Exception:
-        sys.modules.pop(name, None)
-        raise
 
 
 for _module_name in (
@@ -70,8 +53,3 @@ for _module_name in (
     "task_state_context",
 ):
     _alias_package_module(_module_name)
-
-for _module_name, _filename in {
-    "memory_compiler": "memory-compiler.py",
-}.items():
-    _alias_legacy_script(_module_name, _filename)

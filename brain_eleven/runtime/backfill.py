@@ -50,11 +50,7 @@ def _transcripts(vault, claude_home, codex_home, since):
         except (OSError, ValueError):
             continue
     sessions = Path(codex_home) / 'sessions'
-    import sys
-    scripts = str(Path(__file__).resolve().parents[2] / 'scripts')
-    if scripts not in sys.path:
-        sys.path.insert(0, scripts)
-    from capture_gap_audit import _codex_meta
+    from .capture_gap_audit import _codex_meta
     for path in sorted(sessions.rglob('*.jsonl')) if sessions.is_dir() else []:
         if path.stat().st_mtime < since:
             continue

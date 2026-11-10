@@ -55,10 +55,10 @@ RETIRE_REASONS = frozenset({'MACHINE_CONTENT', 'PASTED_OUTPUT', 'PASTED_DOCUMENT
 
 def rule_reason(text):
     """The deterministic reason a memory is junk, or ''."""
-    from . import extraction as _legacy
+    from . import extraction
     from .queue_triage import rule_verdict
     text = str(text or '')
-    if _legacy._pasted_document(text):
+    if extraction._pasted_document(text):
         return 'PASTED_DOCUMENT'
     verdict, reason = rule_verdict({'candidate_type': 'NEW_MEMORY', 'commitment': 'COMMITTED', 'content': text})
     return reason if verdict == 'REJECT' and reason in RETIRE_REASONS else ''

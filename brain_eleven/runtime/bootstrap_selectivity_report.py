@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only: compare SessionStart's old top-5 with the step-9 distinct selection.
 
 For each registered project, reports how many of the old five bootstrap
@@ -14,7 +13,6 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.runtime.context import BOOTSTRAP_POOL, BOOTSTRAP_SLOTS, NEAR_DUPLICATE, _stale_memory_ids, select_distinct  # noqa: E402
 from brain_eleven.runtime.review import _words  # noqa: E402

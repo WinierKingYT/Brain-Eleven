@@ -44,9 +44,9 @@ def test_remaining_runtime_callers_use_package_boundaries():
     assert "from .task_state_context import TaskStateComposer" in context_source
     assert "from scripts.capture_safety import" not in context_source
     assert "from scripts.task_state_context import" not in context_source
-    assert "from brain_eleven._legacy import load_legacy_module" in evidence_source
+    assert "load_legacy_module" not in evidence_source
     assert "from scripts.evidence import" not in evidence_source
-    assert "from brain_eleven._legacy import load_legacy_module" in resolver_source
+    assert "load_legacy_module" not in resolver_source
     assert "from scripts.state_resolver import" not in resolver_source
 
 
@@ -95,74 +95,3 @@ def test_project_registry_implementation_is_canonical_and_legacy_path_is_an_adap
     assert canonical_project_registry.ProjectRegistry.__module__ == "brain_eleven.projects.registry"
     assert "class ProjectRegistry" not in LEGACY_PROJECT_REGISTRY.read_text(encoding="utf-8")
 
-
-def test_runtime_capture_surfaces_preserve_legacy_object_identity():
-    from brain_eleven.runtime.capture_event import (
-        CaptureEventError,
-        HookEvent,
-        parse_hook_event,
-    )
-    from brain_eleven.runtime.evidence import (
-        EvidenceBatch,
-        EvidenceMessage,
-        EvidenceStore,
-        EvidenceTime,
-    )
-    from brain_eleven.runtime.capture_provenance import (
-        TranscriptProvenanceError,
-        resolve_transcript_path,
-    )
-    from brain_eleven.runtime.capture_queue import CaptureQueue, CaptureQueueError
-    from brain_eleven.runtime.capture_safety import evaluate_capture
-    from brain_eleven.runtime.extraction import DeterministicExtractor
-    from brain_eleven.runtime.state_boundary import StateBoundary
-    from brain_eleven.runtime.task_state_context import TaskStateComposer
-    from brain_eleven.state.resolver import (
-        CurrentProjectState,
-        StateResolver,
-    )
-    from brain_eleven.runtime.capture_event import (
-        CaptureEventError as LegacyCaptureEventError,
-        HookEvent as LegacyHookEvent,
-        parse_hook_event as legacy_parse_hook_event,
-    )
-    from brain_eleven.runtime.evidence import (
-        EvidenceBatch as LegacyEvidenceBatch,
-        EvidenceMessage as LegacyEvidenceMessage,
-        EvidenceStore as LegacyEvidenceStore,
-        EvidenceTime as LegacyEvidenceTime,
-    )
-    from brain_eleven.runtime.capture_provenance import (
-        TranscriptProvenanceError as LegacyTranscriptProvenanceError,
-        resolve_transcript_path as legacy_resolve_transcript_path,
-    )
-    from brain_eleven.runtime.capture_queue import (
-        CaptureQueue as LegacyCaptureQueue,
-        CaptureQueueError as LegacyCaptureQueueError,
-    )
-    from brain_eleven.runtime.capture_safety import evaluate_capture as legacy_evaluate_capture
-    from brain_eleven.runtime.extraction import DeterministicExtractor as LegacyDeterministicExtractor
-    from brain_eleven.state.resolver import (
-        CurrentProjectState as LegacyCurrentProjectState,
-        StateResolver as LegacyStateResolver,
-    )
-    from brain_eleven.runtime.state_boundary import StateBoundary as LegacyStateBoundary
-    from scripts.task_state_context import TaskStateComposer as LegacyTaskStateComposer
-
-    assert CaptureEventError is LegacyCaptureEventError
-    assert HookEvent is LegacyHookEvent
-    assert parse_hook_event is legacy_parse_hook_event
-    assert TranscriptProvenanceError is LegacyTranscriptProvenanceError
-    assert resolve_transcript_path is legacy_resolve_transcript_path
-    assert CaptureQueue is LegacyCaptureQueue
-    assert CaptureQueueError is LegacyCaptureQueueError
-    assert evaluate_capture is legacy_evaluate_capture
-    assert DeterministicExtractor is LegacyDeterministicExtractor
-    assert StateBoundary is LegacyStateBoundary
-    assert EvidenceBatch is LegacyEvidenceBatch
-    assert EvidenceMessage is LegacyEvidenceMessage
-    assert EvidenceStore is LegacyEvidenceStore
-    assert EvidenceTime is LegacyEvidenceTime
-    assert TaskStateComposer is LegacyTaskStateComposer
-    assert CurrentProjectState is LegacyCurrentProjectState
-    assert StateResolver is LegacyStateResolver
