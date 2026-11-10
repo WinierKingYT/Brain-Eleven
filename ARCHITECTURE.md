@@ -27,7 +27,7 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `brain_eleven/state/` | Proje/görev durumu |
 | `brain_eleven/projects/` | Proje kimliği ve kayıt defteri |
 | `brain_eleven/extraction/`, `retrieval/`, `search/` | Çıkarım sağlayıcıları, embedding |
-| `scripts/` | Eski betikler; bir kısmı hâlâ canlı yolda (`capture_queue.py`, `context-compiler.py`, `memory_store.py`), `search-api.py` Docker HTTP API'si |
+| `scripts/` | Eski betikler ve uyumluluk adaptörleri; canlı kod pakette. `context-compiler.py` yalnız kurulu SessionStart hook'unun çağırdığı giriş noktası, `remember.py` /remember komutunun yolu, `search-api.py` Docker HTTP API'si |
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
 

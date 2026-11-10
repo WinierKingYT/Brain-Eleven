@@ -5,6 +5,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-10)
 
+- **Canlı kod scripts/'ten pakete taşındı.** `brain_eleven/_legacy.py` köprüsü
+  silindi; 21 betik `brain_eleven/` altına girdi. `scripts/context-compiler.py`
+  kurulu hook yolu olduğu için ince giriş noktası kaldı. recall-probe 2/5 ve 5/5.
+
 - **v1.0 başlangıç ölçümü.** Testler 1637 geçti, 0 kırmızı. `recall-probe`
   oturum başı modunda 2/5 (üç yanıt hafızada ama 8 yere sığmıyor: `SLOT_LIMIT`),
   `--mode prompt` ile 5/5. Gerileme değil: iki mod farklı şeyi ölçüyor.

@@ -16,8 +16,6 @@ from datetime import datetime
 from typing import List, Dict, Optional
 
 from brain_eleven.memory.scope import filter_memories, infer_memory_scope
-from brain_eleven.search import retriever as memory_retriever
-from brain_eleven.search import semantic as semantic_search_module
 from brain_eleven.search.retriever import MemoryRetriever
 from brain_eleven.search.semantic import SemanticSearchEngine
 

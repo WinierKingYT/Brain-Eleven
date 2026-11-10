@@ -17,7 +17,6 @@ import argparse
 import io
 import math
 import os
-import sys
 import tempfile
 from contextlib import redirect_stdout
 from pathlib import Path, PurePosixPath, PureWindowsPath

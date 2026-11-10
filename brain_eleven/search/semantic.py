@@ -12,9 +12,6 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
-import sys
-
-from brain_eleven.search import embedding as embedding_generator
 from brain_eleven.search.embedding import EmbeddingGenerator
 
 

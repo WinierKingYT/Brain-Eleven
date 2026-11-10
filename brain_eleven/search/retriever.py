@@ -14,7 +14,6 @@ Pipeline:
 
 import json
 import re
-import sys
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict
