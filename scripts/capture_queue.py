@@ -44,7 +44,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fa
 try:
     from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 except ImportError:  # pragma: no cover - deployed copied-hook fallback
-    from memory_store_lock import MemoryStoreLockTimeout, file_lock
+    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock
 
 
 CAPTURE_QUEUE_SCHEMA_VERSION = 1

@@ -311,7 +311,9 @@ class DeterministicSafetyPrefilter:
     """Screen secrets, transcript-like payloads and quoted material pre-model."""
 
     def __init__(self) -> None:
-        self._capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
+        from brain_eleven.runtime import capture_safety
+
+        self._capture_safety = capture_safety
 
     def evaluate(self, content: str) -> PrefilterResult:
         if not isinstance(content, str):

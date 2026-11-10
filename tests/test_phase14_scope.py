@@ -12,7 +12,7 @@ SCRIPTS = Path(__file__).parent.parent / "scripts"
 
 from entity_extractor import EntityExtractor  # noqa: E402
 from knowledge_graph import KnowledgeGraph  # noqa: E402
-from memory_scope import (  # noqa: E402
+from brain_eleven.memory.scope import (  # noqa: E402
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     filter_memories,

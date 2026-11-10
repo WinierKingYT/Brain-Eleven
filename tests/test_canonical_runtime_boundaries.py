@@ -139,7 +139,7 @@ def test_runtime_capture_surfaces_preserve_legacy_object_identity():
         EvidenceStore as LegacyEvidenceStore,
         EvidenceTime as LegacyEvidenceTime,
     )
-    from scripts.capture_provenance import (
+    from brain_eleven.runtime.capture_provenance import (
         TranscriptProvenanceError as LegacyTranscriptProvenanceError,
         resolve_transcript_path as legacy_resolve_transcript_path,
     )
@@ -147,7 +147,7 @@ def test_runtime_capture_surfaces_preserve_legacy_object_identity():
         CaptureQueue as LegacyCaptureQueue,
         CaptureQueueError as LegacyCaptureQueueError,
     )
-    from scripts.capture_safety import evaluate_capture as legacy_evaluate_capture
+    from brain_eleven.runtime.capture_safety import evaluate_capture as legacy_evaluate_capture
     from scripts.extraction import DeterministicExtractor as LegacyDeterministicExtractor
     from scripts.state_resolver import (
         CurrentProjectState as LegacyCurrentProjectState,

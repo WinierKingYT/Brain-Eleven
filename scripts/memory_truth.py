@@ -19,14 +19,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
-from brain_eleven._legacy import load_legacy_module
 from brain_eleven.memory import GLOBAL_SCOPE, infer_memory_scope, scoped_fingerprint
 from brain_eleven.memory import MemoryStore, MemoryStoreConflict, MemoryStoreCorrupt, no_change
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
-
-
-_capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
-evaluate_capture = _capture_safety.evaluate_capture
+from brain_eleven.runtime.capture_safety import evaluate_capture
 
 
 class TruthError(RuntimeError):

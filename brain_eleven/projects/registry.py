@@ -15,12 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-try:
-    from brain_eleven.infrastructure.locking import file_lock  # noqa: E402
-except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
-    if exc.name != "brain_eleven":
-        raise
-    from memory_store_lock import file_lock  # noqa: E402
+from brain_eleven.infrastructure.locking import file_lock
 
 
 REGISTRY_SCHEMA_VERSION = 1

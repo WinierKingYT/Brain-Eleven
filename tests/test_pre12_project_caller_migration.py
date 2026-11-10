@@ -28,7 +28,6 @@ def test_legacy_registry_imports_are_limited_to_compatibility_edges() -> None:
     allowed = {
         "brain_eleven/projects/registry.py",
         "scripts/capture_event.py",
-        "scripts/memory_scope.py",
         "scripts/state_store.py",
     }
     for path in (root / "scripts").rglob("*.py"):

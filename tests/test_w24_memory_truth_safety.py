@@ -105,7 +105,7 @@ def _secret_cases():
 
 def test_truth_surfaces_and_safety_policy_keep_identity():
     legacy = importlib.import_module("memory_truth")
-    capture = importlib.import_module("capture_safety")
+    capture = importlib.import_module("brain_eleven.runtime.capture_safety")
     package = importlib.import_module("brain_eleven.memory.truth")
 
     for name in (

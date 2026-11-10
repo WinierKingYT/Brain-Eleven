@@ -21,7 +21,7 @@ from scripts.memory_store import (  # noqa: E402
     MemoryStoreCorrupt,
     MemoryStoreError,
 )
-from scripts.memory_store_lock import MemoryStoreLockTimeout, memory_store_lock  # noqa: E402
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, memory_store_lock  # noqa: E402
 from scripts.project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
 
 

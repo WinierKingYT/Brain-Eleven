@@ -16,12 +16,12 @@ from enum import Enum
 from typing import Any, Mapping, Optional, Sequence
 
 try:
-    from scripts.capture_safety import evaluate_capture
+    from brain_eleven.runtime.capture_safety import evaluate_capture
     from scripts.evidence import EvidenceBatch, EvidenceMessage, EvidenceTime
 except ModuleNotFoundError as exc:  # pragma: no cover - deployed copied-hook fallback
     if exc.name != "scripts":
         raise
-    from capture_safety import evaluate_capture
+    from brain_eleven.runtime.capture_safety import evaluate_capture
     from evidence import EvidenceBatch, EvidenceMessage, EvidenceTime
 
 

@@ -12,7 +12,7 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-from capture_safety import (  # noqa: E402
+from brain_eleven.runtime.capture_safety import (  # noqa: E402
     CaptureSafetyError,
     POLICY_NAME,
     evaluate_capture,

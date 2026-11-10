@@ -42,7 +42,6 @@ def _alias_legacy_script(name: str, filename: str) -> None:
 for _module_name in (
     "capture_event",
     "capture_queue",
-    "capture_safety",
     "anomaly_detector",
     "cache_manager",
     "chat_interface",
@@ -55,9 +54,7 @@ for _module_name in (
     "logging_config",
     "memory_backup",
     "memory_provenance",
-    "memory_scope",
     "memory_store",
-    "memory_store_lock",
     "project_registry",
     "phase15_evidence",
     "phase16_evidence",

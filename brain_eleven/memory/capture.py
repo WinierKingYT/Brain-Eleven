@@ -20,16 +20,18 @@ from brain_eleven._legacy import load_legacy_module
 from brain_eleven.extraction import EntityExtractor
 from brain_eleven.projects.registry import ProjectRegistry, registry_path as project_registry_path
 
+from brain_eleven.runtime.capture_safety import (
+    CaptureSafetyError,
+    CaptureSafetyResult,
+    evaluate_capture,
+    require_safe_capture,
+)
+
 from .scope import GLOBAL_SCOPE, PROJECT_SCOPE, project_identity, resolve_capture_scope
 
 
-_capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
 _memory_validator = load_legacy_module("memory_validator", "memory-validator.py")
 
-evaluate_capture = _capture_safety.evaluate_capture
-require_safe_capture = _capture_safety.require_safe_capture
-CaptureSafetyError = _capture_safety.CaptureSafetyError
-CaptureSafetyResult = _capture_safety.CaptureSafetyResult
 MemoryValidator = _memory_validator.MemoryValidator
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

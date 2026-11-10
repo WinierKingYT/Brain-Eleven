@@ -10,7 +10,7 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-from memory_scope import (  # noqa: E402
+from brain_eleven.memory.scope import (  # noqa: E402
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     legacy_project_id,
