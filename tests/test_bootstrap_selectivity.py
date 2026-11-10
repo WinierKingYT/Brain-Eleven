@@ -30,10 +30,7 @@ def test_ranking_order_is_kept_when_nothing_is_redundant():
 
 def test_report_runs_on_a_real_store(tmp_path, capsys):
     import json
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-    from bootstrap_selectivity_report import main
+    from brain_eleven.runtime.bootstrap_selectivity_report import main
     from tests.test_memclaim01_claim_key import NEW_TIME, OLD_TIME, _accept, _review_item, _runtime
 
     vault, _ = _runtime(tmp_path, shadow_accept=True)

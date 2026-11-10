@@ -12,13 +12,8 @@ import json
 import tempfile
 from datetime import datetime
 
-# Load memory-validator from hyphenated filename
-spec = importlib.util.spec_from_file_location(
-    "memory_validator",
-    Path(__file__).parent.parent / "scripts" / "memory-validator.py"
-)
-memory_validator = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(memory_validator)
+from brain_eleven.memory import validator as memory_validator
+
 MemoryValidator = memory_validator.MemoryValidator
 ValidatedMemory = memory_validator.ValidatedMemory
 

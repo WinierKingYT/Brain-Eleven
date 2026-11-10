@@ -10,6 +10,7 @@ from brain_eleven.runtime.storage import RuntimeConfig, identity, now, read_json
 from brain_eleven.runtime.worker import allowed
 from brain_eleven.memory.scope import infer_memory_scope
 from .capture_safety import evaluate_capture
+from .context_compiler import ContextCompiler
 from .task_state_context import TaskStateComposer
 from brain_eleven.memory import MemoryStore, MemoryStoreError
 from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
@@ -42,12 +43,6 @@ def _normalize_v1_state_identity(context, state):
     if not record_ids:
         return context
     return context + '\n\n## STATE RECORD IDS\n' + '\n'.join(f'- {item}' for item in record_ids)
-
-
-def _legacy_context_compiler():
-    """Load the legacy compiler without invoking its public Companion path."""
-    from brain_eleven._legacy import load_legacy_module
-    return load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
 
 
 def _rank_prompt_candidates(query, baseline, ranked_pool, *, project_id, stable_key,
@@ -260,7 +255,7 @@ def warm_prompt_providers(config_path=Path('.claude/ig-provider-config.json'), t
     """
     try:
         if vault is not None:
-            document = _legacy_context_compiler()(str(vault)).memory_store.load()
+            document = ContextCompiler(str(vault)).memory_store.load()
             texts = (*texts, *(str(item.get('content', '')) for item in document['validated_memory']))
         with _PROVIDER_LOCK:
             embedding_provider, reranker = _prompt_providers(config_path)
@@ -294,7 +289,7 @@ def _compile_project_scoped_v1(vault, project_id, *, budget=3000, human_approval
     and unscoped note inputs to ``_generate_context_block``.
     """
     compile_started = perf_counter()
-    compiler = _legacy_context_compiler()(str(vault), project_id=project_id)
+    compiler = ContextCompiler(str(vault), project_id=project_id)
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
     compiler.source_memory_revision = document['revision']
@@ -542,13 +537,11 @@ def explain_bootstrap(vault, project_root, *, budget=3000):
     filters, distinct selection, token budget) but records where every memory
     stopped. Read-only; returns ids and reason codes, never memory text.
     """
-    from brain_eleven._legacy import load_legacy_module
-    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     runtime = RuntimeConfig(vault)
     project = allowed(vault, project_root)
     if runtime.load()['mode'] == 'OFF' or not project:
         return {'status': 'OFF' if runtime.load()['mode'] == 'OFF' else 'SCOPE_DISABLED', 'memories': {}}
-    compiler = compiler_type(str(vault), project_id=project['project_id'])
+    compiler = ContextCompiler(str(vault), project_id=project['project_id'])
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
     state = compiler._resolve_current_state()
@@ -587,13 +580,11 @@ def explain_bootstrap(vault, project_root, *, budget=3000):
 
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
-    from brain_eleven._legacy import load_legacy_module
-    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     runtime = RuntimeConfig(vault)
     project = allowed(vault, project_root)
     if runtime.load()['mode'] == 'OFF' or not project:
         return {'status': 'OFF' if runtime.load()['mode'] == 'OFF' else 'SCOPE_DISABLED', 'context': '', 'selected_ids': [], 'delivered': False}
-    compiler = compiler_type(str(vault), project_id=project['project_id'])
+    compiler = ContextCompiler(str(vault), project_id=project['project_id'])
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
     compiler.source_memory_revision = document['revision']
@@ -829,12 +820,10 @@ def _inputs_current(vault, revisions):
 
 def compile_task_w06b(vault, task, *, budget=1024, human_approval=False):
     """Native UserPromptSubmit W-06B path; SessionStart never calls this."""
-    from brain_eleven._legacy import load_legacy_module
-    compiler_type = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
     project_id = getattr(getattr(task.task, 'project', None), 'project_id', None)
     if not project_id:
         return {'status': 'SCOPE_DISABLED', 'context': '', 'selected_ids': [], 'provider': 'V1'}
-    compiler = compiler_type(str(vault), project_id=project_id)
+    compiler = ContextCompiler(str(vault), project_id=project_id)
     document = compiler.memory_store.load()
     compiler.memories = document['validated_memory']
     compiler.source_memory_revision = document['revision']

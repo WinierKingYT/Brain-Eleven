@@ -1,6 +1,5 @@
 """Durability and live-reader tests for the legacy embedding cache."""
 
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,15 +13,9 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def load_module(name, filename):
-    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / filename)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from brain_eleven.search import embedding as embedding_generator  # noqa: E402
+from brain_eleven.search import semantic as semantic_search  # noqa: E402
 
-
-embedding_generator = load_module("w20_embedding_generator", "embedding-generator.py")
-semantic_search = load_module("w20_semantic_search", "semantic-search.py")
 EmbeddingGenerator = embedding_generator.EmbeddingGenerator
 SemanticSearchEngine = semantic_search.SemanticSearchEngine
 
@@ -179,9 +172,7 @@ import sys
 from pathlib import Path
 import numpy as np
 from brain_eleven.runtime import storage
-spec = importlib.util.spec_from_file_location('embedding_generator', Path('scripts') / 'embedding-generator.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+from brain_eleven.search import embedding as module
 storage.os.replace = lambda *args: os._exit(17)
 generator = module.EmbeddingGenerator(sys.argv[1])
 generator.use_openai = True
@@ -210,9 +201,7 @@ import importlib.util
 import sys
 from pathlib import Path
 import numpy as np
-spec = importlib.util.spec_from_file_location('embedding_generator', Path('scripts') / 'embedding-generator.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+from brain_eleven.search import embedding as module
 generator = module.EmbeddingGenerator(sys.argv[1])
 generator.use_openai = True
 generator.client = object()

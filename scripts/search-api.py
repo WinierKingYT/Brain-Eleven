@@ -64,7 +64,6 @@ def _load_hyphenated_module(name: str, filename: str):
 # and are directly importable; the remaining legacy validator/embedding
 # adapters still use importlib until their bounded migrations are complete.
 try:
-    _memory_validator = _load_hyphenated_module("memory_validator", "memory-validator.py")
 
     from brain_eleven.search import (
         HybridSearchEngine,
@@ -76,7 +75,7 @@ try:
     # Keep the API's historical names stable while the search surface moves
     # behind the package boundary.
     HeuristicRanker = PackagedHeuristicRanker
-    MemoryValidator = _memory_validator.MemoryValidator
+    from brain_eleven.memory.validator import MemoryValidator
 
     from brain_eleven.support import CacheManager, AnomalyDetector, MemorySummarizer
     from brain_eleven.graph import KnowledgeGraph
@@ -758,8 +757,7 @@ async def embed_text(query: str = Query(..., description="Text to embed")):
     input text and expensive to (re)compute via the OpenAI API.
     """
     try:
-        _embedding_generator = _load_hyphenated_module("embedding_generator", "embedding-generator.py")
-        EmbeddingGenerator = _embedding_generator.EmbeddingGenerator
+        from brain_eleven.search.embedding import EmbeddingGenerator
 
         # Version the API cache alongside the provider-backed contract so old
         # deterministic/fallback vectors cannot be reused after migration.

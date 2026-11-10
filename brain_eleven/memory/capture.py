@@ -3,8 +3,8 @@
 The legacy ``scripts/remember.py`` entrypoint is a compatibility adapter.  The
 validator remains the canonical validation/write authority for this bounded
 migration; this module deliberately does not duplicate its transaction logic.
-The existing capture-safety policy is loaded through the shared legacy loader
-so package and historical imports keep the same object identity.
+The existing capture-safety policy is imported from
+``brain_eleven.runtime.capture_safety``.
 """
 
 from __future__ import annotations
@@ -16,21 +16,21 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from brain_eleven._legacy import load_legacy_module
 from brain_eleven.extraction import EntityExtractor
 from brain_eleven.projects.registry import ProjectRegistry, registry_path as project_registry_path
 
+from brain_eleven.runtime.capture_safety import (
+    CaptureSafetyError,
+    CaptureSafetyResult,
+    evaluate_capture,
+    require_safe_capture,
+)
+
+from .validator import MemoryValidator
 from .scope import GLOBAL_SCOPE, PROJECT_SCOPE, project_identity, resolve_capture_scope
 
 
-_capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
-_memory_validator = load_legacy_module("memory_validator", "memory-validator.py")
 
-evaluate_capture = _capture_safety.evaluate_capture
-require_safe_capture = _capture_safety.require_safe_capture
-CaptureSafetyError = _capture_safety.CaptureSafetyError
-CaptureSafetyResult = _capture_safety.CaptureSafetyResult
-MemoryValidator = _memory_validator.MemoryValidator
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_VAULT = REPO_ROOT

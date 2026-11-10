@@ -7,12 +7,7 @@ object preserves lifecycle behavior and avoids a second mutation authority.
 
 from __future__ import annotations
 
-from brain_eleven._legacy import load_legacy_module
-
-
-_legacy = load_legacy_module("memory_lifecycle", "memory-lifecycle.py")
-
-MemoryLifecycleManager = _legacy.MemoryLifecycleManager
+from .manager import MemoryLifecycleManager
 
 from .dedupe import SUPERSESSION_NOTE, main as dedupe_main, plan_dedupe
 

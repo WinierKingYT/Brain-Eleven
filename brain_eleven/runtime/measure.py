@@ -18,17 +18,8 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
 
 from .storage import RuntimeConfig, read_json, write_json, now
-
-_SCRIPTS = Path(__file__).resolve().parents[2] / 'scripts'
-
-
-def _scripts():
-    if str(_SCRIPTS) not in sys.path:
-        sys.path.insert(0, str(_SCRIPTS))
-
 
 def default_since(vault):
     """The last native install time: measurements start where the current code started."""
@@ -96,9 +87,8 @@ def _recall(vault):
 
 
 def measure(vault, *, since=None, claude_home=None, codex_home=None, save=True):
-    _scripts()
-    from capture_gap_audit import _parse_since, audit, verdict
-    from bootstrap_selectivity_report import compare
+    from .capture_gap_audit import _parse_since, audit, verdict
+    from .bootstrap_selectivity_report import compare
     from .staleness import scan
 
     since = since or default_since(vault)

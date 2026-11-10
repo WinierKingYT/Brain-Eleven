@@ -19,16 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-try:
-    from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock, memory_store_lock
-    from brain_eleven.memory import MemoryStore, MemoryStoreError
-    from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
-except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
-    if exc.name != "brain_eleven":
-        raise
-    from memory_store import MemoryStore, MemoryStoreError
-    from memory_store_lock import MemoryStoreLockTimeout, file_lock, memory_store_lock
-    from project_registry import ProjectRegistry, ProjectRegistryError
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, file_lock, memory_store_lock
+from brain_eleven.memory import MemoryStore, MemoryStoreError
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError
 
 
 # Keep the lifecycle lock bound to the original primitive. Existing callers

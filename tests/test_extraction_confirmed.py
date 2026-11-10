@@ -1,6 +1,6 @@
 """An assistant decision the user explicitly approves next becomes a user-committed candidate."""
 
-from extraction import Commitment, DeterministicExtractor, NewMemoryCandidate
+from brain_eleven.runtime.extraction import Commitment, DeterministicExtractor, NewMemoryCandidate
 from tests.test_extraction import _batch
 
 

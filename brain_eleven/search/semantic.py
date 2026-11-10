@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Brain-Eleven Semantic Search Engine
 Vector-based similarity matching for memory retrieval
@@ -13,22 +12,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
-import sys
-
-# Direct execution loads embedding-generator.py by file path, while that
-# module imports the packaged runtime storage surface.
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
-import importlib.util
-spec = importlib.util.spec_from_file_location(
-    "embedding_generator",
-    Path(__file__).parent / "embedding-generator.py"
-)
-embedding_generator = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(embedding_generator)
-EmbeddingGenerator = embedding_generator.EmbeddingGenerator
+from brain_eleven.search.embedding import EmbeddingGenerator
 
 
 class SemanticSearchEngine:

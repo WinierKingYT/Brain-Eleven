@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Brain-Eleven Memory Retriever
 Query engine for semantic search over validated memories
@@ -15,15 +14,10 @@ Pipeline:
 
 import json
 import re
-import sys
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Tuple, Optional
-
-_ROOT = Path(__file__).resolve().parents[1]
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
 
 from brain_eleven.memory import filter_memories
 

@@ -10,8 +10,8 @@ import json
 
 import pytest
 
-from evidence import TranscriptReader
-from extraction import DeterministicExtractor, NewMemoryCandidate, strip_dictation_fillers
+from brain_eleven.runtime.evidence import TranscriptReader
+from brain_eleven.runtime.extraction import DeterministicExtractor, NewMemoryCandidate, strip_dictation_fillers
 
 
 @pytest.mark.parametrize(("raw", "clean"), [
@@ -57,7 +57,7 @@ def test_captured_memory_content_has_no_fillers(tmp_path):
 
 
 def test_filler_only_segment_keeps_later_candidate_ids(tmp_path):
-    from extraction import _candidate_id
+    from brain_eleven.runtime.extraction import _candidate_id
 
     transcript = tmp_path / "s.jsonl"
     transcript.write_text(json.dumps({"role": "user", "content": "Ee. Postgres kullanacağız. Redis de kullanacağız."})

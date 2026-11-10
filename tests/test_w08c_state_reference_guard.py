@@ -14,7 +14,7 @@ import state_store as state_store_module
 from memory_store import MemoryStore
 from memory_store import MemoryStoreCorrupt
 from project_registry import ProjectRegistry
-from state_resolver import StateResolver
+from brain_eleven.state.resolver import StateResolver
 from state_store import (
     StateReferenceConflict,
     StateReferenceError,

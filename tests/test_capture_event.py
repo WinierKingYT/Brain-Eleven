@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from capture_event import (
+from brain_eleven.runtime.capture_event import (
     MAX_HOOK_EVENT_BYTES,
     CaptureEventError,
     CaptureProjectResolutionError,

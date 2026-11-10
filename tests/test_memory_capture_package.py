@@ -29,14 +29,6 @@ def test_package_adapter_and_bare_import_share_capture_objects():
     assert bare.MemoryValidator is canonical.MemoryValidator
 
 
-def test_capture_safety_uses_the_single_legacy_policy_object():
-    canonical = _capture_module()
-    legacy = importlib.import_module("capture_safety")
-
-    assert canonical.evaluate_capture is legacy.evaluate_capture
-    assert canonical.require_safe_capture is legacy.require_safe_capture
-
-
 def test_remember_adapter_has_no_second_implementation():
     source_path = Path(__file__).parents[1] / "scripts" / "remember.py"
     tree = ast.parse(source_path.read_text(encoding="utf-8"))

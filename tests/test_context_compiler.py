@@ -20,11 +20,8 @@ import pytest
 from project_registry import ProjectRegistry  # noqa: E402
 from state_store import StateService, StateStore  # noqa: E402
 
-spec = importlib.util.spec_from_file_location(
-    "context_compiler", Path(__file__).parent.parent / "scripts" / "context-compiler.py"
-)
-context_compiler = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(context_compiler)
+from brain_eleven.runtime import context_compiler  # noqa: E402
+
 ContextCompiler = context_compiler.ContextCompiler
 ContextBootstrapStale = context_compiler.ContextBootstrapStale
 

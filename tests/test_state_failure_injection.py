@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 import scripts.state_store as state_store_module  # noqa: E402
 from scripts.memory_store import MemoryStore  # noqa: E402
-from scripts.memory_store_lock import MemoryStoreLockTimeout  # noqa: E402
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout  # noqa: E402
 from scripts.project_registry import ProjectRegistry  # noqa: E402
 from scripts.state_store import (  # noqa: E402
     StateProjectUnknown,

@@ -11,9 +11,9 @@ from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json
 from brain_eleven.runtime.worker import Worker, enqueue
 from brain_eleven.state import StateService, StateStore
-from scripts import capture_queue as module
-from scripts.capture_event import EVENT_SESSION_END, parse_hook_event
-from scripts.capture_queue import (
+from brain_eleven.runtime import capture_queue as module
+from brain_eleven.runtime.capture_event import EVENT_SESSION_END, parse_hook_event
+from brain_eleven.runtime.capture_queue import (
     CLAIMED, COMMITTED, PROCESSING, QUEUED, CaptureQueue,
     CaptureQueueCorruptError,
 )

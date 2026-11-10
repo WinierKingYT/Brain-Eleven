@@ -25,14 +25,6 @@ def _sys_path_mutations(relative_path: str) -> list[ast.Call]:
     ]
 
 
-def test_file_loaded_semantic_cli_uses_only_repository_root_bootstrap() -> None:
-    """Its file-loaded dependency needs the package root, not scripts/ itself."""
-
-    mutations = _sys_path_mutations("scripts/semantic-search.py")
-    assert len(mutations) == 1
-    assert ast.unparse(mutations[0].args[1]) == "str(_REPO_ROOT)"
-
-
 def test_spawn_compatibility_adapters_retain_repository_bootstrap() -> None:
     """Bare legacy imports must remain discoverable in Windows spawn workers."""
 
@@ -56,7 +48,7 @@ def test_search_api_keeps_only_repository_root_bootstrap() -> None:
 
 
 def test_memory_validator_uses_the_runtime_safety_surface() -> None:
-    source = (ROOT / "scripts" / "memory-validator.py").read_text(encoding="utf-8")
+    source = (ROOT / "brain_eleven" / "memory" / "validator.py").read_text(encoding="utf-8")
 
     assert "from brain_eleven.runtime.capture_safety import" in source
     assert "from capture_safety import" not in source

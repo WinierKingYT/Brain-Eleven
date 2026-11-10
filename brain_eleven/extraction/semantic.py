@@ -17,8 +17,6 @@ import math
 import re
 from typing import Any, Callable, Mapping, Optional, Protocol, Sequence
 
-from brain_eleven._legacy import load_legacy_module
-
 
 SEMANTIC_SCHEMA_VERSION = "ig01-a-proposition-v1"
 SEMANTIC_EXTRACTOR_VERSION = "ig03-semantic-proposal-v1"
@@ -311,7 +309,9 @@ class DeterministicSafetyPrefilter:
     """Screen secrets, transcript-like payloads and quoted material pre-model."""
 
     def __init__(self) -> None:
-        self._capture_safety = load_legacy_module("capture_safety", "capture_safety.py")
+        from brain_eleven.runtime import capture_safety
+
+        self._capture_safety = capture_safety
 
     def evaluate(self, content: str) -> PrefilterResult:
         if not isinstance(content, str):
@@ -695,7 +695,9 @@ class DeterministicRegexProvider:
 
     def __init__(self) -> None:
         self.prefilter = DeterministicSafetyPrefilter()
-        self._extraction = load_legacy_module("extraction", "extraction.py")
+        from brain_eleven.runtime import extraction
+
+        self._extraction = extraction
 
     def extract(
         self,

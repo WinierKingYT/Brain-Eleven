@@ -13,7 +13,7 @@ from brain_eleven.runtime.migration import migrate
 from brain_eleven.runtime.storage import RuntimeConfig, write_json
 from brain_eleven.runtime.worker import Worker, enqueue
 from brain_eleven.state import StateService
-from capture_provenance import TranscriptProvenanceError, resolve_transcript_path
+from brain_eleven.runtime.capture_provenance import TranscriptProvenanceError, resolve_transcript_path
 
 
 def _runtime(tmp_path, *, roots):

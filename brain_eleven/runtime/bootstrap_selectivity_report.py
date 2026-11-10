@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only: compare SessionStart's old top-5 with the step-9 distinct selection.
 
 For each registered project, reports how many of the old five bootstrap
@@ -14,8 +13,6 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from brain_eleven._legacy import load_legacy_module  # noqa: E402
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.runtime.context import BOOTSTRAP_POOL, BOOTSTRAP_SLOTS, NEAR_DUPLICATE, _stale_memory_ids, select_distinct  # noqa: E402
 from brain_eleven.runtime.review import _words  # noqa: E402
@@ -33,7 +30,7 @@ def _redundant(chosen):
 
 def compare(vault) -> dict:
     """Old vs step-9 bootstrap slots for every registered project."""
-    compiler_type = load_legacy_module("brain_eleven_legacy_context_compiler", "context-compiler.py").ContextCompiler
+    from brain_eleven.runtime.context_compiler import ContextCompiler as compiler_type
     stale = _stale_memory_ids(vault)
     report = {}
     for project in ProjectRegistry(vault).list_projects():

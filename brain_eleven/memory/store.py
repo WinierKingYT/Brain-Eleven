@@ -16,12 +16,7 @@ from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple, Union
 from collections.abc import Mapping
 
-try:
-    from brain_eleven.infrastructure.locking import memory_store_lock
-except ModuleNotFoundError as exc:  # pragma: no cover - copied-hook fallback
-    if exc.name != "brain_eleven":
-        raise
-    from memory_store_lock import memory_store_lock
+from brain_eleven.infrastructure.locking import memory_store_lock
 
 
 CANONICAL_SCHEMA_VERSION = 2

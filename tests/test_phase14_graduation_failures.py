@@ -21,7 +21,7 @@ from scripts.memory_store import (  # noqa: E402
     MemoryStoreCorrupt,
     MemoryStoreError,
 )
-from scripts.memory_store_lock import MemoryStoreLockTimeout, memory_store_lock  # noqa: E402
+from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, memory_store_lock  # noqa: E402
 from scripts.project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
 
 
@@ -54,12 +54,9 @@ def _crash_while_holding_store_lock(vault_path, locked):
 
 
 def _load_context_compiler():
-    spec = importlib.util.spec_from_file_location(
-        "phase14_graduation_context_compiler", SCRIPTS / "context-compiler.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.ContextCompiler
+    from brain_eleven.runtime.context_compiler import ContextCompiler
+
+    return ContextCompiler
 
 
 def _memory(memory_id, content="Use atomic writes"):

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from evidence import TranscriptReader
-from extraction import Commitment, DeterministicExtractor, NewMemoryCandidate, StateMutationProposal
+from brain_eleven.runtime.evidence import TranscriptReader
+from brain_eleven.runtime.extraction import Commitment, DeterministicExtractor, NewMemoryCandidate, StateMutationProposal
 
 
 def _batch(tmp_path, rows, *, project_id="brain-eleven"):

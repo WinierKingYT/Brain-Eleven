@@ -12,7 +12,7 @@ SCRIPTS = Path(__file__).parent.parent / "scripts"
 
 from entity_extractor import EntityExtractor  # noqa: E402
 from knowledge_graph import KnowledgeGraph  # noqa: E402
-from memory_scope import (  # noqa: E402
+from brain_eleven.memory.scope import (  # noqa: E402
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     filter_memories,
@@ -124,7 +124,7 @@ def test_default_retrieval_is_global_only_without_project():
 
 
 def test_context_compiler_retrieves_global_and_current_project_only(tmp_path):
-    compiler_module = _load_script("phase14_context_compiler", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
     records = [
@@ -146,7 +146,7 @@ def test_context_compiler_retrieves_global_and_current_project_only(tmp_path):
 
 
 def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_path):
-    compiler_module = _load_script("phase14_context_compiler_read_only", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     project_root = tmp_path / "unregistered-project"
     project_root.mkdir()
@@ -182,7 +182,7 @@ def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_
 
 
 def test_archived_project_defaults_to_global_only_but_historical_scope_is_explicit(tmp_path):
-    compiler_module = _load_script("phase13_archived_context_compiler", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     archived_root = tmp_path / "archived-project"
     archived_root.mkdir()
@@ -227,7 +227,7 @@ def test_legacy_project_label_gets_stable_compatibility_id():
 
 
 def test_conflict_detection_does_not_cross_project_boundaries(tmp_path):
-    validator_module = _load_script("phase14_memory_validator", "memory-validator.py")
+    from brain_eleven.memory import validator as validator_module
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
     project_a = project_identity(tmp_path / "project-a")[0]

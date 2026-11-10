@@ -12,7 +12,7 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-from capture_safety import (  # noqa: E402
+from brain_eleven.runtime.capture_safety import (  # noqa: E402
     CaptureSafetyError,
     POLICY_NAME,
     evaluate_capture,
@@ -99,7 +99,7 @@ def test_remember_rejects_before_project_registration_or_persistence(tmp_path):
 def test_validator_and_batch_compiler_cannot_persist_unsafe_content(tmp_path):
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
-    validator_module = _load_script("capture_safety_validator", "memory-validator.py")
+    from brain_eleven.memory import validator as validator_module
     validator = validator_module.MemoryValidator(str(vault))
 
     with pytest.raises(CaptureSafetyError) as exc:

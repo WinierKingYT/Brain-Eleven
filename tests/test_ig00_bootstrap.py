@@ -25,8 +25,7 @@ def test_shadow_bootstrap_is_v1_but_prompt_is_not_delivered(runtime, client):
 
 @pytest.mark.parametrize('change', ['OFF', 'optout', 'revision'])
 def test_bootstrap_revalidates_after_render(runtime, monkeypatch, change):
-    from brain_eleven._legacy import load_legacy_module
-    compiler = load_legacy_module('brain_eleven_legacy_context_compiler', 'context-compiler.py').ContextCompiler
+    from brain_eleven.runtime.context_compiler import ContextCompiler as compiler
     original = compiler._generate_context_block
     vault, project = runtime
     def changed(self, *args):

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Brain-Eleven Hybrid Search Engine
 Combine lexical + semantic search for optimal retrieval
@@ -16,21 +15,9 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
-
 from brain_eleven.memory.scope import filter_memories, infer_memory_scope
-
-from brain_eleven._legacy import load_legacy_module
-
-# Load semantic search
-semantic_search_module = load_legacy_module("semantic_search", "semantic-search.py")
-SemanticSearchEngine = semantic_search_module.SemanticSearchEngine
-
-# Load retriever (Phase 4)
-memory_retriever = load_legacy_module("memory_retriever", "memory-retriever.py")
-MemoryRetriever = memory_retriever.MemoryRetriever
+from brain_eleven.search.retriever import MemoryRetriever
+from brain_eleven.search.semantic import SemanticSearchEngine
 
 
 class HybridSearchEngine:

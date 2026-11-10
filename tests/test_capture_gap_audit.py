@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
-
-from capture_gap_audit import audit, main, verdict  # noqa: E402
+from brain_eleven.runtime.capture_gap_audit import audit, main, verdict  # noqa: E402
 from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.runtime.migration import migrate  # noqa: E402
 from brain_eleven.runtime.ownership import _project_slug  # noqa: E402

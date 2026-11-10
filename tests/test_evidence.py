@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from evidence import (
+from brain_eleven.runtime.evidence import (
     DailyEvidenceAdapter,
     EvidenceCorruptError,
     EvidencePathError,
