@@ -15,9 +15,8 @@ Detectors:
 - broken_supersession:    superseded_by points at a memory_id that doesn't exist
 - trivial_content:        content too short/empty to be a useful memory
 
-The historical :mod:`scripts.anomaly_detector` module is a compatibility
-adapter.  Detector logic lives here and consumes the canonical summarizer
-helpers directly.
+Detector logic lives here and consumes the canonical summarizer helpers
+directly.
 """
 
 import json

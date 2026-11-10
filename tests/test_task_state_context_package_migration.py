@@ -19,7 +19,6 @@ from brain_eleven.state import StateService
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_PATH = ROOT / "brain_eleven" / "runtime" / "task_state_context.py"
-ADAPTER_PATH = ROOT / "scripts" / "task_state_context.py"
 
 BASELINE_CALLERS = frozenset(
     {
@@ -66,7 +65,6 @@ def _task_state_import_files() -> set[str]:
         for path in source_root.rglob("*.py"):
             relative = path.relative_to(ROOT).as_posix()
             if relative in {
-                "scripts/task_state_context.py",
                 "brain_eleven/runtime/task_state_context.py",
                 "tests/test_task_state_context_package_migration.py",
             }:
@@ -147,46 +145,8 @@ def test_canonical_task_state_module_owns_the_implementation_and_package_edges()
     assert "transact(" not in source
 
 
-def test_legacy_task_state_module_is_adapter_only() -> None:
-    source = ADAPTER_PATH.read_text(encoding="utf-8")
-    tree = ast.parse(source, filename=str(ADAPTER_PATH))
-    definitions = {
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
-    }
-
-    assert definitions == {"_load_canonical"}
-    assert "brain_eleven.runtime.task_state_context" in source
-    assert "from dataclasses" not in source
-    assert "TaskStateComposer(" not in source
-    assert "MemoryStore" not in source
-    assert "StateStore" not in source
-    assert "open(" not in source
-    assert "write_text(" not in source
-    assert "json.dump(" not in source
-    assert ".register(" not in source
-    assert ".transact(" not in source
-
-
-def test_package_script_and_bare_surfaces_share_all_task_state_objects() -> None:
+def test_package_composition_preserves_valid_archived_and_unknown_fixtures(tmp_path) -> None:
     canonical = importlib.import_module("brain_eleven.runtime.task_state_context")
-    adapter = importlib.import_module("scripts.task_state_context")
-    bare = importlib.import_module("task_state_context")
-
-    for name in PUBLIC_NAMES:
-        assert getattr(canonical, name) is getattr(adapter, name), name
-        assert getattr(adapter, name) is getattr(bare, name), name
-
-    assert canonical.TaskStateLineage.from_dict.__func__ is adapter.TaskStateLineage.from_dict.__func__
-    assert canonical.TaskStateContext.__module__ == "brain_eleven.runtime.task_state_context"
-    assert canonical.TaskStateComposer.__module__ == "brain_eleven.runtime.task_state_context"
-
-
-def test_package_and_compatibility_composition_preserve_valid_archived_and_unknown_fixtures(tmp_path) -> None:
-    canonical = importlib.import_module("brain_eleven.runtime.task_state_context")
-    adapter = importlib.import_module("scripts.task_state_context")
-    bare = importlib.import_module("task_state_context")
 
     project = tmp_path / "project-a"
     project.mkdir()
@@ -197,21 +157,12 @@ def test_package_and_compatibility_composition_preserve_valid_archived_and_unkno
         now="2026-09-17T10:00:00Z",
     )
 
-    for module in (canonical, adapter, bare):
+    for module in (canonical,):
         result = module.TaskStateComposer(tmp_path, project).compose(
             "Implement safe task state composition."
         )
         assert result.state.status == "AVAILABLE"
         assert result.lineage.project_id == "project-a"
-        if module is canonical:
-            expected = _strip_generated_fields(result.to_dict())
-    for module in (adapter, bare):
-        actual = _strip_generated_fields(
-            module.TaskStateComposer(tmp_path, project).compose(
-                "Implement safe task state composition."
-            ).to_dict()
-        )
-        assert actual == expected
 
     ProjectRegistry(tmp_path).set_status("project-a", "archived")
     archived = canonical.TaskStateComposer(tmp_path, project).compose(
@@ -229,23 +180,10 @@ def test_package_and_compatibility_composition_preserve_valid_archived_and_unkno
     assert unknown.lineage.to_dict() == {"status": "unresolved"}
 
 
-def test_direct_adapter_and_package_cli_have_identical_json_contract(tmp_path) -> None:
-    vault = tmp_path / "vault"
-    project_root = tmp_path / "unknown-project"
-    adapter = _run_cli(str(ADAPTER_PATH), vault, project_root, cwd=tmp_path)
-    package = _run_cli("brain_eleven.runtime.task_state_context", vault, project_root, cwd=ROOT)
-
-    assert adapter.returncode == 0, adapter.stderr
-    assert package.returncode == 0, package.stderr
-    assert _strip_generated_fields(json.loads(adapter.stdout)) == _strip_generated_fields(
-        json.loads(package.stdout)
-    )
-
-
 @pytest.mark.parametrize(
     "entrypoint",
-    [[str(ADAPTER_PATH)], ["-m", "brain_eleven.runtime.task_state_context"]],
-    ids=["adapter", "package"],
+    [["-m", "brain_eleven.runtime.task_state_context"]],
+    ids=["package"],
 )
 def test_json_cli_is_utf8_when_stdout_uses_a_legacy_windows_code_page(tmp_path, entrypoint) -> None:
     """An en-US Windows pipe defaults to cp1252, which cannot encode U+0131 by itself."""
@@ -276,41 +214,6 @@ def test_json_cli_is_utf8_when_stdout_uses_a_legacy_windows_code_page(tmp_path, 
     assert request in json.dumps(payload, ensure_ascii=False)
 
 
-def test_direct_adapter_and_package_cli_have_identical_human_contract(tmp_path) -> None:
-    vault = tmp_path / "vault"
-    project_root = tmp_path / "unknown-project"
-    request = [
-        "--vault",
-        str(vault),
-        "--project-root",
-        str(project_root),
-        "--request",
-        "Explain task state.",
-    ]
-    environment = os.environ.copy()
-    environment.pop("PYTHONPATH", None)
-    adapter = subprocess.run(
-        [sys.executable, str(ADAPTER_PATH), *request],
-        cwd=tmp_path,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    package = subprocess.run(
-        [sys.executable, "-m", "brain_eleven.runtime.task_state_context", *request],
-        cwd=ROOT,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-    assert adapter.returncode == 0, adapter.stderr
-    assert package.returncode == 0, package.stderr
-    assert adapter.stdout == package.stdout
-
-
 def test_corrupt_registry_fails_closed_without_path_or_request_leak(tmp_path) -> None:
     vault = tmp_path / "vault"
     registry_path = vault / ".claude" / "project-registry.json"
@@ -320,7 +223,6 @@ def test_corrupt_registry_fails_closed_without_path_or_request_leak(tmp_path) ->
     request = "private request must not appear in a registry failure"
 
     for command, cwd in (
-        ([sys.executable, str(ADAPTER_PATH)], tmp_path),
         ([sys.executable, "-m", "brain_eleven.runtime.task_state_context"], ROOT),
     ):
         environment = os.environ.copy()

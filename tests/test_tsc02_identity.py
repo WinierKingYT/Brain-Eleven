@@ -11,9 +11,9 @@ from brain_eleven.projects.identity import (
     ROOT_IDENTITY_PATTERN,
     project_root_identity,
 )
-from project_registry import ProjectRegistry
-from state_store import StateService
-from task_state_context import TaskStateComposer, TaskStateLineage, TaskStateLineageError
+from brain_eleven.projects.registry import ProjectRegistry
+from brain_eleven.state.store import StateService
+from brain_eleven.runtime.task_state_context import TaskStateComposer, TaskStateLineage, TaskStateLineageError
 
 
 SOURCE = {"type": "user", "reference": "tsc-02-test"}

@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 
-from cache_manager import CacheManager, LRUCache, DiskCache  # noqa: E402
+from brain_eleven.support.cache import CacheManager, LRUCache, DiskCache  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

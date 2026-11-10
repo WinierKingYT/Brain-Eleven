@@ -25,15 +25,6 @@ def _sys_path_mutations(relative_path: str) -> list[ast.Call]:
     ]
 
 
-def test_spawn_compatibility_adapters_retain_repository_bootstrap() -> None:
-    """Bare legacy imports must remain discoverable in Windows spawn workers."""
-
-    for relative_path in ("scripts/memory_store.py", "scripts/state_store.py"):
-        mutations = _sys_path_mutations(relative_path)
-        assert len(mutations) == 1
-        assert ast.unparse(mutations[0].args[1]) == "str(_ROOT)"
-
-
 def test_search_api_keeps_only_repository_root_bootstrap() -> None:
     mutations = _sys_path_mutations("scripts/search-api.py")
 

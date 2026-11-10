@@ -5,6 +5,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-10)
 
+- **`scripts/` temizlendi.** 15 uyumluluk adaptörü ve 5 ölü betik
+  (memory-compiler, session_pipeline, prompt-counter, state.py,
+  migrate-legacy-memory) testleriyle silindi; testler doğrudan `brain_eleven`
+  yoluna çevrildi. Kalanlar ARCHITECTURE.md'de tek tek yazılı.
+
 - **Canlı kod scripts/'ten pakete taşındı.** `brain_eleven/_legacy.py` köprüsü
   silindi; 21 betik `brain_eleven/` altına girdi. `scripts/context-compiler.py`
   kurulu hook yolu olduğu için ince giriş noktası kaldı. recall-probe 2/5 ve 5/5.

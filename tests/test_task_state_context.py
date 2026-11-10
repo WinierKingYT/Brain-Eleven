@@ -8,9 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from project_registry import ProjectRegistry  # noqa: E402
-from state_store import StateService  # noqa: E402
-from task_state_context import TaskStateComposer  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
+from brain_eleven.state.store import StateService  # noqa: E402
+from brain_eleven.runtime.task_state_context import TaskStateComposer  # noqa: E402
 
 
 SOURCE = {"type": "user", "reference": "test"}

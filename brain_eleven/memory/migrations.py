@@ -1,8 +1,7 @@
 """Canonical scope migration and rollback operations for memory storage.
 
-``scripts/migrate-memory-scope.py`` remains a compatibility/direct-execution
-adapter.  All scope-v2 transformation and rollback behavior lives here and
-continues to use the canonical :class:`MemoryStore` transaction boundary.
+All scope-v2 transformation and rollback behavior lives here and
+uses the canonical :class:`MemoryStore` transaction boundary.
 """
 
 from __future__ import annotations

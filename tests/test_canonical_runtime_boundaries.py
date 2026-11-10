@@ -9,9 +9,6 @@ WORKER = ROOT / "brain_eleven" / "runtime" / "worker.py"
 CONTEXT = ROOT / "brain_eleven" / "runtime" / "context.py"
 EVIDENCE = ROOT / "brain_eleven" / "runtime" / "evidence.py"
 STATE_RESOLVER = ROOT / "brain_eleven" / "state" / "resolver.py"
-LEGACY_MEMORY_STORE = ROOT / "scripts" / "memory_store.py"
-LEGACY_STATE_STORE = ROOT / "scripts" / "state_store.py"
-LEGACY_PROJECT_REGISTRY = ROOT / "scripts" / "project_registry.py"
 
 
 def test_worker_uses_canonical_surfaces_for_memory_truth_and_evidence():
@@ -65,33 +62,3 @@ def test_brain_eleven_package_has_no_direct_scripts_import_edges():
             for alias in node.names
         )
         assert not any(name == "scripts" or name.startswith("scripts.") for name in imports), path
-
-
-def test_memory_store_implementation_is_canonical_and_legacy_path_is_an_adapter():
-    from brain_eleven.memory import MemoryStore as CanonicalMemoryStore
-    from scripts.memory_store import MemoryStore as LegacyMemoryStore
-
-    assert CanonicalMemoryStore is LegacyMemoryStore
-    assert CanonicalMemoryStore.__module__ == "brain_eleven.memory.store"
-    assert "class MemoryStore" not in LEGACY_MEMORY_STORE.read_text(encoding="utf-8")
-
-
-def test_state_store_implementation_is_canonical_and_legacy_path_is_an_adapter():
-    import brain_eleven.state.store as canonical_state_store
-    import scripts.state_store as legacy_state_store
-    import state_store as bare_state_store
-
-    assert canonical_state_store is legacy_state_store is bare_state_store
-    assert canonical_state_store.StateStore.__module__ == "brain_eleven.state.store"
-    assert "class StateStore" not in LEGACY_STATE_STORE.read_text(encoding="utf-8")
-
-
-def test_project_registry_implementation_is_canonical_and_legacy_path_is_an_adapter():
-    import brain_eleven.projects.registry as canonical_project_registry
-    import project_registry as bare_project_registry
-    import scripts.project_registry as legacy_project_registry
-
-    assert canonical_project_registry is legacy_project_registry is bare_project_registry
-    assert canonical_project_registry.ProjectRegistry.__module__ == "brain_eleven.projects.registry"
-    assert "class ProjectRegistry" not in LEGACY_PROJECT_REGISTRY.read_text(encoding="utf-8")
-

@@ -7,7 +7,7 @@ import pytest
 
 from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state import StateProjectArchived, StateService
-import state_store as legacy_state_store
+import brain_eleven.state.store as legacy_state_store
 
 
 SOURCE = {"type": "user", "reference": "w14-test"}

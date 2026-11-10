@@ -1,7 +1,6 @@
 """Public boundary for deterministic and semantic extraction.
 
 The deterministic entity implementation is canonical in ``.entities``.
-``scripts.entity_extractor`` remains a compatibility/direct-execution adapter;
 semantic extraction stays proposal-only in ``.semantic``.
 """
 

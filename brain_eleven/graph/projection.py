@@ -2,9 +2,6 @@
 """
 Canonical Brain-Eleven knowledge-graph projection (Phase 11A).
 
-The historical ``scripts/knowledge_graph.py`` path is a thin
-compatibility/direct-execution adapter that re-exports these exact objects.
-
 Lightweight, dependency-light alternative to the Neo4j design originally
 sketched in PHASE11-KICKSTART.md. Neo4j means standing up a whole extra
 database service (nothing currently runs it here); networkx gives the same

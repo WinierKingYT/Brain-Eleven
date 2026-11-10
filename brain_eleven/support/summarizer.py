@@ -13,8 +13,7 @@ quality_score/confidence already computed by memory-validator.py during
 the validation pipeline. Works identically whether embeddings are real
 or fallback.
 
-The historical :mod:`scripts.summarizer` module is a compatibility adapter;
-all tokenization, deduplication, ranking, and scope filtering lives here.
+All tokenization, deduplication, ranking, and scope filtering lives here.
 """
 
 import json

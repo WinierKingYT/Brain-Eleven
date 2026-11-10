@@ -36,89 +36,6 @@ def _stable_document(value):
     return value
 
 
-def test_package_adapter_and_bare_graph_objects_preserve_identity() -> None:
-    package = importlib.import_module("brain_eleven.graph")
-    projection = importlib.import_module("brain_eleven.graph.projection")
-    adapter = importlib.import_module("scripts.knowledge_graph")
-    bare = importlib.import_module("knowledge_graph")
-
-    for name in (
-        "KnowledgeGraph",
-        "KnowledgeGraphProjectionError",
-        "KnowledgeGraphProjectionStale",
-    ):
-        expected = getattr(package, name)
-        assert getattr(projection, name) is expected
-        assert getattr(adapter, name) is expected
-        assert getattr(bare, name) is expected
-    assert adapter.KNOWLEDGE_GRAPH_SCHEMA_VERSION == package.KNOWLEDGE_GRAPH_SCHEMA_VERSION
-    assert adapter._utc_now is projection._utc_now
-
-
-def test_legacy_graph_script_is_an_adapter_only() -> None:
-    script = ROOT / "scripts" / "knowledge_graph.py"
-    source = script.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-
-    function_names = {
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    }
-    assert function_names == {"_load_canonical"}
-    assert not any(isinstance(node, ast.ClassDef) for node in ast.walk(tree))
-    assert "brain_eleven.graph.projection" in source
-    assert "class KnowledgeGraph" not in source
-    assert "scripts.logging_config" not in source
-
-    canonical_source = (ROOT / "brain_eleven" / "graph" / "projection.py").read_text(
-        encoding="utf-8"
-    )
-    assert "from scripts.knowledge_graph" not in canonical_source
-    assert "scripts.logging_config" not in canonical_source
-
-
-def test_package_and_adapter_envelope_round_trip_and_backup_parity(tmp_path: Path) -> None:
-    package = importlib.import_module("brain_eleven.graph.projection")
-    adapter = importlib.import_module("scripts.knowledge_graph")
-    package_vault = tmp_path / "package"
-    adapter_vault = tmp_path / "adapter"
-    package_vault.mkdir()
-    adapter_vault.mkdir()
-    _write_revisioned_memory(package_vault)
-    _write_revisioned_memory(adapter_vault)
-
-    package_graph = package.KnowledgeGraph(str(package_vault))
-    adapter_graph = adapter.KnowledgeGraph(str(adapter_vault))
-    for graph in (package_graph, adapter_graph):
-        graph.add_entity("memory", "DECISION", "Use Redis", scope="global")
-        graph.add_entity("technology", "TECHNOLOGY", "Redis", entity_kind="technology")
-        graph.add_relationship("memory", "MENTIONS", "technology", source_memory="memory")
-        graph.mark_projection(0)
-        graph.save(source_memory_revision=0)
-
-    package_document = json.loads(
-        (package_vault / ".claude" / "knowledge-graph.json").read_text(encoding="utf-8")
-    )
-    adapter_document = json.loads(
-        (adapter_vault / ".claude" / "knowledge-graph.json").read_text(encoding="utf-8")
-    )
-    assert _stable_document(package_document) == _stable_document(adapter_document)
-    assert package_document["schema_version"] == 2
-    assert package_document["projection"] == "knowledge_graph"
-    assert package_document["source_memory_revision"] == 0
-
-    package_graph.add_entity("extra", "LESSON", "Keep the graph derived")
-    adapter_graph.add_entity("extra", "LESSON", "Keep the graph derived")
-    package_graph.save(source_memory_revision=0)
-    adapter_graph.save(source_memory_revision=0)
-    for vault in (package_vault, adapter_vault):
-        backup = json.loads(
-            (vault / ".claude" / "knowledge-graph.backup.json").read_text(encoding="utf-8")
-        )
-        assert "extra" not in backup["data"]["nodes"]
-
-
 @pytest.mark.parametrize("filename,contents,expected", [
     ("missing", None, "missing"),
     (
@@ -205,20 +122,4 @@ def test_package_graph_scope_visibility_remains_isolated(tmp_path: Path) -> None
     }
     assert graph.find_entities(project_id="a", retrieval_scope="project")[0]["id"] == "project-a"
 
-
-def test_legacy_demonstration_cli_still_executes_without_visible_window(tmp_path: Path) -> None:
-    _write_revisioned_memory(tmp_path)
-    script = ROOT / "scripts" / "knowledge_graph.py"
-    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    completed = subprocess.run(
-        [sys.executable, str(script)],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        creationflags=creationflags,
-        check=False,
-    )
-
-    assert completed.returncode == 0
-    assert '"total_entities"' in completed.stdout
-    assert (tmp_path / ".claude" / "knowledge-graph.json").exists()
+

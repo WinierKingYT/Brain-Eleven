@@ -13,11 +13,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-import scripts.state_store as state_store_module  # noqa: E402
-from scripts.memory_store import MemoryStore  # noqa: E402
+import brain_eleven.state.store as state_store_module  # noqa: E402
+from brain_eleven.memory.store import MemoryStore  # noqa: E402
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout  # noqa: E402
-from scripts.project_registry import ProjectRegistry  # noqa: E402
-from scripts.state_store import (  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
+from brain_eleven.state.store import (  # noqa: E402
     StateProjectUnknown,
     StateProvenanceError,
     StateReferenceError,

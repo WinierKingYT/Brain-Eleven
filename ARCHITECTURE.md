@@ -27,9 +27,22 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `brain_eleven/state/` | Proje/görev durumu |
 | `brain_eleven/projects/` | Proje kimliği ve kayıt defteri |
 | `brain_eleven/extraction/`, `retrieval/`, `search/` | Çıkarım sağlayıcıları, embedding |
-| `scripts/` | Eski betikler ve uyumluluk adaptörleri; canlı kod pakette. `context-compiler.py` yalnız kurulu SessionStart hook'unun çağırdığı giriş noktası, `remember.py` /remember komutunun yolu, `search-api.py` Docker HTTP API'si |
+| `scripts/` | Canlı kod pakette; burada yalnız repo dışından çağrılabilen girişler kalır (aşağıdaki liste) |
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |
 | `🔮 Companion/`, `🗂️ Proje Notları/`, `📝 Template/` | Obsidian vault içeriği |
+
+## `scripts/` içindekiler
+
+- `context-compiler.py`: kurulu SessionStart hook şablonunun çağırdığı giriş noktası; `brain_eleven.runtime.context_compiler.main`'i çalıştırır.
+- `remember.py`: `/remember` komutunun çağırdığı yol; `brain_eleven.memory.capture`'a yönlenir.
+- `remember_opt_in.py`: SessionEnd hook şablonunun sorduğu, projede proaktif yakalama izni olup olmadığını denetleyen kapı.
+- `install-cross-project-memory.py`: eski `~/.claude` kurulumu (hook ve komut dosyalarını yazar/kaldırır); yeni kurulum `brain_eleven/runtime/install.py`.
+- `memory_backup.py`: kanonik hafızanın doğrulanmış yedeğini alır ve geri yükler.
+- `post_session_maintenance.py`: `brain_eleven.runtime.maintenance`'a yönlenen eski bakım girişi (graf yenileme, anomali, özet).
+- `search-api.py`: Docker'daki FastAPI HTTP API'si (`Dockerfile`, `docker-compose.yml`).
+- `weekly_recall_check.ps1`, `weekly_recall_check_core.ps1`: haftalık hatırlama kontrolü (Windows zamanlanmış görevi için).
+- `ops/backup.sh`, `deploy.sh`, `rollback.sh`: `Makefile` hedefleri (Docker dağıtımı).
+- `__init__.py`: testlerin `scripts.` altından içe aktardığı paket işareti.
 
 ## Seni tanıma notları
 

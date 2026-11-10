@@ -24,14 +24,14 @@ from brain_eleven.state import (
 )
 from brain_eleven.state.store import StateStore as PackagedStateStore
 
-from memory_store import (
+from brain_eleven.memory.store import (
     CANONICAL_SCHEMA_VERSION as LEGACY_MEMORY_SCHEMA_VERSION,
     MemoryStore as LegacyMemoryStore,
     MemoryStoreConflict as LegacyMemoryStoreConflict,
     MemoryStoreCorrupt as LegacyMemoryStoreCorrupt,
     MemoryStoreError as LegacyMemoryStoreError,
 )
-from state_store import (
+from brain_eleven.state.store import (
     STATE_FILENAME as LEGACY_STATE_FILENAME,
     STATE_SCHEMA_VERSION as LEGACY_STATE_SCHEMA_VERSION,
     StateStore as LegacyStateStore,

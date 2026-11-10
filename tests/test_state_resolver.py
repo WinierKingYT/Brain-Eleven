@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from project_registry import ProjectRegistry  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.state.resolver import (  # noqa: E402
     PROJECT_ARCHIVED,
     PROJECT_UNKNOWN,
@@ -18,7 +18,7 @@ from brain_eleven.state.resolver import (  # noqa: E402
     STATE_NOT_FOUND,
     StateResolver,
 )
-from state_store import StateService, StateStore  # noqa: E402
+from brain_eleven.state.store import StateService, StateStore  # noqa: E402
 
 
 SOURCE = {"type": "user", "reference": "test"}

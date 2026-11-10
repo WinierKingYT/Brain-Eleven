@@ -10,7 +10,7 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-from entity_extractor import EntityExtractor  # noqa: E402
+from brain_eleven.extraction.entities import EntityExtractor  # noqa: E402
 from memory_backup import (  # noqa: E402
     CANONICAL_ARCHIVE_PATH,
     MemoryBackupError,
@@ -23,9 +23,9 @@ from memory_backup import (  # noqa: E402
     verify_backup,
 )
 from brain_eleven.memory.scope import GLOBAL_SCOPE, PROJECT_SCOPE, scoped_fingerprint  # noqa: E402
-from memory_store import MemoryStore  # noqa: E402
-from project_registry import ProjectRegistry  # noqa: E402
-from state_store import StateService  # noqa: E402
+from brain_eleven.memory.store import MemoryStore  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
+from brain_eleven.state.store import StateService  # noqa: E402
 
 
 def _memory(memory_id, content, *, scope=GLOBAL_SCOPE, project_id="", project="", status="active"):

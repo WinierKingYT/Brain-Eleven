@@ -1,9 +1,6 @@
 """Canonical logging implementation for the support package.
 
-The historical :mod:`scripts.logging_config` module remains available as a
-compatibility adapter, but all formatter and logger setup behavior lives here.
-Keeping the implementation in the installable package gives legacy imports
-and package imports one shared object identity during the migration.
+All formatter and logger setup behavior lives here.
 """
 
 from __future__ import annotations
@@ -68,8 +65,8 @@ def setup_logging(name: str, log_dir: str = "logs") -> logging.Logger:
     """Create the standard console, debug-file, and error-file handlers.
 
     Existing handlers are preserved so repeated setup calls for the same
-    logger cannot duplicate output.  The directory and file names retain the
-    legacy contract for callers that still import ``scripts.logging_config``.
+    logger cannot duplicate output.  The directory and file names are
+    fixed (``logs/brain-eleven.log`` and ``brain-eleven.error.log``).
     """
 
     logger = logging.getLogger(name)

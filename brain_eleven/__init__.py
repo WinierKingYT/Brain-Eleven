@@ -1,7 +1,7 @@
 """Stable package namespace for Brain-Eleven's core business logic.
 
-Migration is intentionally incremental.  Legacy ``scripts`` entry points may
-remain as compatibility adapters while their implementation moves here.
+Live code lives here; ``scripts/`` keeps only the entry points listed in
+ARCHITECTURE.md.
 """
 
 __all__ = ["memory", "projects", "state"]

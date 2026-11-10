@@ -10,12 +10,12 @@ from pathlib import Path
 
 import pytest
 
-import state_store as state_store_module
-from memory_store import MemoryStore
-from memory_store import MemoryStoreCorrupt
-from project_registry import ProjectRegistry
+import brain_eleven.state.store as state_store_module
+from brain_eleven.memory.store import MemoryStore
+from brain_eleven.memory.store import MemoryStoreCorrupt
+from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state.resolver import StateResolver
-from state_store import (
+from brain_eleven.state.store import (
     StateReferenceConflict,
     StateReferenceError,
     StateService,
@@ -296,14 +296,4 @@ def test_reference_guard_does_not_persist_snapshot_or_memory_content(tmp_path):
     assert "memory_revision" not in state_text
     assert "memory_scope" not in state_text
 
-
-def test_package_and_legacy_state_service_identity_remains_intact():
-    from brain_eleven.state import StateService as package_service
-    from brain_eleven.state import StateReferenceConflict as package_conflict
-    from brain_eleven.state.store import StateService as package_store_service
-    from scripts.state import _error_code
-
-    assert package_service is StateService
-    assert package_store_service is StateService
-    assert package_conflict is StateReferenceConflict
-    assert _error_code(StateReferenceConflict("MEMORY_REFERENCE_LOCK_TIMEOUT")) == "MEMORY_REFERENCE_CONFLICT"
+

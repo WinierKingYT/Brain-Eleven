@@ -14,9 +14,9 @@ from pathlib import Path
 import pytest
 
 
-from knowledge_graph import KnowledgeGraph  # noqa: E402
-from entity_extractor import EntityExtractor, TECH_LEXICON  # noqa: E402
-from chat_interface import IntentClassifier, Intent, ChatAgent  # noqa: E402
+from brain_eleven.graph.projection import KnowledgeGraph  # noqa: E402
+from brain_eleven.extraction.entities import EntityExtractor, TECH_LEXICON  # noqa: E402
+from brain_eleven.runtime.chat_interface import IntentClassifier, Intent, ChatAgent  # noqa: E402
 
 
 def make_memory(**overrides):

@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-import project_registry as legacy_registry
+import brain_eleven.projects.registry as legacy_registry
 from brain_eleven.projects import registry as package_registry
 
 
@@ -205,7 +205,7 @@ def test_atomic_write_invokes_parent_directory_sync_hook(monkeypatch, tmp_path):
 
 
 def test_package_and_legacy_exports_preserve_identity(tmp_path):
-    import project_registry as bare_registry
+    import brain_eleven.projects.registry as bare_registry
 
     assert package_registry.ProjectRegistry is legacy_registry.ProjectRegistry
     assert package_registry.ProjectRegistry is bare_registry.ProjectRegistry
