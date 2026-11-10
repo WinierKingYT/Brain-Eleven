@@ -12,10 +12,8 @@ from brain_eleven.state import StateService, StateStore
 from tests.test_pre13_runtime import runtime  # noqa: F401 - fixture registration
 
 
-_COMPILER_PATH = Path(__file__).parents[1] / "scripts" / "context-compiler.py"
-_SPEC = importlib.util.spec_from_file_location("w07a_context_compiler", _COMPILER_PATH)
-_MODULE = importlib.util.module_from_spec(_SPEC)
-_SPEC.loader.exec_module(_MODULE)
+from brain_eleven.runtime import context_compiler as _MODULE  # noqa: E402
+
 ContextCompiler = _MODULE.ContextCompiler
 
 

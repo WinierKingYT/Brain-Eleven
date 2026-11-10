@@ -929,11 +929,9 @@ def restore_backup(archive_path: Union[str, Path], vault_path: Union[str, Path])
 
 
 def _load_context_compiler():
-    script = Path(__file__).with_name("context-compiler.py")
-    spec = importlib.util.spec_from_file_location("brain_eleven_context_compiler", script)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.ContextCompiler
+    from brain_eleven.runtime.context_compiler import ContextCompiler
+
+    return ContextCompiler
 
 
 def run_disaster_drill(

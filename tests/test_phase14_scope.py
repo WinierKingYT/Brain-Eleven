@@ -124,7 +124,7 @@ def test_default_retrieval_is_global_only_without_project():
 
 
 def test_context_compiler_retrieves_global_and_current_project_only(tmp_path):
-    compiler_module = _load_script("phase14_context_compiler", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
     records = [
@@ -146,7 +146,7 @@ def test_context_compiler_retrieves_global_and_current_project_only(tmp_path):
 
 
 def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_path):
-    compiler_module = _load_script("phase14_context_compiler_read_only", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     project_root = tmp_path / "unregistered-project"
     project_root.mkdir()
@@ -182,7 +182,7 @@ def test_session_project_resolution_is_read_only_and_unknown_is_global_only(tmp_
 
 
 def test_archived_project_defaults_to_global_only_but_historical_scope_is_explicit(tmp_path):
-    compiler_module = _load_script("phase13_archived_context_compiler", "context-compiler.py")
+    from brain_eleven.runtime import context_compiler as compiler_module
     vault = tmp_path / "vault"
     archived_root = tmp_path / "archived-project"
     archived_root.mkdir()
