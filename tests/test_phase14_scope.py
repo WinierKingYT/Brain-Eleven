@@ -227,7 +227,7 @@ def test_legacy_project_label_gets_stable_compatibility_id():
 
 
 def test_conflict_detection_does_not_cross_project_boundaries(tmp_path):
-    validator_module = _load_script("phase14_memory_validator", "memory-validator.py")
+    from brain_eleven.memory import validator as validator_module
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
     project_a = project_identity(tmp_path / "project-a")[0]

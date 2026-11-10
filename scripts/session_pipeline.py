@@ -177,7 +177,7 @@ def run_pipeline(vault_path: Path, project_root: Path, python_executable: str, r
     )
     validator = StepSpec(
         "memory_validator",
-        [python_executable, str(scripts / "memory-validator.py"), "--vault", str(vault_path), "--generated-by-run", run_id],
+        [python_executable, "-m", "brain_eleven.memory.validator", "--vault", str(vault_path), "--generated-by-run", run_id],
         artifacts / "validated-memory.json",
         critical=True,
     )

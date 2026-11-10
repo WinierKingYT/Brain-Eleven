@@ -56,7 +56,7 @@ def test_search_api_keeps_only_repository_root_bootstrap() -> None:
 
 
 def test_memory_validator_uses_the_runtime_safety_surface() -> None:
-    source = (ROOT / "scripts" / "memory-validator.py").read_text(encoding="utf-8")
+    source = (ROOT / "brain_eleven" / "memory" / "validator.py").read_text(encoding="utf-8")
 
     assert "from brain_eleven.runtime.capture_safety import" in source
     assert "from capture_safety import" not in source

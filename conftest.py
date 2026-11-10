@@ -73,9 +73,7 @@ for _module_name in (
 
 for _module_name, _filename in {
     "memory_compiler": "memory-compiler.py",
-    "memory_lifecycle": "memory-lifecycle.py",
     "memory_retriever": "memory-retriever.py",
-    "memory_validator": "memory-validator.py",
     "hybrid_search": "hybrid-search.py",
     "ml_ranker": "ml-ranker.py",
 }.items():

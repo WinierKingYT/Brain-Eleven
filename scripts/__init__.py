@@ -17,8 +17,6 @@ from types import ModuleType
 _SCRIPT_ROOT = Path(__file__).parent
 _LEGACY_FILES = {
     "memory_compiler": "memory-compiler.py",
-    "memory_validator": "memory-validator.py",
-    "memory_lifecycle": "memory-lifecycle.py",
 }
 
 

@@ -12,13 +12,8 @@ import json
 import tempfile
 from datetime import datetime
 
-# Load memory-lifecycle from hyphenated filename
-spec = importlib.util.spec_from_file_location(
-    "memory_lifecycle",
-    Path(__file__).parent.parent / "scripts" / "memory-lifecycle.py"
-)
-memory_lifecycle = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(memory_lifecycle)
+from brain_eleven.lifecycle import manager as memory_lifecycle
+
 MemoryLifecycleManager = memory_lifecycle.MemoryLifecycleManager
 
 
