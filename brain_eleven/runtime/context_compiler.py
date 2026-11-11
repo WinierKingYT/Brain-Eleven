@@ -731,7 +731,8 @@ class ContextCompiler:
             if isinstance(objective, Mapping) and isinstance(objective.get("text"), str):
                 lines.append(f"Objective: {objective['text'][:200]}")
             milestone = current.get("milestone")
-            if isinstance(milestone, Mapping) and isinstance(milestone.get("title"), str):
+            if (isinstance(milestone, Mapping) and isinstance(milestone.get("title"), str)
+                    and milestone.get("status") not in {"COMPLETED", "CANCELLED"}):
                 lines.append(f"Milestone: {milestone['title'][:160]}")
             self._append_continuity_section(
                 lines, current_state, "active_work_items", "Active work items", "WORK_ITEM"

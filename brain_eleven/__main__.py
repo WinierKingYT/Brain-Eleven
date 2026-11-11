@@ -100,6 +100,8 @@ def main(argv=None):
     sub.add_parser('notes', help='rewrite the readable memory notes under Companion/Hafıza now')
     profile_cmd = sub.add_parser('profile', help='how much context hooks inject: normal, economical (session start only, short) or manual (none)')
     profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual'], help='omit to show the current profile')
+    milestone_cmd = sub.add_parser('close-milestone', help="mark this project's current milestone completed; the session-start state line stops showing it")
+    milestone_cmd.add_argument('--project-root', default=None, help='default: current folder')
     retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
     retire_cmd.add_argument('memory_ids', nargs='+')
     retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
@@ -245,6 +247,24 @@ def main(argv=None):
                         raise ValueError(f'Unknown project: {name}')
                     private.append(name if name in known else by_label[name])
             result = RuntimeConfig(args.vault).set_cross_project_recall(args.state == 'ON', private=private)
+        elif args.command == 'close-milestone':
+            import os
+            from .projects.registry import ProjectRegistry
+            from .state import StateService
+            project = ProjectRegistry(args.vault).resolve(args.project_root or os.getcwd())
+            if not project:
+                raise ValueError('Project folder is not enrolled (project add)')
+            service = StateService(args.vault)
+            state = service.store.get_project(project['project_id']) or {}
+            milestone = (state.get('current') or {}).get('milestone')
+            if not milestone or milestone['status'] in {'COMPLETED', 'CANCELLED'}:
+                raise ValueError('No open milestone')
+            # PLANNED and BLOCKED cannot go straight to COMPLETED in the state machine.
+            target = 'COMPLETED' if milestone['status'] == 'ACTIVE' else 'CANCELLED'
+            service.transition_milestone(project['project_id'], milestone_id=milestone['id'], target_status=target,
+                                         expected_revision=state['revision'],
+                                         source={'type': 'user', 'reference': 'close-milestone'})
+            result = {'status': target, 'title': milestone['title']}
         elif args.command == 'retire':
             from .runtime.staleness import retire
             result = {'retired': [], 'failed': {}}

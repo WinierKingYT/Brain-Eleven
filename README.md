@@ -88,6 +88,7 @@ ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasın�
 | `measure` | Gerçek kullanım ölçümü |
 | `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |
+| `close-milestone` | Projenin açık kilometre taşını tamamlandı say; oturum başındaki durum satırı onu göstermeyi bırakır |
 
 Tüm komutlar: `python -m brain_eleven --help`.
 
