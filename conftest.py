@@ -23,7 +23,6 @@ def _alias_package_module(name: str) -> None:
 
 for _module_name in (
     "memory_backup",
-    "post_session_maintenance",
     "remember",
     "remember_opt_in",
 ):

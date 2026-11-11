@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 import pytest
 
 
-from post_session_maintenance import (  # noqa: E402
+from brain_eleven.runtime.maintenance import (  # noqa: E402
     run_maintenance, save_report, summarize_for_shell, SURFACE_THRESHOLD,
 )
 
@@ -96,7 +96,7 @@ class TestRunMaintenance:
     def test_one_failing_step_does_not_block_others(self, vault, monkeypatch):
         write_memories(vault, [make_memory(content="Something to summarize")])
 
-        import post_session_maintenance as psm
+        import brain_eleven.runtime.maintenance as psm
 
         def broken_extractor(_vault_path):
             raise RuntimeError("simulated graph failure")
@@ -182,7 +182,7 @@ class TestSummarizeForShell:
         assert "found" in summarize_for_shell(dirty_report).lower()
 
     def test_summary_reports_failed_step(self, vault, monkeypatch):
-        import post_session_maintenance as psm
+        import brain_eleven.runtime.maintenance as psm
 
         def broken_extractor(_vault_path):
             raise RuntimeError("boom")
