@@ -78,6 +78,22 @@ def _project_slug(project_root: str) -> str:
     return _SLUG_NON_ALNUM.sub("-", normalized)
 
 
+def _safe_slug(path: str) -> str | None:
+    try:
+        return _project_slug(path)
+    except (OSError, ValueError, RuntimeError):
+        return None
+
+
+def _require_owned(registry: ProjectRegistry, cwds: set[str], project_id: str) -> None:
+    """Every session cwd must resolve to ``project_id`` as its nearest registered root."""
+    if not cwds:
+        raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_UNVERIFIED")
+    owners = {(registry.resolve_containing(cwd) or {}).get("project_id") for cwd in cwds}
+    if owners != {project_id}:
+        raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
+
+
 def _hash_normalized(client: str, value: Any) -> str | None:
     return session_key(client, value) if isinstance(value, str) and value else None
 
@@ -116,8 +132,11 @@ def _read_native_metadata(path: Path, client: str) -> tuple[list[str], list[str]
             continue
         if client == "claude":
             value = document.get("sessionId")
+            cwd = document.get("cwd")
             if isinstance(value, str) and value:
                 session_values.append(value)
+            if isinstance(cwd, str) and cwd:
+                project_values.append(cwd)
         else:
             if document.get("type") != "session_meta":
                 continue
@@ -160,21 +179,28 @@ def verify_transcript_ownership(
     record = registry.get(project_id)
     if not record or record.get("root") != expected_root:
         raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
+    metadata = None
     if client == "claude":
         matching_roots = [
             item for item in registry.list_projects()
             if _project_slug(str(item.get("root", ""))) == resolved.parent.name
         ]
-        if len(matching_roots) != 1:
+        if len(matching_roots) > 1:
             raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_UNVERIFIED")
-        if matching_roots[0].get("project_id") != project_id:
+        if matching_roots and matching_roots[0].get("project_id") != project_id:
             raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
-        if _project_slug(expected_root) != resolved.parent.name:
+        if matching_roots and _project_slug(expected_root) != resolved.parent.name:
             raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
+        if not matching_roots:
+            # Sub-folder session: the client named the directory after the session's
+            # cwd, which must be recorded and lie under this project (nearest root).
+            metadata = _read_native_metadata(resolved, client)
+            named = {value for value in set(metadata[1]) if _safe_slug(value) == resolved.parent.name}
+            _require_owned(registry, named, project_id)
         if _hash_normalized(client, resolved.stem) != expected_session_key:
             raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
 
-    session_values, project_values, digest = _read_native_metadata(resolved, client)
+    session_values, project_values, digest = metadata or _read_native_metadata(resolved, client)
     normalized_sessions = {_hash_normalized(client, value) for value in session_values}
     normalized_sessions.discard(None)
     if not normalized_sessions:
@@ -182,11 +208,7 @@ def verify_transcript_ownership(
     if normalized_sessions != {expected_session_key}:
         raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
     if client == "codex":
-        normalized_projects = {normalize_registry_root(value) for value in project_values}
-        if not normalized_projects:
-            raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_UNVERIFIED")
-        if normalized_projects != {expected_root}:
-            raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
+        _require_owned(registry, set(project_values), project_id)
     return TranscriptBinding(
         path=resolved,
         client=client,

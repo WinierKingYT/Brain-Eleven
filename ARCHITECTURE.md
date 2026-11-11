@@ -25,7 +25,7 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 | `brain_eleven/runtime/` | Hook giriş noktası, servis, worker, bağlam derleme, bakım, CLI işleri |
 | `brain_eleven/memory/` | Kanonik hafıza deposu (revizyon + kilit + atomik yazım) |
 | `brain_eleven/state/` | Proje/görev durumu |
-| `brain_eleven/projects/` | Proje kimliği ve kayıt defteri |
+| `brain_eleven/projects/` | Proje kimliği ve kayıt defteri; hook, oturumun cwd'sini en yakın kayıtlı ata köke çözer (`resolve_containing`), alt klasör ve proje içi worktree oturumları o projeye aittir |
 | `brain_eleven/extraction/`, `retrieval/`, `search/` | Çıkarım sağlayıcıları, embedding |
 | `scripts/` | Canlı kod pakette; burada yalnız repo dışından çağrılabilen girişler kalır (aşağıdaki liste) |
 | `evals/recall_probe/` | `recall-probe` komutunun 5 sorusu |

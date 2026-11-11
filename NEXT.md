@@ -5,6 +5,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
+- **Alt klasör ve worktree oturumları yakalanıyor.** Kayıtlı bir kökün altındaki
+  cwd (ör. `tests/`, `.claude/worktrees/…`) en yakın kayıtlı köke çözülür; yakalama,
+  bağlam ve döküm sahipliği o projeyi görür. Sınır: kökün dışındaki worktree'ler.
 - **v1.0: sadeleştirme (PR #79–#89).** Gölgedeki V2 bağlam derleyicisi (beş
   paket, ~6.500 satır) canlı yolda çalışmıyordu, silindi; kullandığı tek
   bayatlık kontrolü `context.py` içinde `_inputs_current` oldu. Canlı kod
@@ -99,20 +102,21 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.1 taslağı (onay bekliyor)
+## Sıradaki işler: v1.1 (onaylandı 2026-11-11) — yakalamayı güvenilir yap
 
-1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
+1. **Sessiz hataları görünür yap.** `yakala pano` çöktüğünde iz bırakmıyor (64 bit
+   pano hatası bu yüzden fark edilmedi).
+2. **Ölü mektup kuyruğu.** `doctor` 50 dead-letter gösteriyor (25
+   `TRANSCRIPT_NOT_FOUND`, 18 `REVIEW_PERSIST_FAILED`, 7
+   `TRANSCRIPT_OWNERSHIP_UNVERIFIED`); nedenleri bulunup kuyruk temizlenmeli.
+3. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak. (v1.0 çalışmasında 5 alt
    ajan raporu bu başlıkla bitti; ham veri hazır.)
-2. **Worktree oturumlarını yakala.** Bir git worktree'sinde (`.claude/worktrees/…`)
-   çalışan oturumun yakalaması `CWD_NOT_REGISTERED` ile düşüyor gibi görünüyor
-   (v1.0 çalışmasında gözlendi, kök neden doğrulanmadı); worktree ana projeye
-   çözülmeli.
-3. **Ölü mektup kuyruğu.** `doctor` 50 dead-letter gösteriyor (25
-   `TRANSCRIPT_NOT_FOUND`, 18 `REVIEW_PERSIST_FAILED`, 7
-   `TRANSCRIPT_OWNERSHIP_UNVERIFIED`); nedenleri bulunup kuyruk temizlenmeli.
-4. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
+4. **Durum satırı ve küçük temizlik.** StateStore'daki "V2 SHADOW" satırı,
+   `scripts/`'teki dört betik kararı, vault notlarının sürüm arşivinden
+   çıkarılması (sahip isterse).
+5. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 
 ## Açık konular
