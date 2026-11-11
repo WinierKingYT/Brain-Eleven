@@ -28,6 +28,9 @@ git -C "{{VAULT_PATH}}" log --oneline HEAD..origin/master
 4. `{{PYTHON}} -m pip install -r "{{VAULT_PATH}}/requirements.txt"`
 5. `{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" install` (yeni hook ve skill'ler için).
 6. `{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" doctor` → `READY` olmalı.
+   Windows'ta 4–6. adımların yerine tek komut: `powershell -ExecutionPolicy Bypass -File "{{VAULT_PATH}}/kur.ps1"`
+   (ayrıca eski servisi durdurur). Elle yapıldıysa çalışan servis eski kodu
+   boşta kapanana kadar (en çok 4 saat) bellekte tutar; bunu kullanıcıya söyle.
 7. Kullanıcıya: eski ve yeni commit, `NEXT.md`'nin en üst maddeleri, gerekiyorsa
    istemcide hook güven onayı ve yeni oturum başlatması.
 

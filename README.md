@@ -28,14 +28,15 @@ Windows'ta tek komut (depoyu indirir, bağımlılıkları ve hook'ları kurar,
 `doctor` çalıştırır):
 
 ```powershell
-git clone https://github.com/WinierKingYT/Brain-Eleven.git; .\Brain-Eleven\kur.ps1
+git clone https://github.com/WinierKingYT/Brain-Eleven.git; powershell -ExecutionPolicy Bypass -File Brain-Eleven\kur.ps1
 ```
 
 Güncelleme de tek komut; yerel değişiklik varsa durur, hafıza ve ayarlara
-dokunmaz, sonunda geri alma komutunu yazar:
+dokunmaz, eski servisi durdurur (sıradaki oturum yenisini başlatır), sonunda
+geri alma komutunu yazar:
 
 ```powershell
-.\kur.ps1 -Guncelle
+powershell -ExecutionPolicy Bypass -File kur.ps1 -Guncelle
 ```
 
 Sonra her proje için bir kez:
