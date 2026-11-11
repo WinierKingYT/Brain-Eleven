@@ -24,4 +24,14 @@ if ($Guncelle) {
 
 Calistir python -m pip install -r (Join-Path $vault 'requirements.txt')
 Calistir python -m brain_eleven --vault $vault install
+# Çalışan servis eski kodu bellekte tutar (boşta 4 saate kadar); durdur ki sıradaki hook yenisini başlatsın.
+$durdur = @'
+import sys
+from brain_eleven.runtime.launcher import request_service
+try:
+    request_service(sys.argv[1], '/api/runtime/stop', {})
+except Exception:
+    pass  # servis calismiyorsa durdurulacak bir sey yok
+'@
+python -c $durdur $vault
 Calistir python -m brain_eleven --vault $vault doctor
