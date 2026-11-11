@@ -32,10 +32,24 @@ def _line(item):
     return f"- {content} <small>`{item.get('memory_id', '?')}` · {day}{flags}</small>"
 
 
+def agent_readable(item, approved_only):
+    """The SessionStart gates (approval, secret, capture safety).
+
+    Only such records go into a topic note: the ``map`` profile points the
+    agent at those notes, so they must not carry what bootstrap would withhold.
+    """
+    from brain_eleven.runtime.capture_safety import evaluate_capture
+    from brain_eleven.runtime.secret_check import contains_secret
+    content = str(item.get('content', ''))
+    return ((not approved_only or item.get('is_approved', True) is True)
+            and not contains_secret(content) and evaluate_capture(content).accepted)
+
+
 def render(vault, document):
     """Write one note per project (and Genel), plus one per topic, from a MemoryStore document; return the project note names."""
     from brain_eleven.projects.registry import ProjectRegistry
     labels = {p['project_id']: p.get('project_label') or p['project_id'] for p in ProjectRegistry(vault).list_projects()}
+    approved_only = RuntimeConfig(vault).load().get('b1_human_approval', False)
     groups = {}
     for item in document.get('validated_memory', []):
         if not isinstance(item, dict) or str(item.get('status') or 'active') != 'active':
@@ -53,7 +67,7 @@ def render(vault, document):
             line = _line(item)
             if not line:
                 continue
-            if item.get('topic'):
+            if item.get('topic') and agent_readable(item, approved_only):
                 by_topic.setdefault(_name(item['topic']), []).append(line)
             else:
                 by_type.setdefault(str(item.get('type') or 'observation'), []).append(line)

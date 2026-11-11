@@ -585,12 +585,11 @@ def _topic_map(memories, project, *, approved_only):
     The agent opens the one topic note it needs; prompt-time recall is unchanged.
     Returns '' when the project has no topics, so the normal records are used.
     """
-    from .memory_notes import NOTES_DIR, _name
+    from .memory_notes import NOTES_DIR, _name, agent_readable
     counts, untopiced = {}, 0
     for item in memories:
         if (str(item.get('status') or 'active') != 'active' or item.get('scope') != 'project'
-                or item.get('project_id') != project['project_id']
-                or (approved_only and item.get('is_approved', True) is not True)):
+                or item.get('project_id') != project['project_id'] or not agent_readable(item, approved_only)):
             continue
         if item.get('topic'):
             counts[_name(item['topic'])] = counts.get(_name(item['topic']), 0) + 1
@@ -603,7 +602,8 @@ def _topic_map(memories, project, *, approved_only):
              f'you need before working on its topic: `{folder}/<topic>.md`',
              *(f'- {topic} ({count})' for topic, count in sorted(counts.items()))]
     if untopiced:
-        lines.append(f'- {untopiced} record(s) without a topic: `{folder}.md`')
+        # No path: the project note also lists records the approval gate withholds.
+        lines.append(f'- {untopiced} record(s) without a topic (delivered at prompt time when relevant)')
     return '\n'.join(lines)
 
 

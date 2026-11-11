@@ -84,8 +84,9 @@ def test_map_profile_lists_topic_notes_instead_of_record_text(tmp_path):
     set_topic(vault, [first], 'Teslimat')
     result = compile_bootstrap(vault, vault)
     assert result['status'] == 'SUCCESS' and result['selected_ids'] == []
-    assert '- Teslimat (1)' in result['context'] and '1 record(s) without a topic' in result['context']
+    assert '- Teslimat (1)' in result['context'] and '1 record(s) without a topic (delivered' in result['context']
     assert 'alpha is delivered' not in result['context'] and 'importer stays manual' not in result['context']
+    assert '.md`' in result['context'] and result['context'].count('.md') == 1  # only the topic-note pattern
 
     RuntimeConfig(vault).set_context_profile('normal')
     assert 'alpha is delivered' in compile_bootstrap(vault, vault)['context']
