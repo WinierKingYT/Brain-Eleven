@@ -1,6 +1,7 @@
 """Yakala inbox (2026-10-14)."""
 
 import json
+import os
 import types
 from pathlib import Path
 
@@ -98,3 +99,12 @@ def test_web_clipper_template_writes_into_the_inbox():
     template = json.loads(Path('templates/obsidian/beyne-at.json').read_text(encoding='utf-8'))
     assert template['path'] == str(yakala.INBOX)
     assert {p['name']: p['value'] for p in template['properties']}['durum'] == yakala.PENDING
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windows clipboard API')
+def test_windows_clipboard_declares_64_bit_handle_for_unlock():
+    import ctypes
+    from ctypes import wintypes
+
+    assert isinstance(yakala._windows_clipboard(), str)
+    assert ctypes.windll.kernel32.GlobalUnlock.argtypes == [wintypes.HGLOBAL]
