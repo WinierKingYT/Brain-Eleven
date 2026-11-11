@@ -195,7 +195,9 @@ def verify_transcript_ownership(
             # Sub-folder session: the client named the directory after the session's
             # cwd, which must be recorded and lie under this project (nearest root).
             metadata = _read_native_metadata(resolved, client)
-            named = {value for value in set(metadata[1]) if _safe_slug(value) == resolved.parent.name}
+            # Absolute only: a relative or ~ cwd would be resolved against this process, not the session.
+            named = {value for value in set(metadata[1])
+                     if os.path.isabs(value) and _safe_slug(value) == resolved.parent.name}
             _require_owned(registry, named, project_id)
         if _hash_normalized(client, resolved.stem) != expected_session_key:
             raise TranscriptOwnershipError("TRANSCRIPT_OWNERSHIP_MISMATCH")
