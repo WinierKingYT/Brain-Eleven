@@ -27,15 +27,8 @@ from brain_eleven.support.cache import CacheManager, LRUCache, DiskCache  # noqa
 
 @pytest.fixture
 def cache(tmp_path):
-    """CacheManager pointed at an isolated temp vault, L2/Redis disabled.
-
-    enable_l2=False avoids a real Redis connection attempt per test — on
-    Windows a refused/absent Redis can make the TCP connect take far longer
-    than the configured socket timeout, making the suite needlessly slow.
-    """
-    return CacheManager(
-        vault_path=str(tmp_path), l1_max_size=50, l1_ttl=5, l3_ttl=5, enable_l2=False
-    )
+    """CacheManager pointed at an isolated temp vault."""
+    return CacheManager(vault_path=str(tmp_path), l1_max_size=50, l1_ttl=5, l3_ttl=5)
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +166,7 @@ class TestDiskCache:
 
 
 # ---------------------------------------------------------------------------
-# CacheManager (integration across L1/L2/L3)
+# CacheManager (integration across L1/L3)
 # ---------------------------------------------------------------------------
 
 class TestCacheManager:
@@ -227,13 +220,14 @@ class TestCacheManager:
         assert k1 == k2
         assert k1 != k3
 
-    def test_stats_reflects_l2_connection_state(self, cache):
+    def test_stats_reports_l1_and_l3(self, cache):
         # Act
         stats = cache.stats()
 
-        # Assert: no Redis running in test env -> L2 reports disconnected
+        # Assert
         assert "l1" in stats
-        assert stats["l2_connected"] is False
+        assert "l3_path" in stats
+        assert "l2_connected" not in stats
 
 
 # ---------------------------------------------------------------------------

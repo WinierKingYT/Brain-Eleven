@@ -39,9 +39,7 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 - `install-cross-project-memory.py`: eski `~/.claude` kurulumu (hook ve komut dosyalarını yazar/kaldırır); yeni kurulum `brain_eleven/runtime/install.py`.
 - `memory_backup.py`: kanonik hafızanın doğrulanmış yedeğini alır ve geri yükler.
 - `post_session_maintenance.py`: `brain_eleven.runtime.maintenance`'a yönlenen eski bakım girişi (graf yenileme, anomali, özet).
-- `search-api.py`: Docker'daki FastAPI HTTP API'si (`Dockerfile`, `docker-compose.yml`).
 - `weekly_recall_check.ps1`, `weekly_recall_check_core.ps1`: haftalık hatırlama kontrolü (Windows zamanlanmış görevi için).
-- `ops/backup.sh`, `deploy.sh`, `rollback.sh`: `Makefile` hedefleri (Docker dağıtımı).
 - `__init__.py`: testlerin `scripts.` altından içe aktardığı paket işareti.
 
 ## Seni tanıma notları

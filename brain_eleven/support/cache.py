@@ -2,15 +2,13 @@
 """Canonical multi-level cache implementation for the support package.
 
 L1: In-memory LRU cache (fastest, per-process, small)
-L2: Redis cache (shared across processes, network hop)
 L3: Disk fallback (JSON file, survives restarts, slowest)
 
-All LRU, disk, and optional Redis behavior lives in this module.
+All LRU and disk behavior lives in this module.
 """
 
 import json
 import hashlib
-import socket
 import sys
 import threading
 import time
@@ -25,13 +23,6 @@ if _logging is None:  # pragma: no cover - support package loads logging first
 setup_logging = _logging.setup_logging
 
 logger = setup_logging(__name__)
-
-try:
-    import redis
-    REDIS_AVAILABLE = True
-except ImportError:
-    REDIS_AVAILABLE = False
-    logger.warning("redis package not installed - L2 cache disabled")
 
 
 class LRUCache:
@@ -158,121 +149,41 @@ class CacheManager:
     def __init__(
         self,
         vault_path: str = ".",
-        redis_host: str = "localhost",
-        redis_port: int = 6379,
         l1_max_size: int = 500,
         l1_ttl: int = 300,
-        l2_ttl: int = 1800,
         l3_ttl: int = 3600,
-        enable_l2: bool = True,
     ):
         self.vault_path = Path(vault_path)
         self.l1 = LRUCache(max_size=l1_max_size, ttl_seconds=l1_ttl)
         self.l3 = DiskCache(cache_dir=str(self.vault_path / "cache"), ttl_seconds=l3_ttl)
-        self.l2_ttl = l2_ttl
-
-        self.redis_client = None
-        if enable_l2 and REDIS_AVAILABLE and not self._tcp_reachable(redis_host, redis_port):
-            logger.warning(
-                f"L2 Redis unreachable at {redis_host}:{redis_port} (TCP pre-check failed), "
-                "falling back to L1+L3 only"
-            )
-        elif enable_l2 and REDIS_AVAILABLE:
-            try:
-                self.redis_client = redis.Redis(
-                    host=redis_host, port=redis_port, decode_responses=True,
-                    socket_connect_timeout=2, socket_timeout=2,
-                )
-                self.redis_client.ping()
-                logger.info(f"✅ L2 Redis cache connected ({redis_host}:{redis_port})")
-            except (redis.exceptions.RedisError, ConnectionError) as e:
-                logger.warning(f"L2 Redis unavailable, falling back to L1+L3 only: {e}")
-                self.redis_client = None
-
-    @staticmethod
-    def _tcp_reachable(host: str, port: int, timeout: float = 1.0) -> bool:
-        """
-        Fast TCP-level pre-check before handing off to redis-py.
-
-        On some platforms (notably Windows) an unreachable/refused host can
-        make the OS-level connect take far longer than the timeout passed to
-        redis-py, stalling startup for 15-20s. A raw socket with an enforced
-        timeout fails fast and lets callers skip Redis immediately instead.
-        """
-        try:
-            with socket.create_connection((host, port), timeout=timeout):
-                return True
-        except OSError:
-            return False
-
-    # -- internal helpers -------------------------------------------------
-
-    def _l2_get(self, key: str) -> Optional[Any]:
-        if not self.redis_client:
-            return None
-        try:
-            raw = self.redis_client.get(key)
-            return json.loads(raw) if raw is not None else None
-        except (redis.exceptions.RedisError, json.JSONDecodeError) as e:
-            logger.warning(f"L2 read error for key {key}: {e}")
-            return None
-
-    def _l2_set(self, key: str, value: Any) -> None:
-        if not self.redis_client:
-            return
-        try:
-            self.redis_client.setex(key, self.l2_ttl, json.dumps(value))
-        except redis.exceptions.RedisError as e:
-            logger.warning(f"L2 write error for key {key}: {e}")
-
-    def _l2_delete(self, key: str) -> None:
-        if not self.redis_client:
-            return
-        try:
-            self.redis_client.delete(key)
-        except redis.exceptions.RedisError as e:
-            logger.warning(f"L2 delete error for key {key}: {e}")
 
     # -- public API ---------------------------------------------------------
 
     def get(self, key: str) -> Optional[Any]:
-        """Read through L1 -> L2 -> L3, backfilling higher levels on hit."""
+        """Read through L1 -> L3, backfilling L1 on hit."""
         value = self.l1.get(key)
         if value is not None:
-            return value
-
-        value = self._l2_get(key)
-        if value is not None:
-            self.l1.set(key, value)
             return value
 
         value = self.l3.get(key)
         if value is not None:
             self.l1.set(key, value)
-            self._l2_set(key, value)
             return value
 
         return None
 
     def set(self, key: str, value: Any) -> None:
-        """Write-through to every configured cache level."""
+        """Write-through to L1 and L3."""
         self.l1.set(key, value)
-        self._l2_set(key, value)
         self.l3.set(key, value)
 
     def delete(self, key: str) -> None:
         self.l1.delete(key)
-        self._l2_delete(key)
         self.l3.delete(key)
 
     def clear(self) -> None:
         self.l1.clear()
         self.l3.clear()
-        if self.redis_client:
-            try:
-                self.redis_client.flushdb()
-            except redis.exceptions.RedisError as e:
-                logger.warning(f"L2 clear error: {e}")
 
     def get_or_compute(self, key: str, compute_fn, *args, **kwargs) -> Any:
         """Return cached value, or compute, cache, and return it."""
@@ -293,12 +204,11 @@ class CacheManager:
     def stats(self) -> dict:
         return {
             "l1": self.l1.stats(),
-            "l2_connected": self.redis_client is not None,
             "l3_path": str(self.l3.cache_path),
         }
 
 
-__all__ = ["CacheManager", "DiskCache", "LRUCache", "REDIS_AVAILABLE", "logger"]
+__all__ = ["CacheManager", "DiskCache", "LRUCache", "logger"]
 
 
 if __name__ == "__main__":

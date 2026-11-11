@@ -16,7 +16,6 @@ from brain_eleven.support.cache import (
     CacheManager,
     DiskCache,
     LRUCache,
-    REDIS_AVAILABLE,
 )
 from brain_eleven.support.summarizer import (
     MemorySummarizer,
@@ -33,7 +32,6 @@ __all__ = [
     "JSONFormatter",
     "LRUCache",
     "MemorySummarizer",
-    "REDIS_AVAILABLE",
     "jaccard_similarity",
     "logger",
     "setup_logging",

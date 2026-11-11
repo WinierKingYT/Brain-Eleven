@@ -16,11 +16,8 @@ dependencies = [
     "httpx2==2.13.1",
     "numpy==2.4.2",
     "openai==2.24.0",
-    "redis==7.1.0",
     "networkx==3.6.1",
     "python-ulid==4.0.1",
-    "python-dotenv==1.2.2",
-    "defusedxml==0.7.1",
 ]
 
 [project.optional-dependencies]

@@ -17,7 +17,7 @@ Design constraints (this runs inside a shell hook on every session end):
   one failing step still lets the others run and still produces a report.
 - MUST be fast and idempotent - session-end can fire more than once a day,
   and entity_extractor.build_graph() already does a full rebuild each call.
-- MUST NOT require the REST API process (search-api.py) to be running -
+- MUST NOT require any long-running service to be running -
   this is a CLI-only maintenance step, same as memory-validator.py itself.
 """
 

@@ -41,8 +41,8 @@ class EmbeddingGenerator:
         self.embedding_schema_version = 2
 
         # Try to use OpenAI if API key available. An empty string counts as
-        # "not set" - e.g. a .env with `OPENAI_API_KEY=` (no value) loaded
-        # via python-dotenv sets the env var to "", and os.getenv() returns
+        # "not set" - e.g. an env file with `OPENAI_API_KEY=` (no value)
+        # sets the env var to "", and os.getenv() returns
         # that "" rather than None, so `is not None` alone would wrongly
         # treat an empty key as present and initialize a client that fails
         # on the first real call instead of reporting semantic unavailability.
