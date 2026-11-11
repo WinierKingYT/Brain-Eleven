@@ -123,6 +123,7 @@ def _capture_outcome(cfg, client, event, payload, outcome, error=None):
 
 
 def hook(vault, client, event, payload):
+    from brain_eleven.projects.registry import ProjectRegistry, normalize_registry_root
     from brain_eleven.runtime.worker import allowed, capture_session_hash, enqueue
     cfg = RuntimeConfig(vault)
     capture = event in {'Stop', 'SessionEnd'}
@@ -130,6 +131,11 @@ def hook(vault, client, event, payload):
         if capture:
             _capture_outcome(cfg, client, event, payload, 'MODE_OFF')
         return {}
+    # A session opened in a sub-folder or in-tree worktree belongs to the nearest
+    # registered root; queue, ownership, context and receipts all see that root.
+    owner = ProjectRegistry(vault).resolve_containing(payload.get('cwd'))
+    if owner and owner['root'] != normalize_registry_root(payload['cwd']):
+        payload = {**payload, 'cwd': owner['root']}
     if not allowed(vault, payload.get('cwd')):
         if capture:
             _capture_outcome(cfg, client, event, payload,

@@ -226,6 +226,24 @@ class ProjectRegistry:
             None,
         )
 
+    def resolve_containing(self, path: Union[str, Path]) -> Optional[Dict]:
+        """Return the deepest registered project whose root is ``path`` or one of its parents.
+
+        Only a session's working directory is resolved this way; ``resolve``
+        keeps its exact-root meaning for registration and everything else.
+        """
+        if not isinstance(path, (str, Path)) or not str(path).strip():
+            return None
+        try:
+            folder = Path(normalize_registry_root(path))
+        except (OSError, ValueError, RuntimeError):
+            return None
+        by_root = {project.get("root"): project for project in self.load()["projects"]}
+        return next(
+            (dict(by_root[str(candidate)]) for candidate in (folder, *folder.parents) if str(candidate) in by_root),
+            None,
+        )
+
     def proactive_capture_policy(self, project_root: Union[str, Path]) -> Dict:
         """Return the canonical, fail-closed proactive-capture decision."""
         record = self.resolve(project_root)
