@@ -85,7 +85,7 @@ ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasın�
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |
 | `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler) |
-| `recall-probe` | 5 soruluk hatırlama testi. Varsayılan yalnız oturum başı bağlamını ölçer (8 yer); gerçek kullanım için `--mode prompt` (oturum başı + istem anı) |
+| `recall-probe` | 5 soruluk hatırlama testi. Varsayılan yalnız oturum başı bağlamını ölçer (12 yer); gerçek kullanım için `--mode prompt` (oturum başı + istem anı) |
 | `measure` | Gerçek kullanım ölçümü |
 | `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |

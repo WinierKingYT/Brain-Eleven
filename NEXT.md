@@ -124,8 +124,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    (`beyin` skill'i adayları sohbette gösterir). Bu yolla yazılan kayıt
    "Sohbetten onay" notunu taşır ve deneme süresinde kalır. Başarı ölçüsü: bir
    hafta sonra süresi dolan "sahibi baksın" adayı sayısı.
-2. **Oturum başı hatırlamayı düzelt.** `recall-probe` oturum başında 2/5; üç
-   yanıt hafızada ama 8 yere sığmıyor (`SLOT_LIMIT`).
+2. ~~Oturum başı hatırlamayı düzelt.~~ **Yapıldı.** Oturum başı yer sayısı 8 → 12
+   (sahip kararı). `recall-probe` oturum başı 2/5 → 4/5, `--mode prompt` 5/5
+   (değişmedi). Kalan tek yanıt (SRT-00) `stale_candidate` işaretli olduğu için
+   bilerek arkada. Not: beş test sorusu eski döneme ait; yenilemek sahibin kararı.
 3. **`/remember` ve `/study` kurulumunu yeni `install`'a taşı,** ardından
    `install-cross-project-memory.py`'yi sil.
 4. **Codex yakalaması.** `CWD_NOT_REGISTERED` ve çift hook uyarısı.
@@ -160,7 +162,7 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 - `doctor`'daki `review_pending` gürültü işaretli adayları da sayıyor (65'in 13'ü
   gerçekten sahibe kalan).
-- Oturum başı hatırlama 2/5: üç yanıt hafızada ama 8 yere sığmıyor.
+- `recall-probe`'un beş sorusu eski döneme (IG, SRT-00) ait; sahip isterse yenilenir.
 - Hafızada "V2 SHADOW kalır" diyen eski kararlar hâlâ etkin; sahip `retire`
   ile iptal edebilir.
 - Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
