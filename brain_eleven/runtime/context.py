@@ -482,7 +482,8 @@ BOOTSTRAP_POOL = 15
 PROMPT_POOL = 2000
 # SessionStart memory slots (owner decision C2, 2026-09-26): 5 left recall
 # answers out with SLOT_LIMIT in a real session; the 3000-token budget still bounds it.
-BOOTSTRAP_SLOTS = 8
+# Owner decision 2026-11-11: 8 -> 12 (recall-probe at session start 2/5 -> see NEXT.md).
+BOOTSTRAP_SLOTS = 12
 
 
 def _memory_identity(item):
