@@ -115,6 +115,21 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
+## Sıradaki işler: v1.2 (onaylandı 2026-11-11) — adaylar boşa gitmesin
+
+1. ~~Onay yükünü azalt.~~ **Yapıldı.** Ölçüm: süresi dolan 1.172 adayın 828'i
+   zaten gürültü/tekrar işaretliydi; gerçek kayıp "sahibi baksın" denip
+   bakılmayan 164 (180'i hiç değerlendirilmemiş). `digest` vardı, eksik olan
+   onay yoluydu: `decide --accept/--reject` sahibin sohbetteki sözünü uygular
+   (`beyin` skill'i adayları sohbette gösterir). Bu yolla yazılan kayıt
+   "Sohbetten onay" notunu taşır ve deneme süresinde kalır. Başarı ölçüsü: bir
+   hafta sonra süresi dolan "sahibi baksın" adayı sayısı.
+2. **Oturum başı hatırlamayı düzelt.** `recall-probe` oturum başında 2/5; üç
+   yanıt hafızada ama 8 yere sığmıyor (`SLOT_LIMIT`).
+3. **`/remember` ve `/study` kurulumunu yeni `install`'a taşı,** ardından
+   `install-cross-project-memory.py`'yi sil.
+4. **Codex yakalaması.** `CWD_NOT_REGISTERED` ve çift hook uyarısı.
+
 ## v1.1 maddeleri (kapandı 2026-11-11) — yakalamayı güvenilir yap
 
 1. ~~Sessiz hataları görünür yap.~~ **Yapıldı.** Ctrl+Alt+B (`yakala pano`)
@@ -143,8 +158,8 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Açık konular
 
-- Adaylar bakılmadan düşüyor: tüm onay kayıtlarında 59 onay, 3.726 ret, 1.172
-  süresi dolan; bekleyen 65. Sonraki sürümün ana konusu.
+- `doctor`'daki `review_pending` gürültü işaretli adayları da sayıyor (65'in 13'ü
+  gerçekten sahibe kalan).
 - Oturum başı hatırlama 2/5: üç yanıt hafızada ama 8 yere sığmıyor.
 - Hafızada "V2 SHADOW kalır" diyen eski kararlar hâlâ etkin; sahip `retire`
   ile iptal edebilir.

@@ -24,7 +24,8 @@ from datetime import datetime, timezone
 
 PROBATION_DAYS = 14
 RESOLVED_BY = 'probation'
-_HUMAN_NOTE_PREFIX = 'Model onayı'
+# Notes of accepts no person is proven to have made: the model's, and an agent's on the owner's word.
+_HUMAN_NOTE_PREFIX = ('Model onayı', 'Sohbetten onay')
 
 _PROMPT = """A software project's memory system saved this record automatically. Check it sceptically.
 Answer DROP if it is any of these:
@@ -74,7 +75,7 @@ def flagged_ids(vault):
 
 
 def human_accepted_ids(vault):
-    """Memory ids a person accepted in review (not a model, whose note starts 'Model onayı')."""
+    """Memory ids a person accepted in review (not a model or a chat relay; see _HUMAN_NOTE_PREFIX)."""
     from .review import ReviewStore
     found = set()
     for item in ReviewStore(vault)._items():

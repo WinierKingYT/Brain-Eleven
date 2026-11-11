@@ -57,6 +57,9 @@ def main(argv=None):
     recap_cmd.add_argument('--json', action='store_true', help='print counts and text as JSON')
     applier = sub.add_parser('apply-suggestions', help="apply the model's review verdicts (ACCEPT writes, REJECT hides)")
     applier.add_argument('--apply', action='store_true', help='write accepts (default: count only)')
+    decide_cmd = sub.add_parser('decide', help="apply the owner's spoken decisions on digest items (ids from `digest`)")
+    decide_cmd.add_argument('--accept', nargs='*', default=[], metavar='REVIEW_ID')
+    decide_cmd.add_argument('--reject', nargs='*', default=[], metavar='REVIEW_ID')
     auto = sub.add_parser('queue-triage', help='pre-evaluate the review queue: rules reject noise, a local model decides the rest')
     auto.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service schedule on/off (default: run once)')
     auto.add_argument('--no-model', action='store_true', help='rules only')
@@ -158,6 +161,9 @@ def main(argv=None):
         elif args.command == 'apply-suggestions':
             from .runtime.value import apply_suggestions
             result = apply_suggestions(args.vault, apply=args.apply)
+        elif args.command == 'decide':
+            from .runtime.value import decide
+            result = decide(args.vault, accept=args.accept, reject=args.reject)
         elif args.command == 'queue-triage':
             if args.accept_verified:
                 from .runtime.storage import RuntimeConfig
@@ -298,7 +304,7 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if args.command == 'doctor' and result.get('status') != 'READY':
             return 1
-        if args.command in {'retire', 'study'} and result.get('failed'):
+        if args.command in {'retire', 'study', 'decide'} and result.get('failed'):
             return 1
         return 0
     except (ValueError, OSError) as exc:
