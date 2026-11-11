@@ -36,10 +36,8 @@ Claude/Codex hook'u ──► runtime/launcher.py ──► yerel servis (runtim
 - `context-compiler.py`: kurulu SessionStart hook şablonunun çağırdığı giriş noktası; `brain_eleven.runtime.context_compiler.main`'i çalıştırır.
 - `remember.py`: `/remember` komutunun çağırdığı yol; `brain_eleven.memory.capture`'a yönlenir.
 - `remember_opt_in.py`: SessionEnd hook şablonunun sorduğu, projede proaktif yakalama izni olup olmadığını denetleyen kapı.
-- `install-cross-project-memory.py`: eski `~/.claude` kurulumu (hook ve komut dosyalarını yazar/kaldırır); yeni kurulum `brain_eleven/runtime/install.py`.
+- `install-cross-project-memory.py`: `/remember` ve `/study` komut dosyalarını `~/.claude/commands/` altına yazan/kaldıran tek yol (eski hook'ları da kurar); `brain_eleven/runtime/install.py` bu komutları kurmaz.
 - `memory_backup.py`: kanonik hafızanın doğrulanmış yedeğini alır ve geri yükler.
-- `post_session_maintenance.py`: `brain_eleven.runtime.maintenance`'a yönlenen eski bakım girişi (graf yenileme, anomali, özet).
-- `weekly_recall_check.ps1`, `weekly_recall_check_core.ps1`: haftalık hatırlama kontrolü (Windows zamanlanmış görevi için).
 - `__init__.py`: testlerin `scripts.` altından içe aktardığı paket işareti.
 
 ## Seni tanıma notları

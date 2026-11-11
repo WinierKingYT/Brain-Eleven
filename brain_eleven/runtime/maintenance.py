@@ -2,9 +2,6 @@
 """
 Canonical Brain-Eleven post-session maintenance runtime (Phase 12).
 
-The historical ``scripts/post_session_maintenance.py`` path is a thin
-compatibility/direct-execution adapter that re-exports these exact objects.
-
 Single entry point session-end.sh calls to run everything Phase 10/11
 built that the daily hook pipeline never touched: knowledge graph rebuild,
 anomaly detection, and a same-day digest. Writes one compact report file

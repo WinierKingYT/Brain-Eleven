@@ -119,22 +119,27 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    yeniden kuyruğa alındı (2026-11-11) ve yeni kodla işlendi. Kalan 25 `TRANSCRIPT_NOT_FOUND` ve
    7 `TRANSCRIPT_OWNERSHIP_UNVERIFIED` işinin dökümü artık diskte yok:
    kurtarılamaz, yalnız neden silindikleri (saklama süresi mi) anlaşılmalı.
-3. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
-   sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
-   `<oturum>/subagents/*.jsonl` dökümlerini de okumak. (v1.0 çalışmasında 5 alt
-   ajan raporu bu başlıkla bitti; ham veri hazır.)
-4. **Durum satırı ve küçük temizlik.** StateStore'daki "V2 SHADOW" satırı,
-   `scripts/`'teki dört betik kararı, vault notlarının sürüm arşivinden
-   çıkarılması (sahip isterse).
+3. ~~Alt ajan ölçümü.~~ **Yapıldı (2026-11-11).** Son 30 günde 403 alt ajan
+   raporunun 37'si (%9) bulgular başlığıyla bitmiş; yalnız talimatın açıkça
+   verildiği projelerde yazılıyor. Bu raporlardan çıkan 262 adayın hiçbiri
+   onaylanmadı ya da reddedilmedi: 228'i bakılmadan süresi doldu, 34'ü bekliyor.
+   Karar: `subagents/*.jsonl` dökümleri okunmayacak; darboğaz yakalama değil,
+   adayların bakılmadan düşmesi (sonraki sürüm konusu).
+4. **Durum satırı ve küçük temizlik.** Hiçbir yerden çağrılmayan
+   `weekly_recall_check*.ps1` ve `post_session_maintenance.py` silindi (bakım
+   testleri artık doğrudan `brain_eleven.runtime.maintenance`'ı sınıyor).
+   `memory_backup.py` kaldı. `install-cross-project-memory.py` de kaldı:
+   `/remember` ve `/study` komut dosyalarını kuran tek yol o. Açık kalan:
+   StateStore'daki "V2 SHADOW" satırı kod değil, kurulumdaki veri; elle
+   düzeltmek için bir komut yok.
 5. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 
 ## Açık konular
 
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
-- `scripts/` içinde repo dışından çağrılabilecek dört betik sahibin kararını
-  bekliyor: `weekly_recall_check*.ps1`, `memory_backup.py`,
-  `post_session_maintenance.py`, `install-cross-project-memory.py`.
+- `/remember` ve `/study` komutlarını yeni `install` kurmuyor; eski
+  `install-cross-project-memory.py` hâlâ tek yol.
 - Proje durum satırı hâlâ "V2 SHADOW" diyor (StateStore); V2 kaldırıldı, satır
   güncellenmeli.
 - Codex, hook'ları hem `hooks.json` hem `config.toml`'dan yüklediği için uyarıyor.
