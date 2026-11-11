@@ -5,6 +5,12 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
+- **v1.1 kapandı (PR #90–#94): yakalama güvenilir.** Alt klasör/worktree
+  oturumları yakalanıyor, süzgece takılan aday oturumu düşürmüyor, Ctrl+Alt+B
+  hatası görünür, iki ölü betik gitti, `close-milestone` eski durum satırını
+  kapattı. Ölçüm: testler 1354 geçti, 0 kırmızı; `doctor` READY; `recall-probe`
+  önce/sonra aynı (oturum başı 2/5 `SLOT_LIMIT`, `--mode prompt` 5/5). Ölü
+  mektup 50 → 32 (kalanların dökümü yok, kurtarılamaz).
 - **Güvenlik süzgecine takılan aday artık oturumu düşürmüyor.** 18
   `REVIEW_PERSIST_FAILED` ölü mektubunun hepsi tek nedendi: 80 satırı aşan bir
   kullanıcı mesajı (`too_many_lines`). Ret kalıcı olduğu için iş 3 kez düşüp
@@ -109,7 +115,7 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.1 (onaylandı 2026-11-11) — yakalamayı güvenilir yap
+## v1.1 maddeleri (kapandı 2026-11-11) — yakalamayı güvenilir yap
 
 1. ~~Sessiz hataları görünür yap.~~ **Yapıldı.** Ctrl+Alt+B (`yakala pano`)
    başarısız olunca içeriksiz bir kod kaydediliyor (`EMPTY`, `SECRET`,
@@ -133,11 +139,17 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    "V2 SHADOW" satırı kod değil, kurulumdaki veriydi: `close-milestone` komutu
    açık kilometre taşını tamamlandı sayıyor, kapanan taş durum satırında
    görünmüyor. Gerçek kurulumda güncellemeden sonra bir kez çalıştırılmalı.
-5. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
-   işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
+5. **Markdown'dan geri yazım.** Yapılmadı; bu sürümde ihtiyaç görülmedi.
 
 ## Açık konular
 
+- Adaylar bakılmadan düşüyor: tüm onay kayıtlarında 59 onay, 3.726 ret, 1.172
+  süresi dolan; bekleyen 65. Sonraki sürümün ana konusu.
+- Oturum başı hatırlama 2/5: üç yanıt hafızada ama 8 yere sığmıyor.
+- Hafızada "V2 SHADOW kalır" diyen eski kararlar hâlâ etkin; sahip `retire`
+  ile iptal edebilir.
+- Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
+  Son Codex yakalaması `CWD_NOT_REGISTERED` (nedeni bakılmadı).
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
 - `/remember` ve `/study` komutlarını yeni `install` kurmuyor; eski
   `install-cross-project-memory.py` hâlâ tek yol.
