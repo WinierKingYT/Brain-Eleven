@@ -191,9 +191,11 @@ STALENESS_SCAN_INTERVAL_SECONDS = 3600
 
 # Dead-letter codes that `worker --retry-dead-letter` retries by default:
 # transcript-read failures a fixed reader can now process, including the
-# EVIDENCE_INVALID catch-all older builds recorded. Ownership/provenance
-# codes are safety verdicts and are only retried when named explicitly.
-RETRYABLE_DEAD_LETTER_CODES = frozenset(_EVIDENCE_READ_CODES | {'EVIDENCE_INVALID'})
+# EVIDENCE_INVALID catch-all older builds recorded, and REVIEW_PERSIST_FAILED,
+# which older builds raised for a safety-refused candidate that is now counted
+# and skipped. Ownership/provenance codes are safety verdicts and are only
+# retried when named explicitly.
+RETRYABLE_DEAD_LETTER_CODES = frozenset(_EVIDENCE_READ_CODES | {'EVIDENCE_INVALID', 'REVIEW_PERSIST_FAILED'})
 
 
 def capture_session_key(client, session):
@@ -332,10 +334,16 @@ class Worker:
         audit record is returned by ``ReviewStore`` but must not be counted as
         a new effect in this job.
         """
-        from .triage import filter_candidate
+        from .triage import filter_candidate, record
         if filter_candidate(self.vault, candidate, reason):
             # Layer-1 noise (quoted, short ack, low-evidence prose/code) is
             # counted, never queued; a committed decision is never filtered.
+            return None
+        refused = self.review.rejection(candidate)
+        if refused:
+            # Safety refusal is permanent: count it (code only, no text) and keep
+            # the session's other candidates instead of failing the whole job.
+            record(self.vault, refused)
             return None
         review_id = self.review.add(candidate, reason, source)
         if not review_id:

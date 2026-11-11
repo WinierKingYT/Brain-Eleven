@@ -197,10 +197,27 @@ class ReviewStore:
                 return item.get('id')
         return None
 
+    @staticmethod
+    def rejection(candidate):
+        """Content-free code when the safety gate refuses this candidate, else None.
+
+        A refusal is permanent (retrying cannot change it), unlike a write failure.
+        """
+        content = candidate.get('text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content', '')
+        if not isinstance(content, str):
+            return 'UNSAFE_NOT_TEXT'
+        verdict = evaluate_capture(content)
+        if not verdict.accepted:
+            return 'UNSAFE_' + (verdict.reason or 'refused').upper()
+        if contains_secret(content):
+            return 'UNSAFE_POTENTIAL_SECRET'
+        if len(content) > 8000:
+            return 'UNSAFE_PAYLOAD_TOO_LARGE'
+        return None
+
     def add(self, candidate, reason, source):
         text_key = 'text' if candidate.get('candidate_type') == 'STATE_MUTATION' else 'content'
-        content = candidate.get(text_key, '')
-        if not isinstance(content, str) or not evaluate_capture(content).accepted or contains_secret(content) or len(content) > 8000:
+        if self.rejection(candidate):
             return None
         fields = {'candidate_id', 'candidate_type', 'project_id', 'scope', text_key, 'memory_type', 'commitment', 'confidence', 'evidence_refs', 'operation', 'occurred_at'}
         candidate = {key: value for key, value in candidate.items() if key in fields}

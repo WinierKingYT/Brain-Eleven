@@ -5,6 +5,13 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
+- **Güvenlik süzgecine takılan aday artık oturumu düşürmüyor.** 18
+  `REVIEW_PERSIST_FAILED` ölü mektubunun hepsi tek nedendi: 80 satırı aşan bir
+  kullanıcı mesajı (`too_many_lines`). Ret kalıcı olduğu için iş 3 kez düşüp
+  oturumun tüm adaylarını kaybediyordu. Şimdi ret `UNSAFE_*` koduyla
+  `auto-triage` sayacına (doctor) yazılır, metin yazılmaz; gerçek yazım hatası
+  yine yeniden denenir. Kurtarma: `worker --retry-dead-letter` artık bu kodu
+  da kapsıyor (18 dökümün hepsi duruyor; sahip çalıştıracak).
 - **Alt klasör ve worktree oturumları yakalanıyor.** Kayıtlı bir kökün altındaki
   cwd (ör. `tests/`, `.claude/worktrees/…`) en yakın kayıtlı köke çözülür; yakalama,
   bağlam ve döküm sahipliği o projeyi görür. Sınır: kökün dışındaki worktree'ler.
@@ -106,9 +113,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 1. **Sessiz hataları görünür yap.** `yakala pano` çöktüğünde iz bırakmıyor (64 bit
    pano hatası bu yüzden fark edilmedi).
-2. **Ölü mektup kuyruğu.** `doctor` 50 dead-letter gösteriyor (25
-   `TRANSCRIPT_NOT_FOUND`, 18 `REVIEW_PERSIST_FAILED`, 7
-   `TRANSCRIPT_OWNERSHIP_UNVERIFIED`); nedenleri bulunup kuyruk temizlenmeli.
+2. **Ölü mektup kuyruğu.** 18 `REVIEW_PERSIST_FAILED` düzeltildi (yukarıda;
+   yeniden deneme sahibin onayını bekliyor). Kalan 25 `TRANSCRIPT_NOT_FOUND` ve
+   7 `TRANSCRIPT_OWNERSHIP_UNVERIFIED` işinin dökümü artık diskte yok:
+   kurtarılamaz, yalnız neden silindikleri (saklama süresi mi) anlaşılmalı.
 3. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak. (v1.0 çalışmasında 5 alt
