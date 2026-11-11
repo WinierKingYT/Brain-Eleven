@@ -38,9 +38,27 @@ reddettiğini kendi sözüyle söyleyince uygula:
 {{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" decide --accept <id> ... --reject <id> ...
 ```
 
+Onaylanan kayıt bir konuya aitse `--topic "<konu>"` ekle: önce `topic` ile
+mevcut konu adlarına bak, uyan varsa onu kullan, yoksa kısa bir ad öner ve
+kullanıcıya söyle. Farklı konulardaki adayları ayrı `decide` çağrılarıyla onayla.
+
 Kullanıcı açıkça söylemeden hiçbir adayı onaylama ya da reddetme; adı geçmeyen
 aday beklemede kalır. Ret geri alınamaz, emin değilsen sor. Metni düzelterek
 onaylamak için `review` (tarayıcı açar).
+
+## Konu
+
+Her kayıt bir konuya bağlanabilir; konu yalnız kayıtları notlarda gruplar.
+
+```text
+{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" topic --project-root "$PWD"
+{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" topic "<konu>" <mem_id> ...
+```
+
+İlki mevcut konuları ve konusu olmayan kayıtları listeler. Kullanıcı "kayıtları
+konulara ayır" derse: konusuz kayıtları oku, az sayıda (proje başına 4–8) kısa
+konu adı öner, hangi kaydın hangi konuya gideceğini sohbette göster ve kullanıcı
+onaylayınca ikinci komutla yaz. Onaysız konu yazma.
 
 ## Kaydet
 

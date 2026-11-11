@@ -309,7 +309,7 @@ def apply_suggestions(vault, *, apply=False):
 
 
 def _accept(vault, item, note):
-    """Accept one pending review item through the normal review path; False when it did not land."""
+    """Accept one pending review item through the normal review path; the finished item, or None."""
     from brain_eleven.memory import MemoryStore
     from brain_eleven.state import StateStore
     from .service import review_action
@@ -321,14 +321,14 @@ def _accept(vault, item, note):
             revision = MemoryStore(vault).load()['revision']
         result = review_action(vault, item['id'], 'accept', {'expected_revision': revision, 'note': note})
     except ValueError:
-        return False
-    return isinstance(result, dict) and result.get('status') == 'ACCEPTED'
+        return None
+    return result if isinstance(result, dict) and result.get('status') == 'ACCEPTED' else None
 
 
 CHAT_NOTE = 'Sohbetten onay'
 
 
-def decide(vault, *, accept=(), reject=()):
+def decide(vault, *, accept=(), reject=(), topic=None):
     """Apply the owner's spoken decisions on digest items (owner decision 2026-11-11).
 
     An agent runs this on the owner's word, so nothing proves a person decided:
@@ -340,13 +340,17 @@ def decide(vault, *, accept=(), reject=()):
     from .storage import read_json
     store = ReviewStore(vault)
     result = {'accepted': [], 'rejected': [], 'failed': []}
+    written = set()
     for review_id in dict.fromkeys(accept):
         try:
             item = read_json(store.path(review_id)) or {}
         except ValueError:  # malformed id
             item = {}
-        ok = item.get('status') == 'PENDING' and _accept(vault, item, CHAT_NOTE)
-        result['accepted' if ok else 'failed'].append(review_id)
+        done = _accept(vault, item, CHAT_NOTE) if item.get('status') == 'PENDING' else None
+        result['accepted' if done else 'failed'].append(review_id)
+        for decision in ((done or {}).get('result') or {}).get('decisions') or ():
+            if isinstance(decision, dict):
+                written.update(decision[key] for key in ('successor_memory_id', 'target_memory_id') if decision.get(key))
     for review_id in dict.fromkeys(reject):
         try:
             done = review_action(vault, review_id, 'reject', {'note': 'Sohbetten ret'})
@@ -354,5 +358,8 @@ def decide(vault, *, accept=(), reject=()):
             done = None
         ok = isinstance(done, dict) and done.get('status') == 'REJECTED'
         result['rejected' if ok else 'failed'].append(review_id)
+    if topic and written:
+        from .memory_notes import set_topic
+        result['topic'] = set_topic(vault, written, topic)
     refresh_owner_counts(vault)
     return result

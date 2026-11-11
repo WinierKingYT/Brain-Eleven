@@ -77,3 +77,50 @@ def refresh(vault, *, force=False):
     notes = render(vault, document)
     write_json(marker, {'revision': revision, 'at': now(), 'notes': len(notes)})
     return {'status': 'RENDERED', 'revision': revision, 'notes': notes}
+
+
+TOPIC_MAX = 40
+
+
+def set_topic(vault, memory_ids, topic):
+    """Name the topic of active memories (owner decision 2026-11-11); '' clears it.
+
+    The topic only groups records into notes: content, status and approval
+    are untouched, and the write goes through MemoryStore like every other.
+    """
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.memory.store import no_change
+    from brain_eleven.runtime.secret_check import contains_secret
+    topic = ' '.join(str(topic or '').split())
+    if (topic and topic != _name(topic)) or len(topic) > TOPIC_MAX or contains_secret(topic):
+        raise ValueError(f'Topic must be at most {TOPIC_MAX} characters that are safe in a file name')
+    wanted = set(memory_ids)
+
+    def mutate(document):
+        changed = [m for m in document['validated_memory'] if m.get('memory_id') in wanted
+                   and str(m.get('status') or 'active') == 'active' and m.get('topic', '') != topic]
+        for memory in changed:
+            memory['topic'] = topic
+        found = {m.get('memory_id') for m in document['validated_memory']
+                 if m.get('memory_id') in wanted and str(m.get('status') or 'active') == 'active'}
+        result = {'topic': topic, 'updated': sorted(m['memory_id'] for m in changed),
+                  'not_found': sorted(wanted - found)}
+        return result if changed else no_change(result)
+
+    return MemoryStore(vault).transact(mutate)[0]
+
+
+def topics(vault, project_id):
+    """Topic names with counts, and the active records of the project that have none yet."""
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.secret_check import contains_secret
+    counts, untopiced = {}, []
+    for memory in MemoryStore(vault).load()['validated_memory']:
+        if str(memory.get('status') or 'active') != 'active' or (memory.get('project_id') or '') != (project_id or ''):
+            continue
+        if memory.get('topic'):
+            counts[memory['topic']] = counts.get(memory['topic'], 0) + 1
+        elif not contains_secret(str(memory.get('content', ''))):
+            untopiced.append({'id': memory.get('memory_id'), 'type': memory.get('type'),
+                              'text': ' '.join(str(memory.get('content', '')).split())[:160]})
+    return {'topics': dict(sorted(counts.items())), 'untopiced': untopiced}

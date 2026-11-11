@@ -70,3 +70,34 @@ def test_notes_cli_forces_a_render(runtime, capsys):  # noqa: F811
     assert main(['--vault', str(vault), 'notes']) == 0
     assert '"RENDERED"' in capsys.readouterr().out
     assert (vault / memory_notes.NOTES_DIR).is_dir()
+
+
+def test_topic_is_set_listed_and_cleared_only_on_active_memories(runtime, capsys):  # noqa: F811
+    import pytest
+
+    vault, project_id = runtime
+    document = MemoryStore(vault).load()
+    MemoryStore(vault).replace({**document, 'validated_memory': _document(project_id)['validated_memory']})
+
+    result = memory_notes.set_topic(vault, ['mem_a', 'mem_c', 'mem_missing'], 'Depolama')
+    assert (result['updated'], result['not_found']) == (['mem_a'], ['mem_c', 'mem_missing'])  # mem_c is resolved
+    by_id = {m['memory_id']: m for m in MemoryStore(vault).load()['validated_memory']}
+    assert by_id['mem_a']['topic'] == 'Depolama' and 'topic' not in by_id['mem_c']
+    assert by_id['mem_a']['content'] == 'SQLite yerel kalır.'
+
+    listing = memory_notes.topics(vault, project_id)
+    assert listing['topics'] == {'Depolama': 1}
+    assert [x['id'] for x in listing['untopiced']] == ['mem_b']  # mem_d holds a secret, mem_e is global
+
+    revision = MemoryStore(vault).revision()
+    memory_notes.set_topic(vault, ['mem_a'], 'Depolama')
+    assert MemoryStore(vault).revision() == revision  # no change, no write
+    for bad in ('a/b', 'x' * 41):
+        with pytest.raises(ValueError):
+            memory_notes.set_topic(vault, ['mem_a'], bad)
+
+    assert main(['--vault', str(vault), 'topic', '', 'mem_a']) == 0
+    assert memory_notes.topics(vault, project_id)['topics'] == {}
+    capsys.readouterr()
+    assert main(['--vault', str(vault), 'topic', '--project-root', str(vault)]) == 0
+    assert '"untopiced"' in capsys.readouterr().out

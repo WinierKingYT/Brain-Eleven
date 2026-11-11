@@ -65,6 +65,7 @@ _RECORD_STRING_FIELDS = {
     "project_id",
     "project",
     "project_label",
+    "topic",
 }
 
 
