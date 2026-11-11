@@ -66,3 +66,26 @@ def test_stale_counts_are_not_shown(tmp_path):
         'at': '2026-01-01T00:00:00+00:00', 'projects': {'': {'waiting': 3, 'model_accept': 1,
                                                           'not_evaluated': 0, 'audit': 0}}})
     assert owner_notice(vault) == ''
+
+
+def test_map_profile_lists_topic_notes_instead_of_record_text(tmp_path):
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.context import compile_bootstrap
+    from brain_eleven.runtime.memory_notes import set_topic
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    _accept(vault, _review_item(tmp_path, vault, 'kept', 'We decided alpha is delivered at session start.', NEW_TIME))
+    _accept(vault, _review_item(tmp_path, vault, 'other', 'We decided the importer stays manual this quarter.', NEW_TIME))
+    RuntimeConfig(vault).set_context_profile('map')
+
+    without_topics = compile_bootstrap(vault, vault)['context']
+    assert 'alpha is delivered' in without_topics and 'TOPIC NOTES' not in without_topics  # nothing to map yet
+
+    first = next(m['memory_id'] for m in MemoryStore(vault).load()['validated_memory'] if 'alpha' in m['content'])
+    set_topic(vault, [first], 'Teslimat')
+    result = compile_bootstrap(vault, vault)
+    assert result['status'] == 'SUCCESS' and result['selected_ids'] == []
+    assert '- Teslimat (1)' in result['context'] and '1 record(s) without a topic' in result['context']
+    assert 'alpha is delivered' not in result['context'] and 'importer stays manual' not in result['context']
+
+    RuntimeConfig(vault).set_context_profile('normal')
+    assert 'alpha is delivered' in compile_bootstrap(vault, vault)['context']

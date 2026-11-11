@@ -579,6 +579,34 @@ def explain_bootstrap(vault, project_root, *, budget=3000):
             'counts': counts, 'memories': memories}
 
 
+def _topic_map(memories, project, *, approved_only):
+    """Profile 'map' (owner decision 2026-11-12): topic names instead of record text.
+
+    The agent opens the one topic note it needs; prompt-time recall is unchanged.
+    Returns '' when the project has no topics, so the normal records are used.
+    """
+    from .memory_notes import NOTES_DIR, _name
+    counts, untopiced = {}, 0
+    for item in memories:
+        if (str(item.get('status') or 'active') != 'active' or item.get('scope') != 'project'
+                or item.get('project_id') != project['project_id']
+                or (approved_only and item.get('is_approved', True) is not True)):
+            continue
+        if item.get('topic'):
+            counts[_name(item['topic'])] = counts.get(_name(item['topic']), 0) + 1
+        else:
+            untopiced += 1
+    if not counts:
+        return ''
+    folder = (NOTES_DIR / _name(project.get('project_label') or project['project_id'])).as_posix()
+    lines = ['## TOPIC NOTES', f"This project's memory is in short notes inside the Brain-Eleven vault. Read the one "
+             f'you need before working on its topic: `{folder}/<topic>.md`',
+             *(f'- {topic} ({count})' for topic, count in sorted(counts.items()))]
+    if untopiced:
+        lines.append(f'- {untopiced} record(s) without a topic: `{folder}.md`')
+    return '\n'.join(lines)
+
+
 def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
     """Bound the existing V1 compiler to canonical scoped bootstrap inputs."""
     runtime = RuntimeConfig(vault)
@@ -599,10 +627,18 @@ def compile_bootstrap(vault, project_root, *, budget=3000, session=''):
             if (not b1_enabled or item.get('is_approved', True) is True)
             and safe(item['content'])]
     memories = select_distinct(pool, stale_ids=_stale_memory_ids(vault), limit=BOOTSTRAP_SLOTS)
+    topic_map = ''
+    if runtime.load().get('context_profile') == 'map':
+        topic_map = _topic_map(compiler.memories, project, approved_only=b1_enabled)
+        if topic_map:
+            # shortcut: the owner notice below rides only on record text, so it is absent in this profile.
+            memories = []
     estimator = ConservativeTokenEstimator()
     # Unscoped Last Session, Open Loops and linked notes are not canonical
     # project inputs. Preserve V1 ranking and rendering without those surfaces.
     context = compiler._generate_context_block(memories, {}, '', '', state)
+    if topic_map:
+        context += '\n\n' + topic_map
     while memories and estimator.estimate(context).count > budget:
         memories.pop()
         context = compiler._generate_context_block(memories, {}, '', '', state)
