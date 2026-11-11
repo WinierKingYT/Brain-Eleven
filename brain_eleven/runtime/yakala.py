@@ -129,6 +129,8 @@ def _windows_clipboard():
     user32.GetClipboardData.restype = wintypes.HANDLE
     kernel32.GlobalLock.restype = ctypes.c_void_p
     kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+    # Bildirilmezse 64 bit tutamaç C int'e sığmaz: OverflowError, pythonw altında sessizce.
+    kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
     if not user32.OpenClipboard(None):
         raise OSError('Clipboard is busy')
     try:
