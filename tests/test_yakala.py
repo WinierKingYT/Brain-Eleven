@@ -108,3 +108,50 @@ def test_windows_clipboard_declares_64_bit_handle_for_unlock():
 
     assert isinstance(yakala._windows_clipboard(), str)
     assert ctypes.windll.kernel32.GlobalUnlock.argtypes == [wintypes.HGLOBAL]
+
+
+SECRET_TEXT = 'anahtarım AKIAIOSFODNN7EXAMPLE'
+
+
+def _last(vault):
+    from brain_eleven.runtime.storage import RuntimeConfig, read_json
+    return read_json(RuntimeConfig(vault).root / 'last-yakala.json')
+
+
+@pytest.mark.parametrize('text, code', [('   ', 'EMPTY'), (SECRET_TEXT, 'SECRET'),
+                                        ('x' * (yakala.TEXT_LIMIT + 1), 'TOO_LONG')],
+                         ids=['empty', 'secret', 'too-long'])
+def test_clipboard_failure_is_logged_with_a_code_and_reraised(tmp_path, monkeypatch, text, code):
+    monkeypatch.setattr(yakala, 'read_clipboard', lambda: text)
+    with pytest.raises(ValueError):
+        yakala.clipboard(tmp_path)
+    record = _last(tmp_path)
+    assert (record['status'], record['error']) == ('FAILED', code)
+    assert 'AKIA' not in json.dumps(record) and 'anahtar' not in json.dumps(record)
+
+
+def test_clipboard_unexpected_error_logs_only_the_class_name(tmp_path, monkeypatch):
+    def busy():
+        raise OSError('Clipboard is busy: C:/secret/path')
+    monkeypatch.setattr(yakala, 'read_clipboard', busy)
+    with pytest.raises(OSError):
+        yakala.clipboard(tmp_path)
+    record = _last(tmp_path)
+    assert record['error'] == 'OSError' and 'secret' not in json.dumps(record)
+
+
+def test_liste_shows_last_attempt_and_tolerates_a_missing_or_corrupt_file(tmp_path, monkeypatch, capsys):
+    from brain_eleven.runtime.storage import RuntimeConfig
+    assert main(['--vault', str(tmp_path), 'yakala', 'liste']) == 0
+    assert 'son_deneme' not in json.loads(capsys.readouterr().out)
+    monkeypatch.setattr(yakala, 'read_clipboard', lambda: 'https://example.com/ok')
+    yakala.clipboard(tmp_path)
+    assert yakala.last_attempt(tmp_path)['status'] == 'CAPTURED'
+    monkeypatch.setattr(yakala, 'read_clipboard', lambda: '  ')
+    with pytest.raises(ValueError):
+        yakala.clipboard(tmp_path)
+    main(['--vault', str(tmp_path), 'yakala', 'liste'])
+    assert json.loads(capsys.readouterr().out)['son_deneme']['error'] == 'EMPTY'
+    (RuntimeConfig(tmp_path).root / 'last-yakala.json').write_text('{bozuk', encoding='utf-8')
+    assert yakala.last_attempt(tmp_path) is None
+    assert main(['--vault', str(tmp_path), 'yakala', 'liste']) == 0
