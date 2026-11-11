@@ -80,3 +80,17 @@ def test_codex_hooks_defined_in_both_files_are_flagged_but_trust_records_are_not
     cfg.ensure_root()
     joined = " | ".join(_pipeline_health(vault, cfg, home)["suggestions"])
     assert "both hooks.json and config.toml (SessionStart)" in joined
+
+
+def test_pipeline_health_reports_last_yakala_and_suggests_on_failure(tmp_path):
+    cfg = RuntimeConfig(tmp_path)
+    cfg.ensure_root()
+    assert "last_yakala" not in _pipeline_health(tmp_path, cfg)
+    write_json(cfg.root / "last-yakala.json", {"at": "2026-11-11T10:00:00+00:00", "status": "CAPTURED", "item": "a.md"})
+    health = _pipeline_health(tmp_path, cfg)
+    assert health["last_yakala"]["status"] == "CAPTURED"
+    assert not any("Ctrl+Alt+B" in s for s in health["suggestions"])
+    write_json(cfg.root / "last-yakala.json", {"at": "2026-11-11T10:01:00+00:00", "status": "FAILED", "error": "SECRET"})
+    health = _pipeline_health(tmp_path, cfg)
+    assert health["last_yakala"]["error"] == "SECRET"
+    assert "last Ctrl+Alt+B capture failed: SECRET" in health["suggestions"]

@@ -22,6 +22,10 @@ FILE_LIMIT = 50 * 1024 * 1024
 PENDING, DONE = 'bekliyor', 'işlendi'
 HOTKEY = 'CTRL+ALT+B'
 SHORTCUT_NAME = 'Beyne at.lnk'
+_FAILURE_CODES = {'Nothing to capture': 'EMPTY', 'File is larger than 50 MB': 'FILE_TOO_LARGE',
+                  'The file looks like it contains a secret; not captured': 'SECRET',
+                  'Text is longer than 100,000 characters': 'TOO_LONG',
+                  'The text looks like it contains a secret; not captured': 'SECRET'}
 _URL = re.compile(r'^https?://\S+$')
 _FIELD = re.compile(r'^([^:\n]+): ?(.*)$')
 
@@ -157,9 +161,27 @@ def read_clipboard():
 
 def clipboard(vault):
     """What the hotkey runs: capture whatever text or link is on the clipboard."""
-    result = add(vault, read_clipboard())
+    try:
+        result = add(vault, read_clipboard())
+    except Exception as exc:
+        # Content-free on purpose: only a fixed code, never the text, a path or the raw message.
+        code = _FAILURE_CODES.get(str(exc)) if isinstance(exc, ValueError) else None
+        _log(vault, {'status': 'FAILED', 'error': code or type(exc).__name__})
+        raise
     _log(vault, result)
     return result
+
+
+def last_attempt(vault):
+    """The last hotkey capture outcome (runtime state), or None when missing or unreadable."""
+    from .storage import RuntimeConfig, read_json
+    try:
+        record = read_json(RuntimeConfig(vault).root / 'last-yakala.json', None)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(record, dict) or not record.get('status'):
+        return None
+    return {key: record[key] for key in ('at', 'status', 'error', 'item') if record.get(key)}
 
 
 def _log(vault, result):

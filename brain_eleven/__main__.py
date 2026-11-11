@@ -213,6 +213,9 @@ def main(argv=None):
                 result = yakala.clipboard(args.vault)
             elif args.action == 'liste':
                 result = yakala.items(args.vault, status=None if args.hepsi else yakala.PENDING)
+                attempt = yakala.last_attempt(args.vault)
+                if attempt:
+                    result['son_deneme'] = attempt
             elif args.action == 'bitti':
                 result = yakala.done(args.vault, args.value or '', args.note)
             else:

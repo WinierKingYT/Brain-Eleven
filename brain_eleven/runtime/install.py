@@ -461,6 +461,13 @@ def _pipeline_health(vault, cfg, home=None):
                                    + (f" ({record.get('error')})" if record.get('error') else ''))
     health['last_capture'] = last_capture
 
+    from .yakala import last_attempt
+    attempt = last_attempt(vault)
+    if attempt:
+        health['last_yakala'] = attempt
+        if attempt['status'] == 'FAILED':
+            suggestions.append(f"last Ctrl+Alt+B capture failed: {attempt.get('error')}")
+
     pending = expiring = 0
     soon = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat()
     for path in (cfg.root / 'review').glob('rev_*.json'):

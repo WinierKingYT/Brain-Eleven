@@ -111,10 +111,12 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Sıradaki işler: v1.1 (onaylandı 2026-11-11) — yakalamayı güvenilir yap
 
-1. **Sessiz hataları görünür yap.** `yakala pano` çöktüğünde iz bırakmıyor (64 bit
-   pano hatası bu yüzden fark edilmedi).
-2. **Ölü mektup kuyruğu.** 18 `REVIEW_PERSIST_FAILED` düzeltildi (yukarıda;
-   yeniden deneme sahibin onayını bekliyor). Kalan 25 `TRANSCRIPT_NOT_FOUND` ve
+1. ~~Sessiz hataları görünür yap.~~ **Yapıldı.** Ctrl+Alt+B (`yakala pano`)
+   başarısız olunca içeriksiz bir kod kaydediliyor (`EMPTY`, `SECRET`,
+   `TOO_LONG`, `FILE_TOO_LARGE` ya da hata sınıfının adı); `yakala liste`
+   `son_deneme`, `doctor` `last_yakala` ve bir öneri satırı gösteriyor.
+2. **Ölü mektup kuyruğu.** 18 `REVIEW_PERSIST_FAILED` işi gerçek kurulumda
+   yeniden kuyruğa alındı (2026-11-11) ve yeni kodla işlendi. Kalan 25 `TRANSCRIPT_NOT_FOUND` ve
    7 `TRANSCRIPT_OWNERSHIP_UNVERIFIED` işinin dökümü artık diskte yok:
    kurtarılamaz, yalnız neden silindikleri (saklama süresi mi) anlaşılmalı.
 3. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
