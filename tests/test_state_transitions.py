@@ -113,3 +113,25 @@ def test_unknown_and_archived_projects_cannot_be_initialized_or_mutated(tmp_path
     registry.register(tmp_path / "archived", project_id="archived", status="archived")
     with pytest.raises(StateProjectArchived):
         service.init_project("archived", source=SOURCE)
+
+
+def test_close_milestone_command_completes_it_and_hides_the_state_line(tmp_path, capsys):
+    from brain_eleven.__main__ import main
+    from brain_eleven.runtime.context_compiler import ContextCompiler
+    from brain_eleven.state.resolver import StateResolver
+
+    service = service_with_active_project(tmp_path)
+    service.set_current_milestone("brain-eleven", phase_id="phase-20", title="Phase 20 FROZEN",
+                                  expected_revision=1, source=SOURCE, now=NOW)
+    root = str(tmp_path / "brain-eleven")
+
+    def state_block():
+        state = StateResolver(tmp_path).resolve("brain-eleven")
+        return ContextCompiler._generate_context_block(ContextCompiler.__new__(ContextCompiler), [], {}, "", "", state)
+
+    assert "Milestone: Phase 20 FROZEN" in state_block()
+    assert main(["--vault", str(tmp_path), "close-milestone", "--project-root", root]) == 0
+    assert service.store.get_project("brain-eleven")["current"]["milestone"]["status"] == "COMPLETED"
+    assert "Phase 20 FROZEN" not in state_block()
+    assert main(["--vault", str(tmp_path), "close-milestone", "--project-root", root]) == 2
+    assert "No open milestone" in capsys.readouterr().out

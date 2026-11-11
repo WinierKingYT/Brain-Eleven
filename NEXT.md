@@ -129,9 +129,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    `weekly_recall_check*.ps1` ve `post_session_maintenance.py` silindi (bakım
    testleri artık doğrudan `brain_eleven.runtime.maintenance`'ı sınıyor).
    `memory_backup.py` kaldı. `install-cross-project-memory.py` de kaldı:
-   `/remember` ve `/study` komut dosyalarını kuran tek yol o. Açık kalan:
-   StateStore'daki "V2 SHADOW" satırı kod değil, kurulumdaki veri; elle
-   düzeltmek için bir komut yok.
+   `/remember` ve `/study` komut dosyalarını kuran tek yol o. StateStore'daki
+   "V2 SHADOW" satırı kod değil, kurulumdaki veriydi: `close-milestone` komutu
+   açık kilometre taşını tamamlandı sayıyor, kapanan taş durum satırında
+   görünmüyor. Gerçek kurulumda güncellemeden sonra bir kez çalıştırılmalı.
 5. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 
@@ -140,7 +141,5 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
 - `/remember` ve `/study` komutlarını yeni `install` kurmuyor; eski
   `install-cross-project-memory.py` hâlâ tek yol.
-- Proje durum satırı hâlâ "V2 SHADOW" diyor (StateStore); V2 kaldırıldı, satır
-  güncellenmeli.
 - Codex, hook'ları hem `hooks.json` hem `config.toml`'dan yüklediği için uyarıyor.
 - `kur.ps1` yalnız Windows; başka sistemde üç adım elle.
