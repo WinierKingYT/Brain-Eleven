@@ -85,7 +85,7 @@ dosyasının üstüne yazılmaz.
 | `profile [normal\|economical\|manual]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç). Yakalama her modda sürer. |
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |
-| `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler) |
+| `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler). Konusu olan kayıtlar `Hafıza/<proje>/<konu>.md` notuna gider, proje notu konulara bağlantı verir |
 | `recall-probe` | 5 soruluk hatırlama testi. Varsayılan yalnız oturum başı bağlamını ölçer (12 yer); gerçek kullanım için `--mode prompt` (oturum başı + istem anı) |
 | `measure` | Gerçek kullanım ölçümü |
 | `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |

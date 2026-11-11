@@ -133,7 +133,10 @@ kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
    durum ve onay değişmez. Sınır: yerine yenisi yazılan (supersede) kayıt konuyu
    devralmıyor.
 2. **Mevcut 100 kaydı konulandır.** Ajan önerir, sahip sohbette onaylar.
-3. **Konu notları.** Konu başına kısa, bağlantılı not (`🔮 Companion/Hafıza/`).
+3. **Konu notları.** Kod yapıldı: konusu olan kayıt `Hafıza/<proje>/<konu>.md`
+   notuna gider, proje notu **Konular** başlığıyla bağlantı verir (harita),
+   konusuz kayıt proje notunda kalır; boşalan konu notu silinmez. Konular
+   arasında bağlantı yok (ilişki verisi yok). Gerçek boy ölçümü madde 2'yi bekliyor.
 4. **Konu haritası.** Oturum başına konu listesi; `recall-probe`'un nasıl
    ölçeceği sahibe sorulacak (eşikler düşürülmez).
 5. **Ölçüm.** Eski ve yeni yolun bağlam harcaması aynı beş soruda.

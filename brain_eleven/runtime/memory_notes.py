@@ -33,7 +33,7 @@ def _line(item):
 
 
 def render(vault, document):
-    """Write one note per project (and Genel) from a MemoryStore document; return the note names."""
+    """Write one note per project (and Genel), plus one per topic, from a MemoryStore document; return the project note names."""
     from brain_eleven.projects.registry import ProjectRegistry
     labels = {p['project_id']: p.get('project_label') or p['project_id'] for p in ProjectRegistry(vault).list_projects()}
     groups = {}
@@ -48,22 +48,44 @@ def render(vault, document):
     for project_id in sorted(set(groups) | set(labels)):
         title = labels.get(project_id, project_id) if project_id else GLOBAL_NOTE
         items = sorted(groups.get(project_id, []), key=lambda m: str(m.get('timestamp') or ''), reverse=True)
-        by_type = {}
+        by_type, by_topic = {}, {}
         for item in items:
             line = _line(item)
-            if line:
+            if not line:
+                continue
+            if item.get('topic'):
+                by_topic.setdefault(_name(item['topic']), []).append(line)
+            else:
                 by_type.setdefault(str(item.get('type') or 'observation'), []).append(line)
-        lines = [f'# {title} — hafıza', '', _HEADER, '', f'{sum(map(len, by_type.values()))} aktif kayıt.']
+        total = sum(map(len, by_type.values())) + sum(map(len, by_topic.values()))
+        lines = [f'# {title} — hafıza', '', _HEADER, '', f'{total} aktif kayıt.']
+        folder = root / _name(title)
+        if by_topic:
+            # The project note is the map: a topic's records live only in its own short note.
+            lines += ['', '## Konular', '', *(f'- [[{_name(title)}/{topic}|{topic}]] — {len(found)} kayıt'
+                                              for topic, found in sorted(by_topic.items()))]
+        for topic, found in by_topic.items():
+            _write(folder / (topic + '.md'), [f'# {topic}', '', _HEADER, '',
+                                              f'[[{_name(title)}]] · {len(found)} aktif kayıt.', '', *found])
+        # No note is deleted: a topic that lost its last record keeps its file and says so.
+        for stale in (folder.glob('*.md') if folder.is_dir() else ()):
+            if stale.stem not in by_topic and _HEADER in stale.read_text(encoding='utf-8'):
+                _write(stale, [f'# {stale.stem}', '', _HEADER, '', f'[[{_name(title)}]] · Bu konuda aktif kayıt kalmadı.'])
         order = list(_TYPE_TITLES) + sorted(set(by_type) - set(_TYPE_TITLES))
         for kind in order:
             if by_type.get(kind):
                 lines += ['', f'## {_TYPE_TITLES.get(kind, kind.capitalize())}', '', *by_type[kind]]
         path = root / (_name(title) + '.md')
-        temporary = path.with_name(path.name + '.tmp')
-        temporary.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-        temporary.replace(path)
+        _write(path, lines)
         written.append(path.stem)
     return written
+
+
+def _write(path, lines):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + '.tmp')
+    temporary.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    temporary.replace(path)
 
 
 def refresh(vault, *, force=False):
