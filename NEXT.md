@@ -5,6 +5,16 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
+- **v1.2 kapandı (PR #97–#100): adaylar boşa gitmesin.** `decide` ile adaylar
+  sohbetten onaylanıyor (kayıt deneme süresinde kalır); oturum başı hafıza yeri
+  8 → 12; `install` `/remember` ve `/study`'yi de kuruyor; Codex yakalamasında
+  hata yok, `doctor` önerileri nedenini söylüyor. Ölçüm: testler 1356 geçti, 0
+  kırmızı; `recall-probe` oturum başı 2/5 → 4/5; `--mode prompt` güncelleme
+  öncesi servisle 5/5 (yeni kodla güncellemeden sonra ölçülecek). Onay yükünün
+  sonrası ölçümü bir hafta kullanım ister (başlangıç: bakılmadan düşen 164).
+- **Sıradaki yön (sahip, 2026-11-11):** hafızayı bağlama itmek yerine Obsidian
+  notlarından gerektiğinde okutmak; konu notları ve aralarında bağlantı. Taslak
+  onay bekliyor.
 - **v1.1 kapandı (PR #90–#94): yakalama güvenilir.** Alt klasör/worktree
   oturumları yakalanıyor, süzgece takılan aday oturumu düşürmüyor, Ctrl+Alt+B
   hatası görünür, iki ölü betik gitti, `close-milestone` eski durum satırını
@@ -115,7 +125,7 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.2 (onaylandı 2026-11-11) — adaylar boşa gitmesin
+## v1.2 maddeleri (kapandı 2026-11-11) — adaylar boşa gitmesin
 
 1. ~~Onay yükünü azalt.~~ **Yapıldı.** Ölçüm: süresi dolan 1.172 adayın 828'i
    zaten gürültü/tekrar işaretliydi; gerçek kayıp "sahibi baksın" denip
