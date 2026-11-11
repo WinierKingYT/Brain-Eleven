@@ -493,7 +493,10 @@ def _pipeline_health(vault, cfg, home=None):
             last_capture[client] = {k: record.get(k) for k in ('at', 'event', 'outcome', 'error')}
             if record.get('outcome') in {'CWD_NOT_REGISTERED', 'CWD_MISSING', 'DEGRADED'}:
                 suggestions.append(f"last {client} capture was {record.get('outcome')}"
-                                   + (f" ({record.get('error')})" if record.get('error') else ''))
+                                   + (f" ({record.get('error')})" if record.get('error') else '')
+                                   + (": that session's folder is not enrolled, which is normal for a project you do not"
+                                      ' want captured; otherwise run python -m brain_eleven project add <folder>'
+                                      if record.get('outcome') == 'CWD_NOT_REGISTERED' else ''))
     health['last_capture'] = last_capture
 
     from .yakala import last_attempt
@@ -549,7 +552,8 @@ def _pipeline_health(vault, cfg, home=None):
     toml_events = codex_toml_hook_events(codex_hooks.parent / 'config.toml') if codex_hooks else []
     if toml_events and client_file_state(codex_hooks) == 'OK':
         suggestions.append('codex loads hooks from both hooks.json and config.toml ('
-                           + ', '.join(toml_events) + '); Codex warns about this and asks for a single representation')
+                           + ', '.join(toml_events) + '); Codex warns about this and asks for a single representation.'
+                           ' Brain-Eleven writes only hooks.json: the config.toml entry belongs to another tool')
     health['suggestions'] = suggestions
     return health
 

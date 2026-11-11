@@ -133,7 +133,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    özetle tanıyıp) devralıyor, sahibin değiştirdiği dosyaya dokunmuyor. Kalan:
    `install-cross-project-memory.py`, yalnız onun kullandığı hook şablonları ve
    testlerinin silinmesi (sahip onayı).
-4. **Codex yakalaması.** `CWD_NOT_REGISTERED` ve çift hook uyarısı.
+4. ~~Codex yakalaması.~~ **İncelendi, hata yok.** Son 40 Codex oturumunun hepsi
+   kayıtlı olmayan klasörlerde açılmış; `CWD_NOT_REGISTERED` doğru sonuç
+   (yakalanması istenen klasör için `project add`). Çift hook uyarısındaki
+   `config.toml` girdisi Brain-Eleven'ın değil, başka bir aracın. `doctor`
+   önerileri artık ikisini de böyle açıklıyor.
 
 ## v1.1 maddeleri (kapandı 2026-11-11) — yakalamayı güvenilir yap
 
@@ -169,7 +173,6 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Hafızada "V2 SHADOW kalır" diyen eski kararlar hâlâ etkin; sahip `retire`
   ile iptal edebilir.
 - Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
-  Son Codex yakalaması `CWD_NOT_REGISTERED` (nedeni bakılmadı).
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
-- Codex, hook'ları hem `hooks.json` hem `config.toml`'dan yüklediği için uyarıyor.
+- Codex çift hook uyarısı sürüyor: `config.toml`'daki girdi başka bir aracın; taşımak sahibin kararı.
 - `kur.ps1` yalnız Windows; başka sistemde üç adım elle.
