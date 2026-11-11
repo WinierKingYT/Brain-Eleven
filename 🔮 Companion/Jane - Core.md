@@ -2,9 +2,12 @@
 type: agent-profile
 title: Jane - Personal Identity
 category: Long-term Memory
-status: active
+status: archived
 created: 2026-08-28
 ---
+
+> **Arşiv (2026-11-11).** Bu not eski ajan profilidir (v2→v3 dönemi).
+> Sahibin güncel profili `Core.md`, ajan kuralları `Kurallar.md`. Not silinmez, olduğu gibi durur.
 
 # Jane - Core Identity
 

@@ -3,7 +3,12 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-11-10)
+## Şu an (2026-11-11)
+
+- **Vault ve açık konular.** `Jane - Core.md` arşiv olarak işaretlendi (silinmedi);
+  sahibin profili `Core.md`. Eskimiş açık konular kapatıldı (aşağıda).
+- **Bağlam süresi.** Servis istem başına ortanca 460 ms, en çok 491 ms
+  (2026-11-10, 20 istek, sıcak servis, sadeleştirme öncesi kod; tekrar eden 5 soru).
 
 - **Docker/Postgres/Redis kaldırıldı: kullanılmıyordu.** Dockerfile, compose,
   Makefile, `scripts/search-api.py`, `scripts/ops/`, imaj yayını iş akışı ve
@@ -116,6 +121,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Açık konular
 
-- texforge, robloxdevOs, obsidian-S&box `project add` ile kaydedilmedi.
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
-- `auto_accept_verified` gerçek kurulumda açık bulundu; sahip teyidi bekliyor.
+
+Kapananlar (2026-11-11, gerçek kurulumdan okundu): texforge, robloxdevOs ve
+obsidian-S&box kayıt defterinde `active`; `auto_accept_verified` kapalı, her
+hafıza sahibin onayından geçiyor. `doctor`'daki `CWD_NOT_REGISTERED` kayıtsız bir
+klasörde açılan Codex oturumundan geliyor: beklenen davranış, hata değil.
