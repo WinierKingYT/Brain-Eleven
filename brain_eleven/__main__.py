@@ -60,6 +60,11 @@ def main(argv=None):
     decide_cmd = sub.add_parser('decide', help="apply the owner's spoken decisions on digest items (ids from `digest`)")
     decide_cmd.add_argument('--accept', nargs='*', default=[], metavar='REVIEW_ID')
     decide_cmd.add_argument('--reject', nargs='*', default=[], metavar='REVIEW_ID')
+    decide_cmd.add_argument('--topic', default=None, help='topic name for the memories these accepts write')
+    topic_cmd = sub.add_parser('topic', help='name the topic of memories; with no name, list topics and records without one')
+    topic_cmd.add_argument('name', nargs='?', help="topic name ('' clears)")
+    topic_cmd.add_argument('memory_ids', nargs='*')
+    topic_cmd.add_argument('--project-root', default=None, help='for the listing; default: current folder')
     auto = sub.add_parser('queue-triage', help='pre-evaluate the review queue: rules reject noise, a local model decides the rest')
     auto.add_argument('state', nargs='?', choices=['OFF', 'ON'], help='turn the service schedule on/off (default: run once)')
     auto.add_argument('--no-model', action='store_true', help='rules only')
@@ -163,7 +168,7 @@ def main(argv=None):
             result = apply_suggestions(args.vault, apply=args.apply)
         elif args.command == 'decide':
             from .runtime.value import decide
-            result = decide(args.vault, accept=args.accept, reject=args.reject)
+            result = decide(args.vault, accept=args.accept, reject=args.reject, topic=args.topic)
         elif args.command == 'queue-triage':
             if args.accept_verified:
                 from .runtime.storage import RuntimeConfig
@@ -231,6 +236,17 @@ def main(argv=None):
         elif args.command == 'why':
             from .runtime.why import why
             result = why(args.vault, args.memory_id)
+        elif args.command == 'topic':
+            from .runtime import memory_notes
+            if args.memory_ids:
+                result = memory_notes.set_topic(args.vault, args.memory_ids, args.name)
+            else:
+                import os
+                from .projects.registry import ProjectRegistry
+                project = ProjectRegistry(args.vault).resolve_containing(args.project_root or os.getcwd())
+                if not project:
+                    raise ValueError('Project folder is not enrolled (project add)')
+                result = memory_notes.topics(args.vault, project['project_id'])
         elif args.command == 'notes':
             from .runtime.memory_notes import refresh
             result = refresh(args.vault, force=True)

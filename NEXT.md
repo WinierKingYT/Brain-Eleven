@@ -12,9 +12,6 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
   kırmızı; `recall-probe` oturum başı 2/5 → 4/5; `--mode prompt` güncelleme
   öncesi servisle 5/5 (yeni kodla güncellemeden sonra ölçülecek). Onay yükünün
   sonrası ölçümü bir hafta kullanım ister (başlangıç: bakılmadan düşen 164).
-- **Sıradaki yön (sahip, 2026-11-11):** hafızayı bağlama itmek yerine Obsidian
-  notlarından gerektiğinde okutmak; konu notları ve aralarında bağlantı. Taslak
-  onay bekliyor.
 - **v1.1 kapandı (PR #90–#94): yakalama güvenilir.** Alt klasör/worktree
   oturumları yakalanıyor, süzgece takılan aday oturumu düşürmüyor, Ctrl+Alt+B
   hatası görünür, iki ölü betik gitti, `close-milestone` eski durum satırını
@@ -124,6 +121,22 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
   `approval ON` açık kaldıkça her hafıza yine onaydan geçer.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
+
+## Sıradaki işler: v1.3 (onaylandı 2026-11-11) — Obsidian'dan oku
+
+Ölçüm (2026-11-11): 100 etkin kayıt, hiçbiri konu taşımıyordu. Bölmeden harita
+kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
+(bugünkü oturum başı 2.301), tek ayrıntı için notun tamamı (+6.319) okunuyor.
+
+1. ~~Konu alanı.~~ **Yapıldı.** Kayıtta `topic` alanı; `topic` komutu listeler ve
+   atar, `decide --topic` onaylananı konuya bağlar. Yalnız gruplar; içerik,
+   durum ve onay değişmez. Sınır: yerine yenisi yazılan (supersede) kayıt konuyu
+   devralmıyor.
+2. **Mevcut 100 kaydı konulandır.** Ajan önerir, sahip sohbette onaylar.
+3. **Konu notları.** Konu başına kısa, bağlantılı not (`🔮 Companion/Hafıza/`).
+4. **Konu haritası.** Oturum başına konu listesi; `recall-probe`'un nasıl
+   ölçeceği sahibe sorulacak (eşikler düşürülmez).
+5. **Ölçüm.** Eski ve yeni yolun bağlam harcaması aynı beş soruda.
 
 ## v1.2 maddeleri (kapandı 2026-11-11) — adaylar boşa gitmesin
 

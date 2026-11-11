@@ -80,13 +80,15 @@ def test_decide_applies_spoken_decisions_and_keeps_the_accept_on_probation(tmp_p
     keep = _review_item(tmp_path, vault, "keep", "We decided the dashboard stays read-only.", NEW_TIME)
     drop = _review_item(tmp_path, vault, "drop", "We decided to keep SQLite for storage.", NEW_TIME)
 
-    assert main(['--vault', str(vault), 'decide', '--accept', keep['id'], '--reject', drop['id']]) == 0
+    assert main(['--vault', str(vault), 'decide', '--accept', keep['id'], '--reject', drop['id'], '--topic', 'Pano']) == 0
     by_id = {x['id']: x for x in ReviewStore(vault)._items()}
     assert (by_id[keep['id']]['status'], by_id[keep['id']]['decision_note']) == ('ACCEPTED', 'Sohbetten onay')
     assert by_id[drop['id']]['status'] == 'REJECTED'
     contents = {m['content'] for m in MemoryStore(vault).load()['validated_memory']}
     assert 'We decided the dashboard stays read-only.' in contents
     assert 'We decided to keep SQLite for storage.' not in contents
+    assert [m.get('topic') for m in MemoryStore(vault).load()['validated_memory']
+            if m['content'] == 'We decided the dashboard stays read-only.'] == ['Pano']
     assert human_accepted_ids(vault) == set()  # an agent relayed it: still on probation
 
     capsys.readouterr()

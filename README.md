@@ -89,6 +89,7 @@ dosyasının üstüne yazılmaz.
 | `recall-probe` | 5 soruluk hatırlama testi. Varsayılan yalnız oturum başı bağlamını ölçer (12 yer); gerçek kullanım için `--mode prompt` (oturum başı + istem anı) |
 | `measure` | Gerçek kullanım ölçümü |
 | `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |
+| `topic` / `topic "<konu>" <id> …` | Konuları ve konusuz kayıtları listele / kayıtlara konu adı ver (içerik değişmez) |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |
 | `close-milestone` | Projenin açık kilometre taşını tamamlandı say; oturum başındaki durum satırı onu göstermeyi bırakır |
 
