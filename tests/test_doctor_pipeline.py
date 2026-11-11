@@ -30,6 +30,7 @@ def test_pipeline_health_counts_and_suggests_next_steps(tmp_path):
     joined = " | ".join(health["suggestions"])
     assert "1 dead-lettered capture(s) are retryable" in joined
     assert "codex capture was CWD_NOT_REGISTERED" in joined
+    assert "project add <folder>" in joined
     assert "python -m brain_eleven measure" in joined
 
     write_json(cfg.root / "measurements" / "20260929T070000Z.json",
