@@ -24,12 +24,37 @@ hafızaya yazar ve her yeni oturumda/istemde ilgili hafızayı bağlama ekler.
 
 ## Kurulum
 
+Windows'ta tek komut (depoyu indirir, bağımlılıkları ve hook'ları kurar,
+`doctor` çalıştırır):
+
+```powershell
+git clone https://github.com/WinierKingYT/Brain-Eleven.git; .\Brain-Eleven\kur.ps1
+```
+
+Güncelleme de tek komut; yerel değişiklik varsa durur, hafıza ve ayarlara
+dokunmaz, sonunda geri alma komutunu yazar:
+
+```powershell
+.\kur.ps1 -Guncelle
+```
+
+Sonra her proje için bir kez:
+
+```bash
+python -m brain_eleven --vault <vault> project add <proje-klasörü>
+```
+
+Başka işletim sisteminde `kur.ps1`'in yaptığı üç adım elle çalıştırılır:
+
 ```bash
 pip install -r requirements.txt
 python -m brain_eleven --vault <vault> install                  # hook'ları kurar
-python -m brain_eleven --vault <vault> project add <proje-klasörü>  # her proje için
 python -m brain_eleven --vault <vault> doctor
 ```
+
+Kararlı sürümler `v1.0.0` gibi etiketlenir. Her sürümün GitHub sayfasında
+kaynak arşivi ve `SHA256SUMS` dosyası bulunur; arşivi elle indirirsen
+`Get-FileHash <arşiv> -Algorithm SHA256` çıktısını o dosyayla karşılaştır.
 
 Yeni kurulum doğrudan `ACTIVE` modda başlar ve her yakalanan hafıza sahibin
 onayına düşer (`approval ON`). Eski kurulumlar `SHADOW`'dan şu komutla çıkar:

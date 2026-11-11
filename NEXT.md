@@ -5,6 +5,9 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
+- **Sürüm paketi.** `kur.ps1` kurulumu ve `-Guncelle` ile güncellemeyi tek
+  komuta indirir. `v*` etiketi itilince `release.yml` testleri çalıştırır,
+  kaynak arşivini ve `SHA256SUMS`'ı sürüme ekler. Paket sürümü 1.0.0.
 - **Vault ve açık konular.** `Jane - Core.md` arşiv olarak işaretlendi (silinmedi);
   sahibin profili `Core.md`. Eskimiş açık konular kapatıldı (aşağıda).
 - **Bağlam süresi.** Servis istem başına ortanca 460 ms, en çok 491 ms
@@ -116,8 +119,6 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
 2. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
-3. **Sürüm paketi.** Checksum'lı kararlı sürüm, tek mesajla kurulum ve
-   güncelleme.
 
 ## Açık konular
 
