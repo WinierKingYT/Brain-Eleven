@@ -55,3 +55,29 @@ def test_a_foreign_skill_with_the_same_name_is_left_alone(runtime, tmp_path):  #
 def test_render_fills_paths(tmp_path):
     text = render_skill('beyin-guncelle', tmp_path)
     assert str(tmp_path.resolve()) in text and '{{' not in text
+
+
+def test_install_writes_commands_takes_over_legacy_copies_and_keeps_owner_edits(runtime, tmp_path):  # noqa: F811
+    import hashlib
+    import json
+
+    vault, _ = runtime
+    home = tmp_path / 'home'
+    commands = home / '.claude' / 'commands'
+    commands.mkdir(parents=True)
+    # The legacy installer's copy is ours (its manifest holds the hash); an owner-edited file is not.
+    legacy = 'legacy render of /remember'
+    (commands / 'remember.md').write_text(legacy, encoding='utf-8')
+    (home / '.claude' / '.brain-eleven-install.json').write_text(json.dumps({'files': {
+        str(commands / 'remember.md'): hashlib.sha256(legacy.encode('utf-8')).hexdigest()}}), encoding='utf-8')
+    (commands / 'study.md').write_text('benim study komutum', encoding='utf-8')
+
+    result = install(vault, home=home)
+    assert (result['commands'], result['commands_skipped_modified']) == (['remember'], ['study'])
+    text = (commands / 'remember.md').read_text(encoding='utf-8')
+    assert '{{' not in text and vault.resolve().as_posix() in text and 'scripts/remember.py' in text
+    assert install(vault, home=home)['commands'] == ['remember']  # repeat is harmless
+
+    uninstall(vault)
+    assert not (commands / 'remember.md').exists()
+    assert (commands / 'study.md').read_text(encoding='utf-8') == 'benim study komutum'

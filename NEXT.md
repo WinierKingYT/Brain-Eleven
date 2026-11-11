@@ -128,8 +128,11 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    (sahip kararı). `recall-probe` oturum başı 2/5 → 4/5, `--mode prompt` 5/5
    (değişmedi). Kalan tek yanıt (SRT-00) `stale_candidate` işaretli olduğu için
    bilerek arkada. Not: beş test sorusu eski döneme ait; yenilemek sahibin kararı.
-3. **`/remember` ve `/study` kurulumunu yeni `install`'a taşı,** ardından
-   `install-cross-project-memory.py`'yi sil.
+3. **`/remember` ve `/study` kurulumu.** `install` artık iki komutu da
+   `~/.claude/commands/` altına yazıyor; eski kurulumun kopyasını (manifestindeki
+   özetle tanıyıp) devralıyor, sahibin değiştirdiği dosyaya dokunmuyor. Kalan:
+   `install-cross-project-memory.py`, yalnız onun kullandığı hook şablonları ve
+   testlerinin silinmesi (sahip onayı).
 4. **Codex yakalaması.** `CWD_NOT_REGISTERED` ve çift hook uyarısı.
 
 ## v1.1 maddeleri (kapandı 2026-11-11) — yakalamayı güvenilir yap
@@ -168,7 +171,5 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
   Son Codex yakalaması `CWD_NOT_REGISTERED` (nedeni bakılmadı).
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
-- `/remember` ve `/study` komutlarını yeni `install` kurmuyor; eski
-  `install-cross-project-memory.py` hâlâ tek yol.
 - Codex, hook'ları hem `hooks.json` hem `config.toml`'dan yüklediği için uyarıyor.
 - `kur.ps1` yalnız Windows; başka sistemde üç adım elle.
