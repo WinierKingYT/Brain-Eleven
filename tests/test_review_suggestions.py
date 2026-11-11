@@ -70,3 +70,25 @@ def test_duplicate_of_memory_hides_only_behind_active_memory(tmp_path):
     done = apply_suggestions(vault, apply=True)
     assert (done['hidden'], done['left_for_person']) == (1, 1)
     assert {x['id']: x['status'] for x in ReviewStore(vault)._items()}[again['id']] == 'PENDING'
+
+
+def test_decide_applies_spoken_decisions_and_keeps_the_accept_on_probation(tmp_path, capsys):
+    from brain_eleven.__main__ import main
+    from brain_eleven.runtime.probation import human_accepted_ids
+
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    keep = _review_item(tmp_path, vault, "keep", "We decided the dashboard stays read-only.", NEW_TIME)
+    drop = _review_item(tmp_path, vault, "drop", "We decided to keep SQLite for storage.", NEW_TIME)
+
+    assert main(['--vault', str(vault), 'decide', '--accept', keep['id'], '--reject', drop['id']]) == 0
+    by_id = {x['id']: x for x in ReviewStore(vault)._items()}
+    assert (by_id[keep['id']]['status'], by_id[keep['id']]['decision_note']) == ('ACCEPTED', 'Sohbetten onay')
+    assert by_id[drop['id']]['status'] == 'REJECTED'
+    contents = {m['content'] for m in MemoryStore(vault).load()['validated_memory']}
+    assert 'We decided the dashboard stays read-only.' in contents
+    assert 'We decided to keep SQLite for storage.' not in contents
+    assert human_accepted_ids(vault) == set()  # an agent relayed it: still on probation
+
+    capsys.readouterr()
+    assert main(['--vault', str(vault), 'decide', '--accept', keep['id'], 'rev_missing']) == 1
+    assert '"failed": [' in capsys.readouterr().out

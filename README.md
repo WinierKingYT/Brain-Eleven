@@ -77,6 +77,7 @@ ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasın�
 | `doctor` | Kurulum ve hook sağlığı |
 | `review` | Onay bekleyen hafızalar (tarayıcıda) |
 | `digest` | Günün en değerli adayları |
+| `decide --accept <id> … --reject <id> …` | Sahibin sohbette söylediği kararı uygular (ajan çalıştırır; kayıt deneme süresinde kalır) |
 | `recap --days 7` | Son günlerin oturumları ve yeni hafızaları (model çağırmaz; `--since/--until YYYY-AA-GG`, `--project`) |
 | `receipt "<ne bitti>" --next … --source …` | İş sonucu kaydı (ajan yazar; recap ve oturum başında görünür) |
 | `yakala ekle <URL\|dosya\|metin>` / `liste` / `kur` | Gelen kutusuna at (`📥 Gelen/`); Windows'ta `kur` Ctrl+Alt+B kısayolunu ekler. İşlemek için ajana "yakalananları işle" de. |

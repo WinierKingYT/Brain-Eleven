@@ -20,13 +20,27 @@ Bütün komutlar şu önekle çalışır:
 | "Bunu hatırla / kaydet" (tek bir karar, ders, gözlem) | aşağıdaki **Kaydet** bölümü |
 | "X hakkında ne biliyoruz?" | `context "<soru>" --project-root "$PWD"` |
 | "Son günlerde ne yaptık?" | `recap --days 7` (ya da `--since YYYY-AA-GG --until YYYY-AA-GG`, `--project <ad>`) |
-| "Onay bekleyenler / hafıza kuyruğu" | `digest`; tek tek onay için `review` (tarayıcı açar) |
+| "Onay bekleyenler / hafıza kuyruğu" | aşağıdaki **Onay** bölümü |
 | "Bunu neden hatırlıyorsun?" / "bu nereden geldi?" | `why <mem_id>` (kaynak rolü, onay, varsa asıl mesaj) |
 | "Şu kayıt yanlış, sil" | `retire <mem_id> --note "<neden>"` (silmez, iptal eder) |
 | "Bu projeyi incele, kararlarını çıkar" | `/study` komutu |
 | "Daha az / hiç bağlam ekleme" | `profile economical` ya da `profile manual`; geri: `profile normal` |
 | "Hafızayı göster" | `🔮 Companion/Hafıza/<proje>.md` notunu oku (güncel değilse önce `notes`) |
 | "Nerede kalmıştık?" | `🔮 Companion/Oturumlar/<proje>.md` notunu oku |
+
+## Onay
+
+`digest` çalıştır; `top` listesindeki adayları numaralayıp metinleriyle sohbette
+göster (kimlikleri gösterme). Kullanıcı hangilerini onayladığını ya da
+reddettiğini kendi sözüyle söyleyince uygula:
+
+```text
+{{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" decide --accept <id> ... --reject <id> ...
+```
+
+Kullanıcı açıkça söylemeden hiçbir adayı onaylama ya da reddetme; adı geçmeyen
+aday beklemede kalır. Ret geri alınamaz, emin değilsen sor. Metni düzelterek
+onaylamak için `review` (tarayıcı açar).
 
 ## Kaydet
 

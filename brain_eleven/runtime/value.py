@@ -282,10 +282,7 @@ def apply_suggestions(vault, *, apply=False):
     they expire on their own within 7 days, so a wrong verdict stays reversible.
     Dry run by default.
     """
-    from brain_eleven.memory import MemoryStore
-    from brain_eleven.state import StateStore
     from .review import ReviewStore
-    from .service import review_action
     from .storage import read_json
 
     suggestions = load_suggestions(vault)
@@ -306,15 +303,56 @@ def apply_suggestions(vault, *, apply=False):
         if not apply:
             summary['accepted'] += 1
             continue
-        candidate = item.get('candidate') or {}
-        try:
-            if candidate.get('candidate_type') == 'STATE_MUTATION':
-                revision = StateStore(vault).project_revision(candidate.get('project_id'))
-            else:
-                revision = MemoryStore(vault).load()['revision']
-            note = f"Model onayı ({entry['by']}): {entry['reason'] or 'ACCEPT'}"[:280]
-            result = review_action(vault, review_id, 'accept', {'expected_revision': revision, 'note': note})
-            summary['accepted' if isinstance(result, dict) and result.get('status') == 'ACCEPTED' else 'failed'] += 1
-        except ValueError:
-            summary['failed'] += 1
+        note = f"Model onayı ({entry['by']}): {entry['reason'] or 'ACCEPT'}"[:280]
+        summary['accepted' if _accept(vault, item, note) else 'failed'] += 1
     return summary
+
+
+def _accept(vault, item, note):
+    """Accept one pending review item through the normal review path; False when it did not land."""
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.state import StateStore
+    from .service import review_action
+    candidate = item.get('candidate') or {}
+    try:
+        if candidate.get('candidate_type') == 'STATE_MUTATION':
+            revision = StateStore(vault).project_revision(candidate.get('project_id'))
+        else:
+            revision = MemoryStore(vault).load()['revision']
+        result = review_action(vault, item['id'], 'accept', {'expected_revision': revision, 'note': note})
+    except ValueError:
+        return False
+    return isinstance(result, dict) and result.get('status') == 'ACCEPTED'
+
+
+CHAT_NOTE = 'Sohbetten onay'
+
+
+def decide(vault, *, accept=(), reject=()):
+    """Apply the owner's spoken decisions on digest items (owner decision 2026-11-11).
+
+    An agent runs this on the owner's word, so nothing proves a person decided:
+    the note marks the accept and ``probation`` keeps treating the memory as
+    unconfirmed for its trial period. A wrong accept is undone with ``retire``.
+    """
+    from .review import ReviewStore
+    from .service import review_action
+    from .storage import read_json
+    store = ReviewStore(vault)
+    result = {'accepted': [], 'rejected': [], 'failed': []}
+    for review_id in dict.fromkeys(accept):
+        try:
+            item = read_json(store.path(review_id)) or {}
+        except ValueError:  # malformed id
+            item = {}
+        ok = item.get('status') == 'PENDING' and _accept(vault, item, CHAT_NOTE)
+        result['accepted' if ok else 'failed'].append(review_id)
+    for review_id in dict.fromkeys(reject):
+        try:
+            done = review_action(vault, review_id, 'reject', {'note': 'Sohbetten ret'})
+        except ValueError:
+            done = None
+        ok = isinstance(done, dict) and done.get('status') == 'REJECTED'
+        result['rejected' if ok else 'failed'].append(review_id)
+    refresh_owner_counts(vault)
+    return result
