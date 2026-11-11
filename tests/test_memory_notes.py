@@ -137,3 +137,15 @@ def test_unapproved_record_stays_out_of_the_topic_note_when_approval_is_on(runti
     topic_note = _note(vault, f'{title}/Depolama')
     assert 'SQLite yerel kalır.' in topic_note and 'Windows hook pythonw' not in topic_note
     assert '`mem_b` · 2026-10-13 · onaysız' in _note(vault, title)  # still visible to the owner
+
+
+def test_turning_approval_on_rerenders_notes_without_a_memory_change(runtime, monkeypatch):  # noqa: F811
+    from brain_eleven.runtime.storage import RuntimeConfig, read_json, write_json
+    vault, project_id = runtime
+    monkeypatch.setattr(MemoryStore, 'load', lambda self: _document(project_id))
+    assert memory_notes.refresh(vault)['status'] == 'RENDERED'
+    assert memory_notes.refresh(vault)['status'] == 'CURRENT'
+    cfg = RuntimeConfig(vault)
+    write_json(cfg.path, {**read_json(cfg.path), 'b1_human_approval': True})
+    assert memory_notes.refresh(vault)['status'] == 'RENDERED'
+    assert memory_notes.refresh(vault)['status'] == 'CURRENT'

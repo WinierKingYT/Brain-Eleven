@@ -103,16 +103,19 @@ def _write(path, lines):
 
 
 def refresh(vault, *, force=False):
-    """Re-render the notes when the canonical memory revision changed since the last render."""
+    """Re-render the notes when the memory revision or the approval gate changed since the last render."""
     from brain_eleven.memory import MemoryStore
-    marker = RuntimeConfig(vault).root / 'memory-notes.json'
+    config = RuntimeConfig(vault)
+    marker = config.root / 'memory-notes.json'
     document = MemoryStore(vault).load()
-    revision = document.get('revision')
-    if not force and read_json(marker, {}).get('revision') == revision:
-        return {'status': 'CURRENT', 'revision': revision}
+    # The approval gate decides what a topic note may hold, so turning it on must not leave old notes behind.
+    state = {'revision': document.get('revision'), 'approved_only': bool(config.load().get('b1_human_approval', False))}
+    previous = read_json(marker, {}) or {}
+    if not force and all(previous.get(key) == value for key, value in state.items()):
+        return {'status': 'CURRENT', 'revision': state['revision']}
     notes = render(vault, document)
-    write_json(marker, {'revision': revision, 'at': now(), 'notes': len(notes)})
-    return {'status': 'RENDERED', 'revision': revision, 'notes': notes}
+    write_json(marker, {**state, 'at': now(), 'notes': len(notes)})
+    return {'status': 'RENDERED', 'revision': state['revision'], 'notes': notes}
 
 
 TOPIC_MAX = 40
