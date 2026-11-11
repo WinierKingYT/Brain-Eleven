@@ -68,9 +68,10 @@ python -m brain_eleven --vault <vault> rollout ACTIVE
 
 `install` Claude Code'a üç skill de kurar (`~/.claude/skills/`): **beyin**
 ("hatırla", "ne biliyoruz", "son işler"), **beyin-doktor** (bir şey
-çalışmıyorsa), **beyin-guncelle** ("beynimi güncelle", geri alma), **beyin-yakala** ("yakalananları işle"). Komut
-ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill dosyasının
-üstüne yazılmaz.
+çalışmıyorsa), **beyin-guncelle** ("beynimi güncelle", geri alma), **beyin-yakala** ("yakalananları işle"). İki komut
+da kurulur (`~/.claude/commands/`): `/remember` (tek bir kaydı elle yaz) ve `/study`. Komut
+ezberlemek yerine ajana söylemek yeterli. Değiştirdiğin bir skill ya da komut
+dosyasının üstüne yazılmaz.
 
 | Komut | Ne işe yarar |
 |---|---|

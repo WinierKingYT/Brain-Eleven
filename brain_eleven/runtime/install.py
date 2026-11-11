@@ -66,28 +66,58 @@ def render_skill(name, vault):
     return text.replace('{{PYTHON}}', str(Path(sys.executable).resolve())).replace('{{VAULT_PATH}}', str(Path(vault).resolve()))
 
 
-def install_skills(vault, home, previous):
-    """Write the skill trio under ~/.claude/skills; never overwrite a file someone else changed.
+COMMANDS = ('remember', 'study')
+COMMAND_TEMPLATES = SKILL_TEMPLATES.parent / 'commands'
 
-    ``previous`` maps a skill to the hash Brain-Eleven last wrote. A file that
-    exists with any other content is left alone and reported.
+
+def render_command(name, vault):
+    """A slash command runs its line in a shell: forward slashes, shell-quoted."""
+    import shlex
+    text = (COMMAND_TEMPLATES / f'{name}.md').read_text(encoding='utf-8')
+    return (text.replace('{{PYTHON}}', shlex.quote(Path(sys.executable).resolve().as_posix()))
+            .replace('{{VAULT_PATH}}', shlex.quote(Path(vault).resolve().as_posix())))
+
+
+def _legacy_command_hashes(root):
+    """Hashes the old scripts/install-cross-project-memory.py recorded, so its files count as ours."""
+    recorded = (read_json(root / '.brain-eleven-install.json', {}) or {}).get('files')
+    return {Path(path).stem: value for path, value in recorded.items()} if isinstance(recorded, dict) else {}
+
+
+def _write_owned(targets, previous):
+    """Write each {name: (path, text)}; never overwrite a file someone else changed.
+
+    ``previous`` maps a name to the hashes Brain-Eleven wrote before. A file
+    that exists with any other content is left alone and reported.
     """
-    root = (Path(home) if home else Path.home()) / '.claude' / 'skills'
     written, skipped = {}, []
-    for name in SKILLS:
-        path = root / name / 'SKILL.md'
-        text = render_skill(name, vault)
+    for name, (path, text) in targets.items():
         if path.exists():
             current = _sha(path.read_text(encoding='utf-8'))
-            if current != previous.get(name) and current != _sha(text):
+            if current not in previous.get(name, ()) and current != _sha(text):
                 skipped.append(name)
                 continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name('SKILL.md.tmp')
+        temporary = path.with_name(path.name + '.tmp')
         temporary.write_text(text, encoding='utf-8')
         temporary.replace(path)
         written[name] = {'path': str(path), 'sha256': _sha(text)}
     return written, skipped
+
+
+def install_skills(vault, home, previous):
+    """Write the skills under ~/.claude/skills; ``previous`` maps a skill to the hash last written."""
+    root = (Path(home) if home else Path.home()) / '.claude' / 'skills'
+    return _write_owned({name: (root / name / 'SKILL.md', render_skill(name, vault)) for name in SKILLS},
+                        {name: (value,) for name, value in previous.items()})
+
+
+def install_commands(vault, home, previous):
+    """Write /remember and /study under ~/.claude/commands, taking over the legacy installer's copies."""
+    root = (Path(home) if home else Path.home()) / '.claude'
+    legacy = _legacy_command_hashes(root)
+    return _write_owned({name: (root / 'commands' / f'{name}.md', render_command(name, vault)) for name in COMMANDS},
+                        {name: (previous.get(name), legacy.get(name)) for name in COMMANDS})
 
 
 def uninstall_skills(recorded):
@@ -245,14 +275,18 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
         write_json(cfg.root / 'native-hooks-installed.json', {'clients': list(manifest['clients'])})
         from .companion import ensure_starters
         ensure_starters(vault)
-        skills, skipped = {}, []
+        skills, skipped, commands, commands_skipped = {}, [], {}, []
         if 'claude' in clients:
             previous = {name: item.get('sha256') for name, item in manifest.get('skills', {}).items()}
             skills, skipped = install_skills(vault, home, previous)
             manifest['skills'] = {**manifest.get('skills', {}), **skills}
+            previous = {name: item.get('sha256') for name, item in manifest.get('commands', {}).items()}
+            commands, commands_skipped = install_commands(vault, home, previous)
+            manifest['commands'] = {**manifest.get('commands', {}), **commands}
             write_json(cfg.root / 'installation.json', manifest)
         return {'status': 'INSTALLED', 'mode': config['mode'], 'clients': list(clients), 'project_id': project['project_id'],
-                'hook_trust': 'CLIENT_REVIEW_REQUIRED', 'skills': sorted(skills), 'skills_skipped_modified': skipped}
+                'hook_trust': 'CLIENT_REVIEW_REQUIRED', 'skills': sorted(skills), 'skills_skipped_modified': skipped,
+                'commands': sorted(commands), 'commands_skipped_modified': commands_skipped}
 
 
 def uninstall(vault):
@@ -277,6 +311,7 @@ def uninstall(vault):
                             hooks.append(entry)
                 write_json(path, restored)
         uninstall_skills(manifest.get('skills', {}))
+        uninstall_skills(manifest.get('commands', {}))
         write_json(cfg.root / 'installation.json', {'clients': {}, 'uninstalled_at': now()})
         (cfg.root / 'native-hooks-installed.json').unlink(missing_ok=True)
     return {'status': 'UNINSTALLED', 'canonical_data': 'PRESERVED'}
