@@ -122,4 +122,22 @@ def test_package_graph_scope_visibility_remains_isolated(tmp_path: Path) -> None
     }
     assert graph.find_entities(project_id="a", retrieval_scope="project")[0]["id"] == "project-a"
 
-
+
+def test_graph_save_writes_envelope_and_keeps_previous_version_as_backup(tmp_path: Path) -> None:
+    from brain_eleven.graph.projection import KnowledgeGraph
+
+    _write_revisioned_memory(tmp_path)
+    graph = KnowledgeGraph(str(tmp_path))
+    graph.add_entity("memory", "DECISION", "Use Redis", scope="global")
+    graph.mark_projection(0)
+    graph.save(source_memory_revision=0)
+
+    document = json.loads((tmp_path / ".claude" / "knowledge-graph.json").read_text(encoding="utf-8"))
+    assert document["schema_version"] == 2
+    assert document["projection"] == "knowledge_graph"
+    assert document["source_memory_revision"] == 0
+
+    graph.add_entity("extra", "LESSON", "Keep the graph derived")
+    graph.save(source_memory_revision=0)
+    backup = json.loads((tmp_path / ".claude" / "knowledge-graph.backup.json").read_text(encoding="utf-8"))
+    assert "extra" not in backup["data"]["nodes"]

@@ -5,37 +5,26 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Şu an (2026-11-11)
 
-- **Sürüm paketi.** `kur.ps1` kurulumu ve `-Guncelle` ile güncellemeyi tek
-  komuta indirir. `v*` etiketi itilince `release.yml` testleri çalıştırır,
-  kaynak arşivini ve `SHA256SUMS`'ı sürüme ekler. Paket sürümü 1.0.0.
-- **Vault ve açık konular.** `Jane - Core.md` arşiv olarak işaretlendi (silinmedi);
-  sahibin profili `Core.md`. Eskimiş açık konular kapatıldı (aşağıda).
-- **Bağlam süresi.** Servis istem başına ortanca 460 ms, en çok 491 ms
-  (2026-11-10, 20 istek, sıcak servis, sadeleştirme öncesi kod; tekrar eden 5 soru).
-
-- **Docker/Postgres/Redis kaldırıldı: kullanılmıyordu.** Dockerfile, compose,
-  Makefile, `scripts/search-api.py`, `scripts/ops/`, imaj yayını iş akışı ve
-  `.env.example` silindi; önbellekte Redis katmanı çıktı (bellek + disk kaldı).
-  Bağımlılıklardan `redis`, `python-dotenv`, `defusedxml` gitti.
-
-- **`scripts/` temizlendi.** 15 uyumluluk adaptörü ve 5 ölü betik
-  (memory-compiler, session_pipeline, prompt-counter, state.py,
-  migrate-legacy-memory) testleriyle silindi; testler doğrudan `brain_eleven`
-  yoluna çevrildi. Kalanlar ARCHITECTURE.md'de tek tek yazılı.
-
-- **Canlı kod scripts/'ten pakete taşındı.** `brain_eleven/_legacy.py` köprüsü
-  silindi; 21 betik `brain_eleven/` altına girdi. `scripts/context-compiler.py`
-  kurulu hook yolu olduğu için ince giriş noktası kaldı. recall-probe 2/5 ve 5/5.
-
-- **v1.0 başlangıç ölçümü.** Testler 1637 geçti, 0 kırmızı. `recall-probe`
-  oturum başı modunda 2/5 (üç yanıt hafızada ama 8 yere sığmıyor: `SLOT_LIMIT`),
-  `--mode prompt` ile 5/5. Gerileme değil: iki mod farklı şeyi ölçüyor.
-  v1.0 sadeleştirmesinde karşılaştırma tabanı bu iki sayıdır.
-
-- **V2 kaldırıldı.** Gölgedeki V2 bağlam derleyicisi (beş paket, ~6.500 satır)
-  canlı yolda çalışmıyordu; silindi. Canlıda kullandığı tek şey, normal turdaki
-  bayatlık kontrolü, `context.py` içinde `_inputs_current` olarak kaldı.
-  150 V2 testi gitti, 4 yeni test geldi (1637 → 1491 geçti).
+- **v1.0: sadeleştirme (PR #79–#89).** Gölgedeki V2 bağlam derleyicisi (beş
+  paket, ~6.500 satır) canlı yolda çalışmıyordu, silindi; kullandığı tek
+  bayatlık kontrolü `context.py` içinde `_inputs_current` oldu. Canlı kod
+  `scripts/`'ten `brain_eleven/` altına taşındı, `_legacy.py` köprüsü, 15 ince
+  adaptör ve 5 ölü betik gitti; `scripts/`'te kalan her dosya ARCHITECTURE.md'de
+  yazılı. Docker/Postgres/Redis ve `search-api.py` kullanılmıyordu, kaldırıldı
+  (`redis`, `python-dotenv`, `defusedxml` bağımlılıkları da).
+- **v1.0: ölçümler.** Testler 1637 → 1327 geçti, 0 kırmızı (gidenler silinen
+  kodun testleri). `recall-probe` önce/sonra aynı: oturum başı 2/5 (üç yanıt
+  hafızada ama 8 yere sığmıyor: `SLOT_LIMIT`), `--mode prompt` 5/5. Servis istem
+  başına bağlam süresi ortanca 460 ms → 430 ms, en çok 491 → 505 ms (20 istek,
+  sıcak servis, tekrar eden 5 soru).
+- **v1.0: sürüm ve kurulum.** `kur.ps1` kurulumu, `-Guncelle` ile güncellemeyi
+  tek komuta indirir ve eski servisi durdurur (`install` servisi yeniden
+  başlatmıyor; servis eski kodu boşta 4 saate kadar tutuyordu). `v*` etiketi
+  itilince `release.yml` testleri çalıştırır, kaynak arşivini ve `SHA256SUMS`'ı
+  sürüme ekler. Gerçek Windows kurulumunda `doctor` READY. İlk Ctrl+Alt+B
+  denemesinde `yakala pano` 64 bit pano tutamacında sessizce çöküyordu; düzeltildi.
+- **v1.0: vault.** `Jane - Core.md` arşiv olarak işaretlendi (silinmedi);
+  sahibin profili `Core.md`.
 - **`why` (PR #78).** `why <mem_id>`: hafızanın içeriği, durumu, sahip onayı ve
   her kanıtı için rol ve asıl mesaj. Kanıt yalnız hash tuttuğu için döküm,
   güvenilen köklerde yol hash'iyle bulunur ve bayt aralığı normal okuyucuyla
@@ -110,21 +99,29 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler (sırayla)
+## Sıradaki işler: v1.1 taslağı (onay bekliyor)
 
-0. **Yakala'yı Windows'ta dene.** `install` + `yakala kur`, sonra bir
-   bağlantıyı kopyalayıp Ctrl+Alt+B; `yakala liste` ile gör.
 1. **Alt ajan ölçümü.** Gerçek orchestrator oturumlarında bulgular başlığı ne
    sıklıkla yazılıyor, adaylar ne kadar işe yarıyor; gerekirse
-   `<oturum>/subagents/*.jsonl` dökümlerini de okumak.
-2. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
+   `<oturum>/subagents/*.jsonl` dökümlerini de okumak. (v1.0 çalışmasında 5 alt
+   ajan raporu bu başlıkla bitti; ham veri hazır.)
+2. **Worktree oturumlarını yakala.** Bir git worktree'sinde (`.claude/worktrees/…`)
+   çalışan oturumun yakalaması `CWD_NOT_REGISTERED` ile düşüyor gibi görünüyor
+   (v1.0 çalışmasında gözlendi, kök neden doğrulanmadı); worktree ana projeye
+   çözülmeli.
+3. **Ölü mektup kuyruğu.** `doctor` 50 dead-letter gösteriyor (25
+   `TRANSCRIPT_NOT_FOUND`, 18 `REVIEW_PERSIST_FAILED`, 7
+   `TRANSCRIPT_OWNERSHIP_UNVERIFIED`); nedenleri bulunup kuyruk temizlenmeli.
+4. **Markdown'dan geri yazım.** Nottaki düzenlemeyi onaydan geçirerek hafızaya
    işlemek (Markdown kaynak, veritabanı türev yönü); ihtiyaç görülürse.
 
 ## Açık konular
 
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
-
-Kapananlar (2026-11-11, gerçek kurulumdan okundu): texforge, robloxdevOs ve
-obsidian-S&box kayıt defterinde `active`; `auto_accept_verified` kapalı, her
-hafıza sahibin onayından geçiyor. `doctor`'daki `CWD_NOT_REGISTERED` kayıtsız bir
-klasörde açılan Codex oturumundan geliyor: beklenen davranış, hata değil.
+- `scripts/` içinde repo dışından çağrılabilecek dört betik sahibin kararını
+  bekliyor: `weekly_recall_check*.ps1`, `memory_backup.py`,
+  `post_session_maintenance.py`, `install-cross-project-memory.py`.
+- Proje durum satırı hâlâ "V2 SHADOW" diyor (StateStore); V2 kaldırıldı, satır
+  güncellenmeli.
+- Codex, hook'ları hem `hooks.json` hem `config.toml`'dan yüklediği için uyarıyor.
+- `kur.ps1` yalnız Windows; başka sistemde üç adım elle.
