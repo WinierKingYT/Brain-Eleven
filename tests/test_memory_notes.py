@@ -101,3 +101,23 @@ def test_topic_is_set_listed_and_cleared_only_on_active_memories(runtime, capsys
     capsys.readouterr()
     assert main(['--vault', str(vault), 'topic', '--project-root', str(vault)]) == 0
     assert '"untopiced"' in capsys.readouterr().out
+
+
+def test_topic_records_move_to_their_own_linked_note_and_an_emptied_topic_note_stays(runtime, monkeypatch):  # noqa: F811
+    vault, project_id = runtime
+    title = memory_notes._name(ProjectRegistry(vault).get(project_id).get('project_label') or project_id)
+    document = _document(project_id)
+    document['validated_memory'][0]['topic'] = 'Depolama'
+    memory_notes.render(vault, document)
+
+    project_note = _note(vault, title)
+    assert f'- [[{title}/Depolama|Depolama]] — 1 kayıt' in project_note
+    assert 'SQLite yerel kalır.' not in project_note and 'Windows hook pythonw' in project_note
+    assert '2 aktif kayıt.' in project_note
+    topic_note = _note(vault, f'{title}/Depolama')
+    assert 'SQLite yerel kalır.' in topic_note and f'[[{title}]] · 1 aktif kayıt.' in topic_note
+
+    del document['validated_memory'][0]['topic']
+    memory_notes.render(vault, document)
+    assert 'Bu konuda aktif kayıt kalmadı.' in _note(vault, f'{title}/Depolama')
+    assert 'SQLite yerel kalır.' in _note(vault, title)
