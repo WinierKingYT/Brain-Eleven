@@ -8,15 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from memory_provenance import MemoryProvenanceStore, ProvenanceCorruptError
+from brain_eleven.memory.store import MemoryStore
+from brain_eleven.memory.provenance import MemoryProvenanceStore, ProvenanceCorruptError
 
 
 def _memory_store(vault):
-    source = Path(__file__).parent.parent / "scripts" / "memory_store.py"
-    spec = importlib.util.spec_from_file_location("memory_store_for_provenance", source)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.MemoryStore(vault)
+    return MemoryStore(vault)
 
 
 def test_migration_preserves_ids_revision_and_distinguishes_daily_day_from_capture_time(tmp_path):

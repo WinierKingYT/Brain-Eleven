@@ -5,9 +5,7 @@ L1: In-memory LRU cache (fastest, per-process, small)
 L2: Redis cache (shared across processes, network hop)
 L3: Disk fallback (JSON file, survives restarts, slowest)
 
-The historical :mod:`scripts.cache_manager` module remains a compatibility
-adapter.  All LRU, disk, and optional Redis behavior lives in this module so
-legacy and package imports share the same classes.
+All LRU, disk, and optional Redis behavior lives in this module.
 """
 
 import json

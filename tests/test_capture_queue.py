@@ -19,7 +19,7 @@ from brain_eleven.runtime.capture_queue import (
     CaptureQueueFullError,
     CaptureQueueWriteError,
 )
-from project_registry import ProjectRegistry
+from brain_eleven.projects.registry import ProjectRegistry
 
 
 def _session_event(vault, project_root, *, session_id="session_01J0000000000000000000000"):

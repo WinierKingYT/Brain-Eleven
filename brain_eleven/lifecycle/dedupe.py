@@ -1,7 +1,6 @@
 """Canonical duplicate-memory planning and cleanup entrypoint.
 
-The historical ``scripts/dedupe-validated-memory.py`` module remains a thin
-compatibility/direct-execution adapter. Planning is read-only; ``main`` only
+Planning is read-only; ``main`` only
 mutates canonical memory when ``--apply`` is explicitly supplied, and the
 actual write continues through ``MemoryLifecycleManager``'s optimistic
 ``MemoryStore`` replacement path.

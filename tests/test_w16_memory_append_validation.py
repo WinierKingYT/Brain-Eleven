@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-import memory_store as legacy_memory_store  # noqa: E402
+import brain_eleven.memory.store as legacy_memory_store  # noqa: E402
 from brain_eleven.memory import MemoryStore as PackageMemoryStore
 from brain_eleven.memory.store import MemoryStore as PackageStoreMemoryStore
 

@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """Canonical deterministic entity extraction (Phase 11B).
 
-This package-owned module is the implementation authority for the historical
-``scripts.entity_extractor`` entrypoint.  The script remains only as a
-compatibility/direct-execution adapter.
-
 Populates the knowledge graph (knowledge_graph.py) from memories in
 .claude/validated-memory.json.
 

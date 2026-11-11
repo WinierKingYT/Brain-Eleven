@@ -11,7 +11,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from task_model import (  # noqa: E402
+from brain_eleven.runtime.task import (  # noqa: E402
     TASK_SCHEMA_VERSION,
     TaskAnalyzer,
     TaskProjectResolutionError,
@@ -20,7 +20,7 @@ from task_model import (  # noqa: E402
     resolve_project,
     validate_task,
 )
-from project_registry import ProjectRegistry  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 
 
 def task_document():

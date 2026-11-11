@@ -10,9 +10,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 from brain_eleven.runtime.extraction import NewMemoryCandidate, StateMutationProposal  # noqa: E402
-from project_registry import ProjectRegistry  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
 from brain_eleven.runtime.state_boundary import BoundaryStatus, StateBoundary  # noqa: E402
-from state_store import StateService  # noqa: E402
+from brain_eleven.state.store import StateService  # noqa: E402
 
 
 SOURCE = {"type": "user", "reference": "test"}

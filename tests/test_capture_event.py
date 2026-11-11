@@ -16,7 +16,7 @@ from brain_eleven.runtime.capture_event import (
     parse_hook_event,
     parse_hook_event_json,
 )
-from project_registry import ProjectRegistry
+from brain_eleven.projects.registry import ProjectRegistry
 
 
 def _session_event(project_root: str) -> dict:

@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from project_registry import ProjectRegistry
+from brain_eleven.projects.registry import ProjectRegistry
 from brain_eleven.state.resolver import STATE_AVAILABLE, STATE_CORRUPT, StateResolver
-from state_store import StateSchemaError, StateService, StateStoreCorrupt
-from task_state_context import TaskStateComposer
+from brain_eleven.state.store import StateSchemaError, StateService, StateStoreCorrupt
+from brain_eleven.runtime.task_state_context import TaskStateComposer
 
 
 SOURCE = {"type": "user", "reference": "tsc-01-test"}

@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 
-from knowledge_graph import KnowledgeGraph  # noqa: E402
-from project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
+from brain_eleven.graph.projection import KnowledgeGraph  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
 from remember import (  # noqa: E402
     default_project_id,
     is_project_opted_in,
@@ -169,7 +169,7 @@ def test_legacy_migration_cli_enables_canonical_registry_policy(vault, tmp_path,
         encoding="utf-8",
     )
 
-    registry_cli = _load_script("project_registry_cli", "project_registry.py")
+    import brain_eleven.projects.registry as registry_cli
     assert registry_cli.main(
         ["--vault", str(vault), "migrate-legacy-opt-in", "--config", str(config)]
     ) == 0

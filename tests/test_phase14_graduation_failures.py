@@ -13,16 +13,16 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-import scripts.memory_store as memory_store_module  # noqa: E402
-from scripts.entity_extractor import EntityExtractor  # noqa: E402
-from scripts.knowledge_graph import KnowledgeGraph  # noqa: E402
-from scripts.memory_store import (  # noqa: E402
+import brain_eleven.memory.store as memory_store_module  # noqa: E402
+from brain_eleven.extraction.entities import EntityExtractor  # noqa: E402
+from brain_eleven.graph.projection import KnowledgeGraph  # noqa: E402
+from brain_eleven.memory.store import (  # noqa: E402
     MemoryStore,
     MemoryStoreCorrupt,
     MemoryStoreError,
 )
 from brain_eleven.infrastructure.locking import MemoryStoreLockTimeout, memory_store_lock  # noqa: E402
-from scripts.project_registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError  # noqa: E402
 
 
 def _append_from_process(vault_path, memory_id, ready, start, results):

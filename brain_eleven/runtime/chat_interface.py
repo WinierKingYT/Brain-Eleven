@@ -2,10 +2,6 @@
 """
 Canonical Brain-Eleven runtime chat interface (Phase 11C).
 
-This package owns the implementation. The historical
-``scripts/chat_interface.py`` path is a compatibility/direct-execution
-adapter that re-exports these exact objects.
-
 Rule-based intent router over the memory system, NOT an LLM chat agent.
 PHASE11-KICKSTART.md's original design called GPT-4 for both intent
 handling and response generation; no OpenAI key is configured here, so

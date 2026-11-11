@@ -118,47 +118,4 @@ def test_setup_logging_uses_isolated_log_dir_and_serializes_levels(
     finally:
         _clean_logger(name)
 
-
-def test_package_and_legacy_logging_objects_share_identity() -> None:
-    legacy = importlib.import_module("scripts.logging_config")
-    bare_legacy = importlib.import_module("logging_config")
-
-    assert legacy.JSONFormatter is JSONFormatter
-    assert legacy.ColoredFormatter is ColoredFormatter
-    assert legacy.setup_logging is setup_logging
-    assert bare_legacy.JSONFormatter is JSONFormatter
-    assert bare_legacy.ColoredFormatter is ColoredFormatter
-    assert bare_legacy.setup_logging is setup_logging
-
-
-def test_legacy_file_is_only_an_adapter() -> None:
-    source_path = ROOT / "scripts" / "logging_config.py"
-    source = source_path.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-
-    assert "brain_eleven.support.logging" in source
-    assert not {
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ClassDef)
-    } & {"JSONFormatter", "ColoredFormatter"}
-    assert "def setup_logging" not in source
-
-
-def test_direct_execution_uses_the_same_legacy_contract(tmp_path: Path) -> None:
-    script = ROOT / "scripts" / "logging_config.py"
-    environment = os.environ.copy()
-    environment["PYTHONIOENCODING"] = "utf-8"
-    result = subprocess.run(
-        [sys.executable, str(script)],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        env=environment,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert "Logging configured" in result.stdout
-    assert (tmp_path / "logs" / "brain-eleven.log").is_file()
-    assert (tmp_path / "logs" / "brain-eleven.error.log").is_file()
+

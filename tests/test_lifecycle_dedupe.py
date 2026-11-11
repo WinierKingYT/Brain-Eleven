@@ -16,16 +16,6 @@ from brain_eleven.memory import MemoryStore, MemoryStoreConflict
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ADAPTER_PATH = ROOT / "scripts" / "dedupe-validated-memory.py"
-
-
-def _load_adapter():
-    spec = importlib.util.spec_from_file_location("dedupe_validated_memory", ADAPTER_PATH)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
 
 
 def _memory(memory_id: str, timestamp: str, *, status: str = "active") -> dict:
@@ -44,31 +34,6 @@ def _seed_vault(tmp_path: Path, memories: list[dict]) -> Path:
     store = MemoryStore(vault)
     store.replace({"validated_memory": memories, "rejected_memory": []})
     return vault
-
-
-def test_package_adapter_and_bare_module_preserve_identity() -> None:
-    adapter = _load_adapter()
-    canonical = importlib.import_module("brain_eleven.lifecycle.dedupe")
-    bare = sys.modules["dedupe_validated_memory"]
-
-    assert plan_dedupe is canonical.plan_dedupe
-    assert adapter.plan_dedupe is canonical.plan_dedupe
-    assert bare.plan_dedupe is canonical.plan_dedupe
-    assert adapter.main is canonical.main
-    assert adapter.SUPERSESSION_NOTE is canonical.SUPERSESSION_NOTE
-
-
-def test_adapter_contains_no_dedupe_implementation() -> None:
-    tree = ast.parse(ADAPTER_PATH.read_text(encoding="utf-8"))
-    definitions = [
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-    ]
-    assert definitions == ["_load_canonical"]
-    source = ADAPTER_PATH.read_text(encoding="utf-8")
-    assert "MemoryLifecycleManager(" not in source
-    assert "defaultdict" not in source
 
 
 def test_equal_timestamp_winner_is_deterministic_and_superseded_is_ignored() -> None:

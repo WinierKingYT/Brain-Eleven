@@ -57,49 +57,6 @@ def _stable(value):
     return value
 
 
-def test_legacy_entity_script_is_adapter_only() -> None:
-    script = ROOT / "scripts" / "entity_extractor.py"
-    source = script.read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    functions = {
-        node.name
-        for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-    }
-
-    assert functions == {"_load_canonical"}
-    assert not any(isinstance(node, ast.ClassDef) for node in ast.walk(tree))
-    assert "brain_eleven.extraction.entities" in source
-    assert "scripts.logging_config" not in source
-
-    canonical = (ROOT / "brain_eleven" / "extraction" / "entities.py").read_text(
-        encoding="utf-8"
-    )
-    assert "from scripts." not in canonical
-
-
-def test_package_and_adapter_rebuild_have_matching_projection_output(tmp_path: Path) -> None:
-    from brain_eleven.extraction.entities import EntityExtractor as PackageExtractor
-    from scripts.entity_extractor import EntityExtractor as AdapterExtractor
-
-    package_vault = tmp_path / "package"
-    adapter_vault = tmp_path / "adapter"
-    memories = [_memory("m1", "Use Redis during Phase 7", project="PromtGen", project_id="p1", scope="project")]
-    _write_store(package_vault, memories)
-    _write_store(adapter_vault, memories)
-
-    PackageExtractor(str(package_vault)).build_graph()
-    AdapterExtractor(str(adapter_vault)).build_graph()
-
-    package_document = json.loads(
-        (package_vault / ".claude" / "knowledge-graph.json").read_text(encoding="utf-8")
-    )
-    adapter_document = json.loads(
-        (adapter_vault / ".claude" / "knowledge-graph.json").read_text(encoding="utf-8")
-    )
-    assert _stable(package_document) == _stable(adapter_document)
-
-
 def test_extraction_keeps_technology_and_phase_relationships_deduplicated(tmp_path: Path) -> None:
     from brain_eleven.extraction import EntityExtractor
     from brain_eleven.graph import KnowledgeGraph
@@ -182,19 +139,4 @@ def test_project_graph_visibility_remains_isolated(tmp_path: Path) -> None:
         "project-b",
     }
 
-
-def test_legacy_entity_cli_delegates_without_visible_window(tmp_path: Path) -> None:
-    _write_store(tmp_path, [])
-    script = ROOT / "scripts" / "entity_extractor.py"
-    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    completed = subprocess.run(
-        [sys.executable, str(script), "--vault", str(tmp_path)],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        creationflags=creationflags,
-        check=False,
-    )
-
-    assert completed.returncode == 0
-    assert '"total_entities"' in completed.stdout
+

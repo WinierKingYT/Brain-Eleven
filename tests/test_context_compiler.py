@@ -17,8 +17,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from project_registry import ProjectRegistry  # noqa: E402
-from state_store import StateService, StateStore  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry  # noqa: E402
+from brain_eleven.state.store import StateService, StateStore  # noqa: E402
 
 from brain_eleven.runtime import context_compiler  # noqa: E402
 

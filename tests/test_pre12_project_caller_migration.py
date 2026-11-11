@@ -8,8 +8,8 @@ from brain_eleven.runtime.capture_event import ProjectRegistry as CaptureProject
 from brain_eleven.runtime.capture_event import ProjectRegistryError as CaptureProjectRegistryError
 from brain_eleven.state.resolver import ProjectRegistry as ResolverProjectRegistry
 from brain_eleven.state.resolver import ProjectRegistryError as ResolverProjectRegistryError
-from task_model import ProjectRegistry as TaskProjectRegistry
-from task_model import ProjectRegistryError as TaskProjectRegistryError
+from brain_eleven.runtime.task import ProjectRegistry as TaskProjectRegistry
+from brain_eleven.runtime.task import ProjectRegistryError as TaskProjectRegistryError
 
 
 def test_read_only_resolution_callers_use_the_package_boundary() -> None:
@@ -22,18 +22,4 @@ def test_read_only_resolution_callers_use_the_package_boundary() -> None:
 
 
 
-
-def test_legacy_registry_imports_are_limited_to_compatibility_edges() -> None:
-    root = Path(__file__).resolve().parents[1]
-    allowed = {
-        "brain_eleven/projects/registry.py",
-        "scripts/state_store.py",
-    }
-    for path in (root / "scripts").rglob("*.py"):
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        uses_legacy_import = any(
-            isinstance(node, ast.ImportFrom) and node.module == "project_registry"
-            for node in ast.walk(tree)
-        )
-        if uses_legacy_import:
-            assert path.relative_to(root).as_posix() in allowed
+

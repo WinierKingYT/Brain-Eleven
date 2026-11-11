@@ -8,23 +8,18 @@ from pathlib import Path
 import pytest
 
 
-SCRIPTS = Path(__file__).parent.parent / "scripts"
-
+from brain_eleven.memory.migrations import (  # noqa: E402
+    MemoryScopeMigrationError,
+    migrate_scope,
+    rollback_scope,
+)
+from brain_eleven.memory.store import MemoryStore  # noqa: E402
 from brain_eleven.memory.scope import (  # noqa: E402
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
     legacy_project_id,
     scoped_fingerprint,
 )
-
-
-def _load_migration():
-    spec = importlib.util.spec_from_file_location(
-        "memory_scope_migration", SCRIPTS / "migrate-memory-scope.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 @pytest.fixture
@@ -45,7 +40,6 @@ def _write_document(vault, document):
 
 
 def test_dry_run_and_migration_handle_mixed_legacy_records_without_identity_loss(vault):
-    migration = _load_migration()
     alpha_id = legacy_project_id("Alpha")
     document = {
         "schema_version": 1,
@@ -78,14 +72,14 @@ def test_dry_run_and_migration_handle_mixed_legacy_records_without_identity_loss
     path = _write_document(vault, document)
     before = path.read_bytes()
 
-    preview = migration.migrate(vault, dry_run=True)
+    preview = migrate_scope(vault, dry_run=True)
 
     assert preview["status"] == "dry_run"
     assert preview["source_revision"] == preview["revision"] == 7
     assert preview["needs_review"] == []
     assert path.read_bytes() == before
 
-    result = migration.migrate(vault)
+    result = migrate_scope(vault)
     migrated = json.loads(path.read_text(encoding="utf-8"))
 
     assert result["status"] == "migrated"
@@ -100,7 +94,6 @@ def test_dry_run_and_migration_handle_mixed_legacy_records_without_identity_loss
 
 
 def test_duplicate_fingerprint_cluster_is_preserved_without_data_loss(vault):
-    migration = _load_migration()
     _write_document(vault, {
         "validated_memory": [
             {"memory_id": "first", "type": "lesson", "content": "Same legacy content"},
@@ -109,7 +102,7 @@ def test_duplicate_fingerprint_cluster_is_preserved_without_data_loss(vault):
         "rejected_memory": [],
     })
 
-    result = migration.migrate(vault)
+    result = migrate_scope(vault)
     stored = json.loads(_memory_path(vault).read_text(encoding="utf-8"))
 
     assert result["status"] == "migrated"
@@ -118,7 +111,6 @@ def test_duplicate_fingerprint_cluster_is_preserved_without_data_loss(vault):
 
 
 def test_schema_v1_envelope_is_persisted_as_v2_even_when_records_are_current(vault):
-    migration = _load_migration()
     document = {
         "schema_version": 1,
         "revision": 4,
@@ -139,7 +131,7 @@ def test_schema_v1_envelope_is_persisted_as_v2_even_when_records_are_current(vau
     path = _write_document(vault, document)
     before = path.read_bytes()
 
-    result = migration.migrate(vault)
+    result = migrate_scope(vault)
     stored = json.loads(path.read_text(encoding="utf-8"))
 
     assert result["status"] == "migrated"
@@ -151,7 +143,6 @@ def test_schema_v1_envelope_is_persisted_as_v2_even_when_records_are_current(vau
 
 
 def test_ambiguous_project_scope_is_reported_without_persisting_a_guess(vault):
-    migration = _load_migration()
     path = _write_document(vault, {
         "validated_memory": [{
             "memory_id": "ambiguous",
@@ -163,8 +154,8 @@ def test_ambiguous_project_scope_is_reported_without_persisting_a_guess(vault):
     })
     before = path.read_bytes()
 
-    preview = migration.migrate(vault, dry_run=True)
-    result = migration.migrate(vault)
+    preview = migrate_scope(vault, dry_run=True)
+    result = migrate_scope(vault)
 
     assert preview["status"] == result["status"] == "needs_review"
     assert result["needs_review"] == [{
@@ -178,22 +169,20 @@ def test_ambiguous_project_scope_is_reported_without_persisting_a_guess(vault):
 
 
 def test_malformed_record_stops_before_backup_or_write(vault):
-    migration = _load_migration()
     path = _write_document(vault, {
         "validated_memory": ["not-a-memory-object"],
         "rejected_memory": [],
     })
     before = path.read_bytes()
 
-    with pytest.raises(migration.MemoryScopeMigrationError):
-        migration.migrate(vault)
+    with pytest.raises(MemoryScopeMigrationError):
+        migrate_scope(vault)
 
     assert path.read_bytes() == before
     assert not list(path.parent.glob("*.pre-scope-v2-*.bak"))
 
 
 def test_interrupted_migration_preserves_canonical_then_reruns_and_rolls_back(vault, monkeypatch):
-    migration = _load_migration()
     source = {
         "validated_memory": [{
             "memory_id": "stable-id",
@@ -208,21 +197,21 @@ def test_interrupted_migration_preserves_canonical_then_reruns_and_rolls_back(va
 
     with monkeypatch.context() as patch:
         patch.setattr(
-            migration.MemoryStore,
+            MemoryStore,
             "_write_unlocked",
             lambda _self, _data: (_ for _ in ()).throw(OSError("simulated disk failure")),
         )
         with pytest.raises(OSError, match="simulated disk failure"):
-            migration.migrate(vault)
+            migrate_scope(vault)
 
     backups = list(path.parent.glob("*.pre-scope-v2-*.bak"))
     assert len(backups) == 1
     assert backups[0].read_bytes() == before
     assert path.read_bytes() == before
 
-    migrated = migration.migrate(vault)
-    rerun = migration.migrate(vault)
-    rolled_back = migration.rollback(vault, migrated["backup"])
+    migrated = migrate_scope(vault)
+    rerun = migrate_scope(vault)
+    rolled_back = rollback_scope(vault, migrated["backup"])
     restored = json.loads(path.read_text(encoding="utf-8"))
 
     assert migrated["status"] == "migrated"
@@ -234,7 +223,6 @@ def test_interrupted_migration_preserves_canonical_then_reruns_and_rolls_back(va
 
 
 def test_invalid_rollback_backup_never_replaces_canonical_memory(vault):
-    migration = _load_migration()
     path = _write_document(vault, {
         "validated_memory": [{"memory_id": "safe", "type": "lesson", "content": "Safe memory"}],
         "rejected_memory": [],
@@ -243,7 +231,7 @@ def test_invalid_rollback_backup_never_replaces_canonical_memory(vault):
     invalid_backup = vault / "invalid-backup.json"
     invalid_backup.write_text("{not valid json", encoding="utf-8")
 
-    with pytest.raises(migration.MemoryScopeMigrationError):
-        migration.rollback(vault, invalid_backup)
+    with pytest.raises(MemoryScopeMigrationError):
+        rollback_scope(vault, invalid_backup)
 
     assert path.read_bytes() == before

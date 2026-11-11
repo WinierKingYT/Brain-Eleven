@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 
-from entity_extractor import EntityExtractor  # noqa: E402
-from knowledge_graph import KnowledgeGraph  # noqa: E402
-from memory_store import MemoryStore  # noqa: E402
+from brain_eleven.extraction.entities import EntityExtractor  # noqa: E402
+from brain_eleven.graph.projection import KnowledgeGraph  # noqa: E402
+from brain_eleven.memory.store import MemoryStore  # noqa: E402
 
 
 def make_memory(memory_id="m1", content="Chose Redis", **overrides):

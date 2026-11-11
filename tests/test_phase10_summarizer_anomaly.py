@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 import pytest
 
 
-from summarizer import MemorySummarizer, tokenize, jaccard_similarity  # noqa: E402
-from anomaly_detector import AnomalyDetector  # noqa: E402
+from brain_eleven.support.summarizer import MemorySummarizer, tokenize, jaccard_similarity  # noqa: E402
+from brain_eleven.support.anomaly import AnomalyDetector  # noqa: E402
 
 
 def make_memory(**overrides):

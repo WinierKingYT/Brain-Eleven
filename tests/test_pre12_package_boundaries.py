@@ -8,7 +8,7 @@ from brain_eleven.projects import registry as package_registry
 
 
 def test_project_registry_package_surface_is_legacy_parity():
-    import project_registry as legacy_registry
+    import brain_eleven.projects.registry as legacy_registry
 
     assert package_registry.ProjectRegistry is legacy_registry.ProjectRegistry
     assert package_registry.ProjectRegistryError is legacy_registry.ProjectRegistryError

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-import memory_store
+import brain_eleven.memory.store as memory_store
 from brain_eleven.memory import MemoryStore as PackageMemoryStore
 
 

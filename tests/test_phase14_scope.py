@@ -10,8 +10,8 @@ import pytest
 
 SCRIPTS = Path(__file__).parent.parent / "scripts"
 
-from entity_extractor import EntityExtractor  # noqa: E402
-from knowledge_graph import KnowledgeGraph  # noqa: E402
+from brain_eleven.extraction.entities import EntityExtractor  # noqa: E402
+from brain_eleven.graph.projection import KnowledgeGraph  # noqa: E402
 from brain_eleven.memory.scope import (  # noqa: E402
     GLOBAL_SCOPE,
     PROJECT_SCOPE,
@@ -22,7 +22,7 @@ from brain_eleven.memory.scope import (  # noqa: E402
     resolved_project_identity,
     scoped_fingerprint,
 )
-from project_registry import ProjectRegistry, ProjectRegistryError, registry_path  # noqa: E402
+from brain_eleven.projects.registry import ProjectRegistry, ProjectRegistryError, registry_path  # noqa: E402
 
 
 def _load_script(name, filename):
@@ -248,7 +248,7 @@ def test_conflict_detection_does_not_cross_project_boundaries(tmp_path):
 
 
 def test_migration_is_idempotent_and_preserves_identity(tmp_path):
-    migration = _load_script("phase14_migration", "migrate-memory-scope.py")
+    import brain_eleven.memory.migrations as migration
     vault = tmp_path / "vault"
     (vault / ".claude").mkdir(parents=True)
     original = _memory("stable-id", "legacy project memory", project="LegacyProject")
@@ -260,7 +260,7 @@ def test_migration_is_idempotent_and_preserves_identity(tmp_path):
         encoding="utf-8",
     )
 
-    first = migration.migrate(vault)
+    first = migration.migrate_scope(vault)
     data = json.loads((vault / ".claude" / "validated-memory.json").read_text(encoding="utf-8"))
     migrated = data["validated_memory"][0]
     assert first["status"] == "migrated"
@@ -272,7 +272,7 @@ def test_migration_is_idempotent_and_preserves_identity(tmp_path):
         "legacy project memory", PROJECT_SCOPE, migrated["project_id"], "decision"
     )
 
-    second = migration.migrate(vault)
+    second = migration.migrate_scope(vault)
     assert second["status"] == "unchanged"
 
 

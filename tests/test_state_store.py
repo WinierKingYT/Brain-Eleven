@@ -10,7 +10,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from state_store import (  # noqa: E402
+from brain_eleven.state.store import (  # noqa: E402
     StateError,
     StateStore,
     StateStoreConflict,
