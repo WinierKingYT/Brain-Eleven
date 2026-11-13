@@ -3,8 +3,17 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-11-11)
+## Şu an (2026-11-13)
 
+- **v1.3 kapandı (PR #102–#104): Obsidian'dan oku.** Kayıtlar konu taşıyor, her
+  konunun kısa bir notu var, `profile map` oturum başında kayıt metni yerine konu
+  listesi veriyor (Brain-Eleven'da 2.301 → 581 karakter). Gerçek kurulum `map`
+  profilinde. Sahibin onayıyla 13 eski dönem kaydı iptal edildi (etkin 100 → 87).
+  Ölçüm: testler 1361 geçti, 0 kırmızı; `doctor` READY. `recall-probe` artık bir şey
+  ölçmüyor: oturum başı 4/5 → 0/5, `--mode prompt` 5/5 → 1/5. Neden: beş sorunun
+  üçünün yanıtı iptal edilen kayıtlardı (`NOT_IN_MEMORY`) ve `map` profili oturum
+  başında kayıt metni vermiyor. Sorular sahibin yazdığı sorular; yenilenmeden
+  sınama hatırlamanın bozulup bozulmadığını söyleyemez.
 - **v1.2 kapandı (PR #97–#100): adaylar boşa gitmesin.** `decide` ile adaylar
   sohbetten onaylanıyor (kayıt deneme süresinde kalır); oturum başı hafıza yeri
   8 → 12; `install` `/remember` ve `/study`'yi de kuruyor; Codex yakalamasında
@@ -122,7 +131,7 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.3 (onaylandı 2026-11-11) — Obsidian'dan oku
+## v1.3 maddeleri (kapandı 2026-11-13) — Obsidian'dan oku
 
 Ölçüm (2026-11-11): 100 etkin kayıt, hiçbiri konu taşımıyordu. Bölmeden harita
 kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
@@ -141,7 +150,8 @@ kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
    metni yerine konu listesi (Brain-Eleven'da 2.301 → 581 karakter, 797 → 198
    token tahmini); istem anı hatırlama aynen. Varsayılan `normal` değişmedi,
    `recall-probe`'a dokunulmadı. Sınır: bu profilde sahip bildirimi satırı yok.
-5. **Ölçüm.** Eski ve yeni yolun bağlam harcaması aynı beş soruda.
+5. **Ölçüm.** Ertelendi (sahip kararı 2026-11-13). Oturum başı kısmı madde 4'te
+   ölçüldü; ajanın not açınca toplam ne harcadığı gerçek kullanım ister.
 
 ## v1.2 maddeleri (kapandı 2026-11-11) — adaylar boşa gitmesin
 
@@ -195,11 +205,11 @@ kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
 
 ## Açık konular
 
-- `doctor`'daki `review_pending` gürültü işaretli adayları da sayıyor (65'in 13'ü
-  gerçekten sahibe kalan).
-- `recall-probe`'un beş sorusu eski döneme (IG, SRT-00) ait; sahip isterse yenilenir.
-- Hafızada "V2 SHADOW kalır" diyen eski kararlar hâlâ etkin; sahip `retire`
-  ile iptal edebilir.
+- `doctor`'daki `review_pending` gürültü işaretli adayları da sayıyor (2026-11-11:
+  65'in 13'ü gerçekten sahibe kalan; 2026-11-13: 80, ayrımı ölçülmedi).
+- `recall-probe`'un beş sorusu eski döneme (IG, SRT-00) ait ve üçünün yanıtı artık
+  hafızada yok; sorular yenilenene kadar sınama kullanılamaz (sahibin kararı).
+- `map` profilinde ajanın doğru konu notunu kendiliğinden açıp açmadığı ölçülmedi.
 - Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.
 - Codex çift hook uyarısı sürüyor: `config.toml`'daki girdi başka bir aracın; taşımak sahibin kararı.
