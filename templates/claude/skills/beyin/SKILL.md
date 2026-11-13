@@ -25,6 +25,7 @@ Bütün komutlar şu önekle çalışır:
 | "Şu kayıt yanlış, sil" | `retire <mem_id> --note "<neden>"` (silmez, iptal eder) |
 | "Bu projeyi incele, kararlarını çıkar" | `/study` komutu |
 | "Daha az / hiç bağlam ekleme" | `profile economical` ya da `profile manual`; geri: `profile normal` |
+| "Hafızayı nottan oku" / oturum başında **TOPIC NOTES** listesi varsa | `profile map` ile açılır; listedeki konu işinle ilgiliyse önce o notu oku |
 | "Hafızayı göster" / bir konuyu öğrenmen gerekince | `🔮 Companion/Hafıza/<proje>.md` notunu oku (güncel değilse önce `notes`); **Konular** listesi varsa yalnız ilgili `Hafıza/<proje>/<konu>.md` notunu aç |
 | "Nerede kalmıştık?" | `🔮 Companion/Oturumlar/<proje>.md` notunu oku |
 

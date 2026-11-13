@@ -132,13 +132,15 @@ kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
    atar, `decide --topic` onaylananı konuya bağlar. Yalnız gruplar; içerik,
    durum ve onay değişmez. Sınır: yerine yenisi yazılan (supersede) kayıt konuyu
    devralmıyor.
-2. **Mevcut 100 kaydı konulandır.** Ajan önerir, sahip sohbette onaylar.
-3. **Konu notları.** Kod yapıldı: konusu olan kayıt `Hafıza/<proje>/<konu>.md`
-   notuna gider, proje notu **Konular** başlığıyla bağlantı verir (harita),
-   konusuz kayıt proje notunda kalır; boşalan konu notu silinmez. Konular
-   arasında bağlantı yok (ilişki verisi yok). Gerçek boy ölçümü madde 2'yi bekliyor.
-4. **Konu haritası.** Oturum başına konu listesi; `recall-probe`'un nasıl
-   ölçeceği sahibe sorulacak (eşikler düşürülmez).
+2. ~~Mevcut 100 kaydı konulandır.~~ **Yapıldı (2026-11-12).** Sahibin sohbetteki
+   onayıyla 100 kaydın tamamı 20 konuya ayrıldı (5 grup).
+3. ~~Konu notları.~~ **Yapıldı.** Konusu olan kayıt `Hafıza/<proje>/<konu>.md`
+   notunda; proje notu **Konular** başlığıyla harita. Gerçek boylar: harita
+   299–654, konu notu 1.133–3.618 karakter. Konular arası bağlantı yok.
+4. ~~Konu haritası.~~ **Yapıldı, seçilebilir.** `profile map`: oturum başında kayıt
+   metni yerine konu listesi (Brain-Eleven'da 2.301 → 581 karakter, 797 → 198
+   token tahmini); istem anı hatırlama aynen. Varsayılan `normal` değişmedi,
+   `recall-probe`'a dokunulmadı. Sınır: bu profilde sahip bildirimi satırı yok.
 5. **Ölçüm.** Eski ve yeni yolun bağlam harcaması aynı beş soruda.
 
 ## v1.2 maddeleri (kapandı 2026-11-11) — adaylar boşa gitmesin

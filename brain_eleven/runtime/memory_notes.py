@@ -32,10 +32,24 @@ def _line(item):
     return f"- {content} <small>`{item.get('memory_id', '?')}` · {day}{flags}</small>"
 
 
+def agent_readable(item, approved_only):
+    """The SessionStart gates (approval, secret, capture safety).
+
+    Only such records go into a topic note: the ``map`` profile points the
+    agent at those notes, so they must not carry what bootstrap would withhold.
+    """
+    from brain_eleven.runtime.capture_safety import evaluate_capture
+    from brain_eleven.runtime.secret_check import contains_secret
+    content = str(item.get('content', ''))
+    return ((not approved_only or item.get('is_approved', True) is True)
+            and not contains_secret(content) and evaluate_capture(content).accepted)
+
+
 def render(vault, document):
     """Write one note per project (and Genel), plus one per topic, from a MemoryStore document; return the project note names."""
     from brain_eleven.projects.registry import ProjectRegistry
     labels = {p['project_id']: p.get('project_label') or p['project_id'] for p in ProjectRegistry(vault).list_projects()}
+    approved_only = RuntimeConfig(vault).load().get('b1_human_approval', False)
     groups = {}
     for item in document.get('validated_memory', []):
         if not isinstance(item, dict) or str(item.get('status') or 'active') != 'active':
@@ -53,7 +67,7 @@ def render(vault, document):
             line = _line(item)
             if not line:
                 continue
-            if item.get('topic'):
+            if item.get('topic') and agent_readable(item, approved_only):
                 by_topic.setdefault(_name(item['topic']), []).append(line)
             else:
                 by_type.setdefault(str(item.get('type') or 'observation'), []).append(line)
@@ -89,16 +103,19 @@ def _write(path, lines):
 
 
 def refresh(vault, *, force=False):
-    """Re-render the notes when the canonical memory revision changed since the last render."""
+    """Re-render the notes when the memory revision or the approval gate changed since the last render."""
     from brain_eleven.memory import MemoryStore
-    marker = RuntimeConfig(vault).root / 'memory-notes.json'
+    config = RuntimeConfig(vault)
+    marker = config.root / 'memory-notes.json'
     document = MemoryStore(vault).load()
-    revision = document.get('revision')
-    if not force and read_json(marker, {}).get('revision') == revision:
-        return {'status': 'CURRENT', 'revision': revision}
+    # The approval gate decides what a topic note may hold, so turning it on must not leave old notes behind.
+    state = {'revision': document.get('revision'), 'approved_only': bool(config.load().get('b1_human_approval', False))}
+    previous = read_json(marker, {}) or {}
+    if not force and all(previous.get(key) == value for key, value in state.items()):
+        return {'status': 'CURRENT', 'revision': state['revision']}
     notes = render(vault, document)
-    write_json(marker, {'revision': revision, 'at': now(), 'notes': len(notes)})
-    return {'status': 'RENDERED', 'revision': revision, 'notes': notes}
+    write_json(marker, {**state, 'at': now(), 'notes': len(notes)})
+    return {'status': 'RENDERED', 'revision': state['revision'], 'notes': notes}
 
 
 TOPIC_MAX = 40

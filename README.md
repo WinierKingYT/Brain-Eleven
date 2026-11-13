@@ -82,7 +82,7 @@ dosyasının üstüne yazılmaz.
 | `recap --days 7` | Son günlerin oturumları ve yeni hafızaları (model çağırmaz; `--since/--until YYYY-AA-GG`, `--project`) |
 | `receipt "<ne bitti>" --next … --source …` | İş sonucu kaydı (ajan yazar; recap ve oturum başında görünür) |
 | `yakala ekle <URL\|dosya\|metin>` / `liste` / `kur` | Gelen kutusuna at (`📥 Gelen/`); Windows'ta `kur` Ctrl+Alt+B kısayolunu ekler. İşlemek için ajana "yakalananları işle" de. |
-| `profile [normal\|economical\|manual]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç). Yakalama her modda sürer. |
+| `profile [normal\|economical\|manual\|map]` | Bağlam tüketimi: normal (oturum başı + her istem), ekonomik (yalnız oturum başı, en çok 2000 karakter), manuel (hiç), harita (`map`: oturum başında kayıt metni yerine konu notlarının listesi; istem anı aynen). Yakalama her modda sürer. |
 | `project add <klasör>` | Projeyi yakalamaya kaydet |
 | `study <klasör veya repo>` | Projeden karar/ders çıkar |
 | `notes` | Hafızanın okunur notlarını şimdi yeniden yaz (`🔮 Companion/Hafıza/`; servis değişince kendisi de yeniler). Konusu olan kayıtlar `Hafıza/<proje>/<konu>.md` notuna gider, proje notu konulara bağlantı verir |

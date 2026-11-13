@@ -202,7 +202,7 @@ def read_json(path, default=None):
 
 # How much context native hooks inject (owner request 2026-10-14). Capture is
 # never affected: sessions are still captured in every profile.
-CONTEXT_PROFILES = ('normal', 'economical', 'manual')
+CONTEXT_PROFILES = ('normal', 'economical', 'manual', 'map')
 ECONOMICAL_SESSION_CHARS = 2000
 ECONOMICAL_SUBAGENT_CHARS = 1000
 
@@ -400,7 +400,8 @@ class RuntimeConfig:
         return self._commit(snapshot, mutate)
 
     def set_context_profile(self, profile):
-        """normal: SessionStart + every prompt; economical: SessionStart only, short; manual: none."""
+        """normal: SessionStart + every prompt; economical: SessionStart only, short; manual: none;
+        map: like normal, but SessionStart lists topic notes instead of record text."""
         if profile not in CONTEXT_PROFILES:
             raise ValueError('Context profile must be one of: ' + ', '.join(CONTEXT_PROFILES))
         value = self.load()
