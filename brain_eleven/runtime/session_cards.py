@@ -242,16 +242,23 @@ def _receipt_lines(vault, project_id, limit):
         return []
 
 
-def context(vault, project_id, *, exclude_session=None, limit=CONTEXT_LIMIT):
-    """Latest work outcomes and cards of this project for a starting session, newest first."""
+def context(vault, project_id, *, exclude_session=None, own=False, limit=CONTEXT_LIMIT):
+    """Latest work outcomes and cards of this project for a starting session, newest first.
+
+    A session does not need its own card, except after a compaction (``own``):
+    then that card is what the session lost, and it comes first.
+    """
     state = read_json(_state_path(vault, project_id), {'cards': {}})
     skip = identity('card_', exclude_session) if exclude_session else None
+    mine = state.get('cards', {}).get(skip) if own else None
     cards = sorted((c for k, c in state.get('cards', {}).items() if k != skip),
                    key=lambda c: c['updated_at'], reverse=True)[:CONTEXT_CARDS]
     receipts = _receipt_lines(vault, project_id, CONTEXT_RECEIPTS)
-    if not cards and not receipts:
+    if not cards and not receipts and not mine:
         return ''
     parts = [CONTEXT_HEADING]
+    if mine:
+        parts.append('Bu oturum (sıkıştırmadan önce):\n' + render_card(mine))
     if receipts:
         parts.append('İş sonuçları (ajanın kaydı):\n' + '\n'.join(receipts))
     parts += [render_card(c) for c in cards]
