@@ -131,6 +131,20 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
+## Sıradaki işler: v1.4 (onaylandı 2026-11-14) — ölçebilir hale getir
+
+1. **Hatırlama sınamasının sorularını yenile.** Beş soru taslağı sahibin onayını
+   bekliyor (`evals/recall_probe/questions.json` onaydan önce değişmez).
+2. ~~Sınama harita profilini anlasın.~~ **Yapıldı.** `map` profilinde yanıtı tutan
+   kaydın konusu oturum başındaki listede ise durum `IN_TOPIC_NOTE` (bir okuma
+   uzakta); ayrı sayılır, puana girmez. Eski beş soruda oturum başı 0/5, biri konu notunda
+   (üçünün yanıtı hafızada değil); taslak beş soruda oturum başı 0/5 puan + 5/5 konu notunda,
+   `--mode prompt` 5/5. Sınır: taslak sorular var olan kayıtlardan seçildi, yani
+   kolay; ajanın notu gerçekten açtığını ölçmez.
+3. **Bekleyen adayları ayıkla.** Sohbetten onayı gerçek kurulumda ilk kez dene.
+4. **Eski kurulum betiğini sil** (`install-cross-project-memory.py`, şablonları,
+   testleri); önce `/remember` çalıştığı doğrulanır.
+
 ## v1.3 maddeleri (kapandı 2026-11-13) — Obsidian'dan oku
 
 Ölçüm (2026-11-11): 100 etkin kayıt, hiçbiri konu taşımıyordu. Bölmeden harita
