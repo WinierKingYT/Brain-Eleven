@@ -145,9 +145,11 @@ kalsın; yeni ajana aynı şey yeniden öğretilmesin. Başarı ölçüsü: ger�
 sıkıştırmadan sonra "neredeyiz, sırada ne var" sorusu yalnız kayıtlardan
 yanıtlanabilsin.
 
-1. **Sıkıştırma özeti oturum kartına.** Özetin "yapılan / yarım kalan / karar"
-   kısımları karta girer (bugün yalnız "sıradaki adım", 200 karakter). Onay
-   istemez, sır süzgecinden geçer.
+1. ~~Sıkıştırma özeti oturum kartına.~~ **Yapıldı.** Kart artık özetten dört
+   şey tutuyor: kalınan yer (300 karakter), yapılan ve yarım kalan (ikişer madde,
+   160'ar karakter), sıradaki adım. Onay istemez, sır süzgecinden geçer. Sınır:
+   özette "karar" başlığı yok, kararlar ayrı tutulmuyor; kart büyüdü, oturum
+   başındaki 1500 karakterlik pay aynı (madde 4'te ölçülecek).
 2. **Sıkıştırmadan sonra oturum kendi kartını geri alsın.** Önce yeniden üret:
    "kendi kartı dışarıda bırakılıyor" bulgusu yalnız kod okumasından.
 3. **Her alt ajan raporu projenin altına iş kaydı olarak.** Hafıza değil,
