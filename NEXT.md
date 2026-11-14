@@ -3,8 +3,15 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-11-13)
+## Şu an (2026-11-14)
 
+- **v1.4 kapandı (PR #106–#108): ölçebilir hale getir.** Hatırlama sınaması yeni
+  beş soruyla ve `map` profilini anlayarak çalışıyor (oturum başı 0/5 puan + 5/5
+  konu notunda, `--mode prompt` 5/5). 80 bekleyen aday ayıklandı: 17 sohbetten
+  onaylandı (deneme süresinde), 4 ders temiz metinle yeniden kaydedildi, gerisi
+  reddedildi; kuyruk 0, etkin kayıt 87 → 108, hepsi konulu. Eski kurulum betiği
+  silindi. Ölçüm: testler 1347 geçti, 0 kırmızı; `doctor` READY. Ölçülmeyen: ajanın `map` profilinde doğru notu gerçekten açtığı;
+  `normal` profilde oturum başı; `/remember` ve `/study` eğik çizgi komutu olarak.
 - **v1.3 kapandı (PR #102–#104): Obsidian'dan oku.** Kayıtlar konu taşıyor, her
   konunun kısa bir notu var, `profile map` oturum başında kayıt metni yerine konu
   listesi veriyor (Brain-Eleven'da 2.301 → 581 karakter). Gerçek kurulum `map`
@@ -131,7 +138,29 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.4 (onaylandı 2026-11-14) — ölçebilir hale getir
+## Sıradaki işler: v1.5 (onaylandı 2026-11-14) — proje, ajanın bağlam penceresi olsun
+
+Hedef: yapılan iş ve öğrenilen bilgi sıkıştırmadan (compaction) sonra da
+kalsın; yeni ajana aynı şey yeniden öğretilmesin. Başarı ölçüsü: gerçek bir
+sıkıştırmadan sonra "neredeyiz, sırada ne var" sorusu yalnız kayıtlardan
+yanıtlanabilsin.
+
+1. **Sıkıştırma özeti oturum kartına.** Özetin "yapılan / yarım kalan / karar"
+   kısımları karta girer (bugün yalnız "sıradaki adım", 200 karakter). Onay
+   istemez, sır süzgecinden geçer.
+2. **Sıkıştırmadan sonra oturum kendi kartını geri alsın.** Önce yeniden üret:
+   "kendi kartı dışarıda bırakılıyor" bulgusu yalnız kod okumasından.
+3. **Her alt ajan raporu projenin altına iş kaydı olarak.** Hafıza değil,
+   "ajanın kaydı" etiketiyle. Çerçeve metni sızıntısının düzeltmesi burada.
+4. **Oturum başı = durum.** Neredeyiz → açık işler → konu haritası; önce ölç.
+5. **Model karnesi.** Bir modelin tekrarlayan hataları sayılarıyla genel konu
+   notunda; onaydan geçer.
+6. **Skill'ler "neden" notuna bağlansın.**
+7. **`/orchestrate` sonuçlarını Brain-Eleven'a yazsın, karneyi okusun.** Skill
+   depo dışında: doğrudan dosya düzenlemesi, başlamadan gösterilir. Gerçek uçtan
+   uca deneme en sonda.
+
+## v1.4 maddeleri (kapandı 2026-11-14) — ölçebilir hale getir
 
 1. ~~Hatırlama sınamasının sorularını yenile.~~ **Yapıldı (sahip onayı 2026-11-14).**
    Beş sorudan biri eskisinden kaldı; dördü güncel kayıtlardan. Gerçek kurulumda
@@ -143,9 +172,16 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
    (üçünün yanıtı hafızada değil); taslak beş soruda oturum başı 0/5 puan + 5/5 konu notunda,
    `--mode prompt` 5/5. Sınır: taslak sorular var olan kayıtlardan seçildi, yani
    kolay; ajanın notu gerçekten açtığını ölçmez.
-3. **Bekleyen adayları ayıkla.** Sohbetten onayı gerçek kurulumda ilk kez dene.
-4. **Eski kurulum betiğini sil** (`install-cross-project-memory.py`, şablonları,
-   testleri); önce `/remember` çalıştığı doğrulanır.
+3. ~~Bekleyen adayları ayıkla.~~ **Yapıldı (2026-11-14).** 80 adayı Sonnet
+   ayıkladı, orkestratör denetledi: 17'si `decide` ile sohbetten onaylandı (ilk
+   gerçek deneme; 14 günlük deneme süresinde), 63'ü reddedildi. Bulunan hata:
+   alt ajan teslim çerçevesinin metni 9 adayın içine sızmıştı; değerli dördü
+   kirli haliyle kabul edilmedi, `remember.py` ile temiz yazıldı (bu yol kaydı
+   doğrudan onaylı yazar, deneme süresi yok). Sızıntının düzeltmesi v1.5 madde 3.
+4. ~~Eski kurulum betiğini sil.~~ **Yapıldı.** `install-cross-project-memory.py`,
+   yalnız onun kurduğu hook ve `legacy` şablonları ve testleri silindi.
+   `context-compiler.py` ve `remember_opt_in.py` kaldı: eski kurulumlarda duran
+   hook dosyaları hâlâ onları çağırabilir.
 
 ## v1.3 maddeleri (kapandı 2026-11-13) — Obsidian'dan oku
 
