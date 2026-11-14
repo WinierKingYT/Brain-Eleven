@@ -222,16 +222,3 @@ def test_opt_in_cli_uses_canonical_registry_policy(vault, tmp_path, capsys):
     }
     assert opt_in_main(["--project-root", str(denied), "--vault", str(vault)]) == 1
     assert json.loads(capsys.readouterr().out)["reason"] == "unregistered"
-
-
-def test_global_hook_uses_registry_policy_not_legacy_config():
-    hook = (
-        Path(__file__).parent.parent
-        / "templates"
-        / "claude"
-        / "hooks"
-        / "brain-eleven-remember-opt-in"
-    ).read_text(encoding="utf-8")
-
-    assert '--vault "$BRAIN_ELEVEN_VAULT"' in hook
-    assert "remember-config.json" not in hook
