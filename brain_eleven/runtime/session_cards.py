@@ -90,6 +90,8 @@ def render_card(card):
                        ('pending', 'Yarım kalan'), ('next', 'Sıradaki')):
         if key == 'first' and len(card.get('first') or '') <= 60:
             continue  # already the title
+        if key in ('current', 'next') and card.get('prompts', 0) != card.get('summary_prompts'):
+            continue  # the owner asked for more since that summary: where it stopped is out of date
         if card.get(key) and not (key == 'last' and card.get('last') == card.get('first')):
             lines.append(f'- {label}: {card[key]}')
     lines += [f'- Alt ajan raporu: {line}' for line in card.get('subagents', [])]
@@ -232,6 +234,7 @@ def update(vault, project, session, messages):
                 kept = [t for t in (_safe(item, limit) for item in _summary_items(content, heading, count)) if t]
                 if kept:
                     card[field] = ' · '.join(kept)
+            card['summary_prompts'] = card['prompts']
         elif role == 'subagent':
             line = _safe(_first_line(content), SUBAGENT_LINE_LIMIT)
             if not line:
@@ -270,10 +273,12 @@ RECEIPTS_HEADING = '## Son iş sonuçları'
 NOTE_RECEIPTS, CONTEXT_RECEIPTS = 5, 3
 
 
-def _receipt_lines(vault, project_id, limit):
+def _receipt_lines(vault, project_id, limit, *, latest_next_only=False):
     try:
         from .receipts import latest, render as render_receipt
-        return [render_receipt(item) for item in latest(vault, project_id, limit)]
+        # An older receipt's "next" is usually what the newer receipt already did.
+        return [render_receipt(item if index == 0 or not latest_next_only else {**item, 'next': None})
+                for index, item in enumerate(latest(vault, project_id, limit))]
     except Exception:  # Receipts are advisory; a bad file never breaks the note.
         return []
 
@@ -289,7 +294,7 @@ def context(vault, project_id, *, exclude_session=None, own=False, limit=CONTEXT
     mine = state.get('cards', {}).get(skip) if own else None
     cards = sorted((c for k, c in state.get('cards', {}).items() if k != skip),
                    key=lambda c: c['updated_at'], reverse=True)[:CONTEXT_CARDS]
-    receipts = _receipt_lines(vault, project_id, CONTEXT_RECEIPTS)
+    receipts = _receipt_lines(vault, project_id, CONTEXT_RECEIPTS, latest_next_only=True)
     if not cards and not receipts and not mine:
         return ''
     parts = [CONTEXT_HEADING]
@@ -298,4 +303,10 @@ def context(vault, project_id, *, exclude_session=None, own=False, limit=CONTEXT
     if receipts:
         parts.append('İş sonuçları (ajanın kaydı):\n' + '\n'.join(receipts))
     parts += [render_card(c) for c in cards]
-    return '\n\n'.join(parts)[:limit]
+    text = parts[0]
+    for part in parts[1:]:
+        # Whole blocks only: a card cut in the middle reads as if the session stopped there.
+        if len(text) + 2 + len(part) > limit:
+            break
+        text += '\n\n' + part
+    return text if text != parts[0] else '\n\n'.join(parts)[:limit]

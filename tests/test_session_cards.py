@@ -173,3 +173,31 @@ def test_after_compaction_the_session_gets_its_own_card_first(runtime, tmp_path)
     after = compile_context(vault, vault, '', client='claude', session='current', turn='compact:1', event='SessionStart')
     assert 'Bu oturum (sıkıştırmadan önce)' in after['context']
     assert after['context'].index('Kart işini bitirelim.') < after['context'].index('Başka oturumun isteği.')
+
+
+def test_session_start_shows_state_without_stale_or_cut_lines(runtime, tmp_path):  # noqa: F811
+    from brain_eleven.runtime import receipts
+    vault, project_id = runtime
+    project = _project(vault, project_id)
+    summary = ('Summary:\n5. Problem Solving:\n   - Kuyruk ayıklandı, 16 aday kabul edildi.\n'
+               '8. Current Work:\n   Dört dersi yeniden kaydediyordum.\n9. Optional Next Step:\n   Kapanış mesajını yazmak.\n')
+    key = capture_session_key('claude', 'old')
+    session_cards.update(vault, project, key, _messages(vault, project_id, tmp_path, 'old', [_user(summary, isCompactSummary=True)]))
+    assert '- Sıradaki: Kapanış mesajını yazmak.' in _note(vault, project)
+    # The owner asked for more after that summary: where it stopped is no longer true.
+    session_cards.update(vault, project, key, _messages(vault, project_id, tmp_path, 'old2', [_user('Şimdi PR açalım.')]))
+    note = _note(vault, project)
+    assert 'Kapanış mesajını yazmak.' not in note and 'Dört dersi yeniden' not in note
+    assert '- Yapılan: Kuyruk ayıklandı, 16 aday kabul edildi.' in note
+
+    receipts.submit(vault, vault, 'Birinci iş bitti.', next_step='İkinci işe başla')
+    receipts.submit(vault, vault, 'İkinci iş bitti.', next_step='Üçüncü işe başla')
+    context = session_cards.context(vault, project_id)
+    assert 'Üçüncü işe başla' in context and 'İkinci işe başla' not in context
+    assert 'İkinci işe başla' in _note(vault, project)  # the note keeps every receipt whole
+
+    session_cards.update(vault, project, capture_session_key('claude', 'big'), _messages(
+        vault, project_id, tmp_path, 'big', [_user('Uzun istek ' + 'kelime ' * 20), _assistant('yanıt ' * 60)]))
+    short = session_cards.context(vault, project_id, limit=500)
+    assert short.endswith(')') or short.splitlines()[-1].startswith('- ')  # ends at a whole block
+    assert '### ' not in short or 'son güncelleme' in short.splitlines()[-1]
