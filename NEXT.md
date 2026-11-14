@@ -133,8 +133,10 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
 ## Sıradaki işler: v1.4 (onaylandı 2026-11-14) — ölçebilir hale getir
 
-1. **Hatırlama sınamasının sorularını yenile.** Beş soru taslağı sahibin onayını
-   bekliyor (`evals/recall_probe/questions.json` onaydan önce değişmez).
+1. ~~Hatırlama sınamasının sorularını yenile.~~ **Yapıldı (sahip onayı 2026-11-14).**
+   Beş sorudan biri eskisinden kaldı; dördü güncel kayıtlardan. Gerçek kurulumda
+   (`map` profili): oturum başı 0/5 puan + 5/5 konu notunda, `--mode prompt` 5/5.
+   `normal` profilde oturum başı ölçülmedi.
 2. ~~Sınama harita profilini anlasın.~~ **Yapıldı.** `map` profilinde yanıtı tutan
    kaydın konusu oturum başındaki listede ise durum `IN_TOPIC_NOTE` (bir okuma
    uzakta); ayrı sayılır, puana girmez. Eski beş soruda oturum başı 0/5, biri konu notunda
@@ -221,8 +223,8 @@ kazandırmıyor: kayıt başına 60 karakterlik başlıkla harita 1.716 karakter
 
 - `doctor`'daki `review_pending` gürültü işaretli adayları da sayıyor (2026-11-11:
   65'in 13'ü gerçekten sahibe kalan; 2026-11-13: 80, ayrımı ölçülmedi).
-- `recall-probe`'un beş sorusu eski döneme (IG, SRT-00) ait ve üçünün yanıtı artık
-  hafızada yok; sorular yenilenene kadar sınama kullanılamaz (sahibin kararı).
+- `recall-probe` soruları var olan kayıtlardan seçildi (kolay); zor soru eklemek
+  sahibin kararı.
 - `map` profilinde ajanın doğru konu notunu kendiliğinden açıp açmadığı ölçülmedi.
 - Canlı doğrulanmayanlar: alt klasörde gerçek oturum, fiziksel Ctrl+Alt+B.
 - Luna (Hermes) kotası açılınca etiketli sette ölçülecek.

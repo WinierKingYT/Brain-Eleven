@@ -1,23 +1,9 @@
 {
-  "source": "Owner-written recall questions (2026-09-20); the official five-question recall test.",
+  "source": "Owner-approved recall questions (2026-11-14); they replace the 2026-09-20 five, whose answers were retired with the IG/V2 era.",
   "note": "A question counts as present in a text when every group has at least one term. Terms are matched case-insensitively after Turkish-aware lowercasing.",
   "questions": [
     {
       "id": 1,
-      "question": "Holdout (corpus-v2) kapısı kırmızıyken ne karar verdik?",
-      "groups": [
-        [
-          "holdout",
-          "corpus-v2"
-        ],
-        [
-          "kırmızı",
-          "red"
-        ]
-      ]
-    },
-    {
-      "id": 2,
       "question": "Gerçek Claude oturumları neden hiç kanonik hafızaya girmiyordu?",
       "groups": [
         [
@@ -35,50 +21,62 @@
       ]
     },
     {
-      "id": 3,
-      "question": "SRT-00 nasıl kapandı, master push edildi mi?",
+      "id": 2,
+      "question": "Holdout verisi ne için kullanılır, ne için kullanılmaz?",
       "groups": [
         [
-          "push"
+          "holdout"
         ],
         [
-          "srt-00"
+          "ayar",
+          "tuning"
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "question": "CI kapsam kapısı düşünce ne yaptık, eşiği düşürdük mü?",
+      "groups": [
+        [
+          "coverage",
+          "kapsam"
         ],
         [
-          "ship"
+          "threshold",
+          "eşik"
+        ],
+        [
+          "runtime.yml",
+          "77.6"
         ]
       ]
     },
     {
       "id": 4,
-      "question": "Phase 20 ve aktif program hangi durumda?",
+      "question": "Servis ısınırken istemler neden takılıyordu?",
       "groups": [
         [
-          "phase 20"
+          "warm-up",
+          "ısın"
         ],
         [
-          "frozen",
-          "donduruldu",
-          "dondurulmuş"
-        ],
-        [
-          "intelligence graduation"
+          "lock",
+          "kilit"
         ]
       ]
     },
     {
       "id": 5,
-      "question": "Retrieval-kalite sözleşmesi hakkında ne dedik?",
+      "question": "Mevcut etiketler ve başarı eşikleri hakkında ne karar verdik?",
       "groups": [
         [
-          "retrieval-kalite",
-          "retrieval kalite",
-          "retrieval quality",
-          "retrieval-quality"
+          "etiket"
         ],
         [
-          "sözleşme",
-          "contract"
+          "eşik"
+        ],
+        [
+          "düşürme"
         ]
       ]
     }
