@@ -18,11 +18,11 @@ def test_covers_needs_every_group_and_folds_turkish_case():
 def test_probe_separates_in_context_from_in_memory_and_missing(tmp_path, monkeypatch):
     vault, _ = _runtime(tmp_path, shadow_accept=True)
     _accept(vault, _review_item(tmp_path, vault, "q1",
-                                "We decided that the holdout corpus-v2 gate stays red by decision.", NEW_TIME))
+                                "We decided that the holdout set is never used for tuning.", NEW_TIME))
 
     result = probe(vault)
     by_id = {r["id"]: r for r in result["results"]}
-    assert by_id[1]["status"] == "IN_CONTEXT"
+    assert by_id[2]["status"] == "IN_CONTEXT"
     assert by_id[5]["status"] == "NOT_IN_MEMORY"
     assert (result["score"], result["of"]) == (1, 5)
 
@@ -30,7 +30,7 @@ def test_probe_separates_in_context_from_in_memory_and_missing(tmp_path, monkeyp
     import brain_eleven.runtime.context as context
     monkeypatch.setattr(context, "compile_bootstrap", lambda *a, **k: {"status": "SUCCESS", "context": "", "selected_ids": []})
     by_id = {r["id"]: r for r in probe(vault)["results"]}
-    assert by_id[1]["status"] == "IN_MEMORY_NOT_DELIVERED" and by_id[1]["memory_ids"]
+    assert by_id[2]["status"] == "IN_MEMORY_NOT_DELIVERED" and by_id[2]["memory_ids"]
 
 
 def test_questions_file_matches_the_owner_test_log():
@@ -66,7 +66,7 @@ def test_answer_waiting_in_the_review_queue_is_pointed_at_and_surfaced(tmp_path)
     from brain_eleven.runtime.service import create_app
     vault, _ = _runtime(tmp_path, shadow_accept=True)
     pending = _review_item(tmp_path, vault, "q3",
-                           "We decided SRT-00 closed and master was pushed as a closure without an independent SHIP.", NEW_TIME)
+                           "We decided the coverage threshold stays after the runtime.yml tests were added.", NEW_TIME)
 
     by_id = {r["id"]: r for r in probe(vault)["results"]}
     assert by_id[3]["status"] == "IN_REVIEW_QUEUE" and by_id[3]["review_ids"] == [pending["id"]]
@@ -84,8 +84,8 @@ def test_answer_split_across_two_pending_candidates_is_pointed_at_as_split(tmp_p
     from fastapi.testclient import TestClient
     from brain_eleven.runtime.service import create_app
     vault, _ = _runtime(tmp_path, shadow_accept=True)
-    first = _review_item(tmp_path, vault, "a", "We decided master was pushed after the closure.", NEW_TIME)
-    second = _review_item(tmp_path, vault, "b", "We decided SRT-00 stays without an independent SHIP.", NEW_TIME)
+    first = _review_item(tmp_path, vault, "a", "We decided the coverage gate needs the runtime.yml tests.", NEW_TIME)
+    second = _review_item(tmp_path, vault, "b", "We decided the threshold is not lowered.", NEW_TIME)
     _review_item(tmp_path, vault, "c", "We decided that the dashboard stays read-only.", NEW_TIME)
 
     entry = {r["id"]: r for r in probe(vault)["results"]}[3]
@@ -146,16 +146,16 @@ def test_map_profile_answer_in_a_listed_topic_note_is_reported_not_scored(tmp_pa
     from brain_eleven.runtime.storage import RuntimeConfig
     vault, _ = _runtime(tmp_path, shadow_accept=True)
     _accept(vault, _review_item(tmp_path, vault, "q1",
-                                "We decided that the holdout corpus-v2 gate stays red by decision.", NEW_TIME))
-    _accept(vault, _review_item(tmp_path, vault, "q5",
-                                "We decided the retrieval-quality contract stays separate.", NEW_TIME))
+                                "We decided that the holdout set is never used for tuning.", NEW_TIME))
+    _accept(vault, _review_item(tmp_path, vault, "q4",
+                                "We decided the warm-up lock is released early.", NEW_TIME))
     RuntimeConfig(vault).set_context_profile("map")
     first = next(m["memory_id"] for m in MemoryStore(vault).load()["validated_memory"] if "holdout" in m["content"])
     set_topic(vault, [first], "Kapilar")
 
     result = probe(vault)
     by_id = {r["id"]: r for r in result["results"]}
-    assert by_id[1]["status"] == "IN_TOPIC_NOTE" and by_id[1]["topics"] == ["Kapilar"]
+    assert by_id[2]["status"] == "IN_TOPIC_NOTE" and by_id[2]["topics"] == ["Kapilar"]
     # No topic, so no note to read: still a plain selection miss.
-    assert by_id[5]["status"] == "IN_MEMORY_NOT_DELIVERED"
+    assert by_id[4]["status"] == "IN_MEMORY_NOT_DELIVERED"
     assert (result["score"], result["in_topic_note"]) == (0, 1)
