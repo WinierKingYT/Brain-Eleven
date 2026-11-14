@@ -1,7 +1,7 @@
 """Per-project session cards and open threads, kept as a readable Markdown note.
 
 Each captured session keeps one short card (first and last request, last
-answer, next step from a compact summary). Cards live per project in
+answer; from a compact summary: where it stopped, done, pending, next step). Cards live per project in
 ``🔮 Companion/Oturumlar/<project>.md`` with the project's open state items
 on top. The card section is size-capped: the oldest cards move verbatim to a
 monthly file under ``🔮 Companion/Arşiv/``; nothing is deleted or summarised,
@@ -22,11 +22,16 @@ CONTEXT_CARDS = 2
 CONTEXT_LIMIT = 1500
 HEADING = '## Son oturumlar'
 CONTEXT_HEADING = '## Son oturumlar (bu projede nerede kalındı)'
-_FIELD_LIMITS = {'first': 120, 'last': 200, 'answer': 300, 'next': 200}
-_NEXT_SECTION = re.compile(r'^\s*(?:#{1,6}\s*)?(?:\*\*)?\s*\d+\.\s*(?:\*\*)?\s*'
-                           r'(optional next step|next step|pending tasks|sıradaki adım|bekleyen işler)\b',
-                           re.IGNORECASE | re.MULTILINE)
-_BULLET = re.compile(r'^\s*[-*•]\s+(.+)$', re.MULTILINE)
+_FIELD_LIMITS = {'first': 120, 'last': 200, 'answer': 300}
+# Compact-summary sections a card keeps, so the session survives its own compaction:
+# card field -> (heading words, items kept, characters per item).
+_SUMMARY_FIELDS = {
+    'current': (re.compile(r'current work|şu anki iş|mevcut iş', re.IGNORECASE), 1, 300),
+    'done': (re.compile(r'problem solving|problem çözme', re.IGNORECASE), 2, 160),
+    'pending': (re.compile(r'pending tasks|bekleyen işler', re.IGNORECASE), 2, 160),
+    'next': (re.compile(r'next step|sıradaki adım', re.IGNORECASE), 1, 200),
+}
+_TOP_BULLET = re.compile(r'^\s{0,3}[-*•]\s+(.+)$', re.MULTILINE)
 _OPEN = {'blockers': ('Engel', {'ACTIVE', 'OPEN'}),
          'requirements': ('Gereksinim', {'ACTIVE', 'OPEN'}),
          'work_items': ('İş', {'TODO', 'ACTIVE', 'BLOCKED', 'IN_PROGRESS', 'PLANNED'})}
@@ -45,12 +50,16 @@ def _safe(text, limit):
     return line if evaluate_capture(line).accepted else None
 
 
-def _next_step(summary):
-    match = _NEXT_SECTION.search(summary or '')
-    if not match:
-        return None
-    bullet = _BULLET.search(summary, match.end())
-    return bullet.group(1) if bullet else None
+def _summary_items(summary, heading, count):
+    """First top-level bullets of one compact-summary section; a section without bullets is one item."""
+    from .extraction import _SUMMARY_SECTION
+    headings = list(_SUMMARY_SECTION.finditer(summary or ''))
+    for number, found in enumerate(headings):
+        if heading.search(found.group(1)):
+            end = headings[number + 1].start() if number + 1 < len(headings) else len(summary)
+            body = summary[found.end():end]
+            return _TOP_BULLET.findall(body)[:count] or [body]
+    return []
 
 
 def _stamp(message):
@@ -76,7 +85,9 @@ def _local(timestamp):
 def render_card(card):
     title = card.get('first') or 'Oturum'
     lines = [f"### {_local(card['started_at'])} · {card['client']} · {title[:60]}"]
-    for key, label in (('first', 'İlk istek'), ('last', 'Son istek'), ('answer', 'Son yanıt'), ('next', 'Sıradaki')):
+    for key, label in (('first', 'İlk istek'), ('last', 'Son istek'), ('answer', 'Son yanıt'),
+                       ('current', 'Sıkıştırmada kalınan yer'), ('done', 'Yapılan'),
+                       ('pending', 'Yarım kalan'), ('next', 'Sıradaki')):
         if key == 'first' and len(card.get('first') or '') <= 60:
             continue  # already the title
         if card.get(key) and not (key == 'last' and card.get('last') == card.get('first')):
@@ -188,9 +199,10 @@ def update(vault, project, session, messages):
             if text:
                 card['answer'] = text
         elif role == 'summary':
-            text = _safe(_next_step(content), _FIELD_LIMITS['next'])
-            if text:
-                card['next'] = text
+            for field, (heading, count, limit) in _SUMMARY_FIELDS.items():
+                kept = [t for t in (_safe(item, limit) for item in _summary_items(content, heading, count)) if t]
+                if kept:
+                    card[field] = ' · '.join(kept)
         else:
             continue
         changed = True
