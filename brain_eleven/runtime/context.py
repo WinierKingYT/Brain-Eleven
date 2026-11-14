@@ -715,7 +715,7 @@ def _record_usage_delivery(vault, result, *, client, session, turn, event):
     record_delivery(vault, memory_ids, session_key=capture_session_key(client, session), event=event, at=now())
 
 
-def _add_session_cards(vault, result, *, client, session):
+def _add_session_cards(vault, result, *, client, session, own=False):
     """Append this project's latest session cards to a native SessionStart context.
 
     Cards are derived, owner-readable notes (``session_cards``); a missing or
@@ -727,7 +727,7 @@ def _add_session_cards(vault, result, *, client, session):
         from .session_cards import context as cards_context
         from .worker import capture_session_key
         cards = cards_context(vault, result['project_id'],
-                              exclude_session=capture_session_key(client, session) if session else None)
+                              exclude_session=capture_session_key(client, session) if session else None, own=own)
     except Exception:
         return
     if not cards:
@@ -764,7 +764,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
     start = perf_counter()
     if event == 'SessionStart':
         result = compile_bootstrap(vault, project_root, budget=budget, session=session)
-        _add_session_cards(vault, result, client=client, session=session)
+        _add_session_cards(vault, result, client=client, session=session, own=turn.startswith('compact:'))
         _add_companion(vault, result, client=client, hints=True)
         _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
         result['elapsed_ms'] = round((perf_counter() - start) * 1000)

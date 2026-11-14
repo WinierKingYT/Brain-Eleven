@@ -178,7 +178,14 @@ def hook(vault, client, event, payload):
     locator = payload.get('transcript_path')
     size = Path(locator).stat().st_size if locator and Path(locator).is_file() else None
     reliable_turn = payload.get('turn_id') or (identity('turn_', prompt, size) if size is not None else None)
-    turn = ('bootstrap' if event == 'SessionStart' else reliable_turn or identity('turn_', prompt, time.time_ns()))
+    if event != 'SessionStart':
+        turn = reliable_turn or identity('turn_', prompt, time.time_ns())
+    elif payload.get('source') == 'compact':
+        # Compaction dropped the first delivery from the model's window: deliver
+        # again, once per compaction; the prefix tells the service to add this session's own card.
+        turn = f'compact:{size if size is not None else time.time_ns()}'
+    else:
+        turn = 'bootstrap'
     key = identity('delivery_', client, session, turn)
     path = cfg.root / 'deliveries' / (key + '.json')
     with file_lock(path, timeout=.15):

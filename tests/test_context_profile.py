@@ -80,3 +80,21 @@ def test_profile_cli_shows_and_sets(runtime, capsys):  # noqa: F811
     assert '"economical"' in capsys.readouterr().out
     assert main(['--vault', str(vault), 'profile']) == 0
     assert '"economical"' in capsys.readouterr().out
+
+
+def test_session_start_after_compaction_delivers_again(runtime, service):  # noqa: F811
+    from brain_eleven.runtime.storage import write_json
+    vault, _ = runtime
+
+    def emitted(source):  # like main(): the receipt is written after the output is flushed
+        result = launcher.hook(vault, 'claude', 'SessionStart', {'session_id': 's', 'cwd': str(vault), 'source': source})
+        if isinstance(result, tuple):
+            write_json(result[1], result[2])
+            return _context(result[0])
+        return _context(result)
+
+    assert emitted('startup') == LONG
+    assert emitted('resume') == ''  # same session, already delivered
+    # Compaction dropped the first delivery from the model's window.
+    assert emitted('compact') == LONG
+    assert service[-1]['turn'].startswith('compact:')

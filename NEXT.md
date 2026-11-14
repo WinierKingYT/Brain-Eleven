@@ -150,8 +150,13 @@ yanıtlanabilsin.
    160'ar karakter), sıradaki adım. Onay istemez, sır süzgecinden geçer. Sınır:
    özette "karar" başlığı yok, kararlar ayrı tutulmuyor; kart büyüdü, oturum
    başındaki 1500 karakterlik pay aynı (madde 4'te ölçülecek).
-2. **Sıkıştırmadan sonra oturum kendi kartını geri alsın.** Önce yeniden üret:
-   "kendi kartı dışarıda bırakılıyor" bulgusu yalnız kod okumasından.
+2. ~~Sıkıştırmadan sonra oturum kendi kartını geri alsın.~~ **Yapıldı.** İki kök
+   neden bulundu ve testle yeniden üretildi: sıkıştırma sonrası oturum başı
+   "bu oturuma zaten verildi" sayılıp hiç bağlam vermiyordu; verseydi de oturumun
+   kendi kartı dışarıda kalıyordu. Artık her sıkıştırmadan sonra bağlam bir kez
+   daha veriliyor, oturumun kendi kartı en başta. Sınır: kart son yanıt
+   kancasında güncelleniyor, yani o anki sıkıştırmanın özeti kartta olmaz
+   (bir öncekininki olur). Canlı sıkıştırmada denenmedi.
 3. **Her alt ajan raporu projenin altına iş kaydı olarak.** Hafıza değil,
    "ajanın kaydı" etiketiyle. Çerçeve metni sızıntısının düzeltmesi burada.
 4. **Oturum başı = durum.** Neredeyiz → açık işler → konu haritası; önce ölç.

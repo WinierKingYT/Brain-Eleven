@@ -159,3 +159,17 @@ def test_compact_summary_keeps_where_it_stopped_done_and_pending(runtime, tmp_pa
     assert '- Yarım kalan: Eski kurulum betiğini silmek.' in note
     assert '- Sıradaki: Kapanış mesajını yazmak.' in note
     assert 'AKIA' not in note and 'Üçüncü' not in note
+
+
+def test_after_compaction_the_session_gets_its_own_card_first(runtime, tmp_path):  # noqa: F811
+    from brain_eleven.runtime.context import compile_context
+    vault, project_id = runtime
+    project = _project(vault, project_id)
+    for session, text in (('current', 'Kart işini bitirelim.'), ('other', 'Başka oturumun isteği.')):
+        session_cards.update(vault, project, capture_session_key('claude', session), _messages(
+            vault, project_id, tmp_path, session, [_user(text)]))
+    fresh = compile_context(vault, vault, '', client='claude', session='current', turn='bootstrap', event='SessionStart')
+    assert 'Kart işini bitirelim.' not in fresh['context']
+    after = compile_context(vault, vault, '', client='claude', session='current', turn='compact:1', event='SessionStart')
+    assert 'Bu oturum (sıkıştırmadan önce)' in after['context']
+    assert after['context'].index('Kart işini bitirelim.') < after['context'].index('Başka oturumun isteği.')
