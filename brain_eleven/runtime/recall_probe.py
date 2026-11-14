@@ -11,6 +11,8 @@ to a fresh session right now, and if not, is it in canonical memory at all?
   session said "bilmiyorum"), so it is reported and not scored.
 - IN_MEMORY_NOT_DELIVERED: an active memory holds it, the bootstrap did not
   select it (a selection problem; the memory ids are listed).
+- IN_TOPIC_NOTE: profile ``map`` delivered no record text, but a topic note the
+  bootstrap lists holds the whole answer: one read away. Reported, not scored.
 - IN_REVIEW_QUEUE: no active memory holds it, but pending review candidates
   do; accepting them is the fix (review ids are listed). When no single
   candidate holds every part of the answer, ``split`` is true and the ids are
@@ -119,6 +121,19 @@ def review_tags(pending, questions=None):
         for rid in review_ids_for(pending, question['groups'])[0]:
             tags.setdefault(rid, []).append(question['id'])
     return tags
+
+
+def _listed_topics(vault, context, memories, holders, groups):
+    """Topics the bootstrap's TOPIC NOTES list names whose note holds the whole answer."""
+    if '## TOPIC NOTES' not in context:
+        return []
+    from .memory_notes import _name, agent_readable
+    from .storage import RuntimeConfig
+    approved_only = RuntimeConfig(vault).load().get('b1_human_approval', False)
+    return sorted({_name(m['topic']) for m in memories
+                   if m.get('memory_id') in holders and m.get('topic') and m.get('scope') == 'project'
+                   and covers(m.get('content', ''), groups) and agent_readable(m, approved_only)
+                   and f"- {_name(m['topic'])} (" in context})
 
 
 SERVICE_WARM_TIMEOUT_SECONDS = 90
@@ -230,12 +245,17 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
                     holders = sorted({m.get('memory_id') for g in groups for m in memories
                                       if covers(m.get('content', ''), [g])})
             status = 'IN_MEMORY_NOT_DELIVERED' if holders else 'NOT_IN_MEMORY'
+            topics = _listed_topics(vault, context, memories, holders, groups) if holders else []
+            if topics:
+                status = 'IN_TOPIC_NOTE'
         review_ids, split = [], False
         if status == 'NOT_IN_MEMORY':
             review_ids, split = review_ids_for(pending, groups)
             if review_ids:
                 status = 'IN_REVIEW_QUEUE'
         entry = {'id': question['id'], 'question': question['question'], 'status': status, 'memory_ids': holders}
+        if status == 'IN_TOPIC_NOTE':
+            entry['topics'] = topics
         if review_ids:
             entry['review_ids'] = review_ids
             entry['split'] = split
@@ -252,6 +272,7 @@ def probe(vault, project_root=None, *, questions_path=None, mode='bootstrap'):
               'delivered_memories': len(bootstrap.get('selected_ids', [])) if bootstrap else 0,
               'score': sum(r['status'] == 'IN_CONTEXT' for r in results), 'of': len(results),
               'in_memory_not_delivered': sum(r['status'] == 'IN_MEMORY_NOT_DELIVERED' for r in results),
+              'in_topic_note': sum(r['status'] == 'IN_TOPIC_NOTE' for r in results),
               'in_review_queue': sum(r['status'] == 'IN_REVIEW_QUEUE' for r in results),
               'in_context_split': sum(r['status'] == 'IN_CONTEXT_SPLIT' for r in results),
               'results': results}

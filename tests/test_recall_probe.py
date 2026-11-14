@@ -138,3 +138,24 @@ def test_cli_reads_a_local_questions_file(tmp_path, capsys):
     main(["--vault", str(vault), "recall-probe", "--questions", str(local)])
     result = json.loads(capsys.readouterr().out)
     assert (result["score"], result["of"]) == (1, 1)
+
+
+def test_map_profile_answer_in_a_listed_topic_note_is_reported_not_scored(tmp_path):
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.memory_notes import set_topic
+    from brain_eleven.runtime.storage import RuntimeConfig
+    vault, _ = _runtime(tmp_path, shadow_accept=True)
+    _accept(vault, _review_item(tmp_path, vault, "q1",
+                                "We decided that the holdout corpus-v2 gate stays red by decision.", NEW_TIME))
+    _accept(vault, _review_item(tmp_path, vault, "q5",
+                                "We decided the retrieval-quality contract stays separate.", NEW_TIME))
+    RuntimeConfig(vault).set_context_profile("map")
+    first = next(m["memory_id"] for m in MemoryStore(vault).load()["validated_memory"] if "holdout" in m["content"])
+    set_topic(vault, [first], "Kapilar")
+
+    result = probe(vault)
+    by_id = {r["id"]: r for r in result["results"]}
+    assert by_id[1]["status"] == "IN_TOPIC_NOTE" and by_id[1]["topics"] == ["Kapilar"]
+    # No topic, so no note to read: still a plain selection miss.
+    assert by_id[5]["status"] == "IN_MEMORY_NOT_DELIVERED"
+    assert (result["score"], result["in_topic_note"]) == (0, 1)
