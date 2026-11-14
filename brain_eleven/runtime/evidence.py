@@ -531,7 +531,13 @@ def _parse_lines(vault, path, client, session, project, captured_at, complete, o
                     # kept as evidence but never counts as the user speaking:
                     # 2026-09-30 it was most of the review-queue noise.
                     role = 'system'
-                if kind == 'user' and role in {'user', 'system'}:
+                origin = doc.get('origin')
+                handed_back = origin.get('handbackReportText') if isinstance(origin, dict) and origin.get('handback') else None
+                if kind == 'user' and isinstance(handed_back, str) and handed_back.strip():
+                    # A background subagent's report: the harness keeps the clean text
+                    # beside the framed message, so the frame never reaches a finding.
+                    role, content = 'subagent', handed_back
+                elif kind == 'user' and role in {'user', 'system'}:
                     report = subagent_report(content)
                     if report is not None:
                         # A subagent's report (a foreground tool result or a

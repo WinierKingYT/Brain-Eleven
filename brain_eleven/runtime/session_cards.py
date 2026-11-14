@@ -92,6 +92,7 @@ def render_card(card):
             continue  # already the title
         if card.get(key) and not (key == 'last' and card.get('last') == card.get('first')):
             lines.append(f'- {label}: {card[key]}')
+    lines += [f'- Alt ajan raporu: {line}' for line in card.get('subagents', [])]
     lines.append(f"- {card.get('prompts', 0)} istem · son güncelleme {_local(card['updated_at'])}")
     return '\n'.join(lines)
 
@@ -176,6 +177,34 @@ def render(vault, project, state):
     return state
 
 
+SUBAGENT_LINE_LIMIT = 300
+CARD_SUBAGENT_LINES = 3
+SUBAGENT_LOG_HEADER = '<!-- Brain-Eleven: alt ajan raporlarının ilk satırı. Ajanın kaydıdır, hafıza değildir; silinmez. -->\n'
+
+
+def _first_line(report):
+    """Opening of a report without Markdown heading or bold marks; a bare title ("Özet") takes the next line too."""
+    kept = []
+    for line in (report or '').splitlines():
+        line = line.strip().lstrip('#').replace('**', '').strip()
+        if line:
+            kept.append(line)
+        if len(' '.join(kept)) >= 40:
+            break
+    return ': '.join(kept[:1] + [' '.join(kept[1:])]) if len(kept) > 1 else (kept[0] if kept else None)
+
+
+def _log_subagent(vault, project, client, stamp, line):
+    """Append one subagent report line to the project's log note; a replayed message is not written twice."""
+    # shortcut: one ever-growing file per project, split by month when it gets slow to read.
+    note = _note_path(vault, project)
+    path = note.with_name(note.stem + ' - alt ajanlar.md')
+    existing = path.read_text(encoding='utf-8') if path.exists() else SUBAGENT_LOG_HEADER
+    entry = f'- {_local(stamp or now())} · {client} · {line}'
+    if entry not in existing:
+        _write_text(path, existing.rstrip('\n') + '\n' + entry + '\n')
+
+
 def update(vault, project, session, messages):
     """Fold one capture increment into the session's card and rewrite the note."""
     from .context import is_automated_prompt
@@ -203,6 +232,13 @@ def update(vault, project, session, messages):
                 kept = [t for t in (_safe(item, limit) for item in _summary_items(content, heading, count)) if t]
                 if kept:
                     card[field] = ' · '.join(kept)
+        elif role == 'subagent':
+            line = _safe(_first_line(content), SUBAGENT_LINE_LIMIT)
+            if not line:
+                continue
+            _log_subagent(vault, project, card['client'], stamp, line)
+            if line not in card.get('subagents', []):
+                card['subagents'] = (card.get('subagents', []) + [line])[-CARD_SUBAGENT_LINES:]
         else:
             continue
         changed = True

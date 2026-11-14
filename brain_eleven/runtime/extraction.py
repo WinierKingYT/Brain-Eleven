@@ -355,6 +355,7 @@ def _summary_candidates(message: EvidenceMessage) -> list[NewMemoryCandidate]:
 
 SUBAGENT_FINDINGS_HEADING = "### Brain-Eleven bulguları"
 _NEXT_HEADING = re.compile(r"^\s*#{1,6}\s", re.MULTILINE)
+_CLOSING_TAG = re.compile(r"</[a-z][\w-]*>")
 
 
 def subagent_facts(content: str) -> list[str]:
@@ -363,9 +364,10 @@ def subagent_facts(content: str) -> list[str]:
     if start < 0:
         return []
     body = content[start + len(SUBAGENT_FINDINGS_HEADING):]
-    following = _NEXT_HEADING.search(body)
-    if following:
-        body = body[:following.start()]
+    # A hand-back frame closes right after the report; its text is not a finding.
+    following = min((m.start() for m in (_NEXT_HEADING.search(body), _CLOSING_TAG.search(body)) if m), default=None)
+    if following is not None:
+        body = body[:following]
     facts: list[str] = []
     current: list[str] = []
     for line in body.splitlines():

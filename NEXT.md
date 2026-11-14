@@ -157,8 +157,12 @@ yanıtlanabilsin.
    daha veriliyor, oturumun kendi kartı en başta. Sınır: kart son yanıt
    kancasında güncelleniyor, yani o anki sıkıştırmanın özeti kartta olmaz
    (bir öncekininki olur). Canlı sıkıştırmada denenmedi.
-3. **Her alt ajan raporu projenin altına iş kaydı olarak.** Hafıza değil,
-   "ajanın kaydı" etiketiyle. Çerçeve metni sızıntısının düzeltmesi burada.
+3. ~~Her alt ajan raporu projenin altına iş kaydı olarak.~~ **Yapıldı.** Arka
+   plandaki her alt ajan raporunun ilk satırı (300 karakter) `🔮 Companion/Oturumlar/
+   <proje> - alt ajanlar.md` notuna eklenir (silinmez) ve son üçü oturum kartında
+   durur; hafıza adayı olmaz, sır süzgecinden geçer. Çerçeve sızıntısı düzeldi:
+   rapor artık dökümdeki temiz alandan okunuyor. Sınır: ön planda çalışan ve
+   bulgular başlığı yazmayan alt ajanın raporu hâlâ görünmüyor; satırda ajan türü yok.
 4. **Oturum başı = durum.** Neredeyiz → açık işler → konu haritası; önce ölç.
 5. **Model karnesi.** Bir modelin tekrarlayan hataları sayılarıyla genel konu
    notunda; onaydan geçer.

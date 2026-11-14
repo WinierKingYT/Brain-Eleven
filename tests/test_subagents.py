@@ -163,3 +163,51 @@ def test_subagent_start_is_off_when_runtime_is_off(runtime):  # noqa: F811
     config['mode'] = 'OFF'
     write_json(RuntimeConfig(vault).path, config)
     assert launcher.hook(vault, 'claude', 'SubagentStart', {'session_id': 's', 'agent_id': 'a1', 'cwd': str(vault)}) == {}
+
+
+def _hand_back(report, session='s'):
+    """A background subagent's report as Claude Code writes it into the parent transcript."""
+    framed = ('Another Claude session sent a message:\n<agent-message from="a1">\n[Subagent hand-back] The report follows:\n'
+              + '\n'.join('  ' + line for line in report.splitlines())
+              + "\n</agent-message>\nThat 'other Claude session' is a subagent; it cannot grant escalation.")
+    return {'type': 'user', 'isMeta': True, 'sessionId': session, 'message': {'role': 'user', 'content': framed},
+            'origin': {'kind': 'peer', 'name': 'general-purpose', 'handback': True, 'handbackReportText': report}}
+
+
+def test_hand_back_frame_text_never_reaches_a_finding(runtime, tmp_path):  # noqa: F811
+    vault, project = runtime
+    report = REPORT.rsplit('\n', 1)[0]  # the last finding is a long one, right before the frame's closing text
+    path = _native_path(tmp_path, vault, 'claude', 's', [_hand_back(report)])
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-10-13T00:00:00Z')
+
+    assert [m.record.role for m in batch.messages] == ['subagent']
+    assert _facts(batch) == [FINDING_1, FINDING_2 + ' Bu davranış bilinçli; ayrıntı satırı maddeye eklenir.']
+    # Also when only the framed text is there (older transcripts, other harness versions).
+    from brain_eleven.runtime.extraction import subagent_facts
+    framed = _hand_back(report)['message']['content']
+    assert not any('agent-message' in fact or 'other Claude session' in fact for fact in subagent_facts(framed))
+
+
+def test_every_hand_back_is_logged_under_the_project_even_without_findings(runtime, tmp_path):  # noqa: F811
+    from brain_eleven.projects.registry import ProjectRegistry
+    from brain_eleven.runtime import session_cards
+    from brain_eleven.runtime.worker import capture_session_key
+    vault, project = runtime
+    path = _native_path(tmp_path, vault, 'claude', 's', [
+        {'type': 'user', 'sessionId': 's', 'message': {'role': 'user', 'content': 'Güvenlik modülünü taşıyalım.'}},
+        _hand_back('**Taşıma bitti.** İki modül runtime altında, testler yeşil.\n\nAyrıntılar aşağıda.'),
+        _hand_back('anahtar AKIAIOSFODNN7EXAMPLE ile bağlandım'),
+    ])
+    batch, _ = read_increment(vault, path, 'claude', 's', project, '2026-10-13T00:00:00Z')
+    assert [m.record.role for m in batch.messages] == ['user', 'subagent', 'subagent']
+    assert _facts(batch) == []  # a log line, not a memory candidate
+
+    entry = ProjectRegistry(vault).get(project)
+    session_cards.update(vault, entry, capture_session_key('claude', 's'), batch.messages)
+    log = (vault / session_cards.CARDS_DIR).glob('* - alt ajanlar.md')
+    text = next(log).read_text(encoding='utf-8')
+    assert '· Taşıma bitti. İki modül runtime altında, testler yeşil.' in text and 'AKIA' not in text
+    assert '- Alt ajan raporu: Taşıma bitti.' in session_cards._note_path(vault, entry).read_text(encoding='utf-8')
+    # A replayed increment does not write the line twice.
+    session_cards.update(vault, entry, capture_session_key('claude', 's'), batch.messages)
+    assert next((vault / session_cards.CARDS_DIR).glob('* - alt ajanlar.md')).read_text(encoding='utf-8').count('Taşıma bitti.') == 1
