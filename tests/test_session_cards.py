@@ -140,3 +140,22 @@ def test_card_state_is_json_in_the_runtime_root(runtime, tmp_path):  # noqa: F81
         vault, project_id, tmp_path, 's', [_user('Kayıt testi.')]))
     state = json.loads(session_cards._state_path(vault, project_id).read_text(encoding='utf-8'))
     assert len(state['cards']) == 1
+
+
+def test_compact_summary_keeps_where_it_stopped_done_and_pending(runtime, tmp_path):  # noqa: F811
+    vault, project_id = runtime
+    project = _project(vault, project_id)
+    summary = ('Summary:\n1. Primary Request and Intent:\n   - Temizlik.\n'
+               '5. Problem Solving:\n   - Kuyruk ayıklandı, 16 aday kabul edildi.\n     - alt satır\n'
+               '   - Eski sorular yenilendi.\n   - Üçüncü madde karta girmez.\n'
+               '7. Pending Tasks:\n   - anahtar AKIAIOSFODNN7EXAMPLE ile bağlan\n   - Eski kurulum betiğini silmek.\n'
+               '8. Current Work:\n   Dört dersi temiz haliyle yeniden kaydediyordum.\n'
+               '9. Optional Next Step:\n   Kapanış mesajını yazmak.\n')
+    session_cards.update(vault, project, capture_session_key('claude', 's'), _messages(
+        vault, project_id, tmp_path, 's', [_user(summary, isCompactSummary=True)]))
+    note = _note(vault, project)
+    assert '- Sıkıştırmada kalınan yer: Dört dersi temiz haliyle yeniden kaydediyordum.' in note
+    assert '- Yapılan: Kuyruk ayıklandı, 16 aday kabul edildi. · Eski sorular yenilendi.' in note
+    assert '- Yarım kalan: Eski kurulum betiğini silmek.' in note
+    assert '- Sıradaki: Kapanış mesajını yazmak.' in note
+    assert 'AKIA' not in note and 'Üçüncü' not in note
