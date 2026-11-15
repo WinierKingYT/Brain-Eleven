@@ -163,7 +163,14 @@ yanıtlanabilsin.
    durur; hafıza adayı olmaz, sır süzgecinden geçer. Çerçeve sızıntısı düzeldi:
    rapor artık dökümdeki temiz alandan okunuyor. Sınır: ön planda çalışan ve
    bulgular başlığı yazmayan alt ajanın raporu hâlâ görünmüyor; satırda ajan türü yok.
-4. **Oturum başı = durum.** Neredeyiz → açık işler → konu haritası; önce ölç.
+4. ~~Oturum başı = durum.~~ **Yapıldı.** Ölçüm (gerçek kurulum, `map`): oturum başı
+   3.121 karakter; kart 1.500'de satır ortasında kesiliyordu, eski iş sonuçlarının
+   "sıradaki" satırları ve kartın eski sıkıştırmadan kalan "sıradaki" satırı
+   çoktan yapılmış işleri gösteriyordu. Artık: yalnız en yeni iş sonucu "sıradaki"
+   taşır; sıkıştırmadan sonra yeni istek geldiyse kartın "kalınan yer / sıradaki"
+   satırları gösterilmez; kart ya bütün verilir ya hiç. Sonra: 2.737 karakter.
+   Dokunulmayan: sahip notları (bu projeyle ilgisiz satırlar var, sahibin metni),
+   içi boş "CURRENT PROJECT STATE" başlığı (282 karakter), ikinci kart sığmıyor.
 5. **Model karnesi.** Bir modelin tekrarlayan hataları sayılarıyla genel konu
    notunda; onaydan geçer.
 6. **Skill'ler "neden" notuna bağlansın.**
