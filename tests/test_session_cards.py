@@ -201,3 +201,24 @@ def test_session_start_shows_state_without_stale_or_cut_lines(runtime, tmp_path)
     short = session_cards.context(vault, project_id, limit=500)
     assert short.endswith(')') or short.splitlines()[-1].startswith('- ')  # ends at a whole block
     assert '### ' not in short or 'son güncelleme' in short.splitlines()[-1]
+
+
+def test_model_report_card_reaches_every_session_start(tmp_path):
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.context import compile_context
+    from brain_eleven.runtime.memory_notes import set_topic
+    from tests.test_memclaim01_claim_key import NEW_TIME, _accept, _review_item
+    from tests.test_memclaim01_claim_key import _runtime as shadow_runtime
+    vault, _ = shadow_runtime(tmp_path, shadow_accept=True)
+    _accept(vault, _review_item(tmp_path, vault, 'k1', 'We decided that reviewers rerun the suite because the model claims tests passed without running them.', NEW_TIME))
+    _accept(vault, _review_item(tmp_path, vault, 'k2', 'We decided the dashboard stays read-only.', NEW_TIME))
+    ids = {('tests passed' in m['content']): m['memory_id'] for m in MemoryStore(vault).load()['validated_memory']}
+    set_topic(vault, [ids[True]], 'Model karnesi - Opus 5.5')
+    set_topic(vault, [ids[False]], 'Arayüz')
+
+    def start(turn):
+        return compile_context(vault, vault, '', client='claude', session='s', turn=turn, event='SessionStart')['context']
+    for context in (start('bootstrap'), start('subagent_x')):
+        block = context.split('## MODEL KARNESİ', 1)[1].split('\n\n##', 1)[0]
+        assert '### Opus 5.5' in block and 'claims tests passed without running them' in block
+        assert 'dashboard' not in block

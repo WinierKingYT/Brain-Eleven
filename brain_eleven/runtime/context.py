@@ -745,6 +745,51 @@ def _asks_continuity(request):
         return False
 
 
+MODEL_CARD_TOPIC = 'Model karnesi'
+MODEL_CARD_HEADING = '## MODEL KARNESİ'
+MODEL_CARD_CHARS, MODEL_CARD_LINE_CHARS = 800, 200
+
+
+def _add_model_cards(vault, result, *, client):
+    """Put the models' recurring mistakes first in a native SessionStart context (owner decision 2026-11-15).
+
+    A report card is any project's approved lesson whose topic starts with
+    "Model karnesi" ("Model karnesi - Opus 5.5"). It is written through the
+    normal review path and the ``topic`` command; this only reads it, for the
+    orchestrator and for every subagent, in every project.
+    """
+    if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
+        return
+    try:
+        from brain_eleven.memory import MemoryStore
+        from .memory_notes import agent_readable
+        config = RuntimeConfig(vault).load()
+        private = set(config.get('cross_project_private') or ())
+        approved_only = config.get('b1_human_approval', False)
+        cards = {}
+        for item in MemoryStore(vault).load()['validated_memory']:
+            topic = str(item.get('topic') or '')
+            if (topic.startswith(MODEL_CARD_TOPIC) and str(item.get('status') or 'active') == 'active'
+                    and (item.get('project_id') == result['project_id'] or item.get('project_id') not in private)
+                    and agent_readable(item, approved_only)):
+                model = topic[len(MODEL_CARD_TOPIC):].strip(' -') or 'Genel'
+                cards.setdefault(model, []).append(' '.join(str(item.get('content', '')).split())[:MODEL_CARD_LINE_CHARS])
+    except Exception:  # Advisory: a damaged store never blocks the bootstrap.
+        return
+    if not cards:
+        return
+    lines = [MODEL_CARD_HEADING, 'Modellerin tekrarlayan hataları (sahibin onayladığı dersler). İş verirken ve iş yaparken bunlara dikkat et.']
+    for model in sorted(cards):
+        lines += [f'### {model}', *(f'- {text}' for text in cards[model])]
+    text = ''
+    for line in lines:  # whole lines only, under the cap
+        if len(text) + len(line) + 1 > MODEL_CARD_CHARS:
+            break
+        text += line + '\n'
+    result['context'] = (text + '\n' + result['context']) if result.get('context') else text.rstrip('\n')
+    result['delivered'] = result['delivery_approved'] = True
+
+
 def _add_companion(vault, result, *, client, hints=False):
     """Put the owner's Core/Kurallar notes first in a native context; never blocks it."""
     if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
@@ -766,6 +811,7 @@ def compile_context(vault, project_root, request, *, client='manual', session=''
         result = compile_bootstrap(vault, project_root, budget=budget, session=session)
         _add_session_cards(vault, result, client=client, session=session, own=turn.startswith('compact:'))
         _add_companion(vault, result, client=client, hints=True)
+        _add_model_cards(vault, result, client=client)
         _record_usage_delivery(vault, result, client=client, session=session, turn=turn, event=event)
         result['elapsed_ms'] = round((perf_counter() - start) * 1000)
         return result
