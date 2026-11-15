@@ -10,8 +10,9 @@ import shlex
 import sys
 from .storage import RuntimeConfig, identity, read_json, write_json, now, runtime_file_lock as file_lock
 
-EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart')
-# Codex has no subagent lifecycle hook.
+# PostToolUse (Skill tool only) and UserPromptExpansion hand an opened skill its "why" notes.
+EVENTS = ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart', 'PostToolUse', 'UserPromptExpansion')
+# Codex has no subagent lifecycle hook and no skill hooks.
 CLIENT_EVENTS = {'claude': EVENTS, 'codex': ('SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd')}
 
 
@@ -225,6 +226,7 @@ def install(vault, *, home=None, clients=('claude', 'codex')):
                 for event, entry in additions.items():
                     entry['hooks'][0].update(command=hook_python(),
                         args=[str(Path(__file__).with_name('launcher.py').resolve()), '--vault', str(Path(vault).resolve()), '--client', client, '--event', event])
+                additions['PostToolUse']['matcher'] = 'Skill'
             if client == 'codex':
                 additions['UserPromptSubmit']['hooks'][0]['additionalContextLimit'] = 3500
             old = manifest['clients'].get(client, {})
