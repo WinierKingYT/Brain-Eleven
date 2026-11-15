@@ -3,8 +3,21 @@
 Tek durum dosyası. Her oturum sonunda en üste 2–3 satır eklenir; eskiyen
 satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 
-## Şu an (2026-11-14)
+## Şu an (2026-11-15)
 
+- **v1.5 kapandı (PR #109–#115): proje, ajanın bağlam penceresi olsun.** Oturum
+  kartı sıkıştırma özetinden kalınan yeri tutuyor; sıkıştırmadan sonra bağlam
+  yeniden veriliyor, oturumun kendi kartı başta; alt ajan raporları proje notuna
+  yazılıyor; oturum başı eskimiş "sıradaki" satırı vermiyor (3.121 → 2.737
+  karakter); model karnesi her oturum ve alt ajan başında; skill açılınca neden
+  notu ekleniyor; `/orchestrate` faz sonunda iş kaydı yazıyor ve karneyi Luna'ya
+  veriyor. Ölçüm: testler 1356 geçti, 0 kırmızı; `recall-probe` önce/sonra aynı
+  (oturum başı 0/5 puan + 5/5 konu notunda; `--mode prompt` 5/5, ama bu mod
+  çalışan eski servisi ölçer). `doctor` ATTENTION: 23 bekleyen aday, 24 eskimiş
+  aday. **Ölçülmeyen: v1.5'in hiçbir parçası gerçek oturumda denenmedi**; kurulum
+  güncellenmedi (`kur.ps1 -Guncelle`). Başarı ölçütü (gerçek bir sıkıştırmadan
+  sonra "neredeyiz, sırada ne var" kayıtlardan cevaplanır) henüz sınanmadı.
+  Gerçek kurulumda karne ve skill notu kaydı yok.
 - **v1.4 kapandı (PR #106–#108): ölçebilir hale getir.** Hatırlama sınaması yeni
   beş soruyla ve `map` profilini anlayarak çalışıyor (oturum başı 0/5 puan + 5/5
   konu notunda, `--mode prompt` 5/5). 80 bekleyen aday ayıklandı: 17 sohbetten
@@ -138,7 +151,12 @@ satırlar silinir. Kontrat, rapor ya da inceleme dosyası açılmaz.
 - Çalışan kısım: ana oturum yakalama, istem anında hatırlama (resmî 5/5,
   401 kayıtta 9/10), projeler arası referans, deneme süresi, `/study`.
 
-## Sıradaki işler: v1.5 (onaylandı 2026-11-14) — proje, ajanın bağlam penceresi olsun
+## Sıradaki işler
+
+v1.6 taslağı sahibin onayını bekliyor. İlk iş her durumda: kurulumu güncelle ve
+v1.5'i gerçek oturumda sına.
+
+## v1.5 maddeleri (kapandı 2026-11-15) — proje, ajanın bağlam penceresi olsun
 
 Hedef: yapılan iş ve öğrenilen bilgi sıkıştırmadan (compaction) sonra da
 kalsın; yeni ajana aynı şey yeniden öğretilmesin. Başarı ölçüsü: gerçek bir

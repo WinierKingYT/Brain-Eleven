@@ -1,4 +1,4 @@
-"""Automated version of the owner's five-question recall test (TEST-LOG.md).
+"""Automated version of the owner's five-question recall test (evals/recall_probe).
 
 For each question it answers one thing without asking a model: is the
 information the key answer needs in the context SessionStart would deliver
