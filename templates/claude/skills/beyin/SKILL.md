@@ -56,6 +56,12 @@ Her kayıt bir konuya bağlanabilir; konu yalnız kayıtları notlarda gruplar.
 {{PYTHON}} -m brain_eleven --vault "{{VAULT_PATH}}" topic "<konu>" <mem_id> ...
 ```
 
+**Model karnesi.** Bir modelin tekrar eden hatasını gördüğünde (kendi işinde ya
+da bir alt ajanın raporunda) hatayı ve neden yanlış olduğunu tek cümlelik bir
+ders olarak yaz, kullanıcı onaylayınca kaydı `Model karnesi - <model>` konusuna
+bağla (ör. `Model karnesi - Opus 5.5`). Bu konudaki dersler her projede, her
+oturumun ve alt ajanın başında **MODEL KARNESİ** başlığıyla verilir.
+
 İlki mevcut konuları ve konusu olmayan kayıtları listeler. Kullanıcı "kayıtları
 konulara ayır" derse: konusuz kayıtları oku, az sayıda (proje başına 4–8) kısa
 konu adı öner, hangi kaydın hangi konuya gideceğini sohbette göster ve kullanıcı

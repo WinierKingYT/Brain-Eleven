@@ -171,8 +171,12 @@ yanıtlanabilsin.
    satırları gösterilmez; kart ya bütün verilir ya hiç. Sonra: 2.737 karakter.
    Dokunulmayan: sahip notları (bu projeyle ilgisiz satırlar var, sahibin metni),
    içi boş "CURRENT PROJECT STATE" başlığı (282 karakter), ikinci kart sığmıyor.
-5. **Model karnesi.** Bir modelin tekrarlayan hataları sayılarıyla genel konu
-   notunda; onaydan geçer.
+5. ~~Model karnesi.~~ **Yapıldı (basit biçim, sahip kararı 2026-11-15).** Konusu
+   `Model karnesi` ile başlayan onaylı kayıtlar (`Model karnesi - Opus 5.5`) her
+   projede, her oturumun ve alt ajanın başında en üstte verilir (en çok 800
+   karakter). Yeni yazım yolu yok: ders normal onaydan geçer, `topic` ile bağlanır.
+   Sınır: sayı tutulmaz; hatayı sistem bulmaz, ajan yazar; karne modele göre
+   süzülmez, hepsi herkese verilir. Gerçek kurulumda henüz karne kaydı yok.
 6. **Skill'ler "neden" notuna bağlansın.**
 7. **`/orchestrate` sonuçlarını Brain-Eleven'a yazsın, karneyi okusun.** Skill
    depo dışında: doğrudan dosya düzenlemesi, başlamadan gösterilir. Gerçek uçtan
