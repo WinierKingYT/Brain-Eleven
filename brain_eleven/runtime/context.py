@@ -795,6 +795,17 @@ def skill_notes(vault, project_id, skill):
                          *(f'- {text}' for text in lessons)]).rstrip('\n')
 
 
+def model_cards(vault, project_id=None):
+    """The report card block as text ('' when there is none); also printed by the ``karne`` command."""
+    cards = _topic_lessons(vault, project_id, MODEL_CARD_TOPIC)
+    if not cards:
+        return ''
+    lines = [MODEL_CARD_HEADING, 'Modellerin tekrarlayan hataları (sahibin onayladığı dersler). İş verirken ve iş yaparken bunlara dikkat et.']
+    for model in sorted(cards):
+        lines += [f'### {model or "Genel"}', *(f'- {text}' for text in cards[model])]
+    return _whole_lines(lines)
+
+
 def _add_model_cards(vault, result, *, client):
     """Put the models' recurring mistakes first in a native SessionStart context (owner decision 2026-11-15).
 
@@ -806,15 +817,11 @@ def _add_model_cards(vault, result, *, client):
     if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
         return
     try:
-        cards = _topic_lessons(vault, result['project_id'], MODEL_CARD_TOPIC)
+        text = model_cards(vault, result['project_id'])
     except Exception:  # Advisory: a damaged store never blocks the bootstrap.
         return
-    if not cards:
+    if not text:
         return
-    lines = [MODEL_CARD_HEADING, 'Modellerin tekrarlayan hataları (sahibin onayladığı dersler). İş verirken ve iş yaparken bunlara dikkat et.']
-    for model in sorted(cards):
-        lines += [f'### {model or "Genel"}', *(f'- {text}' for text in cards[model])]
-    text = _whole_lines(lines)
     result['context'] = (text + '\n' + result['context']) if result.get('context') else text.rstrip('\n')
     result['delivered'] = result['delivery_approved'] = True
 

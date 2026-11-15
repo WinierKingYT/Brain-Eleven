@@ -110,6 +110,8 @@ def main(argv=None):
     profile_cmd.add_argument('profile', nargs='?', choices=['normal', 'economical', 'manual', 'map'], help='omit to show the current profile')
     milestone_cmd = sub.add_parser('close-milestone', help="mark this project's current milestone completed; the session-start state line stops showing it")
     milestone_cmd.add_argument('--project-root', default=None, help='default: current folder')
+    karne_cmd = sub.add_parser('karne', help="print the models' report card (approved 'Model karnesi' lessons) for tools that build their own prompts")
+    karne_cmd.add_argument('--project-root', default=None, help='default: current folder; need not be enrolled')
     retire_cmd = sub.add_parser('retire', help='retire memories by id (status resolved; nothing is deleted)')
     retire_cmd.add_argument('memory_ids', nargs='+')
     retire_cmd.add_argument('--note', default='Sahip: yanlış veya gereksiz kayıt.')
@@ -250,6 +252,12 @@ def main(argv=None):
         elif args.command == 'notes':
             from .runtime.memory_notes import refresh
             result = refresh(args.vault, force=True)
+        elif args.command == 'karne':
+            import os
+            from .runtime.context import model_cards
+            from .runtime.worker import allowed
+            project = allowed(args.vault, args.project_root or os.getcwd())
+            result = {'text': model_cards(args.vault, project['project_id'] if project else None).rstrip()}
         elif args.command == 'profile':
             from .runtime.storage import RuntimeConfig
             config = RuntimeConfig(args.vault)

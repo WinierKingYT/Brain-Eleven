@@ -255,3 +255,20 @@ def test_opening_a_skill_brings_its_why_notes(tmp_path):
     install(vault, home=home, clients=('claude',))
     hooks = json.loads((home / '.claude' / 'settings.json').read_text(encoding='utf-8'))['hooks']
     assert [entry.get('matcher') for entry in hooks['PostToolUse']] == ['Skill']
+
+
+def test_karne_command_prints_the_report_card_for_other_tools(tmp_path, capsys):
+    from brain_eleven.__main__ import main
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime.memory_notes import set_topic
+    from tests.test_memclaim01_claim_key import NEW_TIME, _accept, _review_item
+    from tests.test_memclaim01_claim_key import _runtime as shadow_runtime
+    vault, _ = shadow_runtime(tmp_path, shadow_accept=True)
+    assert main(['--vault', str(vault), 'karne']) == 0
+    assert json.loads(capsys.readouterr().out)['text'] == ''
+    _accept(vault, _review_item(tmp_path, vault, 'k1', 'We decided that reviewers rerun the suite because the model claims tests passed without running them.', NEW_TIME))
+    set_topic(vault, [MemoryStore(vault).load()['validated_memory'][0]['memory_id']], 'Model karnesi - Luna')
+    # A tool outside any enrolled project (the orchestrate skill) still gets the card.
+    assert main(['--vault', str(vault), 'karne', '--project-root', str(tmp_path / 'elsewhere')]) == 0
+    text = json.loads(capsys.readouterr().out)['text']
+    assert '### Luna' in text and 'claims tests passed without running them' in text

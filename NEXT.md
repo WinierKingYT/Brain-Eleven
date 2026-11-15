@@ -184,9 +184,15 @@ yanıtlanabilsin.
    (yalnız Skill aracı) ve `UserPromptExpansion`. Sınır: kancanın bağlam
    ekleyebildiği belgeden doğrulandı, gerçek oturumda denenmedi; skill her
    açılışta notu yeniden alır; gerçek kurulumda henüz böyle bir kayıt yok.
-7. **`/orchestrate` sonuçlarını Brain-Eleven'a yazsın, karneyi okusun.** Skill
-   depo dışında: doğrudan dosya düzenlemesi, başlamadan gösterilir. Gerçek uçtan
-   uca deneme en sonda.
+7. ~~`/orchestrate` sonuçlarını Brain-Eleven'a yazsın, karneyi okusun.~~ **Yapıldı
+   (2026-11-15).** Depoda: `karne` komutu karneyi yazdırır (kayıtlı olmayan
+   klasörden de). Skill'de (depo dışı, `~/.claude/skills/orchestrate`): faz sonunda
+   iş kaydı (`receipt`) yazılır, karne Luna'nın iş emrine eklenir, yeni dersler
+   "karne adayı" olarak listelenir ve sahibe sorulur. Anahtar:
+   `brain_eleven_work_log` (açıldı). Skill'in eski karar kaydetme adımı sahibe
+   sormadan hafızaya yazdığı için kapalı bırakıldı. Sınır: gerçek `/orchestrate`
+   denemesi yapılmadı (sahip kararı: en sonda); iş kaydı için proje Brain-Eleven'a
+   kayıtlı olmalı.
 
 ## v1.4 maddeleri (kapandı 2026-11-14) — ölçebilir hale getir
 
