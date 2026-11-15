@@ -89,6 +89,7 @@ dosyasının üstüne yazılmaz.
 | `recall-probe` | 5 soruluk hatırlama testi. Varsayılan yalnız oturum başı bağlamını ölçer (12 yer); gerçek kullanım için `--mode prompt` (oturum başı + istem anı) |
 | `measure` | Gerçek kullanım ölçümü |
 | `why <id>` | Bu hafıza nereden geldi: kaynak rolü, onay, döküm hâlâ varsa asıl mesaj |
+| `karne` | Model karnesini yazdır (kendi iş emrini kuran araçlar için, ör. `/orchestrate`) |
 | `topic` / `topic "<konu>" <id> …` | Konuları ve konusuz kayıtları listele / kayıtlara konu adı ver (içerik değişmez). Adı `Model karnesi` ile başlayan konu (`Model karnesi - Opus 5.5`) model karnesidir: o modelin tekrarlayan hataları her projede, her oturumun ve alt ajanın başında verilir. `Skill - <skill adı>` konusu (`Skill - minecraft-armor`) o skill'in "neden" notudur: skill açıldığı anda ajana verilir (yalnız Claude) |
 | `retire <id>` | Bir hafızayı iptal et (silmeden) |
 | `close-milestone` | Projenin açık kilometre taşını tamamlandı say; oturum başındaki durum satırı onu göstermeyi bırakır |
