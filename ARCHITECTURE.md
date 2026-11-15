@@ -68,6 +68,13 @@ pano okuma ve Windows Başlat Menüsü kısayolu. URL açmaz, model çağırmaz;
 işleme `beyin-yakala` skill'iyle ajanın kendi araçlarıyla yapılır, sonuç
 `🧠 Bilgi/` notlarıdır (kanonik hafıza değil).
 
+## Skill'in neden notu
+
+`PostToolUse` (yalnız Skill aracı) ve `UserPromptExpansion` (sahip `/skill`
+yazınca) kancaları, açılan skill'in adını alır ve konusu `Skill - <ad>` olan
+onaylı kayıtları bağlama ekler (`context.skill_notes`). Yalnız Claude; yeni
+yazım yolu yoktur.
+
 ## Alt ajanlar
 
 `SubagentStart` (yalnız Claude) alt ajana proje hafızasını ve bir talimat

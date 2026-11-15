@@ -222,3 +222,36 @@ def test_model_report_card_reaches_every_session_start(tmp_path):
         block = context.split('## MODEL KARNESİ', 1)[1].split('\n\n##', 1)[0]
         assert '### Opus 5.5' in block and 'claims tests passed without running them' in block
         assert 'dashboard' not in block
+
+
+def test_opening_a_skill_brings_its_why_notes(tmp_path):
+    from brain_eleven.memory import MemoryStore
+    from brain_eleven.runtime import launcher
+    from brain_eleven.runtime.install import CLIENT_EVENTS, install
+    from brain_eleven.runtime.memory_notes import set_topic
+    from tests.test_memclaim01_claim_key import NEW_TIME, _accept, _review_item
+    from tests.test_memclaim01_claim_key import _runtime as shadow_runtime
+    vault, _ = shadow_runtime(tmp_path, shadow_accept=True)
+    _accept(vault, _review_item(tmp_path, vault, 'k1', 'We decided that armor textures stay 64x32 because the server pack rejects larger sheets.', NEW_TIME))
+    _accept(vault, _review_item(tmp_path, vault, 'k2', 'We decided the dashboard stays read-only.', NEW_TIME))
+    ids = {('armor' in m['content']): m['memory_id'] for m in MemoryStore(vault).load()['validated_memory']}
+    set_topic(vault, [ids[True]], 'Skill - minecraft-armor')
+    set_topic(vault, [ids[False]], 'Skill - baska')
+    base = {'session_id': 's', 'cwd': str(vault)}
+
+    def note(event, **fields):
+        output = launcher.hook(vault, 'claude', event, {**base, **fields})
+        return output.get('hookSpecificOutput', {}) if output else {}
+    by_tool = note('PostToolUse', tool_name='Skill', tool_input={'skill': 'plugin:minecraft-armor'})
+    typed = note('UserPromptExpansion', expansion_type='slash_command', command_name='minecraft-armor', prompt='/minecraft-armor')
+    assert by_tool['hookEventName'] == 'PostToolUse' and typed['hookEventName'] == 'UserPromptExpansion'
+    for text in (by_tool['additionalContext'], typed['additionalContext']):
+        assert 'server pack rejects larger sheets' in text and 'dashboard' not in text
+    assert note('PostToolUse', tool_name='Skill', tool_input={'skill': 'notsuz'}) == {}
+    assert note('PostToolUse', tool_name='Bash', tool_input={'command': 'ls'}) == {}
+    assert {'PostToolUse', 'UserPromptExpansion'} <= set(CLIENT_EVENTS['claude'])
+    assert not {'PostToolUse', 'UserPromptExpansion'} & set(CLIENT_EVENTS['codex'])
+    home = tmp_path / 'home'
+    install(vault, home=home, clients=('claude',))
+    hooks = json.loads((home / '.claude' / 'settings.json').read_text(encoding='utf-8'))['hooks']
+    assert [entry.get('matcher') for entry in hooks['PostToolUse']] == ['Skill']

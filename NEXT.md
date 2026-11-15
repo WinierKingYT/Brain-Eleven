@@ -177,7 +177,13 @@ yanıtlanabilsin.
    karakter). Yeni yazım yolu yok: ders normal onaydan geçer, `topic` ile bağlanır.
    Sınır: sayı tutulmaz; hatayı sistem bulmaz, ajan yazar; karne modele göre
    süzülmez, hepsi herkese verilir. Gerçek kurulumda henüz karne kaydı yok.
-6. **Skill'ler "neden" notuna bağlansın.**
+6. ~~Skill'ler "neden" notuna bağlansın.~~ **Yapıldı (sahip kararı 2026-11-15:
+   skill açılınca ver).** Konusu `Skill - <skill adı>` olan onaylı kayıtlar, o
+   skill açıldığı anda (ajan açınca ya da sahip `/skill` yazınca) bağlama eklenir;
+   en çok 800 karakter, yalnız Claude. Kuruluma iki kanca eklendi: `PostToolUse`
+   (yalnız Skill aracı) ve `UserPromptExpansion`. Sınır: kancanın bağlam
+   ekleyebildiği belgeden doğrulandı, gerçek oturumda denenmedi; skill her
+   açılışta notu yeniden alır; gerçek kurulumda henüz böyle bir kayıt yok.
 7. **`/orchestrate` sonuçlarını Brain-Eleven'a yazsın, karneyi okusun.** Skill
    depo dışında: doğrudan dosya düzenlemesi, başlamadan gösterilir. Gerçek uçtan
    uca deneme en sonda.

@@ -149,6 +149,8 @@ def hook(vault, client, event, payload):
         return {} if result.get('status') not in {'DEGRADED', 'FAILED'} else {'systemMessage': 'Brain-Eleven: konuşma kaynağı alınamadı; doctor ile kontrol edin.'}
     if event == 'SubagentStart':
         return subagent_start(vault, client, payload)
+    if event in SKILL_EVENTS:
+        return skill_opened(vault, client, event, payload)
     profile = cfg.load().get('context_profile', 'normal')
     if profile == 'manual' or (profile == 'economical' and event == 'UserPromptSubmit'):
         # The owner chose fewer injected tokens; nothing is compiled or started.
@@ -281,11 +283,32 @@ def subagent_start(vault, client, payload):
     return {'hookSpecificOutput': {'hookEventName': 'SubagentStart', 'additionalContext': text}}
 
 
+SKILL_EVENTS = ('PostToolUse', 'UserPromptExpansion')
+
+
+def skill_opened(vault, client, event, payload):
+    """Hand a just-opened skill its "why" notes: the model opened it (Skill tool) or the owner typed /skill."""
+    if client != 'claude':
+        raise ValueError('Unsupported hook event')
+    if event == 'PostToolUse':
+        tool_input = payload.get('tool_input')
+        skill = tool_input.get('skill') if payload.get('tool_name') == 'Skill' and isinstance(tool_input, dict) else None
+    else:
+        skill = payload.get('command_name') if payload.get('expansion_type') == 'slash_command' else None
+    if not isinstance(skill, str) or not skill or RuntimeConfig(vault).load().get('context_profile', 'normal') == 'manual':
+        return {}
+    from brain_eleven.runtime.context import skill_notes
+    from brain_eleven.runtime.worker import allowed
+    # shortcut: reads the store in the hook process and repeats on every open of the skill; move behind the service if the store grows slow to load.
+    text = skill_notes(vault, allowed(vault, payload['cwd'])['project_id'], skill)
+    return {'hookSpecificOutput': {'hookEventName': event, 'additionalContext': text}} if text else {}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--vault', required=True)
     parser.add_argument('--client', choices=['claude', 'codex'])
-    parser.add_argument('--event', choices=['SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart'])
+    parser.add_argument('--event', choices=['SessionStart', 'UserPromptSubmit', 'Stop', 'SessionEnd', 'SubagentStart', *SKILL_EVENTS])
     parser.add_argument('--serve', action='store_true')
     args = parser.parse_args(argv)
     if args.serve:

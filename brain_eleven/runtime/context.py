@@ -750,6 +750,51 @@ MODEL_CARD_HEADING = '## MODEL KARNESİ'
 MODEL_CARD_CHARS, MODEL_CARD_LINE_CHARS = 800, 200
 
 
+def _topic_lessons(vault, project_id, prefix):
+    """Approved lessons of every shareable project whose topic starts with ``prefix``, by the rest of the topic name."""
+    from brain_eleven.memory import MemoryStore
+    from .memory_notes import agent_readable
+    config = RuntimeConfig(vault).load()
+    private = set(config.get('cross_project_private') or ())
+    approved_only = config.get('b1_human_approval', False)
+    found = {}
+    for item in MemoryStore(vault).load()['validated_memory']:
+        topic = str(item.get('topic') or '')
+        if (topic.startswith(prefix) and str(item.get('status') or 'active') == 'active'
+                and (item.get('project_id') == project_id or item.get('project_id') not in private)
+                and agent_readable(item, approved_only)):
+            found.setdefault(topic[len(prefix):].strip(' -'), []).append(
+                ' '.join(str(item.get('content', '')).split())[:MODEL_CARD_LINE_CHARS])
+    return found
+
+
+def _whole_lines(lines, limit=MODEL_CARD_CHARS):
+    text = ''
+    for line in lines:  # whole lines only, under the cap
+        if len(text) + len(line) + 1 > limit:
+            break
+        text += line + '\n'
+    return text
+
+
+SKILL_NOTE_TOPIC = 'Skill'
+
+
+def skill_notes(vault, project_id, skill):
+    """The "why" lessons of a skill: approved records whose topic is "Skill - <name>" (owner decision 2026-11-15).
+
+    A skill file carries the steps, not the reasons the owner gave while
+    correcting it. Those are written through the normal review path and the
+    ``topic`` command; this only reads them when the skill is opened.
+    """
+    name = str(skill or '').rsplit(':', 1)[-1].strip().lower()  # plugin:skill -> skill
+    lessons = {key.lower(): value for key, value in _topic_lessons(vault, project_id, SKILL_NOTE_TOPIC).items()}.get(name) if name else None
+    if not lessons:
+        return ''
+    return _whole_lines([f'Brain-Eleven: "{name}" skill\'inin neden notları (sahibin onayladığı dersler). Skill\'i uygularken bunlara uy.',
+                         *(f'- {text}' for text in lessons)]).rstrip('\n')
+
+
 def _add_model_cards(vault, result, *, client):
     """Put the models' recurring mistakes first in a native SessionStart context (owner decision 2026-11-15).
 
@@ -761,31 +806,15 @@ def _add_model_cards(vault, result, *, client):
     if client not in {'claude', 'codex'} or not result.get('project_id') or result.get('status') not in {'SUCCESS', 'DEGRADED', 'EMPTY'}:
         return
     try:
-        from brain_eleven.memory import MemoryStore
-        from .memory_notes import agent_readable
-        config = RuntimeConfig(vault).load()
-        private = set(config.get('cross_project_private') or ())
-        approved_only = config.get('b1_human_approval', False)
-        cards = {}
-        for item in MemoryStore(vault).load()['validated_memory']:
-            topic = str(item.get('topic') or '')
-            if (topic.startswith(MODEL_CARD_TOPIC) and str(item.get('status') or 'active') == 'active'
-                    and (item.get('project_id') == result['project_id'] or item.get('project_id') not in private)
-                    and agent_readable(item, approved_only)):
-                model = topic[len(MODEL_CARD_TOPIC):].strip(' -') or 'Genel'
-                cards.setdefault(model, []).append(' '.join(str(item.get('content', '')).split())[:MODEL_CARD_LINE_CHARS])
+        cards = _topic_lessons(vault, result['project_id'], MODEL_CARD_TOPIC)
     except Exception:  # Advisory: a damaged store never blocks the bootstrap.
         return
     if not cards:
         return
     lines = [MODEL_CARD_HEADING, 'Modellerin tekrarlayan hataları (sahibin onayladığı dersler). İş verirken ve iş yaparken bunlara dikkat et.']
     for model in sorted(cards):
-        lines += [f'### {model}', *(f'- {text}' for text in cards[model])]
-    text = ''
-    for line in lines:  # whole lines only, under the cap
-        if len(text) + len(line) + 1 > MODEL_CARD_CHARS:
-            break
-        text += line + '\n'
+        lines += [f'### {model or "Genel"}', *(f'- {text}' for text in cards[model])]
+    text = _whole_lines(lines)
     result['context'] = (text + '\n' + result['context']) if result.get('context') else text.rstrip('\n')
     result['delivered'] = result['delivery_approved'] = True
 

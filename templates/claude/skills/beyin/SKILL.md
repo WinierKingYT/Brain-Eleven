@@ -62,6 +62,12 @@ ders olarak yaz, kullanıcı onaylayınca kaydı `Model karnesi - <model>` konus
 bağla (ör. `Model karnesi - Opus 5.5`). Bu konudaki dersler her projede, her
 oturumun ve alt ajanın başında **MODEL KARNESİ** başlığıyla verilir.
 
+**Skill'in neden notu.** Bir skill'i uygularken kullanıcı seni düzeltirse,
+düzeltmeyi nedeniyle birlikte tek cümlelik ders olarak yaz; kullanıcı
+onaylayınca kaydı `Skill - <skill adı>` konusuna bağla (ör.
+`Skill - minecraft-armor`). O skill bir daha açıldığında bu dersler
+kendiliğinden bağlama eklenir.
+
 İlki mevcut konuları ve konusu olmayan kayıtları listeler. Kullanıcı "kayıtları
 konulara ayır" derse: konusuz kayıtları oku, az sayıda (proje başına 4–8) kısa
 konu adı öner, hangi kaydın hangi konuya gideceğini sohbette göster ve kullanıcı
